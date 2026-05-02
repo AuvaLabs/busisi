@@ -286,12 +286,72 @@ def render_meta_files(
     return paths
 
 
+def render_tools(vertical_name: str) -> dict[str, Path]:
+    """Render /tools/ index + per-tool pages for a vertical."""
+    from engine.core import tools_engine
+
+    Session = get_sessionmaker()
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical_name)
+        ).scalar_one_or_none()
+        if v is None:
+            raise ValueError(f"vertical not found: {vertical_name}")
+        vertical_ctx = _vertical_ctx(v)
+
+    tools = tools_engine.list_tools(vertical_name)
+    env = _env()
+    out: dict[str, Path] = {}
+
+    # Index
+    idx_html = env.get_template("tools_index.html").render(
+        vertical=vertical_ctx,
+        title="Tools",
+        description=f"{vertical_ctx['display_name']} tools — calculators and decision aids.",
+        theme="light",
+        tools=tools,
+    )
+    idx_dir = _output_dir(vertical_name) / "tools"
+    idx_dir.mkdir(parents=True, exist_ok=True)
+    idx_path = idx_dir / "index.html"
+    idx_path.write_text(idx_html, encoding="utf-8")
+    out["index"] = idx_path
+
+    # Per-tool pages
+    for meta in tools:
+        tool = tools_engine.get_tool(vertical_name, meta["slug"])
+        if tool is None or tool["calculate"] is None:
+            continue
+        try:
+            default_result = tool["calculate"](dict(tool["defaults"]))
+        except Exception as exc:
+            logger.warning("tool %s default-run failed: %s", meta["slug"], exc)
+            default_result = {"headline": "—", "breakdown": []}
+        page_html = env.get_template("tool_page.html").render(
+            vertical=vertical_ctx,
+            title=meta["title"],
+            description=meta.get("description", ""),
+            theme="light",
+            tool=meta,
+            default_result=default_result,
+        )
+        page_dir = idx_dir / meta["slug"]
+        page_dir.mkdir(parents=True, exist_ok=True)
+        page_path = page_dir / "index.html"
+        page_path.write_text(page_html, encoding="utf-8")
+        out[meta["slug"]] = page_path
+
+    logger.info("rendered %s tools (%d tool pages)", vertical_name, len(tools))
+    return out
+
+
 def render_all(vertical_name: str, *, index_limit: int = 50) -> dict[str, Any]:
-    """Render index + static pages + sources page + meta files for a vertical."""
+    """Render index + static pages + sources page + tools + meta files."""
     return {
         "index": render_index(vertical_name, limit=index_limit),
         "static_pages": render_static_pages(vertical_name),
         "sources": render_sources(vertical_name),
+        "tools": render_tools(vertical_name),
         "meta": render_meta_files(vertical_name),
     }
 
@@ -304,7 +364,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("vertical")
     parser.add_argument(
         "--target",
-        choices=("all", "index", "static", "sources", "meta"),
+        choices=("all", "index", "static", "sources", "tools", "meta"),
         default="all",
     )
     parser.add_argument("--limit", type=int, default=50)
@@ -328,6 +388,9 @@ def main(argv: list[str] | None = None) -> int:
     elif args.target == "meta":
         for name, p in render_meta_files(args.vertical).items():
             print(f"rendered {name:8s} -> {p}")
+    elif args.target == "tools":
+        for name, p in render_tools(args.vertical).items():
+            print(f"rendered tools/{name} -> {p}")
     return 0
 
 

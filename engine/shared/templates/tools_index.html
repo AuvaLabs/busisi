@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .tools { list-style: none; padding: 0; margin: 0; }
+    .tools li { padding: 1.25rem 0; border-bottom: 1px solid var(--rule); }
+    .tool-title { font-family: var(--serif); font-size: 1.5rem; font-weight: 500; margin: 0 0 0.25rem 0; }
+    .tool-title a { color: var(--text); }
+    .tool-title a:hover { color: var(--accent); text-decoration: none; }
+    .tool-desc { color: var(--text-mute); margin: 0 0 0.5rem 0; font-size: 1rem; }
+    .tool-meta { font-family: var(--sans); font-size: 0.75rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+    .tool-meta .cat { color: var(--accent); margin-right: 1rem; }
+    .lede { font-size: 1.125rem; color: var(--text-mute); max-width: 36rem; margin-bottom: 2rem; }
+{% endblock %}
+
+{% block content %}
+<h1 style="font-family: var(--serif); font-size: 2.5rem; line-height: 1.15; margin: 0 0 1rem 0;">Tools</h1>
+<p class="lede">
+  Calculators, comparators, and decision aids — formula-driven, transparent,
+  no signup required.
+</p>
+
+<ul class="tools">
+{% for t in tools %}
+  <li>
+    <h2 class="tool-title"><a href="/tools/{{ t.slug }}/">{{ t.title }}</a></h2>
+    <p class="tool-desc">{{ t.description }}</p>
+    <p class="tool-meta">
+      <span class="cat">{{ t.category }}</span>
+      <span>last verified {{ t.last_verified }}</span>
+    </p>
+  </li>
+{% else %}
+  <li><em>No tools published yet for this vertical.</em></li>
+{% endfor %}
+</ul>
+{% endblock %}

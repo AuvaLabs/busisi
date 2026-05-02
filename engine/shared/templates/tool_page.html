@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .prose { max-width: 48rem; }
+    h1.tool-title { font-family: var(--serif); font-size: 2.25rem; line-height: 1.2; margin: 0 0 0.5rem 0; }
+    .tool-desc { color: var(--text-mute); font-size: 1.125rem; margin: 0 0 1.5rem 0; }
+    .tool-form {
+      background: var(--bg-elev);
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      border: 1px solid var(--rule);
+    }
+    .tool-form label { display: block; font-family: var(--sans); font-size: 0.875rem; font-weight: 500; margin: 0.75rem 0 0.25rem; color: var(--text); }
+    .tool-form input, .tool-form select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      font-family: var(--sans);
+      font-size: 1rem;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .tool-form input:focus, .tool-form select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+    .result-headline {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 500;
+      color: var(--accent);
+      margin: 1.5rem 0 0.75rem;
+    }
+    .breakdown { font-family: var(--sans); font-size: 0.875rem; }
+    .breakdown table { width: 100%; border-collapse: collapse; }
+    .breakdown td { padding: 0.4rem 0; border-bottom: 1px solid var(--rule); }
+    .breakdown td:last-child { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-mute); }
+    .notes {
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      color: var(--text-mute);
+      background: var(--bg-mute);
+      border-left: 4px solid var(--accent);
+      padding: 0.75rem 1rem;
+      margin: 1.5rem 0;
+    }
+    .stamp { font-family: var(--sans); font-size: 0.75rem; color: var(--text-faint); border-top: 1px solid var(--rule); padding-top: 0.75rem; margin-top: 2rem; }
+{% endblock %}
+
+{% block content %}
+<div class="prose">
+  <h1 class="tool-title">{{ tool.title }}</h1>
+  <p class="tool-desc">{{ tool.description }}</p>
+
+  <form class="tool-form" id="tool-form" method="post" action="/api/tools/{{ tool.slug }}/calculate">
+    {% for inp in tool.inputs %}
+      <label for="f-{{ inp.name }}">{{ inp.label }}{% if inp.suffix %} <span style="color: var(--text-faint);">({{ inp.suffix }})</span>{% endif %}</label>
+      {% if inp.type == 'select' %}
+        <select id="f-{{ inp.name }}" name="{{ inp.name }}">
+          {% for opt in inp.options %}
+            <option value="{{ opt }}"{% if opt == inp.default %} selected{% endif %}>{{ opt }}</option>
+          {% endfor %}
+        </select>
+      {% else %}
+        <input id="f-{{ inp.name }}" name="{{ inp.name }}"
+               type="{{ inp.type }}"
+               value="{{ inp.default }}"
+               {% if inp.min is defined %}min="{{ inp.min }}"{% endif %}
+               {% if inp.max is defined %}max="{{ inp.max }}"{% endif %}
+               {% if inp.step is defined %}step="{{ inp.step }}"{% endif %}>
+      {% endif %}
+    {% endfor %}
+  </form>
+
+  <div class="result-headline" id="result-headline">{{ default_result.headline }}</div>
+
+  <div class="breakdown" id="breakdown">
+    <table>
+      <tbody>
+      {% for label, value in default_result.breakdown %}
+        <tr><td>{{ label }}</td><td>{{ value }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if tool.notes %}
+    <div class="notes"><strong>Note:</strong> {{ tool.notes }}</div>
+  {% endif %}
+
+  <p class="stamp">
+    Last verified {{ tool.last_verified }} · category: {{ tool.category }} ·
+    <a href="/tools/">all tools</a>
+  </p>
+</div>
+
+<script>
+(function () {
+  const form = document.getElementById("tool-form");
+  if (!form) return;
+  const headline = document.getElementById("result-headline");
+  const breakdown = document.getElementById("breakdown");
+  let timer = null;
+  function recalc() {
+    const data = new FormData(form);
+    fetch(form.action, {
+      method: "POST",
+      headers: {"Accept": "application/json"},
+      body: data,
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(j => {
+        headline.textContent = j.headline || "";
+        const rows = (j.breakdown || []).map(([l, v]) => "<tr><td>" + l + "</td><td>" + v + "</td></tr>").join("");
+        breakdown.innerHTML = "<table><tbody>" + rows + "</tbody></table>";
+      })
+      .catch(() => { /* keep last-good values on transient failure */ });
+  }
+  form.addEventListener("input", () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(recalc, 200);
+  });
+})();
+</script>
+{% endblock %}
