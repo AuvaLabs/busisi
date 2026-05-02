@@ -19,12 +19,16 @@ entity_extractor, story_clusterer, summarizer, and Postgres persistence.
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Any
 
 import yaml
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from engine.core import classifier, deduplicator, feed_fetcher, feed_loader
 from engine.core.config import vertical_dir
+from engine.core.db import Article, Vertical, get_sessionmaker
 from engine.core.safe_http import install_ssrf_guard
 
 logger = logging.getLogger(__name__)
@@ -40,11 +44,65 @@ def _load_config(vertical_id: str) -> dict[str, Any]:
     return data
 
 
+def _parse_published(value: str) -> datetime | None:
+    if not value:
+        return None
+    try:
+        from dateutil import parser as dateparser
+
+        dt = dateparser.parse(value)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except (ValueError, TypeError, ImportError):
+        return None
+
+
+def _persist_articles(vertical_id: str, articles: list[dict[str, Any]]) -> int:
+    """Insert articles for the named vertical, skipping (vertical_id, hash) dups.
+
+    Returns the count of newly-inserted rows.
+    """
+    Session = get_sessionmaker()
+    inserted = 0
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical_id)
+        ).scalar_one_or_none()
+        if v is None:
+            logger.warning(
+                "vertical row not found for %s — skipping persist", vertical_id
+            )
+            return 0
+        for article in articles:
+            row = Article(
+                vertical_id=v.id,
+                hash=article["hash"],
+                title=article["title"],
+                link=article["link"],
+                source=article.get("source", ""),
+                feed_region=article.get("feed_region", "Global"),
+                summary=article.get("summary", ""),
+                body=article.get("body"),
+                published_at=_parse_published(article.get("published", "")),
+                labels=article.get("labels"),
+            )
+            session.add(row)
+            try:
+                session.commit()
+                inserted += 1
+            except IntegrityError:
+                session.rollback()
+                logger.debug("article hash %s already in db", article["hash"][:12])
+    return inserted
+
+
 def run_vertical(
     vertical_id: str,
     *,
     max_feeds: int | None = None,
     classify: bool = True,
+    persist: bool = False,
 ) -> list[dict[str, Any]]:
     """Run the ingestion pipeline for one vertical and return enriched articles."""
     install_ssrf_guard()
@@ -69,26 +127,27 @@ def run_vertical(
     )
     logger.info("[%s] %d unique after dedup", vertical_id, len(unique))
 
-    if not classify or not topics:
-        return unique
+    if classify and topics:
+        for article in unique:
+            result = classifier.classify_article(
+                title=article["title"],
+                content=article.get("summary") or None,
+                taxonomy=topics,
+                vertical=vertical_id,
+                always_escalate=always_escalate,
+                escalation_budget=budget,
+            )
+            article["labels"] = result["labels"]
+            article["_classifier"] = {
+                "ai_enhanced": result.get("_ai_enhanced", False),
+                "cached": result.get("_cached", False),
+            }
 
-    enriched: list[dict[str, Any]] = []
-    for article in unique:
-        result = classifier.classify_article(
-            title=article["title"],
-            content=article.get("summary") or None,
-            taxonomy=topics,
-            vertical=vertical_id,
-            always_escalate=always_escalate,
-            escalation_budget=budget,
-        )
-        article["labels"] = result["labels"]
-        article["_classifier"] = {
-            "ai_enhanced": result.get("_ai_enhanced", False),
-            "cached": result.get("_cached", False),
-        }
-        enriched.append(article)
-    return enriched
+    if persist:
+        inserted = _persist_articles(vertical_id, unique)
+        logger.info("[%s] persisted %d new articles", vertical_id, inserted)
+
+    return unique
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -99,6 +158,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("vertical", help="Vertical id (e.g. modelwatch)")
     parser.add_argument("--max-feeds", type=int, default=None)
     parser.add_argument("--no-classify", action="store_true")
+    parser.add_argument("--persist", action="store_true",
+                        help="Insert deduped articles into postgres")
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
 
@@ -111,6 +172,7 @@ def main(argv: list[str] | None = None) -> int:
         args.vertical,
         max_feeds=args.max_feeds,
         classify=not args.no_classify,
+        persist=args.persist,
     )
     print(f"\n=== summary ===\n{len(out)} articles after pipeline\n")
     for article in out[:10]:
