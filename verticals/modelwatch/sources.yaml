@@ -20,7 +20,7 @@
   priority_weight: 1.00
   category_hints: [model-release, product-launch, commentary]
 
-- url: https://www.anthropic.com/rss.xml
+- url: https://www.anthropic.com/news/feed.xml
   type: rss
   region: US
   priority_weight: 1.00
