@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .prose { max-width: 36rem; }
+    .prose h1 { font-size: 2.5rem; line-height: 1.15; margin: 0 0 1rem 0; }
+    .prose h2 { font-size: 1.5rem; margin: 2.5rem 0 0.75rem; }
+    .prose p { margin: 0 0 1rem 0; }
+    .prose a { color: var(--link); }
+    .lede { font-size: 1.25rem; line-height: 1.5; color: var(--text-mute); margin-bottom: 2rem; }
+{% endblock %}
+
+{% block content %}
+<article class="prose">
+  <h1>About {{ vertical.display_name }}</h1>
+
+  <p class="lede">
+    A real-time knowledge platform for the AI/ML field — news the day it
+    breaks, evergreen reference for the concepts that don't, original
+    research drawn from accumulated coverage, and tools that make the
+    field's economics legible.
+  </p>
+
+  <h2>What this is</h2>
+  <p>
+    {{ vertical.display_name }} aggregates first-party announcements from
+    AI labs, research preprints, regulatory filings, and the work of
+    independent voices. It clusters parallel coverage of a single event
+    so the front page reads like a curator's desk, not a press-release
+    feed. Layered on top: a glossary that defines every term you'd hit,
+    beginner's guides, comparisons, and decision tools.
+  </p>
+
+  <h2>Who it's for</h2>
+  <p>
+    Practitioners (researchers, engineers, product builders),
+    decision-makers (founders, executives, policy people), and serious
+    students. Skim-friendly when you have ten minutes; deep when you
+    want it.
+  </p>
+
+  <h2>What's different</h2>
+  <p>
+    Two things. First, the editorial discipline: every story links back
+    to its source prominently, AI-generated summaries are explicitly
+    grounded in those sources, and analysis is marked separately from
+    fact reporting. Second, the architecture: the same engine that
+    powers the front page also generates the reference layer, which
+    keeps the two pegged to each other — the glossary cross-links into
+    every story that uses a term.
+  </p>
+
+  <h2>How to use it</h2>
+  <p>
+    Read the front page for the day's signal. Subscribe to the
+    <a href="/newsletter">daily digest</a> if you'd rather have it
+    delivered. Search for a term? The <a href="/glossary/">glossary</a>
+    is exhaustive. Comparing models? The <a href="/tools/">tools
+    section</a> has live comparisons.
+  </p>
+
+  <h2>Who runs it</h2>
+  <p>
+    {{ vertical.display_name }} is operated by Auva Labs FZE. The
+    operating entity is identified on <a href="/privacy">/privacy</a>
+    and <a href="/terms">/terms</a>. Editorial methodology is
+    documented at <a href="/methodology">/methodology</a> — including
+    the AI tools we use, how we ground summaries, and what we won't do.
+  </p>
+</article>
+{% endblock %}

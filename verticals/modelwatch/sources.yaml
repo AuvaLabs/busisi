@@ -20,11 +20,8 @@
   priority_weight: 1.00
   category_hints: [model-release, product-launch, commentary]
 
-- url: https://www.anthropic.com/news/feed.xml
-  type: rss
-  region: US
-  priority_weight: 1.00
-  category_hints: [model-release, safety-research, commentary]
+# DISABLED 2026-05-02 (404). Replace when correct URL identified.
+# https://www.anthropic.com/news/feed.xml
 
 - url: https://blog.google/technology/ai/rss
   type: rss
@@ -38,17 +35,11 @@
   priority_weight: 1.00
   category_hints: [research-paper, model-release]
 
-- url: https://ai.meta.com/blog/rss/
-  type: rss
-  region: US
-  priority_weight: 1.00
-  category_hints: [model-release, research-paper, infrastructure]
+# DISABLED 2026-05-02 (404). Replace when correct URL identified.
+# https://ai.meta.com/blog/rss/
 
-- url: https://mistral.ai/news/feed.xml
-  type: rss
-  region: EU
-  priority_weight: 1.00
-  category_hints: [model-release, product-launch]
+# DISABLED 2026-05-02 (404). Replace when correct URL identified.
+# https://mistral.ai/news/feed.xml
 
 - url: https://www.cohere.com/blog/rss.xml
   type: rss
@@ -56,11 +47,8 @@
   priority_weight: 1.00
   category_hints: [model-release, product-launch]
 
-- url: https://stability.ai/news/feed
-  type: rss
-  region: UK
-  priority_weight: 1.00
-  category_hints: [model-release, product-launch]
+# DISABLED 2026-05-02 (404). Replace when correct URL identified.
+# https://stability.ai/news/feed
 
 - url: https://blogs.nvidia.com/feed/
   type: rss

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .prose { max-width: 36rem; }
+    .prose h1 { font-size: 2.5rem; line-height: 1.15; margin: 0 0 1rem 0; }
+    .prose h2 { font-size: 1.5rem; margin: 2.5rem 0 0.75rem; }
+    .prose p, .prose li { margin: 0 0 0.75rem 0; }
+    .prose ul { padding-left: 1.25rem; }
+    .prose a { color: var(--link); }
+    .lede { font-size: 1.125rem; color: var(--text-mute); margin-bottom: 1.5rem; }
+    .draft-banner {
+      background: var(--bg-mute);
+      border-left: 4px solid var(--accent);
+      padding: 0.75rem 1rem;
+      margin: 0 0 2rem 0;
+      font-family: var(--sans);
+      font-size: 0.875rem;
+    }
+    .stamp { font-family: var(--sans); font-size: 0.75rem; color: var(--text-faint); border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 3rem; }
+{% endblock %}
+
+{% block content %}
+<article class="prose">
+  <h1>Terms of Service</h1>
+
+  <p class="draft-banner">
+    <strong>Draft — pending operator review.</strong> This is a baseline
+    set of terms; legally-binding final language will be reviewed and
+    ratified by the operating entity before public launch.
+  </p>
+
+  <p class="lede">
+    {{ vertical.display_name }} is provided by Auva Labs FZE. By accessing
+    or using the service you agree to these terms. If you don't agree,
+    don't use the service.
+  </p>
+
+  <h2>Operating entity</h2>
+  <p>
+    The service is operated by <strong>Auva Labs FZE</strong>. Contact:
+    <a href="mailto:legal@auvalabs.com">legal@auvalabs.com</a>.
+  </p>
+
+  <h2>Acceptable use</h2>
+  <ul>
+    <li>Do not abuse the service. No scraping at rates beyond what the public RSS feeds and JSON API permit.</li>
+    <li>Do not impersonate the operating entity or its editorial voice.</li>
+    <li>Do not attempt to circumvent paid-tier gating, sponsorship gating, or rate-limiting.</li>
+    <li>Do not introduce malware, spam, or content that violates third-party rights.</li>
+  </ul>
+
+  <h2>Intellectual property</h2>
+  <p>
+    {{ vertical.display_name }} aggregates publicly available news from
+    primary sources and produces summaries that are explicitly grounded
+    in those sources. Headlines, summaries, and editorial commentary
+    written by us are licensed for personal reading;
+    <a href="/api">programmatic access</a> follows the API's own terms.
+    Content from third-party sources remains the property of those
+    sources and we link prominently back to them in every story.
+  </p>
+
+  <h2>Editorial content disclaimer</h2>
+  <p>
+    Reference and analysis content is intended as general information,
+    not professional advice. Information about specific products,
+    models, regulations, or technical claims is offered in good faith
+    based on the sources cited; readers should verify against the
+    primary sources before acting on it. {{ vertical.display_name }}
+    makes no warranty of fitness for any particular purpose.
+  </p>
+
+  <h2>Pro tier</h2>
+  <p>
+    Pro-tier subscriptions are billed via Stripe. Cancellations take
+    effect at the end of the current billing period; no pro-rated
+    refunds are issued unless required by law. Magic-link access tokens
+    are single-use and expire 15 minutes after issue.
+  </p>
+
+  <h2>Sponsorship and affiliate disclosures</h2>
+  <p>
+    Sponsored content is labelled "Sponsored" on every surface. Affiliate
+    links are disclosed inline and on each affected page. The
+    sponsorship-pricing page lists the current rate card.
+  </p>
+
+  <h2>Limitation of liability</h2>
+  <p>
+    To the maximum extent permitted by law, Auva Labs FZE is not liable
+    for indirect, incidental, or consequential damages arising from your
+    use of the service. Our total liability is limited to the amount you
+    have paid us in the twelve months preceding the claim.
+  </p>
+
+  <h2>Changes</h2>
+  <p>
+    We may update these terms; material changes are announced on the
+    front page and dated below.
+  </p>
+
+  <h2>Governing law</h2>
+  <p>
+    These terms are governed by the laws of the jurisdiction in which
+    Auva Labs FZE is registered, as confirmed in the operator-reviewed
+    final version of this document.
+  </p>
+
+  <p class="stamp">
+    Last reviewed: 2026-05-02. See also <a href="/privacy">privacy</a>
+    and <a href="/methodology">methodology</a>.
+  </p>
+</article>
+{% endblock %}

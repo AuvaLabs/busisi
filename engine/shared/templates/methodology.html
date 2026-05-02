@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .prose { max-width: 36rem; }
+    .prose h1 { font-size: 2.5rem; line-height: 1.15; margin: 0 0 1rem 0; }
+    .prose h2 { font-size: 1.5rem; margin: 2.5rem 0 0.75rem; }
+    .prose h3 { font-size: 1.125rem; margin: 1.5rem 0 0.5rem; font-family: var(--sans); font-weight: 600; }
+    .prose p, .prose li { margin: 0 0 0.75rem 0; }
+    .prose ul { padding-left: 1.25rem; }
+    .prose a { color: var(--link); }
+    .lede { font-size: 1.25rem; line-height: 1.5; color: var(--text-mute); margin-bottom: 2rem; }
+    .stamp { font-family: var(--sans); font-size: 0.75rem; color: var(--text-faint); border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 3rem; }
+{% endblock %}
+
+{% block content %}
+<article class="prose">
+  <h1>Methodology</h1>
+
+  <p class="lede">
+    How {{ vertical.display_name }} sources, processes, and presents
+    information — and what it won't do.
+  </p>
+
+  <h2>Sources</h2>
+  <p>
+    The full list of feeds is at <a href="/sources">/sources</a>, kept
+    in sync with the active configuration on the server. Sources are
+    weighted on a 0.0–1.0 scale that reflects authority, not popularity.
+    First-party announcements (AI labs themselves) are weighted highest;
+    research aggregators next; tech press lower; community signals
+    lowest. The weights affect story prioritisation but not whether a
+    source is included.
+  </p>
+
+  <h2>Aggregation pipeline</h2>
+  <ul>
+    <li><strong>Fetch.</strong> Every feed is polled on a schedule (10 minutes for news, longer for slower-moving sources). User-Agent identifies as the Grimoire bot.</li>
+    <li><strong>Deduplication.</strong> Articles are deduplicated within a 7-day rolling window using a word-shingle inverted index. Two stories about the same event from different outlets are clustered together; multiple coverage of the same announcement is grouped, not repeated.</li>
+    <li><strong>Classification.</strong> A regex-first taxonomy classifier scores each article against the topic list. When confidence is low or the topic is high-stakes (regulation, safety research, controversy), the system escalates to an AI-assisted classifier.</li>
+  </ul>
+
+  <h2>AI usage</h2>
+  <p>
+    AI does the production-line work: classification, summarisation,
+    cluster headlines, narrative paragraphs, and the reference layer's
+    initial drafts. Three rules govern every AI output:
+  </p>
+  <ul>
+    <li><strong>Grounding.</strong> Summaries must derive from source text. If a summary cites a fact, that fact must be in the source. The system rejects ungrounded outputs.</li>
+    <li><strong>Attribution.</strong> Every story links back to its source prominently. Source publication names are typeset as first-class metadata, not afterthought captions.</li>
+    <li><strong>Disclosure.</strong> "Why this matters" callouts are marked as analysis, not fact reporting. The boundary between summarised source material and editorial commentary is always visible.</li>
+  </ul>
+
+  <h3>What we don't do with AI</h3>
+  <ul>
+    <li>No AI-generated photorealism. Hero imagery is either source-attributed or absent. AI-generated diagrams, charts, and abstract illustrations are allowed and labelled as such.</li>
+    <li>No AI-fabricated quotes. Quotes appear only when they're in the source.</li>
+    <li>No AI-generated commentary under our editorial voice. Analysis is human-curated; AI synthesis is captioned.</li>
+  </ul>
+
+  <h2>Reference layer</h2>
+  <p>
+    The glossary, beginner's guides, and comparisons under
+    <a href="/learn/">/learn/</a> are AI-drafted, then editorially
+    reviewed before publication. Every entry carries a "last verified"
+    date. Where the field is moving fast (model capabilities, pricing),
+    the date is the canonical signal of freshness — older than three
+    months means treat with caution.
+  </p>
+
+  <h2>Tools</h2>
+  <p>
+    Tools at <a href="/tools/">/tools/</a> are formula-driven where the
+    formula is well-defined (LLM cost, token count, comparison
+    matrices) and explicitly opinionated where they're not (decision
+    aids). Affiliate links, when present, are disclosed inline and
+    aggregated on each tool's page footer.
+  </p>
+
+  <h2>Editorial integrity</h2>
+  <ul>
+    <li>Sponsored content is labelled "Sponsored" on every surface — newsletter, front page, story pages.</li>
+    <li>Affiliate links are disclosed inline and at the page footer.</li>
+    <li>Pro-tier content does not include sponsor sections.</li>
+    <li>We will not recommend a tool we wouldn't use ourselves.</li>
+    <li>We will not run sponsorships from companies whose products we have actively criticised in editorial.</li>
+  </ul>
+
+  <h2>Privacy and tracking</h2>
+  <p>
+    Analytics is self-hosted (no third-party trackers). We track page
+    views, referrers, and basic conversion signals — never individual
+    users. There is no cookie consent banner because there are no
+    cookies that would require one. Email subscriptions are
+    pseudonymised in storage; unsubscribe is one-click and immediate.
+  </p>
+
+  <h2>Corrections</h2>
+  <p>
+    If you spot an error — a misattribution, a stale fact, a hallucinated
+    figure in a summary — email
+    <a href="mailto:corrections@modelwatch.local">corrections@modelwatch.local</a>.
+    Verified corrections are applied within 24 hours, with a note on the
+    affected page.
+  </p>
+
+  <p class="stamp">
+    Operating entity: Auva Labs FZE. See <a href="/privacy">privacy</a>
+    and <a href="/terms">terms</a>.
+  </p>
+</article>
+{% endblock %}

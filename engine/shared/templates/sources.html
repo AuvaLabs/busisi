@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .lede { font-size: 1.125rem; color: var(--text-mute); margin-bottom: 1.5rem; max-width: 36rem; }
+    table.sources { width: 100%; border-collapse: collapse; font-family: var(--sans); font-size: 0.875rem; }
+    table.sources th { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--rule); font-weight: 600; color: var(--text-mute); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+    table.sources td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    table.sources tr:hover td { background: var(--bg-mute); }
+    .pw { font-variant-numeric: tabular-nums; color: var(--text-mute); }
+    .host { color: var(--text); font-weight: 500; }
+    .region { color: var(--accent); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .health { font-size: 0.75rem; }
+    .health.ok { color: #2F7D32; }
+    .health.warn { color: #9C5D11; }
+    .health.err { color: #A23B2D; }
+    .health.cold { color: var(--text-faint); }
+    .hints { color: var(--text-faint); font-size: 0.75rem; }
+{% endblock %}
+
+{% block content %}
+<h1 style="font-family: var(--serif); font-size: 2.5rem; line-height: 1.15; margin: 0 0 1rem 0;">Sources</h1>
+<p class="lede">
+  All public feeds {{ vertical.display_name }} ingests, with their
+  authority weight and recent fetch health. Disabled sources are kept
+  in the configuration with a note pending replacement.
+</p>
+
+<table class="sources">
+  <thead>
+    <tr>
+      <th>Source</th>
+      <th>Region</th>
+      <th>Priority</th>
+      <th>Topics</th>
+      <th>Health</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for s in sources %}
+    <tr>
+      <td><span class="host">{{ s.host_short }}</span><br><a href="{{ s.url }}" rel="noopener">view feed →</a></td>
+      <td><span class="region">{{ s.region }}</span></td>
+      <td><span class="pw">{{ "%.2f"|format(s.priority_weight) }}</span></td>
+      <td><span class="hints">{{ s.category_hints|join(', ') }}</span></td>
+      <td>
+      {% if s.health.status == 'cold' %}
+        <span class="health cold">no data yet</span>
+      {% else %}
+        <span class="health {{ s.health.status }}">
+          {{ s.health.status }}
+          {% if s.health.last_count is not none %}· {{ s.health.last_count }} entries{% endif %}
+          {% if s.health.last_ok_human %}· {{ s.health.last_ok_human }}{% endif %}
+        </span>
+        {% if s.health.err and s.health.err > 0 %}<br><span class="health err">{{ s.health.err }} errors lifetime</span>{% endif %}
+      {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<p style="font-family: var(--sans); font-size: 0.75rem; color: var(--text-faint); margin-top: 2rem;">
+  {{ sources|length }} sources · generated {{ generated_at }} ·
+  source health auto-disables a feed after 5 consecutive failures
+</p>
+{% endblock %}

@@ -117,18 +117,135 @@ def render_index(vertical_name: str, *, limit: int = 50) -> Path:
     return out_path
 
 
+_STATIC_PAGES = (
+    ("about", "About", "What this is and who runs it."),
+    ("methodology", "Methodology", "How sources, AI usage, and editorial rules work."),
+    ("privacy", "Privacy", "Data we collect, what we don't, and your rights."),
+    ("terms", "Terms", "Usage terms and operating-entity disclosure."),
+)
+
+
+def _vertical_ctx(v: Any) -> dict[str, Any]:
+    return {
+        "name": v.name,
+        "display_name": v.display_name,
+        "accent_light": v.accent_light,
+        "accent_dark": v.accent_dark,
+    }
+
+
+def render_static_pages(vertical_name: str) -> list[Path]:
+    """Render about/methodology/privacy/terms for a vertical. Returns paths."""
+    Session = get_sessionmaker()
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical_name)
+        ).scalar_one_or_none()
+        if v is None:
+            raise ValueError(f"vertical not found: {vertical_name}")
+        vertical_ctx = _vertical_ctx(v)
+
+    env = _env()
+    paths: list[Path] = []
+    for slug, title, description in _STATIC_PAGES:
+        ctx = {
+            "vertical": vertical_ctx,
+            "title": title,
+            "description": description,
+            "theme": "light",
+        }
+        html = env.get_template(f"{slug}.html").render(**ctx)
+        out_dir = _output_dir(vertical_name) / slug
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / "index.html"
+        out_path.write_text(html, encoding="utf-8")
+        paths.append(out_path)
+        logger.info("rendered %s/%s", vertical_name, slug)
+    return paths
+
+
+def render_sources(vertical_name: str) -> Path:
+    """Render the public /sources page from feed_loader + Redis health data."""
+    from engine.core import feed_loader
+    from engine.core.source_health import get_status
+
+    Session = get_sessionmaker()
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical_name)
+        ).scalar_one_or_none()
+        if v is None:
+            raise ValueError(f"vertical not found: {vertical_name}")
+        vertical_ctx = _vertical_ctx(v)
+
+    feeds = feed_loader.load_feeds(vertical_name)
+    sources_ctx: list[dict[str, Any]] = []
+    for f in feeds:
+        url = f["url"]
+        sources_ctx.append({
+            "url": url,
+            "host_short": _short_source(url),
+            "priority_weight": f.get("priority_weight", 0.7),
+            "region": f.get("region", "Global"),
+            "category_hints": f.get("category_hints", []),
+            "health": get_status(url),
+        })
+    sources_ctx.sort(key=lambda s: (-s["priority_weight"], s["host_short"]))
+
+    ctx = {
+        "vertical": vertical_ctx,
+        "title": "Sources",
+        "description": f"All sources {vertical_ctx['display_name']} ingests.",
+        "theme": "light",
+        "sources": sources_ctx,
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    html = _env().get_template("sources.html").render(**ctx)
+    out_dir = _output_dir(vertical_name) / "sources"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "index.html"
+    out_path.write_text(html, encoding="utf-8")
+    logger.info("rendered %s/sources (%d sources)", vertical_name, len(sources_ctx))
+    return out_path
+
+
+def render_all(vertical_name: str, *, index_limit: int = 50) -> dict[str, Any]:
+    """Render index + static pages + sources page for a vertical."""
+    return {
+        "index": render_index(vertical_name, limit=index_limit),
+        "static_pages": render_static_pages(vertical_name),
+        "sources": render_sources(vertical_name),
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI: ``python -m engine.core.output_renderer modelwatch``"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Render a grimoire vertical front page")
+    parser = argparse.ArgumentParser(description="Render a grimoire vertical")
     parser.add_argument("vertical")
+    parser.add_argument(
+        "--target",
+        choices=("all", "index", "static", "sources"),
+        default="all",
+    )
     parser.add_argument("--limit", type=int, default=50)
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
     logging.basicConfig(level=args.log_level, format="%(message)s")
-    out = render_index(args.vertical, limit=args.limit)
-    print(f"rendered -> {out}")
+
+    if args.target == "all":
+        out = render_all(args.vertical, index_limit=args.limit)
+        print(f"rendered index   -> {out['index']}")
+        print(f"rendered static  -> {len(out['static_pages'])} pages")
+        print(f"rendered sources -> {out['sources']}")
+    elif args.target == "index":
+        print(f"rendered -> {render_index(args.vertical, limit=args.limit)}")
+    elif args.target == "static":
+        for p in render_static_pages(args.vertical):
+            print(f"rendered -> {p}")
+    elif args.target == "sources":
+        print(f"rendered -> {render_sources(args.vertical)}")
     return 0
 
 

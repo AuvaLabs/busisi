@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .prose { max-width: 36rem; }
+    .prose h1 { font-size: 2.5rem; line-height: 1.15; margin: 0 0 1rem 0; }
+    .prose h2 { font-size: 1.5rem; margin: 2.5rem 0 0.75rem; }
+    .prose p, .prose li { margin: 0 0 0.75rem 0; }
+    .prose ul { padding-left: 1.25rem; }
+    .prose a { color: var(--link); }
+    .lede { font-size: 1.125rem; color: var(--text-mute); margin-bottom: 1.5rem; }
+    .draft-banner {
+      background: var(--bg-mute);
+      border-left: 4px solid var(--accent);
+      padding: 0.75rem 1rem;
+      margin: 0 0 2rem 0;
+      font-family: var(--sans);
+      font-size: 0.875rem;
+    }
+    .stamp { font-family: var(--sans); font-size: 0.75rem; color: var(--text-faint); border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 3rem; }
+{% endblock %}
+
+{% block content %}
+<article class="prose">
+  <h1>Privacy</h1>
+
+  <p class="draft-banner">
+    <strong>Draft — pending operator review.</strong> This text is a
+    minimum-disclosure baseline reflecting the technical reality of the
+    platform. It will be reviewed and ratified before public launch.
+  </p>
+
+  <p class="lede">
+    {{ vertical.display_name }} collects the minimum data required to
+    operate. We do not sell or share user data with third parties. There
+    are no third-party trackers, no cookie consent banner because there
+    are no cookies requiring one.
+  </p>
+
+  <h2>What we collect</h2>
+  <ul>
+    <li><strong>Server access logs.</strong> IP address, user-agent, request path, response status, timestamp. Retained 30 days for security and abuse detection, then deleted.</li>
+    <li><strong>Self-hosted analytics.</strong> Aggregate page views, referrer host, country (geolocated from IP at the edge — IP is not stored against the analytics record). No individual-user profiles.</li>
+    <li><strong>Newsletter subscribers.</strong> Email address only, plus subscribed/unsubscribed status. Email is stored pseudonymised (hashed lookup) and used solely to deliver the digest you signed up for.</li>
+    <li><strong>Pro tier customers.</strong> The minimum identifying data required by Stripe to process payment, plus an email for account access. Stripe handles cards directly; we never see card details.</li>
+    <li><strong>Sponsorship inquiries.</strong> Whatever you put into the contact form, used to respond to that inquiry.</li>
+  </ul>
+
+  <h2>What we do not collect</h2>
+  <ul>
+    <li>No third-party trackers (no Google Analytics, no Facebook pixel, no Hotjar).</li>
+    <li>No advertising cookies.</li>
+    <li>No fingerprinting beyond standard server logs.</li>
+    <li>No social media login data.</li>
+  </ul>
+
+  <h2>How long we keep it</h2>
+  <ul>
+    <li>Server logs: 30 days, then deleted.</li>
+    <li>Newsletter subscriber records: until you unsubscribe; 30 days after unsubscribe, the record is deleted.</li>
+    <li>Pro tier customer records: until you close the account; we keep payment receipts as long as legally required for tax purposes (typically 7 years), the rest is deleted at account closure.</li>
+    <li>Analytics aggregates: 12 months, then archived.</li>
+  </ul>
+
+  <h2>Your rights</h2>
+  <p>
+    You have the right to request a copy of any personal data we hold,
+    correct it, or have it deleted. Contact
+    <a href="mailto:privacy@modelwatch.local">privacy@modelwatch.local</a>
+    with the request. We respond within 30 days. EU and California
+    residents have specific rights under GDPR and CCPA respectively;
+    those rights are honoured globally.
+  </p>
+
+  <h2>Cookies and similar</h2>
+  <p>
+    Functional cookies only — currently a session cookie for Pro-tier
+    auth (single-purpose, first-party, expires on logout) and an opt-out
+    cookie if you've explicitly opted out of self-hosted analytics
+    aggregation. Nothing else.
+  </p>
+
+  <h2>Data security</h2>
+  <p>
+    Data is stored encrypted at rest. Backups are encrypted before they
+    leave the server. Access to the production environment is limited to
+    operating-entity personnel via key-based SSH only. Tier-A
+    credentials are never stored on the public-facing server.
+  </p>
+
+  <h2>Operating entity</h2>
+  <p>
+    {{ vertical.display_name }} is operated by <strong>Auva Labs FZE</strong>.
+    The operating entity is the data controller for the purposes of GDPR
+    and analogous regimes. Contact:
+    <a href="mailto:legal@auvalabs.com">legal@auvalabs.com</a>.
+  </p>
+
+  <p class="stamp">
+    Last reviewed: 2026-05-02. See also <a href="/methodology">methodology</a>
+    and <a href="/terms">terms</a>.
+  </p>
+</article>
+{% endblock %}
