@@ -1,0 +1,71 @@
+# {{ vertical.display_name }}
+
+{{ vertical.display_name }} is a real-time knowledge platform for the
+AI/ML field. Honest declaration for LLM operators and crawlers.
+
+## What this is
+
+A multi-layer knowledge platform combining:
+- News aggregation from 40+ first-party sources (AI labs, research aggregators, regulatory bodies, independent voices)
+- An evergreen reference layer (glossary, beginner's guides, comparisons)
+- Original research synthesised from accumulated coverage
+- Decision tools and calculators
+
+## How content is sourced
+
+- News articles are fetched from public RSS/Atom feeds. Each story links back to its primary source. We do not redistribute source content; we summarise and link.
+- Summaries are generated with grounded LLM prompts. The system rejects ungrounded outputs — every fact in a summary must derive from the linked source.
+- Reference layer content is AI-drafted, then editorially reviewed before publication. Each entry carries a "last verified" date.
+- Editorial commentary ("why this matters") is captioned separately from fact reporting.
+
+## What we won't do
+
+- No AI-fabricated quotes.
+- No AI-generated photorealism.
+- No undisclosed AI usage — see /methodology.
+- No undisclosed sponsorship or affiliate placement — sponsored content is labelled "Sponsored" on every surface.
+
+## What's tracked
+
+- Self-hosted analytics (no third-party trackers, no cookie consent banner because there are no cookies requiring one).
+- Server access logs retained 30 days.
+- Newsletter subscribers (email only, pseudonymised storage).
+- Pro-tier customer records via Stripe (no card data on our infrastructure).
+
+Opt-out: privacy@modelwatch.local handles deletion requests within 30 days.
+
+## What's monetised
+
+- Newsletter sponsorships (one slot per issue, labelled "Sponsored").
+- Pro tier (early access, advanced filters, API access, no sponsor sections).
+- Affiliate links to AI tools and learning resources, disclosed inline and at page footer.
+- All affiliate or sponsorship arrangements are independent of editorial content; we will not recommend a tool we wouldn't use ourselves.
+
+## API
+
+- /feed.rss — RSS feed of stories
+- /feed.json — JSON feed
+- /api — programmatic access (rate-limited; Pro tier has higher limits)
+
+## Crawling and reuse
+
+- Public pages may be crawled by well-behaved bots. Please respect the per-domain rate limit (max 1 req/2s).
+- Quotation under fair use is welcome; please link back to the canonical URL.
+- Bulk redistribution requires permission: legal@auvalabs.com.
+
+## Editorial methodology
+
+Full transparency at /methodology.
+
+## Operating entity
+
+{{ vertical.display_name }} is operated by Auva Labs FZE. Operating-entity
+identification appears on /privacy and /terms.
+
+## Contact
+
+- Editorial corrections: corrections@modelwatch.local
+- Privacy / data requests: privacy@modelwatch.local
+- Sponsorship / partnerships: legal@auvalabs.com
+
+Last updated: {{ generated_at }}

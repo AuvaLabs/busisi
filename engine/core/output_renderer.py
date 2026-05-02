@@ -209,12 +209,90 @@ def render_sources(vertical_name: str) -> Path:
     return out_path
 
 
+def render_meta_files(
+    vertical_name: str, *, canonical_url: str | None = None
+) -> dict[str, Path]:
+    """Render llms.txt, robots.txt, sitemap.xml for the vertical."""
+    Session = get_sessionmaker()
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical_name)
+        ).scalar_one_or_none()
+        if v is None:
+            raise ValueError(f"vertical not found: {vertical_name}")
+        vertical_ctx = _vertical_ctx(v)
+
+        # Collect URLs for sitemap: index + static pages + sources + each article
+        articles = (
+            session.execute(
+                select(Article)
+                .where(Article.vertical_id == v.id, Article.deleted_at.is_(None))
+                .order_by(Article.fetched_at.desc())
+                .limit(500)
+            )
+            .scalars()
+            .all()
+        )
+
+    base = canonical_url or f"http://{vertical_name}.local"
+    base = base.rstrip("/")
+    now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    urls: list[dict[str, Any]] = [
+        {"loc": f"{base}/", "lastmod": now_date, "changefreq": "hourly", "priority": 1.0},
+        {"loc": f"{base}/about", "lastmod": now_date, "changefreq": "monthly", "priority": 0.5},
+        {"loc": f"{base}/methodology", "lastmod": now_date, "changefreq": "monthly", "priority": 0.5},
+        {"loc": f"{base}/privacy", "lastmod": now_date, "changefreq": "yearly", "priority": 0.3},
+        {"loc": f"{base}/terms", "lastmod": now_date, "changefreq": "yearly", "priority": 0.3},
+        {"loc": f"{base}/sources", "lastmod": now_date, "changefreq": "daily", "priority": 0.6},
+    ]
+    for a in articles:
+        loc = a.link  # external links — we sitemap our own canonical pages once they exist
+        if loc.startswith(base):
+            urls.append({
+                "loc": loc,
+                "lastmod": (a.fetched_at or a.published_at or datetime.now(timezone.utc)).strftime("%Y-%m-%d"),
+                "changefreq": "weekly",
+                "priority": 0.7,
+            })
+
+    env = _env()
+    out_dir = _output_dir(vertical_name)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    paths: dict[str, Path] = {}
+
+    llms = env.get_template("llms.txt").render(
+        vertical=vertical_ctx, generated_at=generated_at
+    )
+    p = out_dir / "llms.txt"
+    p.write_text(llms, encoding="utf-8")
+    paths["llms"] = p
+
+    robots = env.get_template("robots.txt").render(
+        vertical=vertical_ctx, canonical_url=base
+    )
+    p = out_dir / "robots.txt"
+    p.write_text(robots, encoding="utf-8")
+    paths["robots"] = p
+
+    sitemap = env.get_template("sitemap.xml").render(urls=urls)
+    p = out_dir / "sitemap.xml"
+    p.write_text(sitemap, encoding="utf-8")
+    paths["sitemap"] = p
+
+    logger.info("rendered %s meta-files (llms.txt, robots.txt, sitemap.xml)", vertical_name)
+    return paths
+
+
 def render_all(vertical_name: str, *, index_limit: int = 50) -> dict[str, Any]:
-    """Render index + static pages + sources page for a vertical."""
+    """Render index + static pages + sources page + meta files for a vertical."""
     return {
         "index": render_index(vertical_name, limit=index_limit),
         "static_pages": render_static_pages(vertical_name),
         "sources": render_sources(vertical_name),
+        "meta": render_meta_files(vertical_name),
     }
 
 
@@ -226,7 +304,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("vertical")
     parser.add_argument(
         "--target",
-        choices=("all", "index", "static", "sources"),
+        choices=("all", "index", "static", "sources", "meta"),
         default="all",
     )
     parser.add_argument("--limit", type=int, default=50)
@@ -239,6 +317,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"rendered index   -> {out['index']}")
         print(f"rendered static  -> {len(out['static_pages'])} pages")
         print(f"rendered sources -> {out['sources']}")
+        print(f"rendered meta    -> {len(out['meta'])} files")
     elif args.target == "index":
         print(f"rendered -> {render_index(args.vertical, limit=args.limit)}")
     elif args.target == "static":
@@ -246,6 +325,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"rendered -> {p}")
     elif args.target == "sources":
         print(f"rendered -> {render_sources(args.vertical)}")
+    elif args.target == "meta":
+        for name, p in render_meta_files(args.vertical).items():
+            print(f"rendered {name:8s} -> {p}")
     return 0
 
 

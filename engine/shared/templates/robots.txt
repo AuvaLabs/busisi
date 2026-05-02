@@ -1,0 +1,47 @@
+# {{ vertical.display_name }} — robots.txt
+# Honest declaration of what is + isn't crawlable. See /llms.txt for the
+# fuller policy aimed at LLM operators.
+
+User-agent: *
+Allow: /
+Disallow: /api/admin
+Disallow: /sponsorship/admin
+Crawl-delay: 2
+
+# Aggressive AI training crawlers we do not authorise to use our content
+# for training without explicit license. Editorial summaries are
+# AI-assisted but human-supervised; they are licensed for reading, not
+# for ingestion into other models.
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: cohere-ai
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+# Search engines and reasonable retrieval bots are welcome.
+# Bingbot, Googlebot, DuckDuckBot, etc. fall through to the wildcard
+# allow above.
+
+Sitemap: {{ canonical_url }}/sitemap.xml
