@@ -1,0 +1,38 @@
+# Tier-B secrets — never commit
+.env
+*.env
+!.env.example
+.r2-*.env
+
+# State and data — never commit
+data/
+backups/
+/var/log/grimoire/
+/var/log/caddy/
+
+# Caddy runtime
+caddy_data/
+caddy_config/
+sentinel/
+
+# Python build / runtime
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

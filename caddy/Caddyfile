@@ -1,0 +1,36 @@
+# Grimoire Caddy config — placeholder phase (no domains committed yet).
+# Once domains are decided + DNS pointed, swap site blocks for the real
+# hostnames + tls block with cloudflare DNS-01.
+
+{
+    email ops@auvalabs.com
+    admin off
+    servers {
+        max_header_size 16KB
+        timeouts {
+            read_body 30s
+            read_header 10s
+            write 30s
+            idle 2m
+        }
+    }
+}
+
+# Default catch-all (raw IP, unknown hosts) — generic grimoire placeholder
+:80 {
+    root * /srv/grimoire/caddy/sentinel/_default
+    file_server
+    encode zstd gzip
+    log {
+        output file /var/log/caddy/default.log
+        format json
+    }
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        -Server
+    }
+}
