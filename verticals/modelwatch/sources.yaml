@@ -1,0 +1,318 @@
+# Modelwatch — AI/ML knowledge platform sources.
+#
+# Schema: see engine/core/feed_loader.py and verticals/_template/README.md.
+# 50 feeds across 7 priority bands. Reviewed quarterly; broken sources are
+# auto-disabled by source_health when consecutive failures > 5.
+#
+# Priority bands (per BUILD-DIRECTIVE Phase 3):
+#   1.00  AI labs (first-party announcements)
+#   0.90  Research aggregators (ArXiv, Papers with Code)
+#   0.85  AI newsletters / regulatory bodies
+#   0.80  Tech press (AI sections only)
+#   0.70  Independent voices
+#   0.60  Community signals (subreddit hot, HN ML > score 100)
+
+# ====== TIER 1.00 — AI labs (first-party) ======
+
+- url: https://openai.com/news/rss.xml
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [model-release, product-launch, commentary]
+
+- url: https://www.anthropic.com/rss.xml
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [model-release, safety-research, commentary]
+
+- url: https://blog.google/technology/ai/rss
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [model-release, product-launch]
+
+- url: https://deepmind.google/blog/rss.xml
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [research-paper, model-release]
+
+- url: https://ai.meta.com/blog/rss/
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [model-release, research-paper, infrastructure]
+
+- url: https://mistral.ai/news/feed.xml
+  type: rss
+  region: EU
+  priority_weight: 1.00
+  category_hints: [model-release, product-launch]
+
+- url: https://www.cohere.com/blog/rss.xml
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [model-release, product-launch]
+
+- url: https://stability.ai/news/feed
+  type: rss
+  region: UK
+  priority_weight: 1.00
+  category_hints: [model-release, product-launch]
+
+- url: https://blogs.nvidia.com/feed/
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [infrastructure, model-release]
+
+- url: https://blogs.microsoft.com/ai/feed/
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [model-release, product-launch, infrastructure]
+
+- url: https://machinelearning.apple.com/rss.xml
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [research-paper, application]
+
+- url: https://www.amazon.science/index.rss
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [research-paper, application]
+
+- url: https://research.ibm.com/blog/rss.xml
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [research-paper]
+
+- url: https://huggingface.co/blog/feed.xml
+  type: rss
+  region: Global
+  priority_weight: 1.00
+  category_hints: [model-release, tool-release, application]
+
+# ====== TIER 0.90 — Research aggregators ======
+
+- url: http://export.arxiv.org/rss/cs.CL
+  type: rss
+  region: Global
+  priority_weight: 0.90
+  category_hints: [research-paper]
+  refresh_interval: 3600
+
+- url: http://export.arxiv.org/rss/cs.LG
+  type: rss
+  region: Global
+  priority_weight: 0.90
+  category_hints: [research-paper]
+  refresh_interval: 3600
+
+- url: http://export.arxiv.org/rss/cs.AI
+  type: rss
+  region: Global
+  priority_weight: 0.90
+  category_hints: [research-paper]
+  refresh_interval: 3600
+
+- url: http://export.arxiv.org/rss/cs.CV
+  type: rss
+  region: Global
+  priority_weight: 0.90
+  category_hints: [research-paper]
+  refresh_interval: 3600
+
+- url: http://export.arxiv.org/rss/stat.ML
+  type: rss
+  region: Global
+  priority_weight: 0.90
+  category_hints: [research-paper]
+  refresh_interval: 3600
+
+- url: https://paperswithcode.com/feed.xml
+  type: rss
+  region: Global
+  priority_weight: 0.90
+  category_hints: [research-paper, benchmark]
+
+# ====== TIER 0.85 — Newsletters + regulatory ======
+
+- url: https://importai.substack.com/feed
+  type: rss
+  region: Global
+  priority_weight: 0.85
+  category_hints: [commentary, model-release]
+
+- url: https://www.deeplearning.ai/the-batch/feed/
+  type: rss
+  region: US
+  priority_weight: 0.85
+  category_hints: [commentary]
+
+- url: https://lastweekinai.substack.com/feed
+  type: rss
+  region: Global
+  priority_weight: 0.85
+  category_hints: [commentary]
+
+- url: https://www.bensbites.co/feed
+  type: rss
+  region: Global
+  priority_weight: 0.85
+  category_hints: [commentary, product-launch]
+
+- url: https://www.oneusefulthing.org/feed
+  type: rss
+  region: US
+  priority_weight: 0.85
+  category_hints: [commentary, application]
+
+- url: https://www.interconnects.ai/feed
+  type: rss
+  region: US
+  priority_weight: 0.85
+  category_hints: [commentary, model-release]
+
+- url: https://www.aisnakeoil.com/feed
+  type: rss
+  region: US
+  priority_weight: 0.85
+  category_hints: [commentary, controversy]
+
+- url: https://www.brookings.edu/topic/artificial-intelligence/feed/
+  type: rss
+  region: US
+  priority_weight: 0.85
+  category_hints: [regulation, commentary]
+
+- url: https://cset.georgetown.edu/feed/
+  type: rss
+  region: US
+  priority_weight: 0.85
+  category_hints: [regulation, commentary, safety-research]
+
+- url: https://www.aei.org/policy-areas/technology-innovation/feed/
+  type: rss
+  region: US
+  priority_weight: 0.85
+  category_hints: [regulation, commentary]
+
+- url: https://www.aisi.gov.uk/rss.xml
+  type: rss
+  region: UK
+  priority_weight: 0.85
+  category_hints: [regulation, safety-research]
+
+# ====== TIER 0.80 — Tech press (AI sections) ======
+
+- url: https://techcrunch.com/category/artificial-intelligence/feed/
+  type: rss
+  region: US
+  priority_weight: 0.80
+  category_hints: [funding, product-launch, commentary]
+
+- url: https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+  type: rss
+  region: US
+  priority_weight: 0.80
+  category_hints: [product-launch, commentary]
+
+- url: https://arstechnica.com/ai/feed/
+  type: rss
+  region: US
+  priority_weight: 0.80
+  category_hints: [commentary, application, controversy]
+
+- url: https://spectrum.ieee.org/rss/topic/artificial-intelligence
+  type: rss
+  region: US
+  priority_weight: 0.80
+  category_hints: [research-paper, commentary]
+
+- url: https://www.wired.com/feed/tag/ai/latest/rss
+  type: rss
+  region: US
+  priority_weight: 0.80
+  category_hints: [commentary, application]
+
+- url: https://venturebeat.com/category/ai/feed/
+  type: rss
+  region: US
+  priority_weight: 0.80
+  category_hints: [funding, product-launch, commentary]
+
+- url: https://www.technologyreview.com/topic/artificial-intelligence/feed
+  type: rss
+  region: US
+  priority_weight: 0.80
+  category_hints: [commentary, research-paper]
+
+# ====== TIER 0.70 — Independent voices ======
+
+- url: https://simonwillison.net/atom/everything/
+  type: atom
+  region: UK
+  priority_weight: 0.70
+  category_hints: [commentary, tool-release]
+
+- url: https://www.latent.space/feed
+  type: rss
+  region: US
+  priority_weight: 0.70
+  category_hints: [commentary]
+
+- url: https://www.dbreunig.com/feed.xml
+  type: rss
+  region: US
+  priority_weight: 0.70
+  category_hints: [commentary]
+
+- url: https://thegradient.pub/rss/
+  type: rss
+  region: US
+  priority_weight: 0.70
+  category_hints: [commentary, research-paper]
+
+- url: https://lilianweng.github.io/index.xml
+  type: rss
+  region: Global
+  priority_weight: 0.70
+  category_hints: [research-paper, commentary]
+
+- url: https://www.anyscale.com/blog/rss.xml
+  type: rss
+  region: US
+  priority_weight: 0.70
+  category_hints: [infrastructure, application]
+
+# ====== TIER 0.60 — Community signals ======
+
+- url: https://www.reddit.com/r/MachineLearning/.rss
+  type: rss
+  region: Global
+  priority_weight: 0.60
+  category_hints: [research-paper, commentary]
+
+- url: https://www.reddit.com/r/LocalLLaMA/.rss
+  type: rss
+  region: Global
+  priority_weight: 0.60
+  category_hints: [model-release, tool-release]
+
+- url: https://huggingface.co/api/daily-papers/feed
+  type: rss
+  region: Global
+  priority_weight: 0.60
+  category_hints: [research-paper]
+
+- url: https://hnrss.org/newest?points=100&q=AI+OR+LLM+OR+machine+learning
+  type: rss
+  region: Global
+  priority_weight: 0.60
+  category_hints: [commentary]

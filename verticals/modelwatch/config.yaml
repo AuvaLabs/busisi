@@ -1,0 +1,161 @@
+# Modelwatch — vertical config.
+# Read by engine.core.classifier (topics/non_dedup_keys/always_escalate/budget),
+# engine.core.deduplicator (non_dedup_keys), and the renderer (theming).
+
+name: modelwatch
+display_name: Modelwatch
+description: Real-time AI/ML knowledge platform — news, reference, research, tools.
+operating_entity: Auva Labs FZE   # disclosed only on /privacy and /terms
+
+# ---- Theming ----
+accent_light: "#B8743A"
+accent_dark: "#D49464"
+
+# ---- Taxonomy ----
+# Each topic carries a list of case-insensitive regex patterns. The keyword
+# classifier counts occurrences in title (3x weight) + content; the LLM
+# escalation refines anything ambiguous.
+topics:
+  model-release:
+    - \brelease[ds]?\b
+    - \blaunch(ed|ing|es)?\b
+    - \bunveil(ed|ing|s)?\b
+    - \bship(ped|ping|s)?\b
+    - \bavailab(le|ility)\b
+    - \brolls? out\b
+    - \bGPT-?\d
+    - \bClaude-?\d
+    - \bGemini-?\d
+    - \bLlama-?\d
+    - \bMistral-?\w*\d
+    - \bDeepSeek-?\w*
+
+  research-paper:
+    - \barxiv\b
+    - \bpaper\b
+    - \bpreprint\b
+    - \bbenchmark(ed|ing|s)?\b
+    - \bablation\b
+    - \bnovel (approach|architecture|method)\b
+
+  funding:
+    - \braise[ds]?\b.*\$
+    - \bseed (round|funding)\b
+    - \bSeries [A-F]\b
+    - \bvaluation\b
+    - \bIPO\b
+
+  product-launch:
+    - \blaunche[ds]?\b
+    - \bavailab(le|ility)\b
+    - \bgenerally available\b
+    - \bAPI\b
+    - \bpricing\b
+
+  regulation:
+    - \bAI Act\b
+    - \bexecutive order\b
+    - \bregulat(ion|ory|or)\b
+    - \blegisla(ted|tion|tive)\b
+    - \bpolic(y|ies)\b
+    - \bCompliance\b
+    - \bFTC\b
+    - \bEU AI Act\b
+
+  controversy:
+    - \blawsuit\b
+    - \bcopyright\b
+    - \binfring(ement|ed)\b
+    - \bsue[ds]?\b
+    - \bbias(ed)?\b
+    - \bharm(ful|ed)?\b
+    - \bjailbroken\b
+
+  safety-research:
+    - \balignment\b
+    - \binterpretability\b
+    - \bAI safety\b
+    - \badversarial\b
+    - \brobustness\b
+    - \bred-?team(ing)?\b
+
+  benchmark:
+    - \bMMLU\b
+    - \bHumanEval\b
+    - \bSWE-bench\b
+    - \bGSM8K\b
+    - \bbench(mark)?\b
+    - \bSOTA\b
+    - \bstate-of-the-art\b
+    - \bleaderboard\b
+
+  hiring:
+    - \bjoin(ed|ing|s)? (the team|us)\b
+    - \bappoint(ed|s)\b
+    - \bhire[ds]?\b
+    - \bnew (CEO|CTO|head of)\b
+
+  infrastructure:
+    - \bGPU\b
+    - \bH100\b
+    - \bTPU\b
+    - \bdata-?center\b
+    - \bcluster\b
+    - \btraining run\b
+    - \binference\b
+
+  application:
+    - \bagent[s]?\b
+    - \bcoding\b
+    - \bcustomer support\b
+    - \brobotic[s]?\b
+    - \bautonomous\b
+
+  tool-release:
+    - \bopen[- ]?source\b
+    - \bGitHub\b
+    - \bSDK\b
+    - \blibrary\b
+    - \bframework\b
+
+  commentary:
+    - \bopinion\b
+    - \banalysis\b
+    - \bperspective\b
+    - \bessay\b
+
+# ---- Entity types ----
+entity_types:
+  - lab
+  - model
+  - person
+  - company
+  - product
+  - paper
+  - tool
+
+# ---- Dedup guards (non_dedup_keys) ----
+# When two candidate titles each match one of these regexes but capture
+# different values, they are treated as distinct stories regardless of
+# shingle similarity. See docs/architecture-derivation.md §5.
+non_dedup_keys:
+  - "GPT-?(\\d+)"
+  - "Claude-?(\\d+(?:\\.\\d+)?)"
+  - "Gemini-?(\\d+(?:\\.\\d+)?)"
+  - "Llama-?(\\d+(?:\\.\\d+)?)"
+  - "Mistral-?(\\w+)"
+  - "DeepSeek-?(\\w+)"
+
+# ---- Always-escalate topics ----
+always_escalate:
+  - regulation
+  - controversy
+  - safety-research
+
+# ---- LLM escalation budget per pipeline run ----
+escalation_budget: 30
+
+# ---- Pipeline tuning ----
+fuzzy_dedup_threshold: 0.65
+news_cutoff_days: 7
+reference_cutoff_days: null
