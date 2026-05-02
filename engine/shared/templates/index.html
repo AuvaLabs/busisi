@@ -43,9 +43,9 @@
 <ul class="stories">
 {% for a in articles %}
   <li>
-    <h2 class="story-title"><a href="{{ a.link }}" rel="noopener" target="_blank">{{ a.title }}</a></h2>
+    <h2 class="story-title"><a href="/story/{{ a.slug }}/">{{ a.title }}</a></h2>
     <p class="story-meta">
-      <span class="source">{{ a.source_short }}</span>
+      via <span class="source">{{ a.source_short }}</span>
       <span class="region">· {{ a.feed_region }}</span>
       {% if a.published_human %}<span>· {{ a.published_human }}</span>{% endif %}
     </p>

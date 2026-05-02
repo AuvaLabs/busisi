@@ -36,6 +36,7 @@ from engine.core import (
 from engine.core.config import vertical_dir
 from engine.core.db import Article, Vertical, get_sessionmaker
 from engine.core.safe_http import install_ssrf_guard
+from engine.core.slug import make_slug, make_unique_slug
 
 logger = logging.getLogger(__name__)
 
@@ -81,14 +82,18 @@ def _persist_articles(vertical_id: str, articles: list[dict[str, Any]]) -> int:
             )
             return 0
         for article in articles:
+            base = make_slug(article["title"])
+            slug = make_unique_slug(session, v.id, base)
             row = Article(
                 vertical_id=v.id,
                 hash=article["hash"],
+                slug=slug,
                 title=article["title"],
                 link=article["link"],
                 source=article.get("source", ""),
                 feed_region=article.get("feed_region", "Global"),
                 summary=article.get("summary", ""),
+                summary_source="feed",
                 body=article.get("body"),
                 published_at=_parse_published(article.get("published", "")),
                 labels=article.get("labels"),

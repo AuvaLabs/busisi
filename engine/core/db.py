@@ -82,6 +82,7 @@ class Article(Base):
     __tablename__ = "articles"
     __table_args__ = (
         UniqueConstraint("vertical_id", "hash", name="uq_article_vertical_hash"),
+        UniqueConstraint("vertical_id", "slug", name="uq_article_vertical_slug"),
         Index("ix_article_vertical_published", "vertical_id", "published_at"),
         Index("ix_article_vertical_fetched", "vertical_id", "fetched_at"),
     )
@@ -91,12 +92,26 @@ class Article(Base):
         BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
     )
     hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    slug: Mapped[str] = mapped_column(String(256), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     link: Mapped[str] = mapped_column(Text, nullable=False)
     source: Mapped[str] = mapped_column(Text, nullable=False)
     feed_region: Mapped[str] = mapped_column(String(32), default="Global", nullable=False)
+    # Holds the auto-generated/grounded summary that becomes the body of OUR
+    # canonical /story/<slug>/ page. Falls back to feed-provided summary
+    # (summary_source="feed") until the LLM enrichment stage runs.
     summary: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    # `body` is the trafilatura-cleaned scrape, kept as the grounding source
+    # for the LLM summariser; not rendered directly to readers.
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # 1-2-sentence analysis caption (LLM-generated, marked as analysis on the
+    # rendered page). Nullable until LLM tier runs.
+    why_this_matters: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Tracks how `summary` was produced so the rendered page can banner
+    # appropriately. Values: "feed" | "llm" | "manual".
+    summary_source: Mapped[str] = mapped_column(
+        String(16), default="feed", nullable=False
+    )
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     fetched_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False

@@ -83,6 +83,7 @@ def render_index(vertical_name: str, *, limit: int = 50) -> Path:
 
         articles_ctx: list[dict[str, Any]] = [
             {
+                "slug": a.slug,
                 "title": a.title,
                 "link": a.link,
                 "source_short": _short_source(a.source),
@@ -298,6 +299,70 @@ def render_meta_files(
     return paths
 
 
+def render_stories(vertical_name: str, *, limit: int = 200) -> dict[str, Path]:
+    """Render one canonical /story/<slug>/ page per persisted article.
+
+    The story page is OUR canonical surface — the front-page card links to
+    it. Until LLM enrichment runs, the body is the feed-provided summary
+    with a disclosure banner (`summary_source = "feed"`).
+    """
+    Session = get_sessionmaker()
+    out: dict[str, Path] = {}
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical_name)
+        ).scalar_one_or_none()
+        if v is None:
+            raise ValueError(f"vertical not found: {vertical_name}")
+        vertical_ctx = _vertical_ctx(v)
+
+        rows = (
+            session.execute(
+                select(Article)
+                .where(Article.vertical_id == v.id, Article.deleted_at.is_(None))
+                .order_by(Article.fetched_at.desc())
+                .limit(limit)
+            )
+            .scalars()
+            .all()
+        )
+
+    env = _env()
+    base_dir = _output_dir(vertical_name) / "story"
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    for a in rows:
+        article_ctx = {
+            "slug": a.slug,
+            "title": a.title,
+            "summary": a.summary or "",
+            "summary_source": a.summary_source,
+            "why_this_matters": a.why_this_matters,
+            "link": a.link,
+            "source_short": _short_source(a.source),
+            "feed_region": a.feed_region,
+            "published_human": _human_age(a.published_at),
+            "labels": a.labels or [],
+        }
+        ctx = {
+            "vertical": vertical_ctx,
+            "title": a.title,
+            "description": (a.summary or a.title)[:160],
+            "theme": "light",
+            "article": article_ctx,
+            "canonical_url": _canonical_url(vertical_name, f"/story/{a.slug}/"),
+        }
+        html = env.get_template("story.html").render(**ctx)
+        story_dir = base_dir / a.slug
+        story_dir.mkdir(parents=True, exist_ok=True)
+        story_path = story_dir / "index.html"
+        story_path.write_text(html, encoding="utf-8")
+        out[a.slug] = story_path
+
+    logger.info("rendered %s stories (%d pages)", vertical_name, len(rows))
+    return out
+
+
 def render_tools(vertical_name: str) -> dict[str, Path]:
     """Render /tools/ index + per-tool pages for a vertical."""
     from engine.core import tools_engine
@@ -360,9 +425,10 @@ def render_tools(vertical_name: str) -> dict[str, Path]:
 
 
 def render_all(vertical_name: str, *, index_limit: int = 50) -> dict[str, Any]:
-    """Render index + static pages + sources page + tools + meta files."""
+    """Render index + stories + static pages + sources + tools + meta files."""
     return {
         "index": render_index(vertical_name, limit=index_limit),
+        "stories": render_stories(vertical_name),
         "static_pages": render_static_pages(vertical_name),
         "sources": render_sources(vertical_name),
         "tools": render_tools(vertical_name),
@@ -378,7 +444,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("vertical")
     parser.add_argument(
         "--target",
-        choices=("all", "index", "static", "sources", "tools", "meta"),
+        choices=("all", "index", "stories", "static", "sources", "tools", "meta"),
         default="all",
     )
     parser.add_argument("--limit", type=int, default=50)
@@ -389,9 +455,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.target == "all":
         out = render_all(args.vertical, index_limit=args.limit)
         print(f"rendered index   -> {out['index']}")
+        print(f"rendered stories -> {len(out['stories'])} pages")
         print(f"rendered static  -> {len(out['static_pages'])} pages")
         print(f"rendered sources -> {out['sources']}")
+        print(f"rendered tools   -> {len(out['tools'])} pages")
         print(f"rendered meta    -> {len(out['meta'])} files")
+    elif args.target == "stories":
+        for slug, p in render_stories(args.vertical).items():
+            print(f"rendered story/{slug} -> {p}")
     elif args.target == "index":
         print(f"rendered -> {render_index(args.vertical, limit=args.limit)}")
     elif args.target == "static":

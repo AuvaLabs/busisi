@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .story { max-width: 36rem; }
+    .story h1 {
+      font-family: var(--serif);
+      font-size: 2.25rem;
+      line-height: 1.2;
+      margin: 0 0 1rem 0;
+      font-weight: 500;
+    }
+    .meta {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin: 0 0 2rem 0;
+    }
+    .meta .source { color: var(--text-mute); font-weight: 500; }
+    .meta .region { color: var(--accent); }
+    .summary-banner {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      color: var(--text-mute);
+      background: var(--bg-mute);
+      border-left: 3px solid var(--accent);
+      padding: 0.5rem 0.75rem;
+      margin: 0 0 1.5rem 0;
+    }
+    .summary p { font-size: 1.0625rem; line-height: 1.65; margin: 0 0 1rem 0; }
+    .why {
+      margin: 2rem 0;
+      padding: 1rem 1.25rem;
+      border-left: 4px solid var(--accent);
+      background: var(--bg-elev);
+      font-style: italic;
+      font-size: 1rem;
+    }
+    .why .label {
+      display: block;
+      font-style: normal;
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+    .sources {
+      border-top: 1px solid var(--rule);
+      padding-top: 1.5rem;
+      margin-top: 2rem;
+    }
+    .sources h2 {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      margin: 0 0 0.75rem 0;
+    }
+    .sources ul { list-style: none; padding: 0; margin: 0; }
+    .sources li { margin: 0 0 0.5rem 0; font-family: var(--sans); font-size: 0.875rem; }
+    .sources li .pub { color: var(--text); font-weight: 500; }
+    .labels {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      color: var(--text-mute);
+      margin: 1rem 0 0 0;
+    }
+    .labels .label {
+      display: inline-block;
+      padding: 0 0.5rem;
+      margin-right: 0.25rem;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      font-size: 0.7rem;
+    }
+{% endblock %}
+
+{% block content %}
+<article class="story">
+  <h1>{{ article.title }}</h1>
+
+  <p class="meta">
+    {% if article.published_human %}<span>{{ article.published_human }}</span> · {% endif %}
+    <span class="region">{{ article.feed_region }}</span>
+    {% if article.source_short %} · <span class="source">primary source: {{ article.source_short }}</span>{% endif %}
+  </p>
+
+  {% if article.summary_source == 'feed' %}
+    <p class="summary-banner">
+      <strong>Auto-summary pending LLM enrichment.</strong> The body below is the
+      source-provided excerpt; once the grounded summariser runs, this is
+      replaced by {{ vertical.display_name }}'s canonical 50-80-word lede with
+      full source grounding (see <a href="/methodology">methodology</a>).
+    </p>
+  {% elif article.summary_source == 'manual' %}
+    <p class="summary-banner">
+      <strong>Editor-reviewed summary.</strong> Manually verified against the
+      primary source.
+    </p>
+  {% endif %}
+
+  <div class="summary">
+    {% if article.summary %}
+      <p>{{ article.summary | safe }}</p>
+    {% else %}
+      <p><em>No summary available yet.</em></p>
+    {% endif %}
+  </div>
+
+  {% if article.why_this_matters %}
+    <aside class="why">
+      <span class="label">Why this matters</span>
+      {{ article.why_this_matters }}
+    </aside>
+  {% endif %}
+
+  {% if article.labels %}
+    <p class="labels">
+      {% for l in article.labels %}<span class="label">{{ l.label }}</span>{% endfor %}
+    </p>
+  {% endif %}
+
+  <section class="sources">
+    <h2>Sources</h2>
+    <ul>
+      <li>
+        <span class="pub">{{ article.source_short }}</span> —
+        <a href="{{ article.link }}" rel="noopener nofollow" target="_blank">{{ article.title }} ↗</a>
+      </li>
+    </ul>
+  </section>
+</article>
+{% endblock %}
