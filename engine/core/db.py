@@ -172,6 +172,84 @@ class ArticleEntity(Base):
     )
 
 
+# ---- Phase 4 monetization tables ----
+
+
+class Subscriber(Base):
+    """Newsletter subscriber. Email is pseudonymised via SHA256 hash (lookup) +
+    Fernet-encrypted blob (delivery). Plaintext never sits at rest."""
+
+    __tablename__ = "subscribers"
+    __table_args__ = (
+        UniqueConstraint("vertical_id", "email_hash", name="uq_subscriber_email_hash"),
+        Index("ix_subscriber_vertical_confirmed", "vertical_id", "confirmed"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    vertical_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
+    )
+    email_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    email_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
+    confirmed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    unsubscribe_token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    subscribed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    unsubscribed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ProUser(Base):
+    """Stripe-backed Pro tier subscriber. Magic-link auth (single-use 15-min tokens)."""
+
+    __tablename__ = "pro_users"
+    __table_args__ = (
+        UniqueConstraint("vertical_id", "email", name="uq_pro_user_email"),
+        Index("ix_pro_user_stripe_customer", "stripe_customer_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    vertical_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
+    )
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    tier: Mapped[str] = mapped_column(String(16), default="monthly", nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="incomplete", nullable=False)
+    current_period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=False
+    )
+
+
+class SponsorInquiry(Base):
+    """Inbound sponsorship inquiry from /sponsorship form."""
+
+    __tablename__ = "sponsor_inquiries"
+    __table_args__ = (
+        Index("ix_sponsor_inquiry_vertical_created", "vertical_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    vertical_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    company: Mapped[str] = mapped_column(String(256), default="", nullable=False)
+    budget_band: Mapped[str] = mapped_column(String(16), default="custom", nullable=False)
+    message: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+    responded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 _engine: Engine | None = None
 
 
