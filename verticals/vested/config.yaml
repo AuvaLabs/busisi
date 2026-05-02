@@ -1,0 +1,166 @@
+# Vested — vertical config.
+# Read by engine.core.classifier, deduplicator, pipeline, output_renderer.
+
+name: vested
+display_name: Vested
+description: Personal finance for software engineers, data scientists, and AI researchers earning $100K-$500K.
+operating_entity: Auva Labs FZE
+
+# ---- Theming ----
+accent_light: "#2D5F5D"
+accent_dark: "#5A8E8C"
+
+# ---- Taxonomy (15 topics per BUILD-DIRECTIVE Phase 5) ----
+topics:
+  equity-compensation:
+    - \bRSU[s]?\b
+    - \bISO[s]?\b
+    - \bNSO[s]?\b
+    - \bESPP\b
+    - \bvest(ing|ed|s)?\b
+    - \boption[s]? grant\b
+    - \bequity (grant|comp(ensation)?)\b
+    - \brefresh(er|ed)?\b
+
+  taxes:
+    - \bIRS\b
+    - \btax-?(loss harvest|return|bracket|filing)\b
+    - \bAMT\b
+    - \bQSBS\b
+    - \b1099\b
+    - \bW-?2\b
+    - \b401\(k\)\b
+    - \bRoth\b
+    - \bmega backdoor\b
+    - \bpre-?tax\b
+    - \bafter-?tax\b
+    - \bSection \d+\b
+    - \bdeduction\b
+
+  retirement-planning:
+    - \bretirement\b
+    - \b401\(k\)\b
+    - \bIRA\b
+    - \bRoth\b
+    - \bHSA\b
+    - \bFSA\b
+    - \bpension\b
+
+  brokerage-investing:
+    - \b(Fidelity|Schwab|Vanguard|Robinhood|Public)\b
+    - \bETF[s]?\b
+    - \bindex fund[s]?\b
+    - \bbroker(age)?\b
+    - \bportfolio\b
+    - \basset allocation\b
+    - \brebalanc(e|ing)\b
+
+  real-estate:
+    - \bmortgage\b
+    - \bhome (purchase|loan|equity)\b
+    - \bREIT[s]?\b
+    - \brental property\b
+    - \b1031 exchange\b
+
+  debt-management:
+    - \bstudent loan[s]?\b
+    - \bcredit card debt\b
+    - \brefinanc(e|ing)\b
+    - \bdebt (snowball|avalanche|payoff)\b
+
+  salary-negotiation:
+    - \bnegotiat(e|ing|ion)\b
+    - \boffer letter\b
+    - \blevels\b
+    - \btotal compensation\b
+    - \bbase salary\b
+    - \bsign-on bonus\b
+
+  layoff-strategy:
+    - \blayoff[s]?\b
+    - \bRIF\b
+    - \bseverance\b
+    - \bunemployment insurance\b
+    - \bCOBRA\b
+
+  financial-independence:
+    - \bFIRE\b
+    - \bfinancial independence\b
+    - \bsafe withdrawal rate\b
+    - \b4% rule\b
+    - \bcoast(FIRE| fi)\b
+
+  side-income:
+    - \bside hustle\b
+    - \bfreelanc(e|ing)\b
+    - \b1099 income\b
+    - \bSchedule C\b
+
+  banking:
+    - \bhigh-?yield savings\b
+    - \bHYSA\b
+    - \bCD ladder\b
+    - \bI-?bond[s]?\b
+    - \bT-?bill[s]?\b
+    - \bTreasur(y|ies)\b
+    - \bSoFi\b
+    - \bMercury\b
+
+  credit:
+    - \bcredit score\b
+    - \bFICO\b
+    - \bcredit card\b
+    - \b(Amex|Chase|Capital One)\b
+    - \btransfer (bonus|partner)\b
+    - \bpoints\b
+    - \bmiles\b
+
+  insurance-life-stage:
+    - \bterm life\b
+    - \bdisabilit(y|ies) insurance\b
+    - \bumbrella policy\b
+    - \brenters insurance\b
+    - \bhealth insurance\b
+
+  charitable-giving:
+    - \bDAF\b
+    - \bdonor-advised fund\b
+    - \bcharitable (deduction|giving)\b
+    - \bappreciated stock\b
+
+  estate-planning:
+    - \bwill\b
+    - \btrust\b
+    - \bestate (tax|plan)\b
+    - \bbeneficiary\b
+    - \bpower of attorney\b
+
+# ---- Entity types ----
+entity_types:
+  - brokerage
+  - bank
+  - credit-card
+  - tax-software
+  - insurance-provider
+  - employer
+
+# ---- Dedup guards (non_dedup_keys) ----
+non_dedup_keys:
+  - "\\b([A-Z]{2,5})\\b"
+  - "Pub\\.?\\s*(\\d+)"
+  - "401\\(k\\)|403\\(b\\)|457\\(b\\)"
+  - "Section\\s+(\\d+)"
+
+# ---- Always-escalate topics ----
+always_escalate:
+  - taxes
+  - retirement-planning
+  - estate-planning
+
+# ---- Per-run LLM escalation budget ----
+escalation_budget: 25
+
+# ---- Pipeline tuning ----
+fuzzy_dedup_threshold: 0.70
+news_cutoff_days: 14
+reference_cutoff_days: null

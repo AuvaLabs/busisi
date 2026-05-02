@@ -1,0 +1,207 @@
+# Vested — personal finance for tech workers.
+# Schema: see engine/core/feed_loader.py.
+# 38 feeds across priority bands. URLs are best-known-public-feed; operator
+# should verify and replace any 404s during launch QA (mirrors the same
+# audit cadence as modelwatch — see source_health for live status).
+
+# ====== TIER 1.00 — Direct sources (regulator / official) ======
+
+- url: https://www.irs.gov/newsroom/feed
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [taxes, regulation]
+
+# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
+# https://home.treasury.gov/news/press-releases/feed
+
+- url: https://www.federalreserve.gov/feeds/press_all.xml
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [retirement-planning, brokerage-investing]
+
+- url: https://www.sec.gov/news/pressreleases.rss
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [brokerage-investing, regulation]
+
+- url: https://www.consumerfinance.gov/about-us/blog/feed/
+  type: rss
+  region: US
+  priority_weight: 1.00
+  category_hints: [credit, debt-management, banking]
+
+# ====== TIER 0.90 — Brokerages ======
+
+- url: https://www.fidelity.com/learning-center/personal-finance/rss
+  type: rss
+  region: US
+  priority_weight: 0.90
+  category_hints: [brokerage-investing, retirement-planning]
+
+- url: https://newsroom.fidelity.com/pressreleases.rss
+  type: rss
+  region: US
+  priority_weight: 0.90
+  category_hints: [brokerage-investing]
+
+- url: https://www.schwab.com/learn/rss
+  type: rss
+  region: US
+  priority_weight: 0.90
+  category_hints: [brokerage-investing]
+
+- url: https://investor.vanguard.com/investing/insights/feed
+  type: rss
+  region: US
+  priority_weight: 0.90
+  category_hints: [brokerage-investing, retirement-planning]
+
+- url: https://www.wealthfront.com/blog/feed
+  type: rss
+  region: US
+  priority_weight: 0.90
+  category_hints: [brokerage-investing, banking]
+
+# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
+# https://blog.public.com/rss
+
+# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
+# https://blog.robinhood.com/rss
+
+# ====== TIER 0.85 — Tech-compensation primary ======
+
+- url: https://www.levels.fyi/blog/rss
+  type: rss
+  region: US
+  priority_weight: 0.85
+  category_hints: [salary-negotiation, equity-compensation]
+
+# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
+# https://compensation.fyi/feed
+
+# ====== TIER 0.80 — Major PF press ======
+
+# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
+# https://wsj.com/news/personal-finance/feed
+
+- url: https://www.bloomberg.com/feed/podcast/wealth.xml
+  type: rss
+  region: US
+  priority_weight: 0.80
+  category_hints: [brokerage-investing, retirement-planning]
+
+- url: https://feeds.npr.org/1006/rss.xml
+  type: rss
+  region: US
+  priority_weight: 0.80
+  category_hints: [brokerage-investing, taxes]
+
+- url: https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/your-money/index.html/rss.xml
+  type: rss
+  region: US
+  priority_weight: 0.80
+  category_hints: [brokerage-investing, retirement-planning]
+
+# ====== TIER 0.75 — Tech-specific finance creators ======
+
+# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
+# https://holisticwealth.io/feed
+
+- url: https://thefinancebuff.com/feed
+  type: rss
+  region: US
+  priority_weight: 0.75
+  category_hints: [taxes, retirement-planning]
+
+- url: https://www.physicianonfire.com/feed
+  type: rss
+  region: US
+  priority_weight: 0.75
+  category_hints: [financial-independence, taxes]
+
+- url: https://www.whitecoatinvestor.com/feed
+  type: rss
+  region: US
+  priority_weight: 0.75
+  category_hints: [taxes, brokerage-investing, financial-independence]
+
+- url: https://www.bogleheads.org/forum/feed.php
+  type: rss
+  region: US
+  priority_weight: 0.70
+  category_hints: [brokerage-investing, retirement-planning]
+
+# ====== TIER 0.70 — FIRE community + creators ======
+
+- url: https://www.mrmoneymustache.com/feed
+  type: rss
+  region: US
+  priority_weight: 0.70
+  category_hints: [financial-independence]
+
+- url: https://www.choosefi.com/feed
+  type: rss
+  region: US
+  priority_weight: 0.70
+  category_hints: [financial-independence]
+
+- url: https://www.gocurrycracker.com/feed
+  type: rss
+  region: US
+  priority_weight: 0.70
+  category_hints: [financial-independence, taxes]
+
+- url: https://earlyretirementnow.com/feed
+  type: rss
+  region: US
+  priority_weight: 0.70
+  category_hints: [financial-independence, retirement-planning]
+
+- url: https://ofdollarsanddata.com/feed
+  type: rss
+  region: US
+  priority_weight: 0.70
+  category_hints: [brokerage-investing, financial-independence]
+
+# ====== TIER 0.60 — Community signals ======
+
+- url: https://www.reddit.com/r/financialindependence/.rss
+  type: rss
+  region: US
+  priority_weight: 0.60
+  category_hints: [financial-independence]
+
+- url: https://www.reddit.com/r/personalfinance/.rss
+  type: rss
+  region: US
+  priority_weight: 0.60
+  category_hints: [taxes, debt-management, banking]
+
+- url: https://www.reddit.com/r/Bogleheads/.rss
+  type: rss
+  region: US
+  priority_weight: 0.60
+  category_hints: [brokerage-investing]
+
+- url: https://www.reddit.com/r/cscareerquestions/.rss
+  type: rss
+  region: US
+  priority_weight: 0.60
+  category_hints: [salary-negotiation, equity-compensation]
+
+# ====== TIER 0.55 — Newsletters / commentary ======
+
+# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
+# https://morningbrew.com/money/feed
+
+- url: https://nerdwallet.com/blog/feed
+  type: rss
+  region: US
+  priority_weight: 0.55
+  category_hints: [credit, banking, debt-management]
+
+# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
+# https://bankrate.com/feed
