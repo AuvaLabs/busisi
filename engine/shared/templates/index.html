@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .stories { list-style: none; padding: 0; margin: 0; }
+    .stories li { padding: 1rem 0; border-bottom: 1px solid var(--rule); }
+    .stories li:last-child { border-bottom: 0; }
+    .story-title {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 1.4rem;
+      line-height: 1.3;
+      margin: 0 0 0.25rem 0;
+    }
+    .story-title a { color: var(--text); }
+    .story-title a:hover { color: var(--accent); text-decoration: none; }
+    .story-meta {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+    }
+    .story-meta .source { color: var(--text-mute); font-weight: 500; }
+    .story-meta .region { color: var(--accent); }
+    .labels { font-family: var(--sans); font-size: 0.75rem; color: var(--text-mute); margin-top: 0.25rem; }
+    .labels .label {
+      display: inline-block;
+      padding: 0 0.5rem;
+      margin-right: 0.25rem;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      font-size: 0.7rem;
+    }
+    .gen-stamp {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      color: var(--text-faint);
+      margin-top: 2rem;
+    }
+{% endblock %}
+
+{% block content %}
+<ul class="stories">
+{% for a in articles %}
+  <li>
+    <h2 class="story-title"><a href="{{ a.link }}" rel="noopener" target="_blank">{{ a.title }}</a></h2>
+    <p class="story-meta">
+      <span class="source">{{ a.source_short }}</span>
+      <span class="region">· {{ a.feed_region }}</span>
+      {% if a.published_human %}<span>· {{ a.published_human }}</span>{% endif %}
+    </p>
+    {% if a.labels %}
+    <p class="labels">
+      {% for l in a.labels %}<span class="label">{{ l.label }}</span>{% endfor %}
+    </p>
+    {% endif %}
+  </li>
+{% endfor %}
+</ul>
+
+<p class="gen-stamp">Generated {{ generated_at }} · {{ articles|length }} stories shown.</p>
+{% endblock %}

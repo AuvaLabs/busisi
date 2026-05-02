@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en" data-vertical="{{ vertical.name }}" data-theme="{{ theme | default('light') }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} — {{ vertical.display_name }}</title>
+  <meta name="description" content="{{ description }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FBFAF7;
+      --bg-elev: #F4F1EB;
+      --bg-mute: #ECE7DF;
+      --text: #1A1A1A;
+      --text-mute: #5A5852;
+      --text-faint: #8A867D;
+      --rule: #D8D3C9;
+      --link: #1A4F8A;
+      --link-hover: #0E3565;
+      --accent: {{ vertical.accent_light or '#B8743A' }};
+      --serif: 'Newsreader', Georgia, serif;
+      --sans: 'Inter', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+    [data-theme="dark"] {
+      --bg: #1A1817;
+      --bg-elev: #23201E;
+      --bg-mute: #2C2826;
+      --text: #EEEAE3;
+      --text-mute: #A6A199;
+      --text-faint: #6E6960;
+      --rule: #3A3633;
+      --link: #9CC0F0;
+      --link-hover: #C2DAFD;
+      --accent: {{ vertical.accent_dark or '#D49464' }};
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #1A1817; --bg-elev: #23201E; --bg-mute: #2C2826;
+        --text: #EEEAE3; --text-mute: #A6A199; --text-faint: #6E6960;
+        --rule: #3A3633; --link: #9CC0F0; --link-hover: #C2DAFD;
+        --accent: {{ vertical.accent_dark or '#D49464' }};
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--serif);
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--link); text-decoration: none; }
+    a:hover { color: var(--link-hover); text-decoration: underline; }
+    nav, .ui { font-family: var(--sans); }
+    code, pre { font-family: var(--mono); font-size: 14px; }
+    .container {
+      max-width: 72rem;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    header.site {
+      border-bottom: 1px solid var(--rule);
+      padding: 1.5rem 0;
+      margin-bottom: 2rem;
+    }
+    header.site .wordmark {
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 1.5rem;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    header.site .wordmark a { color: inherit; }
+    header.site .wordmark .accent { color: var(--accent); }
+    nav.primary {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 0.5rem;
+    }
+    nav.primary a {
+      color: var(--text-mute);
+      margin-right: 1.5rem;
+    }
+    nav.primary a:hover { color: var(--accent); text-decoration: none; }
+    footer.site {
+      margin-top: 4rem;
+      padding: 2rem 0;
+      border-top: 1px solid var(--rule);
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      color: var(--text-faint);
+    }
+    footer.site a { color: var(--text-mute); }
+    {% block extra_css %}{% endblock %}
+  </style>
+</head>
+<body>
+  <header class="site">
+    <div class="container">
+      <div class="wordmark">
+        <a href="/">{{ vertical.display_name }}<span class="accent">.</span></a>
+      </div>
+      <nav class="primary">
+        <a href="/">Front</a>
+        <a href="/today">Today</a>
+        <a href="/glossary/">Glossary</a>
+        <a href="/learn/">Learn</a>
+        <a href="/tools/">Tools</a>
+        <a href="/research/">Research</a>
+        <a href="/about">About</a>
+        <a href="/methodology">Methodology</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site">
+    <div class="container">
+      <p>{{ vertical.display_name }} — operated by Auva Labs FZE.
+        <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/methodology">Methodology</a> · <a href="/feed.rss">RSS</a></p>
+    </div>
+  </footer>
+</body>
+</html>
