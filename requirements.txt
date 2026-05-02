@@ -1,0 +1,47 @@
+# Runtime dependencies for grimoire platform.
+# Pinned to known-good majors; security updates tracked via dependabot.
+
+# HTTP / feeds
+requests>=2.32,<3
+feedparser>=6.0.11,<7
+urllib3>=2.2,<3
+
+# Article extraction
+trafilatura>=2.0,<3
+lxml>=5.3,<6
+beautifulsoup4>=4.12,<5
+
+# Data / storage
+psycopg[binary]>=3.2,<4
+redis>=5.2,<6
+SQLAlchemy>=2.0,<3
+alembic>=1.14,<2
+
+# Templating + rendering
+Jinja2>=3.1,<4
+markdown-it-py>=3.0,<4
+
+# Server (Phase 3+)
+fastapi>=0.115,<1
+uvicorn[standard]>=0.32,<1
+
+# Observability
+structlog>=24.4,<25
+
+# YAML configuration
+PyYAML>=6.0,<7
+
+# Date parsing
+python-dateutil>=2.9,<3
+
+# Language detect (lightweight)
+langid>=1.1,<2
+
+# Email transport (Phase 4)
+postmarker>=1.0,<2
+
+# Stripe (Phase 4)
+stripe>=11.0,<12
+
+# Image generation (social cards)
+Pillow>=11.0,<12

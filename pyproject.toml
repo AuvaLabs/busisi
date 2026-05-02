@@ -1,0 +1,110 @@
+[project]
+name = "grimoire-platform"
+version = "0.1.0"
+description = "Grimoire — multi-vertical knowledge platform"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "Proprietary"}
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["engine*"]
+exclude = ["tests*"]
+
+# ---------- ruff ----------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["engine", "tests"]
+extend-exclude = [
+    "data",
+    "backups",
+    "caddy/sentinel",
+    ".venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
+    "SIM",
+    "S",
+    "RET",
+    "PT",
+    "PL",
+]
+ignore = [
+    "E501",
+    "S101",
+    "PLR0913",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "PLR2004"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ---------- mypy ----------
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_return_any = true
+warn_unreachable = true
+files = ["engine"]
+exclude = ["tests/", "data/", "backups/"]
+
+[[tool.mypy.overrides]]
+module = ["feedparser.*", "trafilatura.*", "redis.*"]
+ignore_missing_imports = true
+
+# ---------- pytest ----------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["engine/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+    "--tb=short",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning:feedparser.*",
+]
+
+# ---------- coverage ----------
+[tool.coverage.run]
+source = ["engine"]
+branch = true
+omit = ["*/tests/*", "*/__init__.py"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

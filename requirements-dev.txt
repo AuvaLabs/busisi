@@ -1,0 +1,19 @@
+-r requirements.txt
+
+# Test framework
+pytest>=8.3,<9
+pytest-mock>=3.14,<4
+pytest-cov>=6.0,<7
+pytest-asyncio>=0.24,<1
+responses>=0.25,<1
+fakeredis>=2.26,<3
+
+# Linters / type checking
+ruff>=0.8,<1
+mypy>=1.13,<2
+types-PyYAML
+types-requests
+types-python-dateutil
+
+# Build / packaging
+build>=1.2,<2
