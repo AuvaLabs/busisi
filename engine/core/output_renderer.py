@@ -104,6 +104,7 @@ def render_index(vertical_name: str, *, limit: int = 50) -> Path:
             "description": f"{v.display_name} — front page",
             "theme": "light",
             "articles": articles_ctx,
+            "canonical_url": _canonical_url(vertical_name, "/"),
             "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
 
@@ -134,6 +135,15 @@ def _vertical_ctx(v: Any) -> dict[str, Any]:
     }
 
 
+def _canonical_url(vertical_name: str, path: str) -> str:
+    """Return the canonical URL for a page within a vertical.
+
+    Uses the placeholder ``<vertical>.local`` host until the real domain
+    is committed; rendering doesn't depend on TLS so http:// is fine here.
+    """
+    return f"http://{vertical_name}.local{path}"
+
+
 def render_static_pages(vertical_name: str) -> list[Path]:
     """Render about/methodology/privacy/terms for a vertical. Returns paths."""
     Session = get_sessionmaker()
@@ -153,6 +163,7 @@ def render_static_pages(vertical_name: str) -> list[Path]:
             "title": title,
             "description": description,
             "theme": "light",
+            "canonical_url": _canonical_url(vertical_name, f"/{slug}"),
         }
         html = env.get_template(f"{slug}.html").render(**ctx)
         out_dir = _output_dir(vertical_name) / slug
@@ -198,6 +209,7 @@ def render_sources(vertical_name: str) -> Path:
         "description": f"All sources {vertical_ctx['display_name']} ingests.",
         "theme": "light",
         "sources": sources_ctx,
+        "canonical_url": _canonical_url(vertical_name, "/sources"),
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
     html = _env().get_template("sources.html").render(**ctx)
@@ -310,6 +322,7 @@ def render_tools(vertical_name: str) -> dict[str, Path]:
         description=f"{vertical_ctx['display_name']} tools — calculators and decision aids.",
         theme="light",
         tools=tools,
+        canonical_url=_canonical_url(vertical_name, "/tools/"),
     )
     idx_dir = _output_dir(vertical_name) / "tools"
     idx_dir.mkdir(parents=True, exist_ok=True)
@@ -334,6 +347,7 @@ def render_tools(vertical_name: str) -> dict[str, Path]:
             theme="light",
             tool=meta,
             default_result=default_result,
+            canonical_url=_canonical_url(vertical_name, f"/tools/{meta['slug']}/"),
         )
         page_dir = idx_dir / meta["slug"]
         page_dir.mkdir(parents=True, exist_ok=True)
