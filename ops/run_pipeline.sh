@@ -9,6 +9,6 @@ echo "[$(date -Iseconds)] pipeline start vertical=$VERTICAL"
 cd /srv/grimoire
 source .venv/bin/activate
 set -a; source .env; set +a
-PYTHONPATH=. python -m engine.core.pipeline "$VERTICAL" --persist --log-level WARNING
+PYTHONPATH=. python -m engine.core.pipeline "$VERTICAL" --persist --scrape --log-level WARNING
 PYTHONPATH=. python -m engine.core.output_renderer "$VERTICAL" --log-level WARNING
 echo "[$(date -Iseconds)] pipeline done"

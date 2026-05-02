@@ -26,7 +26,13 @@ import yaml
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from engine.core import classifier, deduplicator, feed_fetcher, feed_loader
+from engine.core import (
+    article_scraper,
+    classifier,
+    deduplicator,
+    feed_fetcher,
+    feed_loader,
+)
 from engine.core.config import vertical_dir
 from engine.core.db import Article, Vertical, get_sessionmaker
 from engine.core.safe_http import install_ssrf_guard
@@ -103,6 +109,7 @@ def run_vertical(
     max_feeds: int | None = None,
     classify: bool = True,
     persist: bool = False,
+    scrape: bool = False,
 ) -> list[dict[str, Any]]:
     """Run the ingestion pipeline for one vertical and return enriched articles."""
     install_ssrf_guard()
@@ -126,6 +133,17 @@ def run_vertical(
         raw, vertical=vertical_id, guard_patterns=guard_patterns
     )
     logger.info("[%s] %d unique after dedup", vertical_id, len(unique))
+
+    if scrape and unique:
+        scraped = article_scraper.scrape_articles([a["link"] for a in unique])
+        for article in unique:
+            result = scraped.get(article["link"]) or {}
+            if result.get("success"):
+                article["body"] = result.get("body")
+                article["image_url"] = result.get("image_url")
+                article["author"] = result.get("author")
+                article["language"] = result.get("language")
+                article["word_count"] = result.get("word_count")
 
     if classify and topics:
         for article in unique:
@@ -160,6 +178,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-classify", action="store_true")
     parser.add_argument("--persist", action="store_true",
                         help="Insert deduped articles into postgres")
+    parser.add_argument("--scrape", action="store_true",
+                        help="Fetch full article body via trafilatura")
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
 
@@ -173,6 +193,7 @@ def main(argv: list[str] | None = None) -> int:
         max_feeds=args.max_feeds,
         classify=not args.no_classify,
         persist=args.persist,
+        scrape=args.scrape,
     )
     print(f"\n=== summary ===\n{len(out)} articles after pipeline\n")
     for article in out[:10]:
