@@ -90,7 +90,12 @@ def _redis_client() -> Any | None:
 
 def _next_api_key() -> str:
     """Return the next API key using round-robin rotation."""
-    if len(LLM_API_KEYS) <= 1:
+    # Single-key configs (most common): use the first (and only) key in the
+    # list. Falling back to LLM_API_KEY here would return empty when only the
+    # plural LLM_API_KEYS env var is set, causing a 401 at the upstream.
+    if len(LLM_API_KEYS) == 1:
+        return LLM_API_KEYS[0]
+    if len(LLM_API_KEYS) == 0:
         return LLM_API_KEY
     client = _redis_client()
     if client is not None:
