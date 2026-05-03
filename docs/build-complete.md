@@ -1,8 +1,15 @@
 # Build complete — Grimoire handoff
 
-**Captured:** 2026-05-02
+**Captured:** 2026-05-02 (initial); republished 2026-05-03 with the GitHub mirror live.
 **Build state:** Phases 0–7 shipped; Phase 8 finishing items pending operator-supplied credentials.
 **Handoff to:** the operator (`nicholai@auvalabs.com`) and any future agent resuming the build.
+
+## Repository
+
+- **GitHub:** https://github.com/AuvaLabs/grimoire (private, AuvaLabs org)
+- **VPS source-of-truth:** `/srv/grimoire/` on `grimoire-auvalabs-01`. Auto-pushes every commit to GitHub via a per-repo deploy SSH key (`.git/hooks/post-commit`).
+- **Command center mirror:** `/home/deploy/grimoire/` on `deploy@sqx-automation`. HTTPS push via `gh` CLI (existing AuvaLabs auth).
+- **Author identity:** every commit + tag is `Nicholai Imbong <nicholai@auvalabs.com>`. No AI/agent attribution in commits, README, contributors, or changelogs — internal policy memorialised in the `reference_github_repo.md` project-memory entry.
 
 ---
 
