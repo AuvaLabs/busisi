@@ -125,12 +125,25 @@
   {% endif %}
 
   <section class="sources">
-    <h2>Sources</h2>
+    <h2>
+      {% if article.siblings %}
+        Sources covering this ({{ article.siblings | length + 1 }})
+      {% else %}
+        Sources
+      {% endif %}
+    </h2>
     <ul>
       <li>
         <span class="pub">{{ article.source_short }}</span> —
         <a href="{{ article.link }}" rel="noopener nofollow" target="_blank">{{ article.title }} ↗</a>
       </li>
+      {% for s in article.siblings %}
+        <li>
+          <span class="pub">{{ s.source_short }}</span> —
+          <a href="/story/{{ s.slug }}/">{{ s.title }}</a>
+          {% if s.feed_region %}<span style="color: var(--text-faint);">· {{ s.feed_region }}</span>{% endif %}
+        </li>
+      {% endfor %}
     </ul>
   </section>
 </article>

@@ -406,12 +406,60 @@ def render_meta_files(
     return paths
 
 
+def _siblings_map(
+    session, article_ids: list[int]
+) -> dict[int, list[dict[str, Any]]]:
+    """Return ``{article_id: [sibling_ctx, ...]}`` for any articles that
+    belong to a multi-source Story. Single-key articles map to an empty
+    list. One round-trip per call regardless of input size."""
+    if not article_ids:
+        return {}
+    # article → story_id
+    story_id_rows = session.execute(
+        select(StoryArticle.article_id, StoryArticle.story_id).where(
+            StoryArticle.article_id.in_(article_ids)
+        )
+    ).all()
+    if not story_id_rows:
+        return {}
+    article_to_story: dict[int, int] = {aid: sid for aid, sid in story_id_rows}
+    story_ids = list({sid for _, sid in story_id_rows})
+    # All members of those stories (including the seed articles).
+    members = session.execute(
+        select(StoryArticle.story_id, Article)
+        .join(Article, Article.id == StoryArticle.article_id)
+        .where(StoryArticle.story_id.in_(story_ids))
+    ).all()
+    by_story: dict[int, list[Article]] = {}
+    for sid, art in members:
+        by_story.setdefault(sid, []).append(art)
+    out: dict[int, list[dict[str, Any]]] = {}
+    for aid, sid in article_to_story.items():
+        siblings = [
+            {
+                "slug": m.slug,
+                "title": m.title,
+                "link": m.link,
+                "source_short": _short_source(m.source),
+                "feed_region": m.feed_region,
+            }
+            for m in by_story.get(sid, [])
+            if m.id != aid
+        ]
+        out[aid] = siblings
+    return out
+
+
 def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
     """Render one canonical /story/<slug>/ page per persisted article.
 
     The story page is OUR canonical surface — the front-page card links to
     it. Until LLM enrichment runs, the body is the feed-provided summary
     with a disclosure banner (`summary_source = "feed"`).
+
+    When the article belongs to a multi-source Story (Phase 11 clusterer),
+    sibling member articles are passed as ``article.siblings`` so the
+    template can render a "more sources" panel.
     """
     Session = get_sessionmaker()
     out: dict[str, Path] = {}
@@ -433,6 +481,7 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
             .scalars()
             .all()
         )
+        siblings_by_id = _siblings_map(session, [a.id for a in rows])
 
     env = _env()
     base_dir = _output_dir(vertical_name) / "story"
@@ -450,6 +499,7 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
             "feed_region": a.feed_region,
             "published_human": _human_age(a.published_at),
             "labels": a.labels or [],
+            "siblings": siblings_by_id.get(a.id, []),
         }
         ctx = {
             "vertical": vertical_ctx,

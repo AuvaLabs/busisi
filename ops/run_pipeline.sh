@@ -21,6 +21,11 @@ for V in "${VERTICALS[@]}"; do
   echo "[$(date -Iseconds)] pipeline start vertical=$V"
   PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --enrich --enrich-max 20 --log-level WARNING || \
     echo "[$(date -Iseconds)] pipeline FAILED vertical=$V (continuing)"
+  # Cluster fresh articles into multi-source Story rows BEFORE rendering so
+  # the front page picks up new clusters this tick. Idempotent — articles
+  # already linked to a Story are skipped.
+  PYTHONPATH=. python -m engine.core.story_clusterer "$V" --days 7 --log-level WARNING || \
+    echo "[$(date -Iseconds)] cluster FAILED vertical=$V (continuing)"
   PYTHONPATH=. python -m engine.core.output_renderer "$V" --log-level WARNING || \
     echo "[$(date -Iseconds)] render FAILED vertical=$V (continuing)"
   echo "[$(date -Iseconds)] pipeline done vertical=$V"

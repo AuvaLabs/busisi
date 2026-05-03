@@ -168,3 +168,31 @@ class TestRenderIndexMerge:
         assert "Fresh single-source story" in body
         assert "Pentagon AI cloud deals with multiple providers" in body
         assert 'class="n-sources"' not in body
+
+
+class TestRenderStoriesSiblings:
+    def test_clustered_article_lists_siblings(
+        self, test_engine, repo_templates, output_root
+    ) -> None:
+        _seed(test_engine)
+        renderer.render_stories("modelwatch")
+        primary = output_root / "output" / "modelwatch" / "story" / "cluster-0" / "index.html"
+        body = primary.read_text(encoding="utf-8")
+        # Header shows the count
+        assert "Sources covering this (3)" in body
+        # Primary article still listed
+        assert "Pentagon AI cloud deals with multiple providers" in body
+        # Sibling titles appear with internal /story/ links
+        assert "/story/cluster-1/" in body
+        assert "/story/cluster-2/" in body
+
+    def test_orphan_article_keeps_simple_sources(
+        self, test_engine, repo_templates, output_root
+    ) -> None:
+        _seed(test_engine)
+        renderer.render_stories("modelwatch")
+        orphan = output_root / "output" / "modelwatch" / "story" / "fresh-orphan" / "index.html"
+        body = orphan.read_text(encoding="utf-8")
+        assert "<h2>" in body
+        assert "Sources covering this" not in body
+        assert "Sources" in body
