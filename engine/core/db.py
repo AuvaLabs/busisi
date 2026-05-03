@@ -36,6 +36,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Integer,
     Index,
     String,
     Text,
@@ -66,7 +67,11 @@ class Base(DeclarativeBase):
 class Vertical(Base):
     __tablename__ = "verticals"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
     name: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(128), nullable=False)
     accent_light: Mapped[str | None] = mapped_column(String(16), nullable=True)
@@ -87,7 +92,11 @@ class Article(Base):
         Index("ix_article_vertical_fetched", "vertical_id", "fetched_at"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
     vertical_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
     )
@@ -128,7 +137,11 @@ class Story(Base):
         Index("ix_story_vertical_primary", "vertical_id", "primary_published_at"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
     vertical_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
     )
@@ -162,7 +175,11 @@ class Entity(Base):
         Index("ix_entity_vertical_type", "vertical_id", "type"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
     vertical_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
     )
@@ -200,7 +217,11 @@ class Subscriber(Base):
         Index("ix_subscriber_vertical_confirmed", "vertical_id", "confirmed"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
     vertical_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
     )
@@ -224,7 +245,11 @@ class ProUser(Base):
         Index("ix_pro_user_stripe_customer", "stripe_customer_id"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
     vertical_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
     )
@@ -250,7 +275,11 @@ class SponsorInquiry(Base):
         Index("ix_sponsor_inquiry_vertical_created", "vertical_id", "created_at"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
     vertical_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
     )
