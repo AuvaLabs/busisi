@@ -140,9 +140,66 @@
 
   <footer class="site">
     <div class="container">
+      <form class="subscribe" action="/api/subscribe" method="POST"
+            style="margin: 0 0 1.5rem; max-width: 28rem;">
+        <label for="subscribe-email"
+               style="font-family: var(--sans); font-size: 0.85rem; color: var(--text-mute);
+                      display: block; margin-bottom: 0.4rem; letter-spacing: 0.04em;">
+          One weekly digest. No spam, unsubscribe anytime.
+        </label>
+        <div style="display: flex; gap: 0.5rem;">
+          <input id="subscribe-email" type="email" name="email" required
+                 placeholder="you@work.com"
+                 style="flex: 1; padding: 0.55rem 0.7rem; font-family: var(--sans);
+                        font-size: 0.95rem; border: 1px solid var(--rule); border-radius: 4px;
+                        background: var(--bg-elev); color: var(--text);">
+          <button type="submit"
+                  style="padding: 0.55rem 1rem; font-family: var(--sans); font-weight: 500;
+                         border: 1px solid var(--accent); background: var(--accent);
+                         color: var(--bg); border-radius: 4px; cursor: pointer;">
+            Subscribe
+          </button>
+        </div>
+        <input type="hidden" name="vertical" value="{{ vertical.name }}">
+        <input type="text" name="hp" tabindex="-1" autocomplete="off"
+               style="position: absolute; left: -9999px;" aria-hidden="true">
+        <p class="subscribe-status"
+           style="font-family: var(--sans); font-size: 0.8rem; color: var(--text-faint);
+                  margin: 0.5rem 0 0; min-height: 1.1em;"></p>
+      </form>
       <p>{{ vertical.display_name }} — operated by Auva Labs FZE.
         <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/methodology">Methodology</a> · <a href="/feed.rss">RSS</a></p>
     </div>
   </footer>
+  <script>
+    (function () {
+      var form = document.querySelector('form.subscribe');
+      if (!form) return;
+      var status = form.querySelector('.subscribe-status');
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        status.textContent = 'Sending…';
+        var data = new FormData(form);
+        fetch(form.action, {
+          method: 'POST',
+          body: data,
+          headers: { 'Accept': 'application/json' }
+        }).then(function (r) {
+          return r.json().then(function (j) { return { ok: r.ok, body: j }; });
+        }).then(function (resp) {
+          if (resp.ok) {
+            status.textContent = resp.body.status === 'already_confirmed'
+              ? "You're already subscribed — thank you."
+              : 'Check your inbox to confirm.';
+            form.reset();
+          } else {
+            status.textContent = resp.body.detail || 'Something went wrong.';
+          }
+        }).catch(function () {
+          status.textContent = 'Network error. Try again later.';
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

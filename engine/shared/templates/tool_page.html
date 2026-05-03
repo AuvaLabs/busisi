@@ -51,7 +51,7 @@
   <h1 class="tool-title">{{ tool.title }}</h1>
   <p class="tool-desc">{{ tool.description }}</p>
 
-  <form class="tool-form" id="tool-form" method="post" action="/api/tools/{{ tool.slug }}/calculate">
+  <form class="tool-form" id="tool-form" method="post" action="/api/tools/{{ vertical.name }}/{{ tool.slug }}/calculate">
     {% for inp in tool.inputs %}
       <label for="f-{{ inp.name }}">{{ inp.label }}{% if inp.suffix %} <span style="color: var(--text-faint);">({{ inp.suffix }})</span>{% endif %}</label>
       {% if inp.type == 'select' %}
@@ -101,11 +101,12 @@
   const breakdown = document.getElementById("breakdown");
   let timer = null;
   function recalc() {
-    const data = new FormData(form);
+    const inputs = {};
+    new FormData(form).forEach((value, key) => { inputs[key] = value; });
     fetch(form.action, {
       method: "POST",
-      headers: {"Accept": "application/json"},
-      body: data,
+      headers: {"Accept": "application/json", "Content-Type": "application/json"},
+      body: JSON.stringify({inputs: inputs}),
     })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(j => {

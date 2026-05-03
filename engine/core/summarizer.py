@@ -58,15 +58,51 @@ def _build_user_prompt(title: str, body: str) -> str:
     )
 
 
+_NUM_TOKEN_RE = re.compile(
+    r"(?<![A-Za-z0-9])(\d[\d,]*(?:\.\d+)?)(\s*[kKmMbB])?\s*%?"
+)
+_SUFFIX_MULT = {"k": 1_000.0, "m": 1_000_000.0, "b": 1_000_000_000.0}
+_TOLERANCE = 0.01  # ±1 % wiggle for rounding ($676k ≈ 676,000)
+
+
+def _numeric_values(text: str) -> set[float]:
+    out: set[float] = set()
+    for raw, suffix in _NUM_TOKEN_RE.findall(text):
+        try:
+            value = float(raw.replace(",", ""))
+        except ValueError:
+            continue
+        if suffix:
+            value *= _SUFFIX_MULT[suffix.strip().lower()]
+        out.add(value)
+    return out
+
+
 def _validate_grounded(summary: str, source_text: str) -> tuple[bool, str]:
-    """Lightweight grounding sanity check — flag obvious hallucinations."""
+    """Lightweight grounding sanity check — flag obvious hallucinations.
+
+    Numbers compare on value, not surface form: ``10k`` → ``10,000`` is fine.
+    A summary value passes if any source value is within ±1 % (or 0.5 for
+    very small magnitudes).
+    """
     if not summary or not source_text:
         return True, ""
-    summary_nums = set(re.findall(r"\b\d[\d,.]*[%]?\b", summary))
-    source_nums = set(re.findall(r"\b\d[\d,.]*[%]?\b", source_text))
-    leaked_nums = summary_nums - source_nums
-    if leaked_nums:
-        return False, f"summary cites numbers not in source: {sorted(leaked_nums)[:3]}"
+
+    summary_values = _numeric_values(summary)
+    source_values = _numeric_values(source_text)
+
+    def _matches(v: float) -> bool:
+        for s in source_values:
+            if v == 0 and s == 0:
+                return True
+            if abs(v - s) <= max(_TOLERANCE * max(abs(v), abs(s)), 0.5):
+                return True
+        return False
+
+    leaked = sorted(v for v in summary_values if not _matches(v))
+    if leaked:
+        return False, f"summary cites numbers not in source: {leaked[:3]}"
+
     summary_years = set(re.findall(r"\b(?:19|20)\d{2}\b", summary))
     source_years = set(re.findall(r"\b(?:19|20)\d{2}\b", source_text))
     leaked_years = summary_years - source_years

@@ -24,6 +24,9 @@ markdown-it-py>=3.0,<4
 # Server (Phase 3+)
 fastapi>=0.115,<1
 uvicorn[standard]>=0.32,<1
+cryptography>=44.0,<45
+email-validator>=2.2,<3
+python-multipart>=0.0.18,<1
 
 # Observability
 structlog>=24.4,<25

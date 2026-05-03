@@ -60,8 +60,42 @@ FUZZY_DEDUP_THRESHOLD: Final[float] = float(os.environ.get("FUZZY_DEDUP_THRESHOL
 MAX_SEEN_HASHES: Final[int] = int(os.environ.get("MAX_SEEN_HASHES", "10000"))
 MAX_SEEN_TITLES: Final[int] = int(os.environ.get("MAX_SEEN_TITLES", "5000"))
 
+# ---- Handler app (Phase 9: subscribe / sponsor / tools API) ----
+HANDLER_HOST: Final[str] = os.environ.get("HANDLER_HOST", "127.0.0.1")
+HANDLER_PORT: Final[int] = int(os.environ.get("HANDLER_PORT", "8001"))
+SUBSCRIBER_FERNET_KEY: Final[str] = os.environ.get("SUBSCRIBER_FERNET_KEY", "")
+SUBSCRIBER_EMAIL_PEPPER: Final[str] = os.environ.get("SUBSCRIBER_EMAIL_PEPPER", "")
+SITE_ORIGINS_RAW: Final[str] = os.environ.get("SITE_ORIGINS", "")
+POSTMARK_API_TOKEN: Final[str] = os.environ.get("POSTMARK_API_TOKEN", "")
+POSTMARK_FROM_ADDRESS: Final[str] = os.environ.get(
+    "POSTMARK_FROM_ADDRESS", "no-reply@auvalabs.com"
+)
+POSTMARK_REPLY_TO: Final[str] = os.environ.get("POSTMARK_REPLY_TO", "ops@auvalabs.com")
+SPONSOR_NOTIFY_TO: Final[str] = os.environ.get("SPONSOR_NOTIFY_TO", "ops@auvalabs.com")
+HANDLER_RATE_LIMIT_PER_5MIN: Final[int] = int(
+    os.environ.get("HANDLER_RATE_LIMIT_PER_5MIN", "10")
+)
+
 # ---- Logging ----
 LOG_LEVEL: Final[str] = os.environ.get("LOG_LEVEL", "INFO")
+
+
+def site_origins() -> dict[str, str]:
+    """Parse ``SITE_ORIGINS`` env (``"vertical=origin,…"``) into a dict.
+
+    Malformed chunks are dropped silently so the handler still boots in dev.
+    """
+    out: dict[str, str] = {}
+    for chunk in SITE_ORIGINS_RAW.split(","):
+        chunk = chunk.strip()
+        if not chunk or "=" not in chunk:
+            continue
+        name, origin = chunk.split("=", 1)
+        name = name.strip()
+        origin = origin.strip().rstrip("/")
+        if name and origin:
+            out[name] = origin
+    return out
 
 
 def vertical_dir(vertical_id: str) -> Path:
