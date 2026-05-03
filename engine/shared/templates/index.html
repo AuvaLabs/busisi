@@ -22,6 +22,18 @@
     }
     .story-meta .source { color: var(--text-mute); font-weight: 500; }
     .story-meta .region { color: var(--accent); }
+    .n-sources {
+      display: inline-block;
+      margin-left: 0.4rem;
+      padding: 0.05rem 0.45rem;
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      color: var(--bg);
+      background: var(--accent);
+      border-radius: 999px;
+      vertical-align: 0.05em;
+    }
     .labels { font-family: var(--sans); font-size: 0.75rem; color: var(--text-mute); margin-top: 0.25rem; }
     .labels .label {
       display: inline-block;
@@ -43,7 +55,12 @@
 <ul class="stories">
 {% for a in articles %}
   <li>
-    <h2 class="story-title"><a href="/story/{{ a.slug }}/">{{ a.title }}</a></h2>
+    <h2 class="story-title">
+      <a href="/story/{{ a.slug }}/">{{ a.title }}</a>
+      {% if a.n_sources and a.n_sources > 1 %}
+        <span class="n-sources" title="{{ a.n_sources }} sources covering this">{{ a.n_sources }} sources</span>
+      {% endif %}
+    </h2>
     <p class="story-meta">
       via <span class="source">{{ a.source_short }}</span>
       <span class="region">· {{ a.feed_region }}</span>

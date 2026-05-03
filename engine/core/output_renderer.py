@@ -19,8 +19,16 @@ from urllib.parse import urlparse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import select
 
+from sqlalchemy import func
+
 from engine.core.config import DATA_DIR, GRIMOIRE_ROOT
-from engine.core.db import Article, Vertical, get_sessionmaker
+from engine.core.db import (
+    Article,
+    Story,
+    StoryArticle,
+    Vertical,
+    get_sessionmaker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +48,8 @@ def _env() -> Environment:
 def _human_age(dt: datetime | None) -> str:
     if dt is None:
         return ""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
     now = datetime.now(timezone.utc)
     if dt > now:
         return ""
@@ -60,8 +70,116 @@ def _output_dir(vertical_name: str) -> Path:
     return DATA_DIR / "output" / vertical_name
 
 
+def _load_story_cards(session, vertical_id: int, limit: int) -> list[dict[str, Any]]:
+    """Pull recent Stories with their primary Article + n_sources count.
+
+    Sort key is MAX(member.published_at) per story so a cluster with a
+    fresh follow-up still surfaces — using primary_published_at would
+    pin the story to the *oldest* member's date and hide multi-source
+    coverage that picks up late.
+    """
+    fresh_subq = (
+        select(
+            StoryArticle.story_id.label("story_id"),
+            func.count().label("n"),
+            func.max(Article.published_at).label("latest_at"),
+        )
+        .join(Article, Article.id == StoryArticle.article_id)
+        .group_by(StoryArticle.story_id)
+        .subquery()
+    )
+    rows = session.execute(
+        select(Story, Article, fresh_subq.c.n, fresh_subq.c.latest_at)
+        .join(StoryArticle, StoryArticle.story_id == Story.id)
+        .join(Article, Article.id == StoryArticle.article_id)
+        .join(fresh_subq, fresh_subq.c.story_id == Story.id)
+        .where(
+            Story.vertical_id == vertical_id,
+            StoryArticle.is_primary.is_(True),
+            Article.deleted_at.is_(None),
+        )
+        .order_by(fresh_subq.c.latest_at.desc())
+        .limit(limit)
+    ).all()
+    return [
+        {
+            "kind": "story",
+            "slug": a.slug,
+            "title": s.canonical_headline,
+            "link": a.link,
+            "source_short": _short_source(a.source),
+            "feed_region": a.feed_region,
+            "published_human": _human_age(latest_at or s.primary_published_at),
+            "labels": a.labels or [],
+            "n_sources": int(n),
+            "sort_at": latest_at or s.primary_published_at or a.fetched_at,
+        }
+        for s, a, n, latest_at in rows
+    ]
+
+
+def _load_orphan_articles(
+    session, vertical_id: int, limit: int
+) -> list[dict[str, Any]]:
+    """Pull recent Articles NOT linked to any Story."""
+    clustered = select(StoryArticle.article_id)
+    rows = (
+        session.execute(
+            select(Article)
+            .where(
+                Article.vertical_id == vertical_id,
+                Article.deleted_at.is_(None),
+                ~Article.id.in_(clustered),
+            )
+            .order_by(Article.fetched_at.desc())
+            .limit(limit)
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        {
+            "kind": "article",
+            "slug": a.slug,
+            "title": a.title,
+            "link": a.link,
+            "source_short": _short_source(a.source),
+            "feed_region": a.feed_region,
+            "published_human": _human_age(a.published_at),
+            "labels": a.labels or [],
+            "n_sources": 1,
+            "sort_at": a.published_at or a.fetched_at,
+        }
+        for a in rows
+    ]
+
+
+def _merge_cards(
+    stories: list[dict[str, Any]],
+    orphans: list[dict[str, Any]],
+    limit: int,
+) -> list[dict[str, Any]]:
+    """Merge by sort_at desc; tz-naive datetimes are coerced to UTC."""
+    def _key(card: dict[str, Any]) -> datetime:
+        dt = card["sort_at"]
+        if dt is None:
+            return datetime(1970, 1, 1, tzinfo=timezone.utc)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+
+    merged = sorted(stories + orphans, key=_key, reverse=True)
+    return merged[:limit]
+
+
 def render_index(vertical_name: str, *, limit: int = 50) -> Path:
-    """Render the front-page index.html for a vertical. Returns the output path."""
+    """Render the front-page index.html for a vertical. Returns the output path.
+
+    Cards on the front page come from two sources:
+      * Stories — multi-source clusters, render once with an "N sources" badge.
+      * Orphan Articles — single-source items not in any cluster.
+    Both shapes share the same template fields; ``kind`` distinguishes them.
+    """
     Session = get_sessionmaker()
     with Session() as session:
         v = session.execute(
@@ -70,29 +188,11 @@ def render_index(vertical_name: str, *, limit: int = 50) -> Path:
         if v is None:
             raise ValueError(f"vertical not found: {vertical_name}")
 
-        rows = (
-            session.execute(
-                select(Article)
-                .where(Article.vertical_id == v.id, Article.deleted_at.is_(None))
-                .order_by(Article.fetched_at.desc())
-                .limit(limit)
-            )
-            .scalars()
-            .all()
-        )
-
-        articles_ctx: list[dict[str, Any]] = [
-            {
-                "slug": a.slug,
-                "title": a.title,
-                "link": a.link,
-                "source_short": _short_source(a.source),
-                "feed_region": a.feed_region,
-                "published_human": _human_age(a.published_at),
-                "labels": a.labels or [],
-            }
-            for a in rows
-        ]
+        # Pull more than ``limit`` from each side so the merge can rebalance
+        # if either side is heavily skewed by recency.
+        stories = _load_story_cards(session, v.id, limit)
+        orphans = _load_orphan_articles(session, v.id, limit)
+        cards = _merge_cards(stories, orphans, limit)
 
         ctx = {
             "vertical": {
@@ -104,7 +204,7 @@ def render_index(vertical_name: str, *, limit: int = 50) -> Path:
             "title": "Front",
             "description": f"{v.display_name} — front page",
             "theme": "light",
-            "articles": articles_ctx,
+            "articles": cards,
             "canonical_url": _canonical_url(vertical_name, "/"),
             "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
@@ -115,7 +215,14 @@ def render_index(vertical_name: str, *, limit: int = 50) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "index.html"
     out_path.write_text(html, encoding="utf-8")
-    logger.info("rendered %s (%d articles) -> %s", vertical_name, len(rows), out_path)
+    logger.info(
+        "rendered %s (%d cards: %d stories + %d orphans) -> %s",
+        vertical_name,
+        len(cards),
+        sum(1 for c in cards if c["kind"] == "story"),
+        sum(1 for c in cards if c["kind"] == "article"),
+        out_path,
+    )
     return out_path
 
 
