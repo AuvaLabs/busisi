@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .ep-header { padding: 0 0 1.25rem 0; border-bottom: 1px solid var(--rule); margin-bottom: 1.5rem; }
+    .ep-eyebrow {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      margin: 0 0 0.4rem 0;
+    }
+    .ep-eyebrow .accent { color: var(--accent); }
+    .ep-title { font-family: var(--serif); font-weight: 500; font-size: 2rem; margin: 0; }
+    .ep-count {
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      color: var(--text-mute);
+      margin: 0.5rem 0 0;
+    }
+    .ep-list { list-style: none; padding: 0; margin: 0; }
+    .ep-list > li { padding: 1rem 0; border-bottom: 1px solid var(--rule); }
+    .ep-list > li:last-child { border-bottom: 0; }
+    .ep-story-title {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 1.2rem;
+      line-height: 1.3;
+      margin: 0 0 0.25rem 0;
+    }
+    .ep-story-title a { color: var(--text); }
+    .ep-story-title a:hover { color: var(--accent); text-decoration: none; }
+    .ep-meta {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .ep-meta .source { color: var(--text-mute); font-weight: 500; }
+    .ep-meta .region { color: var(--accent); }
+{% endblock %}
+
+{% block content %}
+<header class="ep-header">
+  <p class="ep-eyebrow">
+    <a href="/entity/" style="color: inherit;">Entities</a>
+    <span class="accent">·</span>
+    {{ entity.type_label }}
+  </p>
+  <h1 class="ep-title">{{ entity.name }}</h1>
+  <p class="ep-count">{{ entity.n }} {{ 'article' if entity.n == 1 else 'articles' }} tagged with this entity.</p>
+</header>
+
+<ul class="ep-list">
+  {% for a in articles %}
+    <li>
+      <h2 class="ep-story-title"><a href="/story/{{ a.slug }}/">{{ a.title }}</a></h2>
+      <p class="ep-meta">
+        via <span class="source">{{ a.source_short }}</span>
+        <span class="region">· {{ a.feed_region }}</span>
+        {% if a.published_human %}<span>· {{ a.published_human }}</span>{% endif %}
+      </p>
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}

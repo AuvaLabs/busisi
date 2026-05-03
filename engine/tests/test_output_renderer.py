@@ -170,6 +170,80 @@ class TestRenderIndexMerge:
         assert 'class="n-sources"' not in body
 
 
+class TestRenderEntities:
+    def _seed_entities(self, test_engine):
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
+
+        from engine.core.db import (
+            Article,
+            ArticleEntity,
+            Entity,
+            Vertical,
+        )
+
+        SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
+        with SM() as s:
+            v = Vertical(name="modelwatch", display_name="Modelwatch")
+            s.add(v)
+            s.commit()
+            s.refresh(v)
+
+            a = Article(
+                vertical_id=v.id,
+                hash="h1",
+                slug="anthropic-claude-5",
+                title="Anthropic releases Claude 5",
+                link="https://example.com/c5",
+                source="https://reuters.example.com/feed",
+                feed_region="US",
+                summary="x",
+                summary_source="llm",
+                published_at=_dt(2026, 5, 4, 12, 0, tzinfo=_tz.utc),
+            )
+            s.add(a)
+            s.commit()
+            s.refresh(a)
+            anthropic = Entity(
+                vertical_id=v.id, type="lab", name="Anthropic", slug="anthropic"
+            )
+            claude = Entity(
+                vertical_id=v.id, type="model", name="Claude 5", slug="claude-5"
+            )
+            ghost = Entity(
+                vertical_id=v.id, type="lab", name="Ghost Lab", slug="ghost-lab"
+            )
+            s.add_all([anthropic, claude, ghost])
+            s.commit()
+            for ent in (anthropic, claude):
+                s.add(ArticleEntity(article_id=a.id, entity_id=ent.id))
+            s.commit()
+            return v.id
+
+    def test_entity_index_lists_only_linked(
+        self, test_engine, repo_templates, output_root
+    ) -> None:
+        self._seed_entities(test_engine)
+        path = renderer.render_entity_index("modelwatch")
+        body = path.read_text(encoding="utf-8")
+        assert "Anthropic" in body
+        assert "Claude 5" in body
+        assert "Ghost Lab" not in body
+        assert "/entity/lab/anthropic/" in body
+        assert "/entity/model/claude-5/" in body
+
+    def test_per_entity_page_lists_articles(
+        self, test_engine, repo_templates, output_root
+    ) -> None:
+        self._seed_entities(test_engine)
+        pages = renderer.render_entities("modelwatch")
+        assert "lab/anthropic" in pages
+        body = pages["lab/anthropic"].read_text(encoding="utf-8")
+        assert "Anthropic releases Claude 5" in body
+        assert "/story/anthropic-claude-5/" in body
+        assert "1 article tagged" in body
+
+
 class TestRenderStoriesSiblings:
     def test_clustered_article_lists_siblings(
         self, test_engine, repo_templates, output_root

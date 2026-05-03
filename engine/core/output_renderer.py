@@ -24,6 +24,8 @@ from sqlalchemy import func
 from engine.core.config import DATA_DIR, GRIMOIRE_ROOT
 from engine.core.db import (
     Article,
+    ArticleEntity,
+    Entity,
     Story,
     StoryArticle,
     Vertical,
@@ -581,6 +583,157 @@ def render_tools(vertical_name: str) -> dict[str, Path]:
     return out
 
 
+_ENTITY_TYPE_LABELS: dict[str, str] = {
+    "lab": "Labs",
+    "model": "Models",
+    "person": "People",
+    "company": "Companies",
+    "product": "Products",
+    "location": "Locations",
+}
+
+
+def render_entity_index(vertical_name: str) -> Path:
+    """Render /entity/index.html — all entities, grouped by type, A→Z."""
+    Session = get_sessionmaker()
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical_name)
+        ).scalar_one_or_none()
+        if v is None:
+            raise ValueError(f"vertical not found: {vertical_name}")
+        # Per-entity article count, joined to ArticleEntity.
+        rows = session.execute(
+            select(Entity, func.count(ArticleEntity.article_id).label("n"))
+            .outerjoin(ArticleEntity, ArticleEntity.entity_id == Entity.id)
+            .where(Entity.vertical_id == v.id)
+            .group_by(Entity.id)
+            .order_by(Entity.type.asc(), Entity.name.asc())
+        ).all()
+        groups: dict[str, list[dict[str, Any]]] = {}
+        for ent, n in rows:
+            if int(n) == 0:
+                continue
+            groups.setdefault(ent.type, []).append(
+                {
+                    "name": ent.name,
+                    "slug": ent.slug,
+                    "type": ent.type,
+                    "n": int(n),
+                    "path": f"/entity/{ent.type}/{ent.slug}/",
+                }
+            )
+        ordered_groups = [
+            {
+                "type": etype,
+                "label": _ENTITY_TYPE_LABELS.get(etype, etype.title()),
+                "entities": sorted(items, key=lambda e: (-e["n"], e["name"].lower())),
+            }
+            for etype, items in groups.items()
+            if items
+        ]
+        ordered_groups.sort(key=lambda g: g["label"])
+
+        ctx = {
+            "vertical": _vertical_ctx(v),
+            "title": "Entities",
+            "description": f"{v.display_name} — every named entity we've tagged.",
+            "theme": "light",
+            "groups": ordered_groups,
+            "total": sum(len(g["entities"]) for g in ordered_groups),
+            "canonical_url": _canonical_url(vertical_name, "/entity/"),
+        }
+
+    html = _env().get_template("entity_index.html").render(**ctx)
+    out_dir = _output_dir(vertical_name) / "entity"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "index.html"
+    out_path.write_text(html, encoding="utf-8")
+    logger.info(
+        "rendered entity index %s -> %s (%d entities)",
+        vertical_name,
+        out_path,
+        ctx["total"],
+    )
+    return out_path
+
+
+def render_entities(vertical_name: str) -> dict[str, Path]:
+    """Render /entity/<type>/<slug>/index.html for every entity with ≥1 link."""
+    Session = get_sessionmaker()
+    out: dict[str, Path] = {}
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical_name)
+        ).scalar_one_or_none()
+        if v is None:
+            raise ValueError(f"vertical not found: {vertical_name}")
+        vertical_ctx = _vertical_ctx(v)
+
+        entity_rows = (
+            session.execute(
+                select(Entity).where(Entity.vertical_id == v.id)
+            )
+            .scalars()
+            .all()
+        )
+        # Per-entity article fetch in one round-trip.
+        link_rows = session.execute(
+            select(ArticleEntity.entity_id, Article)
+            .join(Article, Article.id == ArticleEntity.article_id)
+            .where(Article.vertical_id == v.id, Article.deleted_at.is_(None))
+            .order_by(Article.published_at.desc())
+        ).all()
+        articles_by_entity: dict[int, list[Article]] = {}
+        for eid, a in link_rows:
+            articles_by_entity.setdefault(eid, []).append(a)
+
+    env = _env()
+    base_dir = _output_dir(vertical_name) / "entity"
+    for ent in entity_rows:
+        articles = articles_by_entity.get(ent.id, [])
+        if not articles:
+            continue
+        article_ctxs = [
+            {
+                "slug": a.slug,
+                "title": a.title,
+                "source_short": _short_source(a.source),
+                "feed_region": a.feed_region,
+                "published_human": _human_age(a.published_at),
+            }
+            for a in articles
+        ]
+        ctx = {
+            "vertical": vertical_ctx,
+            "title": ent.name,
+            "description": (
+                f"Articles tagged with {ent.name} on {vertical_ctx['display_name']}."
+            ),
+            "theme": "light",
+            "entity": {
+                "name": ent.name,
+                "slug": ent.slug,
+                "type": ent.type,
+                "type_label": _ENTITY_TYPE_LABELS.get(ent.type, ent.type.title()),
+                "n": len(article_ctxs),
+            },
+            "articles": article_ctxs,
+            "canonical_url": _canonical_url(
+                vertical_name, f"/entity/{ent.type}/{ent.slug}/"
+            ),
+        }
+        html = env.get_template("entity_page.html").render(**ctx)
+        ent_dir = base_dir / ent.type / ent.slug
+        ent_dir.mkdir(parents=True, exist_ok=True)
+        path = ent_dir / "index.html"
+        path.write_text(html, encoding="utf-8")
+        out[f"{ent.type}/{ent.slug}"] = path
+
+    logger.info("rendered %s entities (%d pages)", vertical_name, len(out))
+    return out
+
+
 def render_all(vertical_name: str, *, index_limit: int = 50) -> dict[str, Any]:
     """Render index + stories + static pages + sources + tools + meta files."""
     return {
@@ -589,6 +742,8 @@ def render_all(vertical_name: str, *, index_limit: int = 50) -> dict[str, Any]:
         "static_pages": render_static_pages(vertical_name),
         "sources": render_sources(vertical_name),
         "tools": render_tools(vertical_name),
+        "entity_index": render_entity_index(vertical_name),
+        "entities": render_entities(vertical_name),
         "meta": render_meta_files(vertical_name),
     }
 
@@ -601,7 +756,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("vertical")
     parser.add_argument(
         "--target",
-        choices=("all", "index", "stories", "static", "sources", "tools", "meta"),
+        choices=(
+            "all",
+            "index",
+            "stories",
+            "static",
+            "sources",
+            "tools",
+            "meta",
+            "entities",
+        ),
         default="all",
     )
     parser.add_argument("--limit", type=int, default=50)
@@ -616,7 +780,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"rendered static  -> {len(out['static_pages'])} pages")
         print(f"rendered sources -> {out['sources']}")
         print(f"rendered tools   -> {len(out['tools'])} pages")
+        print(f"rendered entities-> {len(out['entities'])} pages (+ index)")
         print(f"rendered meta    -> {len(out['meta'])} files")
+    elif args.target == "entities":
+        idx = render_entity_index(args.vertical)
+        pages = render_entities(args.vertical)
+        print(f"rendered entity index -> {idx}")
+        print(f"rendered entities    -> {len(pages)} pages")
     elif args.target == "stories":
         for slug, p in render_stories(args.vertical).items():
             print(f"rendered story/{slug} -> {p}")

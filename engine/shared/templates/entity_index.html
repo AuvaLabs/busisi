@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .ei-header { padding: 0 0 1.25rem 0; border-bottom: 1px solid var(--rule); margin-bottom: 1.5rem; }
+    .ei-eyebrow {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      margin: 0 0 0.4rem 0;
+    }
+    .ei-title { font-family: var(--serif); font-weight: 500; font-size: 1.85rem; margin: 0; }
+    .ei-blurb { color: var(--text-mute); font-size: 1rem; margin: 0.5rem 0 0; max-width: 42rem; }
+    .ei-group { margin: 2rem 0; }
+    .ei-group h2 {
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin: 0 0 0.75rem 0;
+    }
+    .ei-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; }
+    .ei-chip {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.4rem;
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      background: var(--bg-elev);
+    }
+    .ei-chip a { color: var(--text); }
+    .ei-chip a:hover { color: var(--accent); text-decoration: none; }
+    .ei-chip .count { font-size: 0.75rem; color: var(--text-faint); }
+    .ei-empty { color: var(--text-mute); padding: 2rem 0; }
+{% endblock %}
+
+{% block content %}
+<header class="ei-header">
+  <p class="ei-eyebrow">Entities</p>
+  <h1 class="ei-title">{{ vertical.display_name }} entities</h1>
+  <p class="ei-blurb">Every named lab, model, person, company, product, and location our pipeline has tagged so far. Updated as new articles are processed.</p>
+</header>
+
+{% if not groups %}
+  <p class="ei-empty">No entities tagged yet — extraction is still draining the backlog.</p>
+{% else %}
+  {% for g in groups %}
+    <section class="ei-group">
+      <h2>{{ g.label }}</h2>
+      <ul class="ei-list">
+        {% for e in g.entities %}
+          <li class="ei-chip">
+            <a href="{{ e.path }}">{{ e.name }}</a>
+            <span class="count">{{ e.n }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
+{% endif %}
+{% endblock %}
