@@ -234,6 +234,12 @@ class Subscriber(Base):
     )
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     unsubscribed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Set after a digest send succeeds. Comparison against the digest's
+    # ``week_start`` provides per-row idempotency without a separate send-log
+    # table — sufficient for the weekly cadence.
+    last_digest_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
 
 class ProUser(Base):

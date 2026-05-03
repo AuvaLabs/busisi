@@ -25,7 +25,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import select
 
 from engine.core.config import DATA_DIR, GRIMOIRE_ROOT
-from engine.core.db import Article, Vertical, get_sessionmaker
+from engine.core.db import Article, Subscriber, Vertical, get_sessionmaker
 
 logger = logging.getLogger(__name__)
 
@@ -225,6 +225,118 @@ def render_archive(
     return path
 
 
+def send_pending_digests(
+    vertical_name: str,
+    *,
+    week_offset: int = -1,
+    limit: int = _DEFAULT_LIMIT,
+    sleep_between: float = 0.1,
+    now: datetime | None = None,
+) -> dict[str, int]:
+    """Send the digest to confirmed subscribers who haven't received this week.
+
+    Default ``week_offset=-1`` ships the previous full ISO week — designed to
+    run Sunday afternoon UTC, after the cron pipeline has finished its last
+    enrichment tick of the week.
+
+    Idempotent at the row level: a subscriber whose
+    ``last_digest_sent_at >= week_start`` is skipped. Successful sends advance
+    the timestamp; failures leave the row untouched so the next run retries.
+    """
+    from time import sleep
+
+    from engine.handlers import email_sender
+    from engine.handlers.security import (
+        CryptoUnavailable,
+        decrypt_email,
+    )
+
+    digest = generate_digest(
+        vertical_name, week_offset=week_offset, limit=limit, now=now
+    )
+    if not digest["articles"]:
+        logger.info(
+            "[%s] no stories for %s — skipping send",
+            vertical_name,
+            digest["week_key"],
+        )
+        return {"considered": 0, "sent": 0, "skipped_no_articles": 1, "failed": 0}
+
+    SessionLocal = get_sessionmaker()
+    counts = {"considered": 0, "sent": 0, "already": 0, "failed": 0}
+
+    with SessionLocal() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical_name)
+        ).scalar_one_or_none()
+        if v is None:
+            logger.warning("vertical %s not found — abort", vertical_name)
+            return {"considered": 0, "sent": 0, "already": 0, "failed": 0}
+
+        rows = session.execute(
+            select(Subscriber).where(
+                Subscriber.vertical_id == v.id,
+                Subscriber.confirmed.is_(True),
+                Subscriber.unsubscribed_at.is_(None),
+            )
+        ).scalars().all()
+
+        for sub in rows:
+            counts["considered"] += 1
+            last_sent = sub.last_digest_sent_at
+            # SQLite drops the tzinfo on read; normalize before comparing
+            # against ``digest["start"]`` which is always UTC-aware.
+            if last_sent is not None and last_sent.tzinfo is None:
+                last_sent = last_sent.replace(tzinfo=timezone.utc)
+            if last_sent is not None and last_sent >= digest["start"]:
+                counts["already"] += 1
+                continue
+            try:
+                addr = decrypt_email(sub.email_encrypted)
+            except CryptoUnavailable:
+                logger.error(
+                    "fernet key missing — abort %s digest blast", vertical_name
+                )
+                counts["failed"] += len(rows) - counts["sent"] - counts["already"]
+                break
+            except Exception as exc:
+                logger.warning(
+                    "decrypt failed for sub %d: %s", sub.id, exc
+                )
+                counts["failed"] += 1
+                continue
+
+            personal_html = digest["html"].replace(
+                "__UNSUB_TOKEN__", sub.unsubscribe_token
+            )
+            personal_text = digest["text"].replace(
+                "__UNSUB_TOKEN__", sub.unsubscribe_token
+            )
+            ok = email_sender.send(
+                to=addr,
+                subject=digest["subject"],
+                text_body=personal_text,
+                html_body=personal_html,
+                stream="broadcast",
+            )
+            if ok:
+                sub.last_digest_sent_at = datetime.now(timezone.utc)
+                session.commit()
+                counts["sent"] += 1
+            else:
+                counts["failed"] += 1
+            if sleep_between:
+                sleep(sleep_between)
+
+    logger.info(
+        "[%s] digest blast %s: %s",
+        vertical_name,
+        digest["week_key"],
+        counts,
+    )
+    return counts
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI: ``python -m engine.core.newsletter_generator modelwatch [--print html]``."""
     import argparse
@@ -244,6 +356,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Write the archive page to data/output/<vertical>/digest/<key>/",
     )
     parser.add_argument(
+        "--send",
+        action="store_true",
+        help="Email the digest to confirmed subscribers (idempotent per ISO week)",
+    )
+    parser.add_argument(
         "--print",
         choices=["html", "text", "subject", "summary"],
         default="summary",
@@ -261,6 +378,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     if args.render_archive:
         render_archive(
+            args.vertical, week_offset=args.week_offset, limit=args.limit
+        )
+    if args.send:
+        send_pending_digests(
             args.vertical, week_offset=args.week_offset, limit=args.limit
         )
 

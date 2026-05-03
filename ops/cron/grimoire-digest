@@ -1,0 +1,5 @@
+# Grimoire weekly digest — Sundays 16:00 UTC. Sends the previous full
+# ISO week's stories to confirmed subscribers; idempotent per row.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+0 16 * * 0 deploy /srv/grimoire/ops/run_digest.sh

@@ -156,6 +156,126 @@ class TestGenerateDigest:
         assert len(digest["articles"]) == 2
 
 
+class TestSendPendingDigests:
+    def _seed_subscribers(
+        self,
+        test_engine,
+        encrypted_addr: str,
+        count: int,
+        confirmed: bool = True,
+        token_prefix: str = "unsub-token",
+    ) -> list[int]:
+        from sqlalchemy import select as _select
+
+        from engine.core.db import Subscriber, Vertical
+
+        SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
+        ids: list[int] = []
+        with SM() as s:
+            v_id = s.execute(
+                _select(Vertical).where(Vertical.name == "modelwatch")
+            ).scalar_one().id
+            offset = s.execute(
+                _select(Subscriber).where(Subscriber.vertical_id == v_id)
+            ).scalars().all()
+            offset = len(offset)
+            for i in range(count):
+                idx = offset + i
+                sub = Subscriber(
+                    vertical_id=v_id,
+                    email_hash=f"{token_prefix}-hash-{idx}",
+                    email_encrypted=encrypted_addr,
+                    confirmed=confirmed,
+                    unsubscribe_token=f"{token_prefix}-{idx}",
+                )
+                s.add(sub)
+                s.commit()
+                s.refresh(sub)
+                ids.append(sub.id)
+        return ids
+
+    @pytest.fixture
+    def fernet_env(self, monkeypatch: pytest.MonkeyPatch) -> str:
+        from cryptography.fernet import Fernet
+
+        import engine.handlers.security as sec
+
+        key = Fernet.generate_key().decode("utf-8")
+        monkeypatch.setattr(sec, "SUBSCRIBER_FERNET_KEY", key)
+        monkeypatch.setattr(sec, "SUBSCRIBER_EMAIL_PEPPER", "test")
+        return key
+
+    @pytest.fixture
+    def fake_send(self, monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+        sent: list[dict] = []
+
+        def _stub(**kwargs):
+            sent.append(kwargs)
+            return True
+
+        import engine.handlers.email_sender as mailer
+
+        monkeypatch.setattr(mailer, "send", _stub)
+        return sent
+
+    def test_skips_when_no_articles(
+        self, seeded, fernet_env, fake_send, test_engine
+    ) -> None:
+        from engine.handlers.security import encrypt_email
+
+        self._seed_subscribers(test_engine, encrypt_email("a@example.com"), 2)
+        counts = ng.send_pending_digests(
+            "modelwatch", week_offset=-2, now=seeded
+        )  # week_offset=-2 has no seeded articles
+        assert counts["sent"] == 0
+        assert counts["skipped_no_articles"] == 1
+        assert fake_send == []
+
+    def test_sends_to_confirmed_only(
+        self, seeded, fernet_env, fake_send, test_engine
+    ) -> None:
+        from engine.handlers.security import encrypt_email
+
+        self._seed_subscribers(
+            test_engine, encrypt_email("ok@example.com"), 2, confirmed=True
+        )
+        self._seed_subscribers(
+            test_engine, encrypt_email("pending@example.com"), 1, confirmed=False
+        )
+        counts = ng.send_pending_digests("modelwatch", now=seeded)
+        assert counts["sent"] == 2
+        assert counts["considered"] == 2  # unconfirmed not even queried
+        assert all(m["to"] == "ok@example.com" for m in fake_send)
+
+    def test_idempotent_on_second_run(
+        self, seeded, fernet_env, fake_send, test_engine
+    ) -> None:
+        from engine.handlers.security import encrypt_email
+
+        self._seed_subscribers(test_engine, encrypt_email("ok@example.com"), 1)
+        first = ng.send_pending_digests("modelwatch", now=seeded)
+        second = ng.send_pending_digests("modelwatch", now=seeded)
+        assert first["sent"] == 1
+        assert second["sent"] == 0
+        assert second["already"] == 1
+        assert len(fake_send) == 1
+
+    def test_replaces_unsub_token_per_row(
+        self, seeded, fernet_env, fake_send, test_engine
+    ) -> None:
+        from engine.handlers.security import encrypt_email
+
+        self._seed_subscribers(test_engine, encrypt_email("a@example.com"), 2)
+        ng.send_pending_digests("modelwatch", now=seeded)
+        unsub_links = [
+            m["text_body"].split("/unsubscribe?token=")[1].split()[0]
+            for m in fake_send
+        ]
+        assert "__UNSUB_TOKEN__" not in fake_send[0]["html_body"]
+        assert "__UNSUB_TOKEN__" not in fake_send[0]["text_body"]
+        assert unsub_links == ["unsub-token-0", "unsub-token-1"]
+
+
 class TestRenderArchive:
     def test_writes_index_html(
         self, seeded, tmp_path, monkeypatch: pytest.MonkeyPatch
