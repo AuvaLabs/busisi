@@ -299,7 +299,7 @@ def render_meta_files(
     return paths
 
 
-def render_stories(vertical_name: str, *, limit: int = 200) -> dict[str, Path]:
+def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
     """Render one canonical /story/<slug>/ page per persisted article.
 
     The story page is OUR canonical surface — the front-page card links to

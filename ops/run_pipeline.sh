@@ -19,7 +19,7 @@ set -a; source .env; set +a
 
 for V in "${VERTICALS[@]}"; do
   echo "[$(date -Iseconds)] pipeline start vertical=$V"
-  PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --log-level WARNING || \
+  PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --enrich --enrich-max 20 --log-level WARNING || \
     echo "[$(date -Iseconds)] pipeline FAILED vertical=$V (continuing)"
   PYTHONPATH=. python -m engine.core.output_renderer "$V" --log-level WARNING || \
     echo "[$(date -Iseconds)] render FAILED vertical=$V (continuing)"

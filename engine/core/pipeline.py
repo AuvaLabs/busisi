@@ -32,6 +32,7 @@ from engine.core import (
     deduplicator,
     feed_fetcher,
     feed_loader,
+    summarizer,
 )
 from engine.core.config import vertical_dir
 from engine.core.db import Article, Vertical, get_sessionmaker
@@ -115,6 +116,8 @@ def run_vertical(
     classify: bool = True,
     persist: bool = False,
     scrape: bool = False,
+    enrich: bool = False,
+    enrich_max: int = 20,
 ) -> list[dict[str, Any]]:
     """Run the ingestion pipeline for one vertical and return enriched articles."""
     install_ssrf_guard()
@@ -170,6 +173,13 @@ def run_vertical(
         inserted = _persist_articles(vertical_id, unique)
         logger.info("[%s] persisted %d new articles", vertical_id, inserted)
 
+    if enrich and persist:
+        # Run AFTER persist so we summarise the rows we just stored. Cap per
+        # tick to keep LLM cost predictable; older rows tagged summary_source
+        # = 'feed' are processed oldest-first.
+        counts = summarizer.enrich_pending(vertical_id, max_articles=enrich_max)
+        logger.info("[%s] summariser enrichment: %s", vertical_id, counts)
+
     return unique
 
 
@@ -185,6 +195,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="Insert deduped articles into postgres")
     parser.add_argument("--scrape", action="store_true",
                         help="Fetch full article body via trafilatura")
+    parser.add_argument("--enrich", action="store_true",
+                        help="Run grounded LLM summariser on pending rows")
+    parser.add_argument("--enrich-max", type=int, default=20,
+                        help="Max rows to summarise per call (cron-friendly)")
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
 
@@ -199,6 +213,8 @@ def main(argv: list[str] | None = None) -> int:
         classify=not args.no_classify,
         persist=args.persist,
         scrape=args.scrape,
+        enrich=args.enrich,
+        enrich_max=args.enrich_max,
     )
     print(f"\n=== summary ===\n{len(out)} articles after pipeline\n")
     for article in out[:10]:
