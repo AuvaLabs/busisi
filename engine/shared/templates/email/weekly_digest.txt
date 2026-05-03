@@ -1,0 +1,25 @@
+{{ vertical.display_name }} — week of {{ week_start.strftime('%b %d, %Y') }}
+{% set ruler = "=" * (vertical.display_name | length + 24) %}
+{{ ruler }}
+
+{% if not articles %}
+Quiet week — no major stories cleared the editorial bar.
+We'll be back next week.
+
+{% else %}
+{% for a in articles %}
+{{ loop.index }}. {{ a.title }}
+   {{ a.feed_region }}{% if a.published_at %} · {{ a.published_at.strftime('%a %b %d') }}{% endif %}
+
+   {{ a.summary }}
+{% if a.why_this_matters %}
+   Why this matters: {{ a.why_this_matters }}
+{% endif %}
+   Read more: {{ a.story_path }}
+
+{% endfor %}
+{% endif %}
+---
+Read online: /digest/{{ week_key }}/
+Unsubscribe: /unsubscribe?token=__UNSUB_TOKEN__
+{{ vertical.display_name }} is operated by Auva Labs FZE.
