@@ -165,5 +165,24 @@ class TestRenderArchive:
         monkeypatch.setattr(ng_mod, "DATA_DIR", tmp_path)
         path = ng.render_archive("modelwatch", now=seeded)
         assert path.exists()
-        assert path.read_text(encoding="utf-8").startswith("<!doctype html>")
+        body = path.read_text(encoding="utf-8")
+        assert body.startswith("<!doctype html>")
         assert "/digest/" in str(path)
+
+    def test_archive_uses_branded_template(
+        self, seeded, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The on-site archive must extend base.html (with nav + footer),
+        not the email-styled inline-table body."""
+        import engine.core.newsletter_generator as ng_mod
+
+        monkeypatch.setattr(ng_mod, "DATA_DIR", tmp_path)
+        path = ng.render_archive("modelwatch", now=seeded)
+        body = path.read_text(encoding="utf-8")
+        # base.html chrome (nav + footer with /privacy link)
+        assert 'data-vertical="modelwatch"' in body
+        assert "/privacy" in body
+        # Branded class names from digest_archive.html
+        assert "digest-stories" in body
+        # NOT the email's 600px inline-table layout
+        assert 'role="presentation"' not in body

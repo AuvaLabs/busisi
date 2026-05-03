@@ -178,6 +178,31 @@ def _output_dir(vertical_name: str) -> Path:
     return DATA_DIR / "output" / vertical_name
 
 
+def _render_archive_html(digest: dict[str, Any]) -> str:
+    """Render the branded on-site archive page (extends base.html).
+
+    Distinct from ``digest["html"]``, which is the email-styled body kept
+    for the email send path. Visitors hitting ``/digest/<key>/`` see the
+    full site chrome (nav, footer, accent colours).
+    """
+    env = _env()
+    vertical = digest["vertical"]
+    archive_path = f"/digest/{digest['week_key']}/"
+    return env.get_template("digest_archive.html").render(
+        vertical=vertical,
+        week_key=digest["week_key"],
+        week_start=digest["start"],
+        week_end=digest["end"],
+        articles=digest["articles"],
+        title=f"Weekly digest · {digest['week_key']}",
+        description=(
+            f"{vertical['display_name']} weekly digest — week of "
+            f"{digest['start']:%b %d, %Y}."
+        ),
+        canonical_url=archive_path,
+    )
+
+
 def render_archive(
     vertical_name: str,
     *,
@@ -191,7 +216,7 @@ def render_archive(
     out_dir = _output_dir(vertical_name) / "digest" / digest["week_key"]
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / "index.html"
-    path.write_text(digest["html"], encoding="utf-8")
+    path.write_text(_render_archive_html(digest), encoding="utf-8")
     logger.info(
         "rendered digest archive -> %s (%d stories)",
         path,

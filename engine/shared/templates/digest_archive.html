@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .digest-header { padding: 1rem 0 1.5rem 0; border-bottom: 1px solid var(--rule); margin-bottom: 1.5rem; }
+    .digest-eyebrow {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      margin: 0 0 0.4rem 0;
+    }
+    .digest-eyebrow .accent { color: var(--accent); }
+    .digest-title {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 2rem;
+      line-height: 1.2;
+      margin: 0;
+    }
+    .digest-stories { list-style: none; padding: 0; margin: 0; }
+    .digest-stories > li { padding: 1.5rem 0; border-bottom: 1px solid var(--rule); }
+    .digest-stories > li:last-child { border-bottom: 0; }
+    .digest-story-title {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 1.45rem;
+      line-height: 1.3;
+      margin: 0 0 0.4rem 0;
+    }
+    .digest-story-title a { color: var(--text); }
+    .digest-story-title a:hover { color: var(--accent); text-decoration: none; }
+    .digest-meta {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      margin: 0 0 0.6rem 0;
+    }
+    .digest-meta .region { color: var(--accent); }
+    .digest-summary { font-size: 1rem; line-height: 1.65; margin: 0; color: var(--text); }
+    .digest-wtm {
+      margin: 0.6rem 0 0 0;
+      padding: 0.6rem 0.9rem;
+      background: var(--bg-elev);
+      border-left: 3px solid var(--accent);
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      line-height: 1.55;
+      color: var(--text-mute);
+    }
+    .digest-wtm strong { color: var(--text); }
+    .digest-empty { color: var(--text-mute); padding: 2rem 0; }
+{% endblock %}
+
+{% block content %}
+<header class="digest-header">
+  <p class="digest-eyebrow">
+    Weekly digest <span class="accent">·</span>
+    {{ week_start.strftime('%b %d') }} – {{ week_end.strftime('%b %d, %Y') }}
+  </p>
+  <h1 class="digest-title">The week in {{ vertical.display_name }}</h1>
+</header>
+
+{% if not articles %}
+  <p class="digest-empty">Quiet week — no major stories cleared the editorial bar. We&rsquo;ll be back next week.</p>
+{% else %}
+  <ul class="digest-stories">
+    {% for a in articles %}
+      <li>
+        <h2 class="digest-story-title">
+          <a href="{{ a.story_path }}">{{ a.title }}</a>
+        </h2>
+        <p class="digest-meta">
+          <span class="region">{{ a.feed_region }}</span>
+          {% if a.published_at %} · {{ a.published_at.strftime('%a %b %d') }}{% endif %}
+        </p>
+        <p class="digest-summary">{{ a.summary }}</p>
+        {% if a.why_this_matters %}
+          <p class="digest-wtm">
+            <strong>Why this matters:</strong> {{ a.why_this_matters }}
+          </p>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}
