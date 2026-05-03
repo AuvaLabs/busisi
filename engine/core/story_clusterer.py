@@ -32,6 +32,7 @@ from sqlalchemy import select
 
 from engine.core.db import (
     Article,
+    ArticleEntity,
     Story,
     StoryArticle,
     Vertical,
@@ -112,8 +113,18 @@ def _already_clustered(session, article_ids: list[int]) -> set[int]:
     return set(rows)
 
 
-def _build_clusters(articles: list[Article]) -> list[list[int]]:
-    """Return clusters of indices into ``articles`` (size >= 2 only)."""
+def _build_clusters(
+    articles: list[Article],
+    *,
+    entity_sets: list[frozenset[int]] | None = None,
+) -> list[list[int]]:
+    """Return clusters of indices into ``articles`` (size >= 2 only).
+
+    When ``entity_sets`` is provided (Phase 14b), an edge between two
+    articles requires title-overlap ≥ threshold AND ≥1 shared entity.
+    Articles with no extracted entities (empty set) bypass the entity
+    check so partially-extracted corpora keep clustering.
+    """
     if not articles:
         return []
 
@@ -136,8 +147,15 @@ def _build_clusters(articles: list[Article]) -> list[list[int]]:
                 if key in seen_pairs:
                     continue
                 seen_pairs.add(key)
-                if _word_overlap_ratio(shingles[a], shingles[b]) >= _CLUSTER_THRESHOLD:
-                    uf.union(a, b)
+                if _word_overlap_ratio(shingles[a], shingles[b]) < _CLUSTER_THRESHOLD:
+                    continue
+                if entity_sets is not None:
+                    ea, eb = entity_sets[a], entity_sets[b]
+                    # Both have entities → require ≥1 shared.
+                    # Either side empty → fall back to title-only.
+                    if ea and eb and not (ea & eb):
+                        continue
+                uf.union(a, b)
 
     grouped: dict[int, list[int]] = defaultdict(list)
     for i in range(len(articles)):
@@ -149,13 +167,31 @@ def _build_clusters(articles: list[Article]) -> list[list[int]]:
     ]
 
 
+def _entity_sets_by_index(
+    session, article_ids: list[int]
+) -> list[frozenset[int]]:
+    """Return ``[frozenset(entity_ids), …]`` aligned to ``article_ids`` order."""
+    if not article_ids:
+        return []
+    rows = session.execute(
+        select(ArticleEntity.article_id, ArticleEntity.entity_id).where(
+            ArticleEntity.article_id.in_(article_ids)
+        )
+    ).all()
+    by_article: dict[int, set[int]] = defaultdict(set)
+    for aid, eid in rows:
+        by_article[aid].add(eid)
+    return [frozenset(by_article.get(aid, ())) for aid in article_ids]
+
+
 def cluster_articles(
     vertical_name: str, *, days: int = _DEFAULT_DAYS, now: datetime | None = None
 ) -> list[list[int]]:
     """Return clusters of article *ids* (size >= 2) inside the window.
 
     Articles already linked to an existing Story are excluded so re-runs
-    only consider fresh candidates.
+    only consider fresh candidates. Edges require both title overlap AND
+    (when both sides have extracted entities) ≥1 shared entity.
     """
     now = now or datetime.now(timezone.utc)
     since = now - timedelta(days=days)
@@ -171,7 +207,9 @@ def cluster_articles(
             return []
         already = _already_clustered(session, [a.id for a in articles])
         free_articles = [a for a in articles if a.id not in already]
-        clusters = _build_clusters(free_articles)
+        free_ids = [a.id for a in free_articles]
+        entity_sets = _entity_sets_by_index(session, free_ids)
+        clusters = _build_clusters(free_articles, entity_sets=entity_sets)
         return [[free_articles[i].id for i in members] for members in clusters]
 
 

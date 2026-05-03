@@ -21,6 +21,11 @@ for V in "${VERTICALS[@]}"; do
   echo "[$(date -Iseconds)] pipeline start vertical=$V"
   PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --enrich --enrich-max 20 --log-level WARNING || \
     echo "[$(date -Iseconds)] pipeline FAILED vertical=$V (continuing)"
+  # Extract named entities. --max 10 caps per-tick LLM cost; backfill of
+  # the historical corpus drains organically. Idempotent via
+  # Article.entities_extracted_at.
+  PYTHONPATH=. python -m engine.core.entity_extractor "$V" --max 10 --sleep 1 --log-level WARNING || \
+    echo "[$(date -Iseconds)] entities FAILED vertical=$V (continuing)"
   # Cluster fresh articles into multi-source Story rows BEFORE rendering so
   # the front page picks up new clusters this tick. Idempotent — articles
   # already linked to a Story are skipped.

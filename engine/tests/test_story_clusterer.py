@@ -11,7 +11,15 @@ from sqlalchemy.pool import StaticPool
 
 import engine.core.db as db_module
 from engine.core import story_clusterer as sc
-from engine.core.db import Article, Base, Story, StoryArticle, Vertical
+from engine.core.db import (
+    Article,
+    ArticleEntity,
+    Base,
+    Entity,
+    Story,
+    StoryArticle,
+    Vertical,
+)
 
 
 @pytest.fixture
@@ -156,3 +164,80 @@ class TestPersist:
         assert first["stories_created"] == 1
         assert second["stories_created"] == 0
         assert second["clusters"] == 0
+
+
+def _link_entities(
+    test_engine, vertical_id: int, slug_to_articles: dict[str, list[str]]
+) -> None:
+    """Create Entity rows + ArticleEntity links keyed by article slug.
+
+    ``slug_to_articles = {"anthropic": ["slug-0", "slug-1"]}`` means
+    entity Anthropic links to articles slug-0 and slug-1.
+    """
+    SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
+    with SM() as s:
+        for ent_slug, art_slugs in slug_to_articles.items():
+            ent = Entity(
+                vertical_id=vertical_id,
+                type="lab",
+                name=ent_slug.title(),
+                slug=ent_slug,
+            )
+            s.add(ent)
+            s.flush()
+            for art_slug in art_slugs:
+                art = s.execute(
+                    sc.select(Article).where(Article.slug == art_slug)
+                ).scalar_one()
+                s.add(ArticleEntity(article_id=art.id, entity_id=ent.id))
+        s.commit()
+
+
+class TestEntityOverlap:
+    def test_shared_entity_required_when_both_have_entities(
+        self, test_engine, now
+    ) -> None:
+        v_id = _seed(
+            test_engine,
+            [
+                # Same vague boilerplate — title overlap will pass.
+                ("Re Personal Investments thread one", 5),
+                ("Re Personal Investments thread two", 4),
+            ],
+        )
+        # Give them DIFFERENT entities so the entity rule blocks clustering.
+        _link_entities(test_engine, v_id, {"vanguard": ["slug-0"]})
+        _link_entities(test_engine, v_id, {"fidelity": ["slug-1"]})
+        clusters = sc.cluster_articles("modelwatch", days=7, now=now)
+        assert clusters == []
+
+    def test_shared_entity_allows_cluster(self, test_engine, now) -> None:
+        v_id = _seed(
+            test_engine,
+            [
+                ("Anthropic launches Claude 5 with new tool use", 5),
+                ("Anthropic releases Claude 5 to enterprise", 4),
+            ],
+        )
+        _link_entities(
+            test_engine, v_id, {"anthropic": ["slug-0", "slug-1"]}
+        )
+        clusters = sc.cluster_articles("modelwatch", days=7, now=now)
+        assert len(clusters) == 1
+        assert len(clusters[0]) == 2
+
+    def test_one_side_lacks_entities_falls_back_to_title(
+        self, test_engine, now
+    ) -> None:
+        v_id = _seed(
+            test_engine,
+            [
+                ("Pentagon AI cloud deals with multiple providers a", 5),
+                ("Pentagon AI cloud deals with multiple providers b", 4),
+            ],
+        )
+        # Only one of the two has entities — the other has none, so the
+        # entity check is skipped and title overlap alone wins.
+        _link_entities(test_engine, v_id, {"pentagon": ["slug-0"]})
+        clusters = sc.cluster_articles("modelwatch", days=7, now=now)
+        assert len(clusters) == 1
