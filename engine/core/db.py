@@ -127,6 +127,11 @@ class Article(Base):
     )
     labels: Mapped[Any] = mapped_column(JSON, nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Set by entity_extractor on success. NULL = still pending, so backfill
+    # batches don't re-pay LLM cost on rows we already processed.
+    entities_extracted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
     vertical: Mapped[Vertical] = relationship(back_populates="articles")
 
