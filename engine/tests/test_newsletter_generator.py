@@ -289,6 +289,32 @@ class TestRenderArchive:
         assert body.startswith("<!doctype html>")
         assert "/digest/" in str(path)
 
+    def test_index_lists_existing_archives(
+        self, seeded, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import engine.core.newsletter_generator as ng_mod
+
+        monkeypatch.setattr(ng_mod, "DATA_DIR", tmp_path)
+        # Render two weeks first so the index has something to list.
+        ng.render_archive("modelwatch", week_offset=0, now=seeded)
+        ng.render_archive("modelwatch", week_offset=-1, now=seeded)
+        idx = ng.render_digest_index("modelwatch")
+        body = idx.read_text(encoding="utf-8")
+        assert "2026-W19" in body
+        assert "2026-W18" in body
+        # Newest first.
+        assert body.index("2026-W19") < body.index("2026-W18")
+
+    def test_index_when_empty(
+        self, seeded, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import engine.core.newsletter_generator as ng_mod
+
+        monkeypatch.setattr(ng_mod, "DATA_DIR", tmp_path)
+        idx = ng.render_digest_index("modelwatch")
+        body = idx.read_text(encoding="utf-8")
+        assert "No digests published yet" in body
+
     def test_archive_uses_branded_template(
         self, seeded, tmp_path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

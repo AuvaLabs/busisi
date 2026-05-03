@@ -337,6 +337,72 @@ def send_pending_digests(
     return counts
 
 
+def _parse_week_key(week_key: str) -> datetime | None:
+    """Parse ``YYYY-Www`` into the Monday 00:00 UTC of that ISO week."""
+    try:
+        year_str, w_str = week_key.split("-W")
+        return datetime.fromisocalendar(int(year_str), int(w_str), 1).replace(
+            tzinfo=timezone.utc
+        )
+    except (ValueError, IndexError):
+        return None
+
+
+def render_digest_index(vertical_name: str) -> Path:
+    """Build /digest/index.html listing every archived week, newest first.
+
+    Reads the on-disk archive directories under
+    ``data/output/<vertical>/digest/`` so the index is a true reflection of
+    what is actually published — no stale DB rows.
+    """
+    out_dir = _output_dir(vertical_name) / "digest"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    weeks: list[dict[str, Any]] = []
+    for entry in sorted(out_dir.iterdir(), reverse=True):
+        if not entry.is_dir():
+            continue
+        idx = entry / "index.html"
+        if not idx.exists():
+            continue
+        start = _parse_week_key(entry.name)
+        if start is None:
+            continue
+        end = start + timedelta(days=7)
+        # Story count: count <li> in .digest-stories — cheap and avoids a
+        # second pass through the DB just for the index.
+        body = idx.read_text(encoding="utf-8", errors="ignore")
+        n_stories = body.count("<li>")
+        weeks.append(
+            {
+                "week_key": entry.name,
+                "label_start": start.strftime("%b %d, %Y"),
+                "label_end": end.strftime("%b %d, %Y"),
+                "n_stories": n_stories,
+                "path": f"/digest/{entry.name}/",
+            }
+        )
+
+    vertical = _vertical_meta(vertical_name)
+    env = _env()
+    html = env.get_template("digest_index.html").render(
+        vertical=vertical,
+        weeks=weeks,
+        title=f"{vertical['display_name']} digest archive",
+        description=(
+            f"Weekly {vertical['display_name']} digests — every issue we've "
+            f"published, archived for reference."
+        ),
+        canonical_url="/digest/",
+    )
+    idx_path = out_dir / "index.html"
+    idx_path.write_text(html, encoding="utf-8")
+    logger.info(
+        "rendered digest index -> %s (%d weeks)", idx_path, len(weeks)
+    )
+    return idx_path
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI: ``python -m engine.core.newsletter_generator modelwatch [--print html]``."""
     import argparse
@@ -380,6 +446,9 @@ def main(argv: list[str] | None = None) -> int:
         render_archive(
             args.vertical, week_offset=args.week_offset, limit=args.limit
         )
+        # Always refresh the index when an archive is rebuilt — cheap and
+        # keeps /digest/ in sync.
+        render_digest_index(args.vertical)
     if args.send:
         send_pending_digests(
             args.vertical, week_offset=args.week_offset, limit=args.limit

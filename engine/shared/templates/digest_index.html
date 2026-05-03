@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .di-header { padding: 0.5rem 0 1.5rem 0; border-bottom: 1px solid var(--rule); margin-bottom: 1.5rem; }
+    .di-eyebrow {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      margin: 0 0 0.4rem 0;
+    }
+    .di-title { font-family: var(--serif); font-weight: 500; font-size: 1.85rem; line-height: 1.2; margin: 0; }
+    .di-blurb { color: var(--text-mute); font-size: 1rem; line-height: 1.55; margin: 0.6rem 0 0; max-width: 42rem; }
+    .di-list { list-style: none; padding: 0; margin: 0; }
+    .di-list > li { padding: 0.95rem 0; border-bottom: 1px solid var(--rule); display: flex; align-items: baseline; gap: 1rem; }
+    .di-list > li:last-child { border-bottom: 0; }
+    .di-week {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--text-faint);
+      flex: 0 0 6rem;
+    }
+    .di-range {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      flex: 1 1 auto;
+    }
+    .di-range a { color: var(--text); }
+    .di-range a:hover { color: var(--accent); text-decoration: none; }
+    .di-count { font-family: var(--sans); font-size: 0.8rem; color: var(--text-mute); }
+    .di-empty { color: var(--text-mute); padding: 2rem 0; }
+{% endblock %}
+
+{% block content %}
+<header class="di-header">
+  <p class="di-eyebrow">Weekly digests</p>
+  <h1 class="di-title">{{ vertical.display_name }} archive</h1>
+  <p class="di-blurb">A weekly recap of the stories that cleared our editorial bar — emailed Sundays, archived here forever.</p>
+</header>
+
+{% if not weeks %}
+  <p class="di-empty">No digests published yet. Check back next Monday.</p>
+{% else %}
+  <ul class="di-list">
+    {% for w in weeks %}
+      <li>
+        <span class="di-week">{{ w.week_key }}</span>
+        <span class="di-range">
+          <a href="{{ w.path }}">Week of {{ w.label_start }}</a>
+        </span>
+        <span class="di-count">{{ w.n_stories }} {{ 'story' if w.n_stories == 1 else 'stories' }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}

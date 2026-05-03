@@ -18,6 +18,8 @@ set -a; source .env; set +a
 
 for V in "${VERTICALS[@]}"; do
   echo "[$(date -Iseconds)] digest start vertical=$V"
+  # --render-archive triggers an index rebuild as well, so the /digest/
+  # listing always reflects the latest week.
   PYTHONPATH=. python -m engine.core.newsletter_generator "$V" \
       --week-offset -1 --render-archive --send --log-level INFO || \
     echo "[$(date -Iseconds)] digest FAILED vertical=$V (continuing)"
