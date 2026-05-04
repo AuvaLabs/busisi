@@ -452,6 +452,33 @@ def _siblings_map(
     return out
 
 
+def _entities_map(
+    session, article_ids: list[int]
+) -> dict[int, list[dict[str, Any]]]:
+    """Return ``{article_id: [{type, slug, name, path}, ...]}`` in one query.
+
+    Empty list for articles with no extracted entities."""
+    if not article_ids:
+        return {}
+    rows = session.execute(
+        select(ArticleEntity.article_id, Entity)
+        .join(Entity, Entity.id == ArticleEntity.entity_id)
+        .where(ArticleEntity.article_id.in_(article_ids))
+        .order_by(Entity.type.asc(), Entity.name.asc())
+    ).all()
+    out: dict[int, list[dict[str, Any]]] = {}
+    for aid, ent in rows:
+        out.setdefault(aid, []).append(
+            {
+                "type": ent.type,
+                "slug": ent.slug,
+                "name": ent.name,
+                "path": f"/entity/{ent.type}/{ent.slug}/",
+            }
+        )
+    return out
+
+
 def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
     """Render one canonical /story/<slug>/ page per persisted article.
 
@@ -483,7 +510,9 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
             .scalars()
             .all()
         )
-        siblings_by_id = _siblings_map(session, [a.id for a in rows])
+        article_ids = [a.id for a in rows]
+        siblings_by_id = _siblings_map(session, article_ids)
+        entities_by_id = _entities_map(session, article_ids)
 
     env = _env()
     base_dir = _output_dir(vertical_name) / "story"
@@ -502,6 +531,7 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
             "published_human": _human_age(a.published_at),
             "labels": a.labels or [],
             "siblings": siblings_by_id.get(a.id, []),
+            "entities": entities_by_id.get(a.id, []),
         }
         ctx = {
             "vertical": vertical_ctx,

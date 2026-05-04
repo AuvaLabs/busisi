@@ -260,6 +260,64 @@ class TestRenderStoriesSiblings:
         assert "/story/cluster-1/" in body
         assert "/story/cluster-2/" in body
 
+    def test_entity_chips_render_on_story_page(
+        self, test_engine, repo_templates, output_root
+    ) -> None:
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
+
+        from engine.core.db import (
+            Article,
+            ArticleEntity,
+            Entity,
+            Vertical,
+        )
+
+        SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
+        with SM() as s:
+            v = Vertical(name="modelwatch", display_name="Modelwatch")
+            s.add(v)
+            s.commit()
+            s.refresh(v)
+            a = Article(
+                vertical_id=v.id,
+                hash="h1",
+                slug="claude-5-launch",
+                title="Anthropic launches Claude 5",
+                link="https://example.com/c5",
+                source="https://example.com/feed",
+                feed_region="US",
+                summary="x",
+                summary_source="llm",
+                published_at=_dt(2026, 5, 4, tzinfo=_tz.utc),
+            )
+            s.add(a)
+            s.commit()
+            s.refresh(a)
+            e1 = Entity(vertical_id=v.id, type="lab", name="Anthropic", slug="anthropic")
+            e2 = Entity(vertical_id=v.id, type="model", name="Claude 5", slug="claude-5")
+            s.add_all([e1, e2])
+            s.commit()
+            s.add_all(
+                [
+                    ArticleEntity(article_id=a.id, entity_id=e1.id),
+                    ArticleEntity(article_id=a.id, entity_id=e2.id),
+                ]
+            )
+            s.commit()
+        renderer.render_stories("modelwatch")
+        body = (
+            output_root
+            / "output"
+            / "modelwatch"
+            / "story"
+            / "claude-5-launch"
+            / "index.html"
+        ).read_text(encoding="utf-8")
+        assert 'class="entity-chips"' in body
+        assert "/entity/lab/anthropic/" in body
+        assert "/entity/model/claude-5/" in body
+
     def test_orphan_article_keeps_simple_sources(
         self, test_engine, repo_templates, output_root
     ) -> None:

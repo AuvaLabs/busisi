@@ -63,6 +63,33 @@
     .sources ul { list-style: none; padding: 0; margin: 0; }
     .sources li { margin: 0 0 0.5rem 0; font-family: var(--sans); font-size: 0.875rem; }
     .sources li .pub { color: var(--text); font-weight: 500; }
+    .entity-chips {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1.5rem 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 0.5rem;
+    }
+    .entity-chips li {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.3rem;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      background: var(--bg-elev);
+    }
+    .entity-chips li .ent-type {
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .entity-chips li a { color: var(--text); }
+    .entity-chips li a:hover { color: var(--accent); text-decoration: none; }
     .labels {
       font-family: var(--sans);
       font-size: 0.75rem;
@@ -88,6 +115,17 @@
     <span class="region">{{ article.feed_region }}</span>
     {% if article.source_short %} · <span class="source">primary source: {{ article.source_short }}</span>{% endif %}
   </p>
+
+  {% if article.entities %}
+    <ul class="entity-chips" aria-label="Tagged entities">
+      {% for e in article.entities %}
+        <li>
+          <span class="ent-type">{{ e.type }}</span>
+          <a href="{{ e.path }}">{{ e.name }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
 
   {% if article.summary_source == 'feed' %}
     <p class="summary-banner">
