@@ -1,0 +1,314 @@
+"""Tests for engine.core.researcher (Phase 22e)."""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+import pytest
+import responses
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+import engine.core.db as db_module
+from engine.core import researcher as r
+from engine.core.db import (
+    Article,
+    ArticleEntity,
+    Base,
+    Entity,
+    ResearchBundle,
+    Vertical,
+)
+
+
+@pytest.fixture
+def test_engine(monkeypatch: pytest.MonkeyPatch):
+    eng = create_engine(
+        "sqlite://",
+        future=True,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(eng)
+    monkeypatch.setattr(db_module, "_engine", eng)
+    yield eng
+
+
+@pytest.fixture
+def stub_ssrf(monkeypatch: pytest.MonkeyPatch):
+    from engine.core import safe_http
+
+    monkeypatch.setattr(safe_http, "install_ssrf_guard", lambda: None)
+
+
+def _seed_researcher_article(test_engine, *, with_entities: int = 2) -> int:
+    SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
+    with SM() as s:
+        v = Vertical(name="modelwatch", display_name="Modelwatch")
+        s.add(v)
+        s.commit()
+        s.refresh(v)
+        a = Article(
+            vertical_id=v.id,
+            hash="h-1",
+            slug="anthropic-claude-5",
+            title="Anthropic launches Claude 5",
+            link="https://example.com/c5",
+            source="https://example.com/feed",
+            feed_region="US",
+            summary="thin source",
+            summary_source="feed",
+            published_at=datetime(2026, 5, 4, tzinfo=timezone.utc),
+            curator_tier="researcher",
+            curator_score=0.55,
+            curator_signals={},
+            curator_version=1,
+        )
+        s.add(a)
+        s.commit()
+        s.refresh(a)
+        for i, name in enumerate(["Anthropic", "Claude 5"][:with_entities]):
+            e = Entity(
+                vertical_id=v.id,
+                type="lab" if i == 0 else "model",
+                name=name,
+                slug=name.lower().replace(" ", "-"),
+            )
+            s.add(e)
+            s.commit()
+            s.refresh(e)
+            s.add(ArticleEntity(article_id=a.id, entity_id=e.id))
+        s.commit()
+        return a.id
+
+
+_ARXIV_FEED = """<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>http://arxiv.org/abs/2501.12345v1</id>
+    <link href="http://arxiv.org/abs/2501.12345v1"/>
+    <title>Anthropic releases Claude 5: A constitutional AI follow-up</title>
+    <summary>This paper studies the deployment of Claude 5 by Anthropic.</summary>
+  </entry>
+</feed>
+"""
+
+
+_EXA_PAYLOAD = {
+    "results": [
+        {
+            "title": "Anthropic announces Claude 5 — TechCrunch",
+            "url": "https://techcrunch.com/2026/05/04/anthropic-claude-5",
+            "text": "Anthropic on Monday announced Claude 5, a substantial upgrade to its flagship model.",
+        }
+    ]
+}
+
+
+class TestExpandQueries:
+    def test_title_only(self) -> None:
+        a = Article(
+            title="OpenAI signs Pentagon AI deal",
+            source="x",
+            hash="x",
+            slug="x",
+            link="x",
+            vertical_id=1,
+        )
+        assert r.expand_queries(a, []) == ["OpenAI signs Pentagon AI deal"]
+
+    def test_title_plus_entity(self) -> None:
+        a = Article(
+            title="OpenAI deal",
+            source="x",
+            hash="x",
+            slug="x",
+            link="x",
+            vertical_id=1,
+        )
+        e = Entity(type="lab", name="OpenAI", slug="openai", vertical_id=1)
+        out = r.expand_queries(a, [e])
+        assert any("OpenAI" in q for q in out)
+
+    def test_dedup(self) -> None:
+        a = Article(
+            title="OpenAI",
+            source="x",
+            hash="x",
+            slug="x",
+            link="x",
+            vertical_id=1,
+        )
+        e = Entity(type="lab", name="OpenAI", slug="openai", vertical_id=1)
+        out = r.expand_queries(a, [e])
+        assert len(out) == len({q.lower() for q in out})
+
+
+class TestArxiv:
+    @responses.activate
+    def test_parses_atom(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from engine.core import config as cfg
+
+        monkeypatch.setattr(r, "ARXIV_ENABLED", True)
+        responses.add(
+            responses.GET,
+            cfg.ARXIV_ENDPOINT,
+            body=_ARXIV_FEED,
+            status=200,
+            content_type="application/atom+xml",
+        )
+        results = r.search_arxiv("Anthropic Claude 5")
+        assert len(results) == 1
+        assert results[0]["host"] == "arxiv.org"
+        assert "Claude 5" in results[0]["title"]
+
+    def test_disabled(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(r, "ARXIV_ENABLED", False)
+        assert r.search_arxiv("anything") == []
+
+    @responses.activate
+    def test_non_200_returns_empty(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from engine.core import config as cfg
+
+        monkeypatch.setattr(r, "ARXIV_ENABLED", True)
+        responses.add(responses.GET, cfg.ARXIV_ENDPOINT, status=500)
+        assert r.search_arxiv("query") == []
+
+
+class TestExa:
+    @responses.activate
+    def test_returns_results_when_keyed(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from engine.core import config as cfg
+
+        monkeypatch.setattr(r, "EXA_API_KEY", "test_key_123")
+        responses.add(
+            responses.POST, cfg.EXA_ENDPOINT, json=_EXA_PAYLOAD, status=200
+        )
+        results = r.search_exa("Anthropic Claude 5")
+        assert len(results) == 1
+        assert results[0]["host"] == "techcrunch.com"
+
+    def test_empty_key_returns_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(r, "EXA_API_KEY", "")
+        assert r.search_exa("anything") == []
+
+    @responses.activate
+    def test_non_200_returns_empty(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from engine.core import config as cfg
+
+        monkeypatch.setattr(r, "EXA_API_KEY", "k")
+        responses.add(responses.POST, cfg.EXA_ENDPOINT, status=403)
+        assert r.search_exa("q") == []
+
+
+class TestPersistBundle:
+    def test_writes_rows_and_marks_article(
+        self, test_engine, stub_ssrf
+    ) -> None:
+        aid = _seed_researcher_article(test_engine)
+        docs = [
+            {
+                "url": "https://arxiv.org/abs/2501.12345",
+                "host": "arxiv.org",
+                "title": "Paper",
+                "text": "Abstract paragraph.",
+            },
+            {
+                "url": "https://techcrunch.com/2026/05/04/anthropic-claude-5",
+                "host": "techcrunch.com",
+                "title": "TechCrunch",
+                "text": "News write-up.",
+            },
+        ]
+        n = r.persist_bundle(aid, docs)
+        assert n == 2
+        SM = sessionmaker(test_engine, future=True)
+        with SM() as s:
+            rows = s.execute(select(ResearchBundle)).scalars().all()
+            assert len(rows) == 2
+            assert rows[0].article_id == aid
+            assert rows[0].sha256 != ""
+            article = s.get(Article, aid)
+            assert article.researched_at is not None
+
+    def test_replaces_prior_bundle(self, test_engine, stub_ssrf) -> None:
+        aid = _seed_researcher_article(test_engine)
+        r.persist_bundle(
+            aid,
+            [
+                {
+                    "url": "https://a.example/",
+                    "host": "a.example",
+                    "title": "x",
+                    "text": "x",
+                }
+            ],
+        )
+        r.persist_bundle(
+            aid,
+            [
+                {
+                    "url": "https://b.example/",
+                    "host": "b.example",
+                    "title": "y",
+                    "text": "y",
+                }
+            ],
+        )
+        SM = sessionmaker(test_engine, future=True)
+        with SM() as s:
+            rows = s.execute(select(ResearchBundle)).scalars().all()
+            assert len(rows) == 1
+            assert rows[0].host == "b.example"
+
+
+class TestResearchPending:
+    @responses.activate
+    def test_researches_pending_with_arxiv_only(
+        self, test_engine, stub_ssrf, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from engine.core import config as cfg
+
+        monkeypatch.setattr(r, "ARXIV_ENABLED", True)
+        monkeypatch.setattr(r, "EXA_API_KEY", "")
+        responses.add(
+            responses.GET,
+            cfg.ARXIV_ENDPOINT,
+            body=_ARXIV_FEED,
+            status=200,
+            content_type="application/atom+xml",
+        )
+        _seed_researcher_article(test_engine)
+        counts = r.research_pending("modelwatch", max_articles=5)
+        assert counts["considered"] == 1
+        assert counts["researched"] == 1
+        assert counts["empty"] == 0
+
+    @responses.activate
+    def test_empty_when_no_results(
+        self, test_engine, stub_ssrf, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from engine.core import config as cfg
+
+        monkeypatch.setattr(r, "ARXIV_ENABLED", True)
+        monkeypatch.setattr(r, "EXA_API_KEY", "")
+        responses.add(
+            responses.GET,
+            cfg.ARXIV_ENDPOINT,
+            body='<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"></feed>',
+            status=200,
+        )
+        _seed_researcher_article(test_engine)
+        counts = r.research_pending("modelwatch", max_articles=5)
+        assert counts["empty"] == 1
+        SM = sessionmaker(test_engine, future=True)
+        with SM() as s:
+            article = s.execute(select(Article)).scalar_one()
+            assert article.researched_at is not None

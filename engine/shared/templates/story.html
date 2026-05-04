@@ -196,6 +196,21 @@
   }
   </script>
 
+  {% if article.research %}
+    <section class="sources" style="margin-top: 2rem;">
+      <h2>Context we found ({{ article.research | length }})</h2>
+      <ul>
+        {% for r in article.research %}
+          <li>
+            <span class="pub">{{ r.host }}</span> —
+            <a href="{{ r.url }}" rel="noopener nofollow" target="_blank">{{ r.url }} ↗</a>
+            {% if r.excerpt %}<div style="color: var(--text-mute); font-size: 0.85rem; margin-top: 0.2rem;">{{ r.excerpt }}…</div>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
   <section class="sources">
     <h2>
       {% if article.siblings %}

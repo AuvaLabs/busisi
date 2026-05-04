@@ -76,6 +76,32 @@ HANDLER_RATE_LIMIT_PER_5MIN: Final[int] = int(
     os.environ.get("HANDLER_RATE_LIMIT_PER_5MIN", "10")
 )
 
+# ---- Researcher (Phase 22e) — web/scholar fetches for thin-source articles ----
+# Exa.ai semantic search — empty key disables Exa and the researcher
+# falls back to arXiv-only (still useful for ML/AI articles).
+EXA_API_KEY: Final[str] = os.environ.get("EXA_API_KEY", "")
+EXA_ENDPOINT: Final[str] = os.environ.get(
+    "EXA_ENDPOINT", "https://api.exa.ai/search"
+)
+ARXIV_ENABLED: Final[bool] = os.environ.get("ARXIV_ENABLED", "1") not in (
+    "0",
+    "false",
+    "False",
+    "",
+)
+ARXIV_ENDPOINT: Final[str] = os.environ.get(
+    "ARXIV_ENDPOINT", "https://export.arxiv.org/api/query"
+)
+RESEARCH_MAX_PER_TICK: Final[int] = int(
+    os.environ.get("RESEARCH_MAX_PER_TICK", "5")
+)
+RESEARCH_QUERY_TIMEOUT: Final[float] = float(
+    os.environ.get("RESEARCH_QUERY_TIMEOUT", "10")
+)
+RESEARCH_BUNDLE_SIZE: Final[int] = int(
+    os.environ.get("RESEARCH_BUNDLE_SIZE", "5")
+)
+
 # ---- Logging ----
 LOG_LEVEL: Final[str] = os.environ.get("LOG_LEVEL", "INFO")
 

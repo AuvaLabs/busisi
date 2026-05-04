@@ -26,6 +26,7 @@ from engine.core.db import (
     Article,
     ArticleEntity,
     Entity,
+    ResearchBundle,
     Story,
     StoryArticle,
     Vertical,
@@ -537,6 +538,30 @@ def _entities_map(
     return out
 
 
+def _research_bundles_map(
+    session, article_ids: list[int]
+) -> dict[int, list[dict[str, Any]]]:
+    """Return ``{article_id: [{url, host, excerpt, ord}, ...]}`` ordered by ord."""
+    if not article_ids:
+        return {}
+    rows = session.execute(
+        select(ResearchBundle)
+        .where(ResearchBundle.article_id.in_(article_ids))
+        .order_by(ResearchBundle.article_id, ResearchBundle.ord)
+    ).scalars().all()
+    out: dict[int, list[dict[str, Any]]] = {}
+    for b in rows:
+        out.setdefault(b.article_id, []).append(
+            {
+                "url": b.source_url,
+                "host": b.host,
+                "excerpt": (b.excerpt or "")[:280],
+                "ord": b.ord,
+            }
+        )
+    return out
+
+
 def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
     """Render one canonical /story/<slug>/ page per persisted article.
 
@@ -571,6 +596,7 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
         article_ids = [a.id for a in rows]
         siblings_by_id = _siblings_map(session, article_ids)
         entities_by_id = _entities_map(session, article_ids)
+        research_by_id = _research_bundles_map(session, article_ids)
 
     env = _env()
     base_dir = _output_dir(vertical_name) / "story"
@@ -601,6 +627,7 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
             "is_skip": (a.curator_tier == "skip"),
             "curator_tier": a.curator_tier,
             "curator_score": a.curator_score,
+            "research": research_by_id.get(a.id, []),
         }
         ctx = {
             "vertical": vertical_ctx,

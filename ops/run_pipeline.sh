@@ -36,6 +36,11 @@ for V in "${VERTICALS[@]}"; do
   # rows where curator_signals.judge is already set (idempotent).
   PYTHONPATH=. python -m engine.core.curator_judge "$V" --max 30 --log-level WARNING || \
     echo "[$(date -Iseconds)] curator_judge FAILED vertical=$V (continuing)"
+  # Researcher fetches supporting docs for tier=researcher articles
+  # whose researched_at IS NULL. Capped per tick to keep web-API
+  # spend predictable.
+  PYTHONPATH=. python -m engine.core.researcher "$V" --log-level WARNING || \
+    echo "[$(date -Iseconds)] researcher FAILED vertical=$V (continuing)"
   # Cluster fresh articles into multi-source Story rows BEFORE rendering so
   # the front page picks up new clusters this tick. Idempotent — articles
   # already linked to a Story are skipped.
