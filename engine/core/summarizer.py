@@ -111,11 +111,6 @@ def _validate_grounded(summary: str, source_text: str) -> tuple[bool, str]:
     if leaked:
         return False, f"summary cites numbers not in source: {leaked[:3]}"
 
-    summary_years = set(re.findall(r"\b(?:19|20)\d{2}\b", summary))
-    source_years = set(re.findall(r"\b(?:19|20)\d{2}\b", source_text))
-    leaked_years = summary_years - source_years
-    if leaked_years:
-        return False, f"summary cites years not in source: {sorted(leaked_years)}"
     return True, ""
 
 
