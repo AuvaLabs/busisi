@@ -808,6 +808,78 @@ def render_entities(vertical_name: str) -> dict[str, Path]:
     return out
 
 
+def render_search(vertical_name: str, *, limit: int = 5000) -> dict[str, Path]:
+    """Write the client-side search index + the /search/ page.
+
+    The index is a JSON array of compact records (short keys to keep the
+    payload tight — at 1k articles it's roughly 200 KB). The page does
+    fuzzy substring ranking in inline JS, no server endpoint.
+    """
+    import json as _json
+
+    Session = get_sessionmaker()
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical_name)
+        ).scalar_one_or_none()
+        if v is None:
+            raise ValueError(f"vertical not found: {vertical_name}")
+        vertical_ctx = _vertical_ctx(v)
+        rows = (
+            session.execute(
+                select(Article)
+                .where(Article.vertical_id == v.id, Article.deleted_at.is_(None))
+                .order_by(Article.published_at.desc().nullslast())
+                .limit(limit)
+            )
+            .scalars()
+            .all()
+        )
+    payload = [
+        {
+            "s": a.slug,
+            "t": a.title,
+            "x": (a.summary or "")[:200],
+            "r": a.feed_region or "",
+        }
+        for a in rows
+    ]
+
+    out_dir = _output_dir(vertical_name)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    json_path = out_dir / "search-index.json"
+    json_path.write_text(
+        _json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+
+    env = _env()
+    page_dir = out_dir / "search"
+    page_dir.mkdir(parents=True, exist_ok=True)
+    page_path = page_dir / "index.html"
+    page_path.write_text(
+        env.get_template("search.html").render(
+            vertical=vertical_ctx,
+            title="Search",
+            description=(
+                f"Search every {vertical_ctx['display_name']} article we've "
+                "indexed. Client-side, no server lookups."
+            ),
+            theme="light",
+            canonical_url=_canonical_url(vertical_name, "/search/"),
+            article_count=len(payload),
+        ),
+        encoding="utf-8",
+    )
+    logger.info(
+        "rendered %s search index (%d records, %d KB)",
+        vertical_name,
+        len(payload),
+        json_path.stat().st_size // 1024,
+    )
+    return {"index_json": json_path, "page": page_path}
+
+
 def render_all(vertical_name: str, *, index_limit: int = 50) -> dict[str, Any]:
     """Render index + stories + static pages + sources + tools + meta files."""
     return {
@@ -818,6 +890,7 @@ def render_all(vertical_name: str, *, index_limit: int = 50) -> dict[str, Any]:
         "tools": render_tools(vertical_name),
         "entity_index": render_entity_index(vertical_name),
         "entities": render_entities(vertical_name),
+        "search": render_search(vertical_name),
         "meta": render_meta_files(vertical_name),
     }
 

@@ -170,6 +170,44 @@ class TestRenderIndexMerge:
         assert 'class="n-sources"' not in body
 
 
+class TestRenderSearch:
+    def test_writes_index_json_and_page(
+        self, test_engine, repo_templates, output_root
+    ) -> None:
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
+
+        from engine.core.db import Article, Vertical
+
+        SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
+        with SM() as s:
+            v = Vertical(name="modelwatch", display_name="Modelwatch")
+            s.add(v)
+            s.commit()
+            s.refresh(v)
+            a = Article(
+                vertical_id=v.id,
+                hash="h1",
+                slug="anthropic-claude-5",
+                title="Anthropic launches Claude 5",
+                link="https://example.com/c5",
+                source="https://example.com/feed",
+                feed_region="US",
+                summary="A short summary about Anthropic.",
+                summary_source="llm",
+                published_at=_dt(2026, 5, 4, tzinfo=_tz.utc),
+            )
+            s.add(a)
+            s.commit()
+        out = renderer.render_search("modelwatch")
+        body = out["page"].read_text(encoding="utf-8")
+        assert "Search Modelwatch" in body
+        assert "/search-index.json" in body
+        json_body = out["index_json"].read_text(encoding="utf-8")
+        assert '"s":"anthropic-claude-5"' in json_body
+        assert '"t":"Anthropic launches Claude 5"' in json_body
+
+
 class TestRenderEntities:
     def _seed_entities(self, test_engine):
         from datetime import datetime as _dt

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    .sx-header { padding: 0 0 1.25rem 0; border-bottom: 1px solid var(--rule); margin-bottom: 1.5rem; }
+    .sx-eyebrow {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      margin: 0 0 0.4rem 0;
+    }
+    .sx-title { font-family: var(--serif); font-weight: 500; font-size: 1.85rem; margin: 0; }
+    .sx-blurb { color: var(--text-mute); font-size: 1rem; margin: 0.5rem 0 0; max-width: 42rem; }
+    .sx-input {
+      display: block;
+      width: 100%;
+      max-width: 32rem;
+      margin: 1.5rem 0 1rem;
+      padding: 0.7rem 1rem;
+      font-family: var(--sans);
+      font-size: 1.05rem;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      background: var(--bg-elev);
+      color: var(--text);
+    }
+    .sx-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+    .sx-status {
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      color: var(--text-faint);
+      margin: 0 0 1rem;
+    }
+    .sx-results { list-style: none; padding: 0; margin: 0; }
+    .sx-results > li { padding: 0.95rem 0; border-bottom: 1px solid var(--rule); }
+    .sx-results > li:last-child { border-bottom: 0; }
+    .sx-rt { font-family: var(--serif); font-weight: 500; font-size: 1.15rem; margin: 0 0 0.25rem; }
+    .sx-rt a { color: var(--text); }
+    .sx-rt a:hover { color: var(--accent); text-decoration: none; }
+    .sx-rmeta {
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin: 0 0 0.4rem;
+    }
+    .sx-rmeta .region { color: var(--accent); }
+    .sx-rx { font-size: 0.95rem; line-height: 1.55; color: var(--text-mute); margin: 0; }
+    .sx-rx mark { background: var(--bg-mute); color: var(--text); padding: 0 0.15em; }
+{% endblock %}
+
+{% block content %}
+<header class="sx-header">
+  <p class="sx-eyebrow">Search</p>
+  <h1 class="sx-title">Search {{ vertical.display_name }}</h1>
+  <p class="sx-blurb">{{ article_count }} article{{ '' if article_count == 1 else 's' }} indexed. Search runs entirely in your browser — no queries leave this page.</p>
+</header>
+
+<input id="sx-q" class="sx-input" type="search" placeholder="Type to search…"
+       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+<p id="sx-status" class="sx-status">Loading index…</p>
+<ul id="sx-results" class="sx-results"></ul>
+
+<script>
+(function () {
+  const q = document.getElementById('sx-q');
+  const status = document.getElementById('sx-status');
+  const results = document.getElementById('sx-results');
+  let docs = null;
+  let timer = null;
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function highlight(s, terms) {
+    let out = escHtml(s);
+    for (const t of terms) {
+      if (!t) continue;
+      const re = new RegExp('(' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+      out = out.replace(re, '<mark>$1</mark>');
+    }
+    return out;
+  }
+  function score(doc, terms) {
+    const t = (doc.t || '').toLowerCase();
+    const x = (doc.x || '').toLowerCase();
+    let s = 0;
+    for (const term of terms) {
+      if (!term) continue;
+      if (t.includes(term)) s += 5;
+      if (x.includes(term)) s += 1;
+      if (t.startsWith(term)) s += 2;
+    }
+    return s;
+  }
+  function render(query) {
+    if (!docs) return;
+    const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) {
+      results.innerHTML = '';
+      status.textContent = `${docs.length} articles indexed.`;
+      return;
+    }
+    const ranked = [];
+    for (const d of docs) {
+      const s = score(d, terms);
+      if (s > 0) ranked.push({ d: d, s: s });
+    }
+    ranked.sort((a, b) => b.s - a.s);
+    const top = ranked.slice(0, 50);
+    status.textContent = ranked.length
+      ? `${ranked.length} match${ranked.length === 1 ? '' : 'es'}` +
+        (ranked.length > 50 ? ' (showing top 50)' : '') + '.'
+      : 'No matches.';
+    results.innerHTML = top.map(r => {
+      const d = r.d;
+      return '<li>'
+        + '<h2 class="sx-rt"><a href="/story/' + escHtml(d.s) + '/">'
+        +   highlight(d.t || '', terms)
+        + '</a></h2>'
+        + '<p class="sx-rmeta"><span class="region">' + escHtml(d.r || '') + '</span></p>'
+        + (d.x ? '<p class="sx-rx">' + highlight(d.x, terms) + '</p>' : '')
+        + '</li>';
+    }).join('');
+  }
+
+  fetch('/search-index.json', { headers: { 'Accept': 'application/json' } })
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(j => {
+      docs = j;
+      status.textContent = `${docs.length} articles indexed.`;
+      if (q.value) render(q.value);
+    })
+    .catch(() => { status.textContent = 'Failed to load search index.'; });
+
+  q.addEventListener('input', () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => render(q.value), 80);
+  });
+  q.focus();
+})();
+</script>
+{% endblock %}
