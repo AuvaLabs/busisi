@@ -132,6 +132,20 @@ class Article(Base):
     entities_extracted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True)
     )
+    # Curator (Phase 22a): editorial-value gate.
+    #   tier ∈ {"skip","standard","researcher"}; score ∈ [0,1];
+    #   signals is the per-rule contribution dict;
+    #   version bumps when rules change so rows can be re-scored.
+    curator_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    curator_tier: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    curator_signals: Mapped[Any] = mapped_column(JSON, nullable=True)
+    curator_version: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False, server_default="0"
+    )
+    # Set after researcher bundle is persisted (Phase 22e+).
+    researched_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
     vertical: Mapped[Vertical] = relationship(back_populates="articles")
 
@@ -303,6 +317,68 @@ class SponsorInquiry(Base):
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
     responded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ResearchBundle(Base):
+    """Web/scholar/news entries fetched by the researcher (Phase 22e).
+
+    Each row is one supporting document for the rewriter to ground on.
+    The bundle is article-scoped; a single Article can have multiple
+    rows ordered by ``ord``. Snapshot fields (``excerpt``, ``sha256``)
+    let us reaudit later even if the source URL mutates.
+    """
+
+    __tablename__ = "research_bundles"
+    __table_args__ = (
+        Index("ix_research_bundle_article", "article_id"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
+    article_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("articles.id", ondelete="CASCADE"), nullable=False
+    )
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    host: Mapped[str] = mapped_column(String(256), nullable=False)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    excerpt: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    ord: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
+class ArticleFeedback(Base):
+    """Reader-submitted issue reports (Phase 22g).
+
+    Lets readers flag bad calls (missing context, wrong claim, not news)
+    so the curator can be tuned. ``reporter_ip_hash`` is sha256-peppered
+    to enable rate-limit grouping without retaining the raw IP.
+    """
+
+    __tablename__ = "article_feedback"
+    __table_args__ = (
+        Index("ix_feedback_article_created", "article_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
+    article_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("articles.id", ondelete="CASCADE"), nullable=False
+    )
+    reporter_ip_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    issue_kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 _engine: Engine | None = None
