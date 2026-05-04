@@ -26,6 +26,11 @@ for V in "${VERTICALS[@]}"; do
   # Article.entities_extracted_at.
   PYTHONPATH=. python -m engine.core.entity_extractor "$V" --max 10 --sleep 1 --log-level WARNING || \
     echo "[$(date -Iseconds)] entities FAILED vertical=$V (continuing)"
+  # Curator scores every article whose curator_version < CURATOR_VERSION
+  # (rule-based, free). Runs AFTER entity extraction so the
+  # entity_strength signal sees fresh entity counts.
+  PYTHONPATH=. python -m engine.core.curator "$V" --max 500 --log-level WARNING || \
+    echo "[$(date -Iseconds)] curator FAILED vertical=$V (continuing)"
   # Cluster fresh articles into multi-source Story rows BEFORE rendering so
   # the front page picks up new clusters this tick. Idempotent — articles
   # already linked to a Story are skipped.
