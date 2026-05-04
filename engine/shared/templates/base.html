@@ -6,6 +6,7 @@
   <title>{{ title }} — {{ vertical.display_name }}</title>
   <meta name="description" content="{{ description }}">
   {% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}">{% endif %}
+  {% if noindex %}<meta name="robots" content="noindex,follow">{% endif %}
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ vertical.display_name }}">

@@ -110,6 +110,18 @@
 <article class="story">
   <h1>{{ article.title }}</h1>
 
+  {% if article.is_skip %}
+    <p class="summary-banner" style="border-left-color: var(--text-faint);">
+      <strong>Not promoted on the front page.</strong> Our curator
+      assigned this story a low editorial-confidence score
+      ({{ '%.2f' | format(article.curator_score or 0) }}) — typically
+      because the source is a discussion forum, the title is
+      conversational, or no named entities were extracted. The page is
+      kept here for direct links; see <a href="/methodology">methodology</a>
+      for how curation works.
+    </p>
+  {% endif %}
+
   <p class="meta">
     {% if article.published_human %}<span>{{ article.published_human }}</span> · {% endif %}
     <span class="region">{{ article.feed_region }}</span>

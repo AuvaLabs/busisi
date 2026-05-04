@@ -99,6 +99,7 @@ def _load_story_cards(session, vertical_id: int, limit: int) -> list[dict[str, A
             Story.vertical_id == vertical_id,
             StoryArticle.is_primary.is_(True),
             Article.deleted_at.is_(None),
+            (Article.curator_tier != "skip") | Article.curator_tier.is_(None),
         )
         .order_by(fresh_subq.c.latest_at.desc())
         .limit(limit)
@@ -123,7 +124,11 @@ def _load_story_cards(session, vertical_id: int, limit: int) -> list[dict[str, A
 def _load_orphan_articles(
     session, vertical_id: int, limit: int
 ) -> list[dict[str, Any]]:
-    """Pull recent Articles NOT linked to any Story."""
+    """Pull recent Articles NOT linked to any Story.
+
+    Excludes ``curator_tier='skip'`` articles (Phase 22c). NULL tier passes
+    through — pre-curator-backfill rows stay visible until scored.
+    """
     clustered = select(StoryArticle.article_id)
     rows = (
         session.execute(
@@ -132,6 +137,7 @@ def _load_orphan_articles(
                 Article.vertical_id == vertical_id,
                 Article.deleted_at.is_(None),
                 ~Article.id.in_(clustered),
+                (Article.curator_tier != "skip") | Article.curator_tier.is_(None),
             )
             .order_by(Article.fetched_at.desc())
             .limit(limit)
@@ -344,11 +350,19 @@ def render_meta_files(
             raise ValueError(f"vertical not found: {vertical_name}")
         vertical_ctx = _vertical_ctx(v)
 
-        # Collect URLs for sitemap: index + static pages + sources + each article
+        # Collect URLs for sitemap + RSS — skip-tier articles are excluded
+        # from public discovery surfaces (Phase 22c). Their /story/<slug>/
+        # pages are still rendered (with noindex meta) so existing inbound
+        # links don't 404.
         articles = (
             session.execute(
                 select(Article)
-                .where(Article.vertical_id == v.id, Article.deleted_at.is_(None))
+                .where(
+                    Article.vertical_id == v.id,
+                    Article.deleted_at.is_(None),
+                    (Article.curator_tier != "skip")
+                    | Article.curator_tier.is_(None),
+                )
                 .order_by(Article.fetched_at.desc())
                 .limit(500)
             )
@@ -584,6 +598,9 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
             "labels": a.labels or [],
             "siblings": siblings_by_id.get(a.id, []),
             "entities": entities_by_id.get(a.id, []),
+            "is_skip": (a.curator_tier == "skip"),
+            "curator_tier": a.curator_tier,
+            "curator_score": a.curator_score,
         }
         ctx = {
             "vertical": vertical_ctx,
@@ -592,6 +609,7 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
             "theme": "light",
             "article": article_ctx,
             "canonical_url": _canonical_url(vertical_name, f"/story/{a.slug}/"),
+            "noindex": (a.curator_tier == "skip"),
         }
         html = env.get_template("story.html").render(**ctx)
         story_dir = base_dir / a.slug
@@ -836,7 +854,12 @@ def render_search(vertical_name: str, *, limit: int = 5000) -> dict[str, Path]:
         rows = (
             session.execute(
                 select(Article)
-                .where(Article.vertical_id == v.id, Article.deleted_at.is_(None))
+                .where(
+                    Article.vertical_id == v.id,
+                    Article.deleted_at.is_(None),
+                    (Article.curator_tier != "skip")
+                    | Article.curator_tier.is_(None),
+                )
                 .order_by(Article.published_at.desc().nullslast())
                 .limit(limit)
             )
