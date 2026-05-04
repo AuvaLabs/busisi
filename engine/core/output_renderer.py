@@ -563,6 +563,12 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
     base_dir.mkdir(parents=True, exist_ok=True)
 
     for a in rows:
+        pub_dt = a.published_at
+        if pub_dt is not None and pub_dt.tzinfo is None:
+            pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+        fetched_dt = a.fetched_at
+        if fetched_dt is not None and fetched_dt.tzinfo is None:
+            fetched_dt = fetched_dt.replace(tzinfo=timezone.utc)
         article_ctx = {
             "slug": a.slug,
             "title": a.title,
@@ -573,6 +579,8 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
             "source_short": _short_source(a.source),
             "feed_region": a.feed_region,
             "published_human": _human_age(a.published_at),
+            "published_iso": pub_dt.isoformat() if pub_dt else "",
+            "fetched_iso": fetched_dt.isoformat() if fetched_dt else "",
             "labels": a.labels or [],
             "siblings": siblings_by_id.get(a.id, []),
             "entities": entities_by_id.get(a.id, []),

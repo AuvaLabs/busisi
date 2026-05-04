@@ -298,6 +298,57 @@ class TestRenderStoriesSiblings:
         assert "/story/cluster-1/" in body
         assert "/story/cluster-2/" in body
 
+    def test_story_emits_newsarticle_jsonld(
+        self, test_engine, repo_templates, output_root
+    ) -> None:
+        import json as _json
+        import re as _re
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
+
+        from engine.core.db import Article, Vertical
+
+        SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
+        with SM() as s:
+            v = Vertical(name="modelwatch", display_name="Modelwatch")
+            s.add(v)
+            s.commit()
+            s.refresh(v)
+            a = Article(
+                vertical_id=v.id,
+                hash="h1",
+                slug="claude-5-launch",
+                title="Anthropic launches Claude 5",
+                link="https://example.com/c5",
+                source="https://example.com/feed",
+                feed_region="US",
+                summary="A short summary.",
+                summary_source="llm",
+                published_at=_dt(2026, 5, 4, 12, 0, tzinfo=_tz.utc),
+            )
+            s.add(a)
+            s.commit()
+        renderer.render_stories("modelwatch")
+        body = (
+            output_root
+            / "output"
+            / "modelwatch"
+            / "story"
+            / "claude-5-launch"
+            / "index.html"
+        ).read_text(encoding="utf-8")
+        m = _re.search(
+            r'<script type="application/ld\+json">(.*?)</script>',
+            body,
+            _re.DOTALL,
+        )
+        assert m, "ld+json block missing"
+        data = _json.loads(m.group(1))
+        assert data["@type"] == "NewsArticle"
+        assert data["headline"] == "Anthropic launches Claude 5"
+        assert data["datePublished"] == "2026-05-04T12:00:00+00:00"
+        assert data["publisher"]["name"] == "Modelwatch"
+
     def test_entity_chips_render_on_story_page(
         self, test_engine, repo_templates, output_root
     ) -> None:

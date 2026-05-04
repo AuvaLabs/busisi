@@ -162,6 +162,28 @@
     </p>
   {% endif %}
 
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": {{ article.title | tojson }},
+    "description": {{ (article.summary or article.title)[:300] | tojson }},
+    {% if article.published_iso %}"datePublished": "{{ article.published_iso }}",{% endif %}
+    {% if article.fetched_iso %}"dateModified": "{{ article.fetched_iso }}",{% endif %}
+    "url": {{ canonical_url | tojson }},
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": {{ canonical_url | tojson }}
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": {{ vertical.display_name | tojson }}
+    },
+    "isBasedOn": {{ article.link | tojson }},
+    "inLanguage": "en"
+  }
+  </script>
+
   <section class="sources">
     <h2>
       {% if article.siblings %}
