@@ -31,6 +31,11 @@ for V in "${VERTICALS[@]}"; do
   # entity_strength signal sees fresh entity counts.
   PYTHONPATH=. python -m engine.core.curator "$V" --max 500 --log-level WARNING || \
     echo "[$(date -Iseconds)] curator FAILED vertical=$V (continuing)"
+  # LLM-judge for gray-zone (curator_tier=researcher) articles. Cap per
+  # tick keeps cost bounded; backfill drains across cron ticks. Skips
+  # rows where curator_signals.judge is already set (idempotent).
+  PYTHONPATH=. python -m engine.core.curator_judge "$V" --max 30 --log-level WARNING || \
+    echo "[$(date -Iseconds)] curator_judge FAILED vertical=$V (continuing)"
   # Cluster fresh articles into multi-source Story rows BEFORE rendering so
   # the front page picks up new clusters this tick. Idempotent — articles
   # already linked to a Story are skipped.
