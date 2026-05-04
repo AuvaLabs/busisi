@@ -404,7 +404,51 @@ def render_meta_files(
     p.write_text(sitemap, encoding="utf-8")
     paths["sitemap"] = p
 
-    logger.info("rendered %s meta-files (llms.txt, robots.txt, sitemap.xml)", vertical_name)
+    def _aware(dt: datetime | None) -> datetime:
+        if dt is None:
+            return datetime(1970, 1, 1, tzinfo=timezone.utc)
+        return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+
+    feed_articles = sorted(
+        articles,
+        key=lambda a: _aware(a.published_at or a.fetched_at),
+        reverse=True,
+    )[:30]
+    feed_items: list[dict[str, Any]] = []
+    for a in feed_articles:
+        pub_dt = a.published_at or a.fetched_at
+        if pub_dt is not None and pub_dt.tzinfo is None:
+            pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+        feed_items.append(
+            {
+                "title": a.title,
+                "link": f"{base}/story/{a.slug}/",
+                "pub_date": (
+                    pub_dt.strftime("%a, %d %b %Y %H:%M:%S +0000") if pub_dt else ""
+                ),
+                "description": (a.summary or "")[:1200],
+                "categories": [
+                    label.get("label", "") if isinstance(label, dict) else str(label)
+                    for label in (a.labels or [])
+                    if label
+                ],
+            }
+        )
+    last_build_date = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
+    feed = env.get_template("feed.rss.xml").render(
+        vertical=vertical_ctx,
+        base_url=base,
+        last_build_date=last_build_date,
+        items=feed_items,
+    )
+    p = out_dir / "feed.rss"
+    p.write_text(feed, encoding="utf-8")
+    paths["feed"] = p
+
+    logger.info(
+        "rendered %s meta-files (llms.txt, robots.txt, sitemap.xml, feed.rss)",
+        vertical_name,
+    )
     return paths
 
 
