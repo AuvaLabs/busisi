@@ -66,15 +66,23 @@ _TOLERANCE = 0.01  # ±1 % wiggle for rounding ($676k ≈ 676,000)
 
 
 def _numeric_values(text: str) -> set[float]:
+    """Return the set of numeric values in ``text``.
+
+    When a token has a magnitude suffix (e.g. ``10k``, ``1.5M``), BOTH the
+    raw and the multiplied value go into the set. This handles common
+    abbreviation collisions like ``401k`` (the IRS plan, value 401) vs
+    ``401k`` (an actual count, value 401,000) — the validator can't
+    disambiguate without context, so we accept either reading.
+    """
     out: set[float] = set()
     for raw, suffix in _NUM_TOKEN_RE.findall(text):
         try:
-            value = float(raw.replace(",", ""))
+            base = float(raw.replace(",", ""))
         except ValueError:
             continue
+        out.add(base)
         if suffix:
-            value *= _SUFFIX_MULT[suffix.strip().lower()]
-        out.add(value)
+            out.add(base * _SUFFIX_MULT[suffix.strip().lower()])
     return out
 
 
