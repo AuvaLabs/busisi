@@ -21,7 +21,7 @@ from sqlalchemy import select
 
 from sqlalchemy import func
 
-from engine.core.config import DATA_DIR, GRIMOIRE_ROOT
+from engine.core.config import DATA_DIR, GRIMOIRE_ROOT, canonical_base_for
 from engine.core.db import (
     Article,
     ArticleEntity,
@@ -257,10 +257,13 @@ def _vertical_ctx(v: Any) -> dict[str, Any]:
 def _canonical_url(vertical_name: str, path: str) -> str:
     """Return the canonical URL for a page within a vertical.
 
-    Uses the placeholder ``<vertical>.local`` host until the real domain
-    is committed; rendering doesn't depend on TLS so http:// is fine here.
+    Base resolves via ``engine.core.config.canonical_base_for`` —
+    env-overridable per vertical (``<VERTICAL>_CANONICAL_BASE``) so the
+    domain commit is a one-line ``.env`` change. Falls back to
+    ``http://<vertical>.local`` when no env override is set (local dev /
+    pre-domain).
     """
-    return f"http://{vertical_name}.local{path}"
+    return f"{canonical_base_for(vertical_name)}{path}"
 
 
 def render_static_pages(vertical_name: str) -> list[Path]:
@@ -373,7 +376,7 @@ def render_meta_files(
             .all()
         )
 
-    base = canonical_url or f"http://{vertical_name}.local"
+    base = canonical_url or canonical_base_for(vertical_name)
     base = base.rstrip("/")
     now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 

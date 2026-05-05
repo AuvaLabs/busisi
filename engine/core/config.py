@@ -142,6 +142,22 @@ def vertical_dir(vertical_id: str) -> Path:
     return VERTICALS_DIR / vertical_id
 
 
+def canonical_base_for(vertical_name: str) -> str:
+    """Return the canonical base URL for a vertical (no trailing slash).
+
+    Env override key is ``<VERTICAL>_CANONICAL_BASE`` (e.g.
+    ``MODELWATCH_CANONICAL_BASE=https://modelwatch.com``). Unset →
+    placeholder ``http://<vertical>.local`` for local dev / pre-domain.
+    Domain commit is therefore a one-line ``.env`` change, not a code
+    edit.
+    """
+    if "/" in vertical_name or vertical_name.startswith("."):
+        raise ValueError(f"Invalid vertical name: {vertical_name!r}")
+    env_key = f"{vertical_name.upper()}_CANONICAL_BASE"
+    base = os.environ.get(env_key, "").strip().rstrip("/")
+    return base or f"http://{vertical_name}.local"
+
+
 def validate_required(*, llm: bool = True, postgres: bool = True) -> list[str]:
     """Return a list of missing required envs. Empty list = OK to proceed.
 

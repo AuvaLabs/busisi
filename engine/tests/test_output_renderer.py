@@ -422,3 +422,35 @@ class TestRenderStoriesSiblings:
         assert "<h2>" in body
         assert "Sources covering this" not in body
         assert "Sources" in body
+
+
+class TestCanonicalBase:
+    """Env-driven canonical_url so domain commit is a .env edit, not code."""
+
+    def test_unset_env_falls_back_to_local(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("MODELWATCH_CANONICAL_BASE", raising=False)
+        assert (
+            renderer._canonical_url("modelwatch", "/about")
+            == "http://modelwatch.local/about"
+        )
+
+    def test_env_override_used_and_trailing_slash_stripped(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv(
+            "MODELWATCH_CANONICAL_BASE", "https://modelwatch.example/"
+        )
+        assert (
+            renderer._canonical_url("modelwatch", "/about")
+            == "https://modelwatch.example/about"
+        )
+
+    def test_canonical_base_for_rejects_invalid_name(self) -> None:
+        from engine.core.config import canonical_base_for
+
+        with pytest.raises(ValueError):
+            canonical_base_for(".dotfile")
+        with pytest.raises(ValueError):
+            canonical_base_for("foo/bar")
