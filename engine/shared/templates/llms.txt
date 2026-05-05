@@ -46,7 +46,12 @@ Opt-out: privacy@modelwatch.local handles deletion requests within 30 days.
 - /feed.json — JSON Feed v1.1
 - /sitemap.xml — full URL inventory
 - /llms-full.txt — plain-text content index optimised for AI ingestion
-- /.well-known/rsl.json — inference licensing terms
+- /api/v1/articles?vertical=&limit=&since= — JSON read API for articles (skip-tier excluded; rate-limited)
+- /api/v1/entities?vertical=&type=&limit= — JSON read API for tagged entities
+- /api/v1/health — service liveness
+- /licensing — plain-English citation, AI-inference, and reuse terms
+- /.well-known/rsl.json — machine-readable inference licensing manifest
+- /.well-known/security.txt — RFC 9116 vulnerability disclosure
 
 ## Crawling and reuse
 
