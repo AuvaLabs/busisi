@@ -1,0 +1,8 @@
+# {{ vertical.display_name }} — vulnerability disclosure (RFC 9116)
+# Operated by Auva Labs FZE.
+
+Contact: mailto:security@auvalabs.com
+Expires: {{ expires }}
+Preferred-Languages: en
+Canonical: {{ base_url }}/.well-known/security.txt
+Policy: {{ base_url }}/licensing

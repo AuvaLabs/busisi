@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+.licensing { max-width: 44rem; }
+.licensing h1 {
+  font-family: var(--serif);
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+}
+.licensing .lede {
+  font-family: var(--sans);
+  color: var(--text-mute);
+  font-size: 1rem;
+  margin: 0 0 2rem 0;
+}
+.licensing h2 {
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 2rem 0 0.6rem 0;
+}
+.licensing p, .licensing li {
+  font-size: 1rem;
+  line-height: 1.65;
+}
+.licensing .rule {
+  border-left: 3px solid var(--accent);
+  padding: 0.6rem 1rem;
+  margin: 0.6rem 0 1rem 0;
+  background: var(--bg-elev);
+  font-family: var(--sans);
+  font-size: 0.95rem;
+}
+.licensing .machine {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--text-mute);
+  background: var(--bg-mute);
+  padding: 0.6rem 0.8rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+{% endblock %}
+
+{% block content %}
+<article class="licensing">
+  <h1>Licensing</h1>
+  <p class="lede">
+    Plain-English citation, quotation, and AI-inference terms for
+    {{ vertical.display_name }} content. The machine-readable peer of this
+    page is at <span class="machine">/.well-known/rsl.json</span>.
+  </p>
+
+  <h2>Quotation under fair use</h2>
+  <div class="rule">Yes, quote us. Up to 90 words per excerpt, with attribution and a link back.</div>
+  <p>
+    You may quote our editorial summaries, headlines, and "why this
+    matters" captions in articles, newsletters, posts, and reports. We
+    ask for two things in return:
+  </p>
+  <ul>
+    <li><strong>Attribution.</strong> Name {{ vertical.display_name }} as the source.</li>
+    <li><strong>A link back</strong> to the canonical story URL on our
+      site (the URL that begins with our domain followed by
+      <code>/story/&lt;slug&gt;/</code>).</li>
+  </ul>
+
+  <h2>AI inference and answer-engine citation</h2>
+  <div class="rule">Yes, you may cite us in AI answers. Attribution and link-back required.</div>
+  <p>
+    {{ vertical.display_name }} explicitly permits answer engines and
+    retrieval-augmented assistants (Perplexity, ChatGPT Search, Claude,
+    Bing Copilot, Google AI Overviews, etc.) to cite our content in
+    user-facing responses, on the same terms as quotation: attribution
+    and a clickable link back to the canonical story URL.
+  </p>
+  <p>
+    For aggregator partnerships and revenue-sharing arrangements, we
+    prefer to work through the
+    <a href="https://www.perplexity.ai/hub/blog/introducing-the-perplexity-publishers-program" rel="noopener">Perplexity Publisher Program</a>,
+    <a href="https://tollbit.com/" rel="noopener">TollBit</a>, and
+    <a href="https://blog.cloudflare.com/introducing-pay-per-crawl/" rel="noopener">Cloudflare Pay-Per-Crawl</a>.
+    Contact <a href="mailto:legal@auvalabs.com">legal@auvalabs.com</a>
+    for direct commercial terms.
+  </p>
+
+  <h2>Training corpora — by license only</h2>
+  <div class="rule">No, do not include our content in training corpora without an explicit license.</div>
+  <p>
+    Our editorial summaries are AI-assisted but human-supervised; they
+    are licensed for reading and citation, not for ingestion into other
+    models' training corpora. Crawling for training is declined in
+    <code>robots.txt</code> and <code>/.well-known/rsl.json</code>.
+    Inference-time retrieval is permitted (see above).
+  </p>
+  <p>
+    For training-license enquiries:
+    <a href="mailto:legal@auvalabs.com">legal@auvalabs.com</a>.
+  </p>
+
+  <h2>Bulk redistribution — by license only</h2>
+  <p>
+    Reposting more than three of our stories in full on a third-party
+    surface (newsletter, news site, app) requires permission. Direct
+    re-syndication of our RSS or JSON feed for personal reading is fine
+    and welcomed. For larger reuse:
+    <a href="mailto:legal@auvalabs.com">legal@auvalabs.com</a>.
+  </p>
+
+  <h2>Source content</h2>
+  <p>
+    Headlines, body excerpts, and external links in each story belong to
+    the original publisher. We summarise and link; we do not redistribute
+    source content. The terms above apply to {{ vertical.display_name }}'s
+    own editorial layer (summaries, "why this matters" captions,
+    research notes, glossary entries, tools), not to upstream publishers'
+    own content, which remains under their licenses.
+  </p>
+
+  <h2>Robots and crawl etiquette</h2>
+  <p>
+    See <code>/robots.txt</code> for the per-bot allow/deny list and
+    crawl delay. Aggressive scraping (above 1 req / 2 s sustained) will
+    be rate-limited or blocked.
+  </p>
+
+  <h2>Contact</h2>
+  <ul>
+    <li>Commercial / licensing: <a href="mailto:legal@auvalabs.com">legal@auvalabs.com</a></li>
+    <li>Editorial corrections: <a href="mailto:corrections@auvalabs.com">corrections@auvalabs.com</a></li>
+    <li>Security disclosures: <a href="mailto:security@auvalabs.com">security@auvalabs.com</a> (RFC 9116 at <code>/.well-known/security.txt</code>)</li>
+  </ul>
+
+  <p style="font-family: var(--sans); font-size: 0.85rem; color: var(--text-faint); margin-top: 2.5rem;">
+    Operating entity: Auva Labs FZE. Last reviewed: see
+    <code>last_updated</code> in <code>/.well-known/rsl.json</code>.
+  </p>
+</article>
+{% endblock %}

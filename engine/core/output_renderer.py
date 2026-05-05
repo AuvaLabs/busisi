@@ -11,7 +11,7 @@ glossary, learn, tools, /today, RSS, Atom, sitemap, llms.txt.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -240,6 +240,7 @@ _STATIC_PAGES = (
     ("methodology", "Methodology", "How sources, AI usage, and editorial rules work."),
     ("privacy", "Privacy", "Data we collect, what we don't, and your rights."),
     ("terms", "Terms", "Usage terms and operating-entity disclosure."),
+    ("licensing", "Licensing", "Quotation, AI inference, and reuse terms."),
 )
 
 
@@ -445,6 +446,33 @@ def render_meta_files(
     p = out_dir / "robots.txt"
     p.write_text(robots, encoding="utf-8")
     paths["robots"] = p
+
+    # /.well-known/ assets — RSL inference licensing manifest +
+    # RFC 9116 security.txt. Both are referenced from llms.txt,
+    # robots.txt, terms.html, and licensing.html.
+    well_known_dir = out_dir / ".well-known"
+    well_known_dir.mkdir(parents=True, exist_ok=True)
+
+    rsl = env.get_template(".well-known/rsl.json").render(
+        vertical=vertical_ctx,
+        base_url=base,
+        generated_at=generated_at,
+    )
+    p = well_known_dir / "rsl.json"
+    p.write_text(rsl, encoding="utf-8")
+    paths["rsl"] = p
+
+    expires = (
+        datetime.now(timezone.utc) + timedelta(days=365)
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    security = env.get_template(".well-known/security.txt").render(
+        vertical=vertical_ctx,
+        base_url=base,
+        expires=expires,
+    )
+    p = well_known_dir / "security.txt"
+    p.write_text(security, encoding="utf-8")
+    paths["security"] = p
 
     sitemap = env.get_template("sitemap.xml").render(urls=urls)
     p = out_dir / "sitemap.xml"

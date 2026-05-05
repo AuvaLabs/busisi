@@ -81,7 +81,6 @@
   <ul>
     <li>Sponsored content is labelled "Sponsored" on every surface — newsletter, front page, story pages.</li>
     <li>Affiliate links are disclosed inline and at the page footer.</li>
-    <li>Pro-tier content does not include sponsor sections.</li>
     <li>We will not recommend a tool we wouldn't use ourselves.</li>
     <li>We will not run sponsorships from companies whose products we have actively criticised in editorial.</li>
   </ul>
@@ -105,8 +104,57 @@
   </p>
 
   <p class="stamp">
-    Operating entity: Auva Labs FZE. See <a href="/privacy">privacy</a>
-    and <a href="/terms">terms</a>.
+    Operating entity: Auva Labs FZE. See <a href="/privacy">privacy</a>,
+    <a href="/terms">terms</a>, and <a href="/licensing">licensing</a>.
   </p>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Where does {{ vertical.display_name }} get its stories?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "From public RSS/Atom feeds of first-party sources (labs, regulators, research aggregators, independent voices) plus tech press. The full source list is published at /sources. Each story links back to the primary source; we summarise and link, we do not redistribute source content."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you use AI to write articles?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, AI does the production-line work — classification, summarisation, cluster headlines. Three rules govern every AI output: grounding (every fact must derive from the linked source; ungrounded summaries are rejected), attribution (every story links back prominently to its source), and disclosure ('why this matters' analysis is captioned separately from fact reporting)."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can answer engines like Perplexity or ChatGPT cite your content?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, with attribution and a clickable link back to the canonical story URL. Inference-time retrieval and citation are explicitly permitted. Training-corpus ingestion requires a separate license. See /licensing for full terms and /.well-known/rsl.json for the machine-readable manifest."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How are corrections handled?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Email corrections@auvalabs.com. Verified corrections are applied within 24 hours, with a dated note on the affected page."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is sponsored or affiliate content disclosed?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Sponsored content is labelled 'Sponsored' on every surface (newsletter, front page, story pages). Affiliate links carry rel='sponsored', a footnote asterisk, and a disclosure block on every page where they appear. We do not recommend tools we would not use ourselves and do not run sponsorships from companies we have actively criticised."
+        }
+      }
+    ]
+  }
+  </script>
 </article>
 {% endblock %}

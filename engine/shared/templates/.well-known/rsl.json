@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "licensor": {
+    "name": "Auva Labs FZE",
+    "publication": {{ vertical.display_name | tojson }},
+    "url": {{ base_url | tojson }},
+    "contact": "legal@auvalabs.com"
+  },
+  "scope": {
+    "applies_to": [
+      {{ base_url | tojson }},
+      {{ (base_url ~ "/*") | tojson }}
+    ],
+    "excludes": [
+      {{ (base_url ~ "/api/*") | tojson }},
+      {{ (base_url ~ "/sponsorship/admin") | tojson }}
+    ]
+  },
+  "quotation": {
+    "allowed": true,
+    "max_words_per_excerpt": 90,
+    "attribution_required": true,
+    "link_back_required": true,
+    "terms_url": {{ (base_url ~ "/licensing") | tojson }}
+  },
+  "ai_inference": {
+    "allowed": true,
+    "attribution_required": true,
+    "link_back_required": true,
+    "terms_url": {{ (base_url ~ "/licensing") | tojson }},
+    "contact_for_commercial_terms": "legal@auvalabs.com",
+    "preferred_aggregators": [
+      "perplexity_publisher_program",
+      "tollbit",
+      "cloudflare_pay_per_crawl"
+    ]
+  },
+  "ai_training": {
+    "allowed": false,
+    "rationale": "Editorial summaries are AI-assisted but human-supervised; redistribution into training corpora requires explicit license.",
+    "contact_for_license": "legal@auvalabs.com"
+  },
+  "redistribution": {
+    "bulk_redistribution_allowed": false,
+    "contact_for_license": "legal@auvalabs.com"
+  },
+  "last_updated": {{ generated_at | tojson }}
+}
