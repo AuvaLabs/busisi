@@ -32,10 +32,18 @@ embedding.report {
         Permissions-Policy "geolocation=(), microphone=(), camera=()"
         -Server
     }
-    handle /api/* { reverse_proxy 127.0.0.1:8001 }
-    handle /r/* { reverse_proxy 127.0.0.1:8001 }
-    handle /confirm { reverse_proxy 127.0.0.1:8001 }
-    handle /unsubscribe { reverse_proxy 127.0.0.1:8001 }
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /r/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /confirm {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /unsubscribe {
+        reverse_proxy 127.0.0.1:8001
+    }
     handle {
         root * /srv/grimoire/data/output/embedding
         file_server
@@ -62,10 +70,18 @@ vested.news {
         Permissions-Policy "geolocation=(), microphone=(), camera=()"
         -Server
     }
-    handle /api/* { reverse_proxy 127.0.0.1:8001 }
-    handle /r/* { reverse_proxy 127.0.0.1:8001 }
-    handle /confirm { reverse_proxy 127.0.0.1:8001 }
-    handle /unsubscribe { reverse_proxy 127.0.0.1:8001 }
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /r/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /confirm {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /unsubscribe {
+        reverse_proxy 127.0.0.1:8001
+    }
     handle {
         root * /srv/grimoire/data/output/vested
         file_server
@@ -83,10 +99,18 @@ embedding.local:80 {
         format json
     }
     header { -Server }
-    handle /api/* { reverse_proxy 127.0.0.1:8001 }
-    handle /r/* { reverse_proxy 127.0.0.1:8001 }
-    handle /confirm { reverse_proxy 127.0.0.1:8001 }
-    handle /unsubscribe { reverse_proxy 127.0.0.1:8001 }
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /r/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /confirm {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /unsubscribe {
+        reverse_proxy 127.0.0.1:8001
+    }
     handle {
         root * /srv/grimoire/data/output/embedding
         file_server
@@ -100,10 +124,18 @@ vested.local:80 {
         format json
     }
     header { -Server }
-    handle /api/* { reverse_proxy 127.0.0.1:8001 }
-    handle /r/* { reverse_proxy 127.0.0.1:8001 }
-    handle /confirm { reverse_proxy 127.0.0.1:8001 }
-    handle /unsubscribe { reverse_proxy 127.0.0.1:8001 }
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /r/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /confirm {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /unsubscribe {
+        reverse_proxy 127.0.0.1:8001
+    }
     handle {
         root * /srv/grimoire/data/output/vested
         file_server
