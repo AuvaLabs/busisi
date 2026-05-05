@@ -29,12 +29,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # NOTE: verticals table has only (id, name, display_name, accent_light,
+    # accent_dark, created_at). The `description` field lives in
+    # verticals/<name>/config.yaml and is read at render time — not in DB.
     op.execute(
         """
         UPDATE verticals
         SET name = 'embedding',
-            display_name = 'The Embedding Report',
-            description = 'Grounded coverage of AI/ML — first-party announcements, research, regulation, tooling.'
+            display_name = 'The Embedding Report'
         WHERE name = 'modelwatch'
         """
     )
@@ -45,8 +47,7 @@ def downgrade() -> None:
         """
         UPDATE verticals
         SET name = 'modelwatch',
-            display_name = 'Modelwatch',
-            description = 'Real-time AI/ML knowledge platform — news, reference, research, tools.'
+            display_name = 'Modelwatch'
         WHERE name = 'embedding'
         """
     )
