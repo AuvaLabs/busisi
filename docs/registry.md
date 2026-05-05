@@ -101,6 +101,21 @@ CF SSL mode: `strict` on all 3. `always_use_https` on.
 | Perplexity Publisher Program | Not yet applied | Apply after ≥30 days of bot_hits data |
 | TollBit / Cloudflare Pay-Per-Crawl | Not yet applied | Same gate |
 
+## Ops scripts (per `CLAUDE.md`)
+
+| Script | Trigger | Purpose |
+|---|---|---|
+| `ops/run_pipeline.sh` | cron | feed → fetch → curate → render → bot-log → IndexNow |
+| `ops/run_digest.sh` | cron (weekly) | newsletter build + send |
+| `ops/backup.sh` | cron (daily) | local pg_dumpall + R2 push |
+| `ops/heartbeat.sh` | cron (5min) | Uptime Kuma push |
+| `ops/cf_dns_txt.sh` | manual | CF API: upsert DNS TXT (GSC + Bing verification) |
+| `ops/cf_web_analytics.sh` | manual | CF API: register zone for Web Analytics auto-install |
+| `engine/core/indexnow.py` | pipeline + manual | IndexNow ping for new URLs |
+
+Runbooks: `ops/runbooks/backup.md`, `ops/runbooks/migrations.md`,
+`ops/runbooks/seo-aeo.md`.
+
 ## Last updated
 
-2026-05-06 — V1 rebrand + CF orange-cloud + Origin Cert + alembic 0004 + 22 session-commits.
+2026-05-06 — V1 rebrand + CF orange-cloud + Origin Cert + alembic 0004 + IndexNow + CF ops scripts shipped.

@@ -112,6 +112,7 @@ Read at runtime by `engine.core.config.canonical_base_for(vertical_name)`.
 - Design: `docs/design-derivation.md`
 - Security posture: `docs/security-posture.md`
 - Backup runbook: `ops/runbooks/backup.md`
+- SEO/AEO/GEO runbook: `ops/runbooks/seo-aeo.md` (IndexNow + GSC + CF Web Analytics)
 - kb_center pointer: `~/kb_center/auvalabs_project.md` § Grimoire (command-center side)
 
 ## Last updated
