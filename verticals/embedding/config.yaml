@@ -1,10 +1,11 @@
-# Modelwatch — vertical config.
+# The Embedding Report — vertical config (V1, AI/ML).
+# Domain: embedding.report (canonical), embeddings.report (301 → canonical).
 # Read by engine.core.classifier (topics/non_dedup_keys/always_escalate/budget),
 # engine.core.deduplicator (non_dedup_keys), and the renderer (theming).
 
-name: modelwatch
-display_name: Modelwatch
-description: Real-time AI/ML knowledge platform — news, reference, research, tools.
+name: embedding
+display_name: The Embedding Report
+description: Grounded coverage of AI/ML — first-party announcements, research, regulation, tooling.
 operating_entity: Auva Labs FZE   # disclosed only on /privacy and /terms
 
 # ---- Theming ----

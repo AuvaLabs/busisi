@@ -31,7 +31,7 @@ A multi-layer knowledge platform combining:
 - Server access logs retained 30 days.
 - Newsletter subscribers (email only, pseudonymised storage).
 
-Opt-out: privacy@modelwatch.local handles deletion requests within 30 days.
+Opt-out: privacy@auvalabs.com handles deletion requests within 30 days.
 
 ## What's monetised
 
@@ -70,8 +70,8 @@ identification appears on /privacy and /terms.
 
 ## Contact
 
-- Editorial corrections: corrections@modelwatch.local
-- Privacy / data requests: privacy@modelwatch.local
+- Editorial corrections: corrections@auvalabs.com
+- Privacy / data requests: privacy@auvalabs.com
 - Sponsorship / partnerships: legal@auvalabs.com
 
 Last updated: {{ generated_at }}

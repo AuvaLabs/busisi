@@ -9,7 +9,7 @@ exec >> "$LOG" 2>&1
 
 VERTICALS=("$@")
 if [ ${#VERTICALS[@]} -eq 0 ]; then
-  VERTICALS=(modelwatch vested)
+  VERTICALS=(embedding vested)
 fi
 
 cd /srv/grimoire

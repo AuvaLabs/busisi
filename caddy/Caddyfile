@@ -12,11 +12,16 @@
     }
 }
 
-# Modelwatch placeholder hostname (until real domain is committed).
-modelwatch.local:80 {
+# ---- Production site blocks (real domains) -------------------------------
+# Caddy handles HTTPS automatically via Let's Encrypt HTTP-01 (grey-cloud
+# DNS at Cloudflare). Switch to orange-cloud + DNS-01 + CF API token when
+# ready to enable Cloudflare proxy.
+
+# The Embedding Report — V1 (AI/ML).
+embedding.report {
     encode zstd gzip
     log {
-        output file /var/log/caddy/modelwatch.log
+        output file /var/log/caddy/embedding.log
         format json
     }
     header {
@@ -27,29 +32,23 @@ modelwatch.local:80 {
         Permissions-Policy "geolocation=(), microphone=(), camera=()"
         -Server
     }
-    # Mutating + read-API surface — FastAPI handler at 127.0.0.1:8001.
-    handle /api/* {
-        reverse_proxy 127.0.0.1:8001
-    }
-    # Affiliate redirect surface — /r/<partner>/<slug>.
-    handle /r/* {
-        reverse_proxy 127.0.0.1:8001
-    }
-    handle /confirm {
-        reverse_proxy 127.0.0.1:8001
-    }
-    handle /unsubscribe {
-        reverse_proxy 127.0.0.1:8001
-    }
-    # Everything else: static site.
+    handle /api/* { reverse_proxy 127.0.0.1:8001 }
+    handle /r/* { reverse_proxy 127.0.0.1:8001 }
+    handle /confirm { reverse_proxy 127.0.0.1:8001 }
+    handle /unsubscribe { reverse_proxy 127.0.0.1:8001 }
     handle {
-        root * /srv/grimoire/data/output/modelwatch
+        root * /srv/grimoire/data/output/embedding
         file_server
     }
 }
 
-# Vested placeholder hostname (until real domain is committed).
-vested.local:80 {
+# Plural defensive — 301 redirect to the canonical singular.
+embeddings.report {
+    redir https://embedding.report{uri} permanent
+}
+
+# Vested — V2 (personal finance for tech workers).
+vested.news {
     encode zstd gzip
     log {
         output file /var/log/caddy/vested.log
@@ -63,18 +62,48 @@ vested.local:80 {
         Permissions-Policy "geolocation=(), microphone=(), camera=()"
         -Server
     }
-    handle /api/* {
-        reverse_proxy 127.0.0.1:8001
+    handle /api/* { reverse_proxy 127.0.0.1:8001 }
+    handle /r/* { reverse_proxy 127.0.0.1:8001 }
+    handle /confirm { reverse_proxy 127.0.0.1:8001 }
+    handle /unsubscribe { reverse_proxy 127.0.0.1:8001 }
+    handle {
+        root * /srv/grimoire/data/output/vested
+        file_server
     }
-    handle /r/* {
-        reverse_proxy 127.0.0.1:8001
+}
+
+# ---- Local-dev placeholders (HTTP only, .local hostnames) ----------------
+# Useful for `curl -H "Host: embedding.local" http://...` against the
+# rendered output without DNS. Remove once production domains are stable.
+
+embedding.local:80 {
+    encode zstd gzip
+    log {
+        output file /var/log/caddy/embedding.log
+        format json
     }
-    handle /confirm {
-        reverse_proxy 127.0.0.1:8001
+    header { -Server }
+    handle /api/* { reverse_proxy 127.0.0.1:8001 }
+    handle /r/* { reverse_proxy 127.0.0.1:8001 }
+    handle /confirm { reverse_proxy 127.0.0.1:8001 }
+    handle /unsubscribe { reverse_proxy 127.0.0.1:8001 }
+    handle {
+        root * /srv/grimoire/data/output/embedding
+        file_server
     }
-    handle /unsubscribe {
-        reverse_proxy 127.0.0.1:8001
+}
+
+vested.local:80 {
+    encode zstd gzip
+    log {
+        output file /var/log/caddy/vested.log
+        format json
     }
+    header { -Server }
+    handle /api/* { reverse_proxy 127.0.0.1:8001 }
+    handle /r/* { reverse_proxy 127.0.0.1:8001 }
+    handle /confirm { reverse_proxy 127.0.0.1:8001 }
+    handle /unsubscribe { reverse_proxy 127.0.0.1:8001 }
     handle {
         root * /srv/grimoire/data/output/vested
         file_server
@@ -82,11 +111,11 @@ vested.local:80 {
 }
 
 # Default catch-all (raw IP, unknown hosts).
-# Browsers hitting http://178.104.214.16/ also see modelwatch (Phase 3 demo).
+# Browsers hitting http://178.104.214.16/ also see The Embedding Report.
 :80 {
-    @grimoire host modelwatch.local 178.104.214.16
+    @grimoire host embedding.local 178.104.214.16
     handle @grimoire {
-        root * /srv/grimoire/data/output/modelwatch
+        root * /srv/grimoire/data/output/embedding
         file_server
     }
     handle {
