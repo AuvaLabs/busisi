@@ -1,0 +1,37 @@
+# Modelwatch affiliate partner registry.
+#
+# Each entry powers /r/<slug>/<campaign> on the public site:
+# - the macro at engine/shared/templates/_affiliate.html renders <a href>
+#   pointing to /r/<slug>/<campaign> with rel="sponsored noopener"
+# - the FastAPI handler at engine/handlers/affiliates.py logs the click
+#   to affiliate_clicks and 302-redirects to `url` with UTM appended
+#
+# Operator action before any commercial use: replace `?ref=auvalabs`
+# placeholders below with the real affiliate codes the partner gives
+# you. The slug → URL mapping is loaded once per process; touch the
+# file or restart the handler service to pick up changes.
+
+partners:
+  anthropic:
+    url: https://www.anthropic.com/?ref=auvalabs
+    name: Anthropic
+
+  openai:
+    url: https://platform.openai.com/?ref=auvalabs
+    name: OpenAI Platform
+
+  cursor:
+    url: https://cursor.com/?ref=auvalabs
+    name: Cursor
+
+  replicate:
+    url: https://replicate.com/?ref=auvalabs
+    name: Replicate
+
+  huggingface:
+    url: https://huggingface.co/pricing?ref=auvalabs
+    name: Hugging Face
+
+  lambda:
+    url: https://lambdalabs.com/?ref=auvalabs
+    name: Lambda Labs

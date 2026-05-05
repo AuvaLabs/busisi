@@ -1,0 +1,21 @@
+# Vested affiliate partner registry.
+#
+# Personal-finance-for-tech-workers partners. See verticals/modelwatch/
+# partners.yaml for the format spec and operator-action notes.
+
+partners:
+  interactive_brokers:
+    url: https://www.interactivebrokers.com/?ref=auvalabs
+    name: Interactive Brokers
+
+  wealthsimple:
+    url: https://www.wealthsimple.com/?ref=auvalabs
+    name: Wealthsimple
+
+  carta:
+    url: https://carta.com/?ref=auvalabs
+    name: Carta
+
+  monarch:
+    url: https://www.monarchmoney.com/?ref=auvalabs
+    name: Monarch Money

@@ -14,8 +14,6 @@
 
 # Modelwatch placeholder hostname (until real domain is committed).
 modelwatch.local:80 {
-    root * /srv/grimoire/data/output/modelwatch
-    file_server
     encode zstd gzip
     log {
         output file /var/log/caddy/modelwatch.log
@@ -29,12 +27,29 @@ modelwatch.local:80 {
         Permissions-Policy "geolocation=(), microphone=(), camera=()"
         -Server
     }
+    # Mutating + read-API surface — FastAPI handler at 127.0.0.1:8001.
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    # Affiliate redirect surface — /r/<partner>/<slug>.
+    handle /r/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /confirm {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /unsubscribe {
+        reverse_proxy 127.0.0.1:8001
+    }
+    # Everything else: static site.
+    handle {
+        root * /srv/grimoire/data/output/modelwatch
+        file_server
+    }
 }
 
 # Vested placeholder hostname (until real domain is committed).
 vested.local:80 {
-    root * /srv/grimoire/data/output/vested
-    file_server
     encode zstd gzip
     log {
         output file /var/log/caddy/vested.log
@@ -47,6 +62,22 @@ vested.local:80 {
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "geolocation=(), microphone=(), camera=()"
         -Server
+    }
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /r/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /confirm {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle /unsubscribe {
+        reverse_proxy 127.0.0.1:8001
+    }
+    handle {
+        root * /srv/grimoire/data/output/vested
+        file_server
     }
 }
 
