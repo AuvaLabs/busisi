@@ -15,6 +15,7 @@ schema and pipeline behaviour preserved unless explicitly noted below.
 - Skip-tier articles excluded from front page, sitemap, RSS, JSON Feed, llms-full, and `/api/v1/articles` (Phase 22c).
 - Researcher: per-article web/scholar bundles in `research_bundles` table for downstream rewriter grounding (Phase 22e).
 - Reader feedback (Phase 22g): `POST /api/feedback` accepts factual_error / broken_link / outdated / spam / other flags; persists to `article_feedback`; collapsed `<details>` form on every `/story/<slug>/`. IP-rate-limited, honeypot-protected, sha256-peppered reporter IP.
+- Researcher cache + budget cap (Phase 22h): Redis-backed query→results cache (7-day TTL by default) wraps both arXiv + Exa.ai calls so repeated queries across articles in the same news cycle skip the network. Hard daily Exa cap via Redis day-keyed counter (200/day default; 0 disables). Both layers fail open on Redis hiccup. Natural arXiv-only failover when Exa cap is hit or key is unset.
 
 **Monetization foundation (Phase 23 + Phase 24a–i):** Four-lane revenue
 strategy. **No premium subscription** — operator pivot 2026-05-05;
