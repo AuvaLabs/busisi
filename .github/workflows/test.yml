@@ -1,0 +1,37 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run pytest
+        env:
+          # Tests use in-memory SQLite + fakeredis; no real services needed.
+          # Provide a pepper so engine.handlers.security imports cleanly
+          # in tests that don't override it via the fernet_env fixture.
+          SUBSCRIBER_EMAIL_PEPPER: ci-test-pepper
+        run: PYTHONPATH=. pytest engine/tests/ -q --no-header
