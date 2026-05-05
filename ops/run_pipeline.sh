@@ -48,5 +48,10 @@ for V in "${VERTICALS[@]}"; do
     echo "[$(date -Iseconds)] cluster FAILED vertical=$V (continuing)"
   PYTHONPATH=. python -m engine.core.output_renderer "$V" --log-level WARNING || \
     echo "[$(date -Iseconds)] render FAILED vertical=$V (continuing)"
+  # Caddy access-log → bot_hits. Idempotent (skips lines older than the
+  # most-recent recorded ts). Ignored if the log file is absent — the
+  # parser warns and returns 0.
+  PYTHONPATH=. python -m engine.core.bot_log_parser "$V" --log-level WARNING || \
+    echo "[$(date -Iseconds)] bot_log_parser FAILED vertical=$V (continuing)"
   echo "[$(date -Iseconds)] pipeline done vertical=$V"
 done

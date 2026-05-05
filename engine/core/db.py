@@ -381,6 +381,66 @@ class ArticleFeedback(Base):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class BotHit(Base):
+    """Recorded crawler hit — populated by the Caddy log parser.
+
+    One row per bot request to a public surface. Used to measure who's
+    actually citing us (Perplexity, ChatGPT Search, Google AI Overviews,
+    etc.) and to feed Publisher-Program / TollBit / Cloudflare-PPC
+    applications. ``ip_hash`` is sha256-peppered.
+    """
+
+    __tablename__ = "bot_hits"
+    __table_args__ = (
+        Index("ix_bot_hit_vertical_ts", "vertical_id", "ts"),
+        Index("ix_bot_hit_bot_ts", "bot_name", "ts"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
+    vertical_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
+    )
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    bot_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    ua: Mapped[str] = mapped_column(Text, nullable=False)
+    path: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[int] = mapped_column(Integer, nullable=False)
+    ip_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class AffiliateClick(Base):
+    """Recorded affiliate-link click — populated by the /r/<partner>/<slug>
+    redirect handler. Used to attribute conversions and audit partner
+    performance without depending on third-party trackers. ``ip_hash`` is
+    sha256-peppered for rate-limit grouping.
+    """
+
+    __tablename__ = "affiliate_clicks"
+    __table_args__ = (
+        Index("ix_affiliate_click_vertical_ts", "vertical_id", "ts"),
+        Index("ix_affiliate_click_partner_ts", "partner", "ts"),
+    )
+
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
+    vertical_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("verticals.id", ondelete="CASCADE"), nullable=False
+    )
+    ts: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+    partner: Mapped[str] = mapped_column(String(64), nullable=False)
+    slug: Mapped[str] = mapped_column(String(256), default="", nullable=False)
+    ip_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
 _engine: Engine | None = None
 
 
