@@ -21,7 +21,7 @@ gated on the operator (DNS, billing accounts, API keys) are flagged
 - [ ] **[OP]** Status push monitor in `status.auvalabs.com` Uptime Kuma; populate `UPTIME_PUSH_URL` in `/srv/grimoire/.env`; alert channel (Discord/Telegram) wired.
 - [ ] **[OP]** Synthesize / Groq API key(s) → `LLM_API_KEYS=` in `.env`. Unlocks LLM-driven Phase 2 modules + Phase 6 LLM-graded harness dimensions.
 - [ ] **[OP]** Postmark or Resend API token → `POSTMARK_API_TOKEN=` in `.env`. Newsletter delivery.
-- [x] **[ENG]** FastAPI handler app shipped (Phase 9): `/api/subscribe`, `/api/sponsor`, `/api/tools/<slug>/calculate`, `/api/v1/{health,articles,entities}`, `/r/<partner>/<slug>` (affiliate redirect).
+- [x] **[ENG]** FastAPI handler app shipped (Phase 9 + 22g + 24g/i): `/api/subscribe`, `/api/sponsor`, `/api/tools/<slug>/calculate`, `/api/feedback` (reader-flag), `/api/v1/{health,articles,entities}` (read API), `/r/<partner>/<slug>` (affiliate redirect).
 - [x] **[ENG]** Caddy reverse-proxies `/api/*`, `/r/*`, `/confirm`, `/unsubscribe` → `127.0.0.1:8001` per vertical site block (was a pre-existing bug — fixed this session).
 - [ ] **[OP]** Domain commit. Update Caddyfile + `output_renderer._canonical_url` from `.local` to the real domains. Cloudflare DNS A-record to `178.104.214.16`. CF cache-HTML rule.
 

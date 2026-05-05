@@ -10,10 +10,11 @@
 Layered onto the original Phase 0–7 platform. All purely additive; original
 schema and pipeline behaviour preserved unless explicitly noted below.
 
-**Editorial pipeline depth (Phase 22a–22e):**
+**Editorial pipeline depth (Phase 22a–22g):**
 - Curator: rule-based score + tier (`skip` / `standard` / `researcher`); LLM-judge for the gray zone; per-row signals JSON.
 - Skip-tier articles excluded from front page, sitemap, RSS, JSON Feed, llms-full, and `/api/v1/articles` (Phase 22c).
 - Researcher: per-article web/scholar bundles in `research_bundles` table for downstream rewriter grounding (Phase 22e).
+- Reader feedback (Phase 22g): `POST /api/feedback` accepts factual_error / broken_link / outdated / spam / other flags; persists to `article_feedback`; collapsed `<details>` form on every `/story/<slug>/`. IP-rate-limited, honeypot-protected, sha256-peppered reporter IP.
 
 **Monetization foundation (Phase 23 + Phase 24a–i):** Four-lane revenue
 strategy. **No premium subscription** — operator pivot 2026-05-05;
