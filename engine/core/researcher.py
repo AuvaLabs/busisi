@@ -24,6 +24,7 @@ deduped by host+url-path and trimmed to ``RESEARCH_BUNDLE_SIZE``.
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Any
@@ -37,8 +38,10 @@ from engine.core.config import (
     ARXIV_ENABLED,
     ARXIV_ENDPOINT,
     EXA_API_KEY,
+    EXA_DAILY_CAP,
     EXA_ENDPOINT,
     RESEARCH_BUNDLE_SIZE,
+    RESEARCH_CACHE_TTL_DAYS,
     RESEARCH_MAX_PER_TICK,
     RESEARCH_QUERY_TIMEOUT,
 )
@@ -50,9 +53,87 @@ from engine.core.db import (
     Vertical,
     get_sessionmaker,
 )
+from engine.core.llm_cache import _redis
 from engine.core.safe_http import install_ssrf_guard
 
 logger = logging.getLogger(__name__)
+
+
+# ---- Cache + budget helpers (Phase 22h) ------------------------------------
+
+
+def _cache_key(provider: str, query: str) -> str:
+    h = hashlib.sha256(query.encode("utf-8", "replace")).hexdigest()
+    return f"grimoire:researcher:cache:{provider}:{h}"
+
+
+def _cache_get(provider: str, query: str) -> list[dict[str, Any]] | None:
+    """Return cached results or None on miss / Redis hiccup. Fail-open."""
+    try:
+        client = _redis()
+        if client is None:
+            return None
+        raw = client.get(_cache_key(provider, query))
+    except Exception as exc:  # noqa: BLE001 — never block research on cache
+        logger.debug("researcher cache get failed: %s", exc)
+        return None
+    if not raw:
+        return None
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8", "replace")
+    try:
+        data = json.loads(raw)
+    except (TypeError, ValueError):
+        return None
+    if not isinstance(data, list):
+        return None
+    return data
+
+
+def _cache_put(
+    provider: str, query: str, results: list[dict[str, Any]]
+) -> None:
+    """Persist results JSON with the configured TTL. Silent on errors."""
+    try:
+        client = _redis()
+        if client is None:
+            return
+        ttl = max(int(RESEARCH_CACHE_TTL_DAYS), 0) * 86400
+        if ttl <= 0:
+            return
+        client.set(
+            _cache_key(provider, query),
+            json.dumps(results),
+            ex=ttl,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("researcher cache put failed: %s", exc)
+
+
+def _exa_daily_counter_key() -> str:
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return f"grimoire:researcher:exa:{today}"
+
+
+def _exa_under_daily_cap() -> bool:
+    """True = OK to spend an Exa call. False = cap reached, skip silently.
+    Fails open on Redis hiccup so a broken cache doesn't kill research."""
+    cap = max(int(EXA_DAILY_CAP), 0)
+    if cap <= 0:
+        return True  # cap disabled
+    try:
+        client = _redis()
+        if client is None:
+            return True
+        n = client.incr(_exa_daily_counter_key())
+        if int(n) == 1:
+            # First call of the day — auto-expire after 48h so stale
+            # day-keys don't accumulate even if cleanup misses.
+            client.expire(_exa_daily_counter_key(), 172800)
+        return int(n) <= cap
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("researcher exa cap check failed: %s", exc)
+        return True
 
 
 # ---- Query expansion -------------------------------------------------------
@@ -109,7 +190,9 @@ def expand_queries(article: Article, entities: list[Entity]) -> list[str]:
 # ---- Source clients --------------------------------------------------------
 
 
-def search_arxiv(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
+def _search_arxiv_uncached(
+    query: str, *, max_results: int = 3
+) -> list[dict[str, Any]]:
     """Hit the arXiv Atom API. No key, no rate-limit issues at our volume."""
     if not ARXIV_ENABLED or not query:
         return []
@@ -151,7 +234,9 @@ def search_arxiv(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
     return out
 
 
-def search_exa(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
+def _search_exa_uncached(
+    query: str, *, max_results: int = 3
+) -> list[dict[str, Any]]:
     """Hit Exa.ai semantic search. Returns [] if EXA_API_KEY is unset."""
     if not EXA_API_KEY or not query:
         return []
@@ -202,6 +287,41 @@ def search_exa(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
             }
         )
     return out
+
+
+# Public cached wrappers — every external caller of search_arxiv /
+# search_exa goes through these so the cache + budget cap apply
+# uniformly. Signatures preserved for backward compatibility.
+
+def search_arxiv(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
+    cached = _cache_get("arxiv", query)
+    if cached is not None:
+        return cached[:max_results]
+    results = _search_arxiv_uncached(query, max_results=max_results)
+    _cache_put("arxiv", query, results)
+    return results
+
+
+_exa_cap_warned = False  # log "cap reached" once per process
+
+
+def search_exa(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
+    cached = _cache_get("exa", query)
+    if cached is not None:
+        return cached[:max_results]
+    if not _exa_under_daily_cap():
+        global _exa_cap_warned
+        if not _exa_cap_warned:
+            logger.warning(
+                "exa daily cap (%d) reached — falling back to arXiv-only "
+                "until UTC midnight",
+                EXA_DAILY_CAP,
+            )
+            _exa_cap_warned = True
+        return []
+    results = _search_exa_uncached(query, max_results=max_results)
+    _cache_put("exa", query, results)
+    return results
 
 
 # ---- Bundle assembly + persistence -----------------------------------------

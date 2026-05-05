@@ -101,6 +101,17 @@ RESEARCH_QUERY_TIMEOUT: Final[float] = float(
 RESEARCH_BUNDLE_SIZE: Final[int] = int(
     os.environ.get("RESEARCH_BUNDLE_SIZE", "5")
 )
+# Researcher cache (Phase 22h): cache search-provider responses in Redis
+# so re-runs against the same article (or shared-query articles) avoid
+# re-paying. TTL governs staleness — 7 days is the default because the
+# stories researcher cares about move on a 1-2 week news cycle.
+RESEARCH_CACHE_TTL_DAYS: Final[int] = int(
+    os.environ.get("RESEARCH_CACHE_TTL_DAYS", "7")
+)
+# Hard daily ceiling on Exa.ai calls (the paid provider). 0 disables the
+# cap. The cap is enforced via a Redis day-keyed counter so multiple
+# pipeline ticks share the same budget.
+EXA_DAILY_CAP: Final[int] = int(os.environ.get("EXA_DAILY_CAP", "200"))
 
 # ---- Logging ----
 LOG_LEVEL: Final[str] = os.environ.get("LOG_LEVEL", "INFO")

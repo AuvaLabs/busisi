@@ -312,3 +312,108 @@ class TestResearchPending:
         with SM() as s:
             article = s.execute(select(Article)).scalar_one()
             assert article.researched_at is not None
+
+
+# ---- Phase 22h: cache + daily budget cap ----------------------------------
+
+
+@pytest.fixture
+def fake_redis(monkeypatch: pytest.MonkeyPatch):
+    import fakeredis
+
+    fr = fakeredis.FakeStrictRedis(decode_responses=True)
+    monkeypatch.setattr(r, "_redis", lambda: fr)
+    monkeypatch.setattr(r, "_exa_cap_warned", False)
+    return fr
+
+
+class TestCacheAndBudget:
+    def test_cache_round_trip(self, fake_redis) -> None:
+        rows = [
+            {"url": "https://arxiv.org/abs/2024.00001", "title": "x",
+             "text": "abstract", "host": "arxiv.org"}
+        ]
+        assert r._cache_get("arxiv", "GPT-5 release") is None
+        r._cache_put("arxiv", "GPT-5 release", rows)
+        out = r._cache_get("arxiv", "GPT-5 release")
+        assert out == rows
+
+    def test_search_arxiv_uses_cache_on_repeat_call(
+        self, fake_redis, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        calls = {"n": 0}
+
+        def fake_uncached(query: str, *, max_results: int = 3):
+            calls["n"] += 1
+            return [
+                {
+                    "url": "https://arxiv.org/abs/2024.00002",
+                    "title": "Paper",
+                    "text": "abstract",
+                    "host": "arxiv.org",
+                }
+            ]
+
+        monkeypatch.setattr(r, "_search_arxiv_uncached", fake_uncached)
+        first = r.search_arxiv("query alpha")
+        assert calls["n"] == 1
+        second = r.search_arxiv("query alpha")
+        assert calls["n"] == 1
+        assert first == second
+        r.search_arxiv("query beta")
+        assert calls["n"] == 2
+
+    def test_exa_daily_cap_blocks_calls_when_exceeded(
+        self, fake_redis, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(r, "EXA_DAILY_CAP", 2)
+        called = {"n": 0}
+
+        def fake_uncached(query: str, *, max_results: int = 3):
+            called["n"] += 1
+            return [
+                {
+                    "url": f"https://exa.example/{query}",
+                    "title": "x",
+                    "text": "x",
+                    "host": "exa.example",
+                }
+            ]
+
+        monkeypatch.setattr(r, "_search_exa_uncached", fake_uncached)
+        r.search_exa("a")
+        r.search_exa("b")
+        third = r.search_exa("c")
+        assert called["n"] == 2
+        assert third == []
+
+    def test_exa_cap_zero_disables(
+        self, fake_redis, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(r, "EXA_DAILY_CAP", 0)
+        called = {"n": 0}
+
+        def fake_uncached(query: str, *, max_results: int = 3):
+            called["n"] += 1
+            return []
+
+        monkeypatch.setattr(r, "_search_exa_uncached", fake_uncached)
+        for q in ("a", "b", "c", "d", "e"):
+            r.search_exa(q)
+        assert called["n"] == 5
+
+    def test_cache_fails_open_when_redis_unavailable(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(r, "_redis", lambda: None)
+        assert r._cache_get("arxiv", "x") is None
+        r._cache_put("arxiv", "x", [{"url": "u", "title": "t",
+                                     "text": "x", "host": "h"}])
+        assert r._cache_get("arxiv", "x") is None
+
+    def test_exa_cap_fails_open_when_redis_unavailable(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(r, "_redis", lambda: None)
+        monkeypatch.setattr(r, "EXA_DAILY_CAP", 1)
+        assert r._exa_under_daily_cap() is True
