@@ -1,6 +1,7 @@
 # {{ vertical.display_name }} — robots.txt
 # Honest declaration of what is + isn't crawlable. See /llms.txt for the
-# fuller policy aimed at LLM operators.
+# fuller editorial policy and /licensing for citation/quotation terms.
+# Inference licensing terms: see /.well-known/rsl.json (Really Simple Licensing).
 
 User-agent: *
 Allow: /
@@ -8,40 +9,79 @@ Disallow: /api/admin
 Disallow: /sponsorship/admin
 Crawl-delay: 2
 
-# Aggressive AI training crawlers we do not authorise to use our content
-# for training without explicit license. Editorial summaries are
-# AI-assisted but human-supervised; they are licensed for reading, not
-# for ingestion into other models.
+# AI crawlers — explicitly allowed under the licensing terms in /licensing
+# and /.well-known/rsl.json. Editorial summaries are AI-assisted but
+# human-supervised; quotation with attribution + canonical link-back is
+# fair use, bulk redistribution requires permission.
 
 User-agent: GPTBot
-Disallow: /
+Allow: /
+Crawl-delay: 2
+
+User-agent: ChatGPT-User
+Allow: /
+Crawl-delay: 2
+
+User-agent: OAI-SearchBot
+Allow: /
+Crawl-delay: 2
 
 User-agent: ClaudeBot
-Disallow: /
+Allow: /
+Crawl-delay: 2
 
 User-agent: Claude-Web
-Disallow: /
+Allow: /
+Crawl-delay: 2
 
 User-agent: anthropic-ai
-Disallow: /
-
-User-agent: cohere-ai
-Disallow: /
-
-User-agent: Google-Extended
-Disallow: /
-
-User-agent: CCBot
-Disallow: /
-
-User-agent: Bytespider
-Disallow: /
+Allow: /
+Crawl-delay: 2
 
 User-agent: PerplexityBot
-Disallow: /
+Allow: /
+Crawl-delay: 2
 
-# Search engines and reasonable retrieval bots are welcome.
-# Bingbot, Googlebot, DuckDuckBot, etc. fall through to the wildcard
-# allow above.
+User-agent: Perplexity-User
+Allow: /
+Crawl-delay: 2
+
+User-agent: Google-Extended
+Allow: /
+Crawl-delay: 2
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+Crawl-delay: 2
+
+User-agent: Applebot-Extended
+Allow: /
+Crawl-delay: 2
+
+User-agent: Amazonbot
+Allow: /
+Crawl-delay: 2
+
+User-agent: cohere-ai
+Allow: /
+Crawl-delay: 2
+
+User-agent: CCBot
+Allow: /
+Crawl-delay: 2
+
+# Bytespider (TikTok/ByteDance) — declined; aggressive scraping behaviour
+# without clear citation surface.
+User-agent: Bytespider
+Disallow: /
 
 Sitemap: {{ canonical_url }}/sitemap.xml

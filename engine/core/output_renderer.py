@@ -407,6 +407,38 @@ def render_meta_files(
     p.write_text(llms, encoding="utf-8")
     paths["llms"] = p
 
+    # llms-full.txt — plain-text content index for AI ingestion. Same
+    # query as sitemap (skip-tier excluded), capped to the 500-row limit
+    # already applied above.
+    llms_full_articles: list[dict[str, Any]] = []
+    for a in articles:
+        pub_dt = a.published_at or a.fetched_at
+        if pub_dt is not None and pub_dt.tzinfo is None:
+            pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+        llms_full_articles.append(
+            {
+                "title": a.title,
+                "slug": a.slug,
+                "summary": a.summary or "",
+                "link": a.link,
+                "source_short": _short_source(a.link),
+                "feed_region": a.feed_region,
+                "why_this_matters": a.why_this_matters or "",
+                "published_iso": (
+                    pub_dt.strftime("%Y-%m-%dT%H:%M:%SZ") if pub_dt else ""
+                ),
+            }
+        )
+    llms_full = env.get_template("llms-full.txt").render(
+        vertical=vertical_ctx,
+        generated_at=generated_at,
+        base_url=base,
+        articles=llms_full_articles,
+    )
+    p = out_dir / "llms-full.txt"
+    p.write_text(llms_full, encoding="utf-8")
+    paths["llms_full"] = p
+
     robots = env.get_template("robots.txt").render(
         vertical=vertical_ctx, canonical_url=base
     )
@@ -438,9 +470,12 @@ def render_meta_files(
             {
                 "title": a.title,
                 "link": f"{base}/story/{a.slug}/",
+                "source_url": a.link,
                 "pub_date": (
                     pub_dt.strftime("%a, %d %b %Y %H:%M:%S +0000") if pub_dt else ""
                 ),
+                "date_published": (pub_dt.isoformat() if pub_dt else ""),
+                "summary": (a.summary or "")[:1200],
                 "description": (a.summary or "")[:1200],
                 "categories": [
                     label.get("label", "") if isinstance(label, dict) else str(label)
@@ -460,8 +495,23 @@ def render_meta_files(
     p.write_text(feed, encoding="utf-8")
     paths["feed"] = p
 
+    feed_description = (
+        f"{vertical_ctx['display_name']} — multi-source coverage with "
+        "grounded summaries and source link-back."
+    )
+    feed_json = env.get_template("feed.json").render(
+        vertical=vertical_ctx,
+        base_url=base,
+        feed_description=feed_description,
+        items=feed_items,
+    )
+    p = out_dir / "feed.json"
+    p.write_text(feed_json, encoding="utf-8")
+    paths["feed_json"] = p
+
     logger.info(
-        "rendered %s meta-files (llms.txt, robots.txt, sitemap.xml, feed.rss)",
+        "rendered %s meta-files (llms.txt, llms-full.txt, robots.txt, "
+        "sitemap.xml, feed.rss, feed.json)",
         vertical_name,
     )
     return paths

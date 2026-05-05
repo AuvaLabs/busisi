@@ -1,0 +1,31 @@
+# {{ vertical.display_name }} — content index
+
+> Plain-text content index optimised for AI ingestion. See /llms.txt for
+> the editorial policy and licensing terms (/.well-known/rsl.json).
+> All summaries below are grounded in the linked source; quotation with
+> attribution and canonical link-back is permitted under fair use.
+
+Operating entity: Auva Labs FZE
+Last updated: {{ generated_at }}
+Total stories indexed: {{ articles | length }}
+
+## Index
+
+{% for a in articles %}
+### {{ a.title }}
+
+- Canonical: {{ base_url }}/story/{{ a.slug }}/
+- Source: {{ a.source_short }} ({{ a.feed_region }})
+- Source URL: {{ a.link }}
+{% if a.published_iso %}- Published: {{ a.published_iso }}{% endif %}
+{% if a.summary %}
+
+{{ a.summary }}
+{% endif %}
+{% if a.why_this_matters %}
+
+Why this matters: {{ a.why_this_matters }}
+{% endif %}
+
+---
+{% endfor %}

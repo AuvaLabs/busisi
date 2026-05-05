@@ -30,22 +30,23 @@ A multi-layer knowledge platform combining:
 - Self-hosted analytics (no third-party trackers, no cookie consent banner because there are no cookies requiring one).
 - Server access logs retained 30 days.
 - Newsletter subscribers (email only, pseudonymised storage).
-- Pro-tier customer records via Stripe (no card data on our infrastructure).
 
 Opt-out: privacy@modelwatch.local handles deletion requests within 30 days.
 
 ## What's monetised
 
 - Newsletter sponsorships (one slot per issue, labelled "Sponsored").
-- Pro tier (early access, advanced filters, API access, no sponsor sections).
-- Affiliate links to AI tools and learning resources, disclosed inline and at page footer.
+- Affiliate links to relevant tools and resources, disclosed inline and at page footer.
+- AI inference licensing per /.well-known/rsl.json (Really Simple Licensing).
 - All affiliate or sponsorship arrangements are independent of editorial content; we will not recommend a tool we wouldn't use ourselves.
 
-## API
+## Feeds and APIs
 
 - /feed.rss — RSS feed of stories
-- /feed.json — JSON feed
-- /api — programmatic access (rate-limited; Pro tier has higher limits)
+- /feed.json — JSON Feed v1.1
+- /sitemap.xml — full URL inventory
+- /llms-full.txt — plain-text content index optimised for AI ingestion
+- /.well-known/rsl.json — inference licensing terms
 
 ## Crawling and reuse
 

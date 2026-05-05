@@ -43,9 +43,9 @@
 
   <h2>Acceptable use</h2>
   <ul>
-    <li>Do not abuse the service. No scraping at rates beyond what the public RSS feeds and JSON API permit.</li>
+    <li>Do not abuse the service. No scraping at rates beyond what the public RSS/JSON feeds permit (see <code>robots.txt</code> Crawl-delay).</li>
     <li>Do not impersonate the operating entity or its editorial voice.</li>
-    <li>Do not attempt to circumvent paid-tier gating, sponsorship gating, or rate-limiting.</li>
+    <li>Do not attempt to circumvent sponsorship gating or rate-limiting.</li>
     <li>Do not introduce malware, spam, or content that violates third-party rights.</li>
   </ul>
 
@@ -54,8 +54,9 @@
     {{ vertical.display_name }} aggregates publicly available news from
     primary sources and produces summaries that are explicitly grounded
     in those sources. Headlines, summaries, and editorial commentary
-    written by us are licensed for personal reading;
-    <a href="/api">programmatic access</a> follows the API's own terms.
+    written by us are licensed for personal reading and quotation with
+    attribution; bulk redistribution and AI inference licensing follow
+    the terms in <a href="/.well-known/rsl.json">/.well-known/rsl.json</a>.
     Content from third-party sources remains the property of those
     sources and we link prominently back to them in every story.
   </p>
@@ -68,14 +69,6 @@
     based on the sources cited; readers should verify against the
     primary sources before acting on it. {{ vertical.display_name }}
     makes no warranty of fitness for any particular purpose.
-  </p>
-
-  <h2>Pro tier</h2>
-  <p>
-    Pro-tier subscriptions are billed via Stripe. Cancellations take
-    effect at the end of the current billing period; no pro-rated
-    refunds are issued unless required by law. Magic-link access tokens
-    are single-use and expire 15 minutes after issue.
   </p>
 
   <h2>Sponsorship and affiliate disclosures</h2>

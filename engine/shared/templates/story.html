@@ -191,6 +191,11 @@
       "@type": "Organization",
       "name": {{ vertical.display_name | tojson }}
     },
+    "author": {
+      "@type": "Organization",
+      "name": {{ vertical.display_name | tojson }},
+      "url": {{ canonical_url | tojson }}
+    },
     "isBasedOn": {{ article.link | tojson }},
     "inLanguage": "en"
   }

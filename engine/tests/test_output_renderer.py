@@ -337,17 +337,22 @@ class TestRenderStoriesSiblings:
             / "claude-5-launch"
             / "index.html"
         ).read_text(encoding="utf-8")
-        m = _re.search(
-            r'<script type="application/ld\+json">(.*?)</script>',
+        blocks = _re.findall(
+            r'<script type="application/ld\+json">\s*(\{.*?\})\s*</script>',
             body,
             _re.DOTALL,
         )
-        assert m, "ld+json block missing"
-        data = _json.loads(m.group(1))
-        assert data["@type"] == "NewsArticle"
-        assert data["headline"] == "Anthropic launches Claude 5"
-        assert data["datePublished"] == "2026-05-04T12:00:00+00:00"
-        assert data["publisher"]["name"] == "Modelwatch"
+        assert blocks, "ld+json blocks missing"
+        parsed = [_json.loads(b) for b in blocks]
+        types = [d.get("@type") for d in parsed]
+        assert "Organization" in types, f"Organization JSON-LD missing: {types}"
+        news = next((d for d in parsed if d.get("@type") == "NewsArticle"), None)
+        assert news is not None, f"NewsArticle JSON-LD missing: {types}"
+        assert news["headline"] == "Anthropic launches Claude 5"
+        assert news["datePublished"] == "2026-05-04T12:00:00+00:00"
+        assert news["publisher"]["name"] == "Modelwatch"
+        assert news["author"]["@type"] == "Organization"
+        assert news["author"]["name"] == "Modelwatch"
 
     def test_entity_chips_render_on_story_page(
         self, test_engine, repo_templates, output_root

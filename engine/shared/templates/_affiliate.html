@@ -1,0 +1,39 @@
+{# Affiliate / sponsored-link macros.
+
+   Usage:
+     {% from "_affiliate.html" import link as aff, disclosure %}
+
+     We use {{ aff("https://anthropic.com/?ref=auvalabs", "Claude", "anthropic") }}
+     for grounded summarisation.
+
+     ... at the bottom of the page ...
+     {{ disclosure() }}
+
+   Every affiliate link emits rel="sponsored noopener" + a data-partner attr
+   (so we can self-host click attribution later) + a footnote asterisk.
+   FTC compliance: pair with the `disclosure()` macro on every page that
+   uses an affiliate link. Compliance is the author's responsibility — the
+   macro emits the asterisk; the disclosure block must be invoked too.
+#}
+
+{% macro link(href, text, partner) -%}
+<a href="{{ href }}" rel="sponsored noopener" target="_blank" data-partner="{{ partner }}">{{ text }}</a><sup class="aff-mark" aria-label="affiliate link">*</sup>
+{%- endmacro %}
+
+{% macro disclosure() -%}
+<aside class="affiliate-disclosure" role="note" style="
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    color: var(--text-mute);
+    border-top: 1px solid var(--rule);
+    margin: 2rem 0 0;
+    padding: 0.8rem 0 0;
+    line-height: 1.5;">
+  <strong style="color: var(--text);">*</strong>
+  Links marked with an asterisk are affiliate links. If you click and sign
+  up or purchase, we may receive a small commission at no extra cost to
+  you. Affiliate arrangements are independent of editorial content; we
+  only link to tools we would (or do) use ourselves. See
+  <a href="/terms">Terms</a> for the full disclosure policy.
+</aside>
+{%- endmacro %}

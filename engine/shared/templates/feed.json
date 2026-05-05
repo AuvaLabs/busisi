@@ -1,0 +1,27 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": {{ vertical.display_name | tojson }},
+  "home_page_url": {{ base_url | tojson }},
+  "feed_url": {{ (base_url ~ "/feed.json") | tojson }},
+  "description": {{ feed_description | tojson }},
+  "language": "en",
+  "authors": [
+    {
+      "name": {{ vertical.display_name | tojson }},
+      "url": {{ base_url | tojson }}
+    }
+  ],
+  "items": [
+    {% for it in items %}
+    {
+      "id": {{ it.link | tojson }},
+      "url": {{ it.link | tojson }},
+      "external_url": {{ it.source_url | tojson }},
+      "title": {{ it.title | tojson }},
+      "content_text": {{ it.summary | tojson }},
+      {% if it.date_published %}"date_published": {{ it.date_published | tojson }},{% endif %}
+      "tags": {{ it.categories | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
