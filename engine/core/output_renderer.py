@@ -541,9 +541,21 @@ def render_meta_files(
     p.write_text(feed_json, encoding="utf-8")
     paths["feed_json"] = p
 
+    # IndexNow key file — must be reachable at https://<vertical>/<KEY>.txt
+    # for Bing/Yandex to verify push-mode index requests. Atelier-pattern.
+    try:
+        from engine.core import indexnow
+
+        in_key = indexnow.get_or_create_key(vertical_name)
+        in_key_path = out_dir / f"{in_key}.txt"
+        in_key_path.write_text(in_key, encoding="utf-8")
+        paths["indexnow_key"] = in_key_path
+    except Exception as exc:  # noqa: BLE001 — never block render on IndexNow
+        logger.warning("indexnow: key-file write failed: %s", exc)
+
     logger.info(
         "rendered %s meta-files (llms.txt, llms-full.txt, robots.txt, "
-        "sitemap.xml, feed.rss, feed.json)",
+        "sitemap.xml, feed.rss, feed.json, indexnow key)",
         vertical_name,
     )
     return paths

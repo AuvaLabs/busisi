@@ -4,6 +4,9 @@
 !.env.example
 .r2-*.env
 
+# Per-vertical IndexNow keys — operational, not for git
+verticals/*/.indexnow_key
+
 # State and data — never commit
 data/
 backups/

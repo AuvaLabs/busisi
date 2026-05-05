@@ -53,5 +53,10 @@ for V in "${VERTICALS[@]}"; do
   # parser warns and returns 0.
   PYTHONPATH=. python -m engine.core.bot_log_parser "$V" --log-level WARNING || \
     echo "[$(date -Iseconds)] bot_log_parser FAILED vertical=$V (continuing)"
+  # IndexNow push to Bing/Yandex — tells them about the day's new URLs
+  # so push-mode indexing kicks in within minutes vs the hours/days
+  # crawl-mode discovery would take. Fail-open.
+  PYTHONPATH=. python -m engine.core.indexnow "$V" --log-level WARNING || \
+    echo "[$(date -Iseconds)] indexnow FAILED vertical=$V (continuing)"
   echo "[$(date -Iseconds)] pipeline done vertical=$V"
 done
