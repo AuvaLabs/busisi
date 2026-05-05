@@ -16,14 +16,35 @@ gated on the operator (DNS, billing accounts, API keys) are flagged
 - [x] **[ENG]** Docker + Postgres 16 + Redis 7 healthy.
 - [x] **[ENG]** Caddy serving placeholder hostnames (`modelwatch.local`, `vested.local`) over HTTP. Security headers global.
 - [x] **[ENG]** Local nightly Postgres dump (03:30 UTC, 14-day retention).
-- [ ] **[OP]** Cloudflare R2 bucket `grimoire-backups` + IP-allowlisted token; populate `~/.r2-grimoire.env` on the command center.
-- [ ] **[OP]** Restic init (`restic --repo $RESTIC_REPOSITORY init`); first off-box backup verifies.
+- [x] **[ENG]** Cloudflare R2 bucket `grimoire-backups` provisioned (account `22fe4279...`, S3-compatible). `ops/backup.sh` pushes via aws CLI when `AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY` are present.
+- [ ] **[OP]** R2 API token (bucket-scoped) added to `/srv/grimoire/.env`; install `awscli` on VPS. Verify with one-shot `sudo /srv/grimoire/ops/backup.sh`.
 - [ ] **[OP]** Status push monitor in `status.auvalabs.com` Uptime Kuma; populate `UPTIME_PUSH_URL` in `/srv/grimoire/.env`; alert channel (Discord/Telegram) wired.
 - [ ] **[OP]** Synthesize / Groq API key(s) → `LLM_API_KEYS=` in `.env`. Unlocks LLM-driven Phase 2 modules + Phase 6 LLM-graded harness dimensions.
 - [ ] **[OP]** Postmark or Resend API token → `POSTMARK_API_TOKEN=` in `.env`. Newsletter delivery.
-- [ ] **[OP]** Stripe account + secret + webhook secret → `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` in `.env`. Pro tier payments.
-- [ ] **[ENG]** FastAPI handler app for `/api/subscribe`, `/api/sponsor`, `/auth/magic-link`, `/api/tools/<slug>/calculate` — pending implementation.
+- [x] **[ENG]** FastAPI handler app shipped (Phase 9): `/api/subscribe`, `/api/sponsor`, `/api/tools/<slug>/calculate`, `/api/v1/{health,articles,entities}`, `/r/<partner>/<slug>` (affiliate redirect).
+- [x] **[ENG]** Caddy reverse-proxies `/api/*`, `/r/*`, `/confirm`, `/unsubscribe` → `127.0.0.1:8001` per vertical site block (was a pre-existing bug — fixed this session).
 - [ ] **[OP]** Domain commit. Update Caddyfile + `output_renderer._canonical_url` from `.local` to the real domains. Cloudflare DNS A-record to `178.104.214.16`. CF cache-HTML rule.
+
+## Monetization + AI-citation surface (this session)
+
+- [x] **[ENG]** robots.txt allow-list for AI crawlers (PerplexityBot, GPTBot, ClaudeBot, Google-Extended, etc.) under explicit licensing terms.
+- [x] **[ENG]** `/llms.txt` + `/llms-full.txt` content index for AI ingestion.
+- [x] **[ENG]** `/feed.json` (JSON Feed v1.1) peer to RSS.
+- [x] **[ENG]** Organization JSON-LD with `sameAs` (LinkedIn, GitHub) on every page.
+- [x] **[ENG]** BreadcrumbList + NewsArticle (`author: Organization`) JSON-LD.
+- [x] **[ENG]** FAQPage JSON-LD on `/methodology` (5 Q&A pairs for AEO).
+- [x] **[ENG]** `/.well-known/rsl.json` — Really Simple Licensing manifest.
+- [x] **[ENG]** `/.well-known/security.txt` — RFC 9116 (1-year Expires auto-rolled).
+- [x] **[ENG]** `/licensing` — plain-English peer to rsl.json.
+- [x] **[ENG]** `/advertise` — sponsorship + ads + affiliate rate card (no premium, per pivot).
+- [x] **[ENG]** Affiliate macro `_affiliate.html` + `/r/<partner>/<slug>` redirect with UTM + click logging (`affiliate_clicks` table).
+- [x] **[ENG]** Per-vertical `partners.yaml` registry (placeholder ref codes).
+- [x] **[ENG]** Bot UA logging — Caddy log → `bot_hits` table via `engine.core.bot_log_parser`, wired into cron.
+- [ ] **[OP]** Replace `?ref=auvalabs` placeholders in `verticals/{modelwatch,vested}/partners.yaml` with real affiliate codes before commercial use.
+- [ ] **[OP]** Verify LinkedIn slug `https://www.linkedin.com/company/auvalabs/` in `base.html` Organization JSON-LD; correct if different.
+- [ ] **[OP]** Apply to Perplexity Publisher Program (needs ≥30 days indexed clean).
+- [ ] **[OP]** Apply to TollBit + Cloudflare Pay-Per-Crawl after ≥30 days of bot_hits telemetry.
+- [ ] **[OP]** Carbon Ads / EthicalAds applications when traffic crosses thresholds.
 
 ---
 
