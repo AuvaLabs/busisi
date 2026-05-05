@@ -96,6 +96,54 @@ class TestParseLines:
         assert h["status"] == 200
         assert h["remote_ip"] == "203.0.113.5"
 
+    def test_prefers_cf_connecting_ip_over_remote_ip(self) -> None:
+        """With Cloudflare orange-cloud, request.remote_ip is a CF edge
+        address; the real bot IP arrives in CF-Connecting-IP."""
+        line = json.dumps(
+            {
+                "ts": 1715000000.0,
+                "request": {
+                    "uri": "/llms.txt",
+                    "headers": {
+                        "User-Agent": ["GPTBot/1.0"],
+                        "Cf-Connecting-Ip": ["203.0.113.99"],
+                    },
+                    "remote_ip": "172.71.130.45",
+                },
+                "status": 200,
+            }
+        )
+        out = list(blp.parse_lines([line]))
+        assert len(out) == 1
+        assert out[0]["remote_ip"] == "203.0.113.99"
+
+    def test_falls_back_to_remote_ip_when_cf_header_absent(self) -> None:
+        """Direct-origin requests (local dev, edge-IP probes) have no
+        CF-Connecting-IP — fall back to the connection's remote_ip."""
+        line = json.dumps(
+            {
+                "ts": 1715000000.0,
+                "request": {
+                    "uri": "/",
+                    "headers": {"User-Agent": ["ClaudeBot/1.0"]},
+                    "remote_ip": "192.0.2.42",
+                },
+                "status": 200,
+            }
+        )
+        out = list(blp.parse_lines([line]))
+        assert len(out) == 1
+        assert out[0]["remote_ip"] == "192.0.2.42"
+
+    def test_extract_cf_ip_helper_handles_case_variants(self) -> None:
+        for header_name in ("Cf-Connecting-Ip", "CF-Connecting-IP", "cf-connecting-ip"):
+            assert (
+                blp._extract_cf_ip({header_name: ["198.51.100.10"]})
+                == "198.51.100.10"
+            )
+        assert blp._extract_cf_ip({}) == ""
+        assert blp._extract_cf_ip(None) == ""
+
     def test_skips_invalid_json(self) -> None:
         out = list(blp.parse_lines(["not json", "", "{ broken"]))
         assert out == []
