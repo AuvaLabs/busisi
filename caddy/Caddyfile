@@ -98,7 +98,9 @@ embedding.local:80 {
         output file /var/log/caddy/embedding.log
         format json
     }
-    header { -Server }
+    header {
+        -Server
+    }
     handle /api/* {
         reverse_proxy 127.0.0.1:8001
     }
@@ -123,7 +125,9 @@ vested.local:80 {
         output file /var/log/caddy/vested.log
         format json
     }
-    header { -Server }
+    header {
+        -Server
+    }
     handle /api/* {
         reverse_proxy 127.0.0.1:8001
     }
