@@ -13,12 +13,17 @@
 }
 
 # ---- Production site blocks (real domains) -------------------------------
-# Caddy handles HTTPS automatically via Let's Encrypt HTTP-01 (grey-cloud
-# DNS at Cloudflare). Switch to orange-cloud + DNS-01 + CF API token when
-# ready to enable Cloudflare proxy.
+# Caddy uses a Cloudflare Origin Certificate (multi-SAN, 15-year validity)
+# at /etc/ssl/grimoire/origin.{crt,key}. Cloudflare orange-cloud is in
+# front of every domain — origin IP hidden, DDoS protection, edge cache,
+# Web Analytics. Renewal: never (cert valid until 2041-05-01).
+# CF passes the real client IP via the CF-Connecting-IP header; Caddy's
+# `client_ip_headers` directive teaches it to use that for `remote_ip`
+# in logs and proxy metadata, so bot_log_parser sees real bot IPs.
 
 # The Embedding Report — V1 (AI/ML).
 embedding.report {
+    tls /etc/ssl/grimoire/origin.crt /etc/ssl/grimoire/origin.key
     encode zstd gzip
     log {
         output file /var/log/caddy/embedding.log
@@ -33,16 +38,28 @@ embedding.report {
         -Server
     }
     handle /api/* {
-        reverse_proxy 127.0.0.1:8001
+        reverse_proxy 127.0.0.1:8001 {
+            header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+            header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+        }
     }
     handle /r/* {
-        reverse_proxy 127.0.0.1:8001
+        reverse_proxy 127.0.0.1:8001 {
+            header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+            header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+        }
     }
     handle /confirm {
-        reverse_proxy 127.0.0.1:8001
+        reverse_proxy 127.0.0.1:8001 {
+            header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+            header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+        }
     }
     handle /unsubscribe {
-        reverse_proxy 127.0.0.1:8001
+        reverse_proxy 127.0.0.1:8001 {
+            header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+            header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+        }
     }
     handle {
         root * /srv/grimoire/data/output/embedding
@@ -52,11 +69,13 @@ embedding.report {
 
 # Plural defensive — 301 redirect to the canonical singular.
 embeddings.report {
+    tls /etc/ssl/grimoire/origin.crt /etc/ssl/grimoire/origin.key
     redir https://embedding.report{uri} permanent
 }
 
 # Vested — V2 (personal finance for tech workers).
 vested.news {
+    tls /etc/ssl/grimoire/origin.crt /etc/ssl/grimoire/origin.key
     encode zstd gzip
     log {
         output file /var/log/caddy/vested.log
@@ -71,16 +90,28 @@ vested.news {
         -Server
     }
     handle /api/* {
-        reverse_proxy 127.0.0.1:8001
+        reverse_proxy 127.0.0.1:8001 {
+            header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+            header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+        }
     }
     handle /r/* {
-        reverse_proxy 127.0.0.1:8001
+        reverse_proxy 127.0.0.1:8001 {
+            header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+            header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+        }
     }
     handle /confirm {
-        reverse_proxy 127.0.0.1:8001
+        reverse_proxy 127.0.0.1:8001 {
+            header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+            header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+        }
     }
     handle /unsubscribe {
-        reverse_proxy 127.0.0.1:8001
+        reverse_proxy 127.0.0.1:8001 {
+            header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+            header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+        }
     }
     handle {
         root * /srv/grimoire/data/output/vested

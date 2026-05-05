@@ -109,6 +109,25 @@ def _extract_ua(headers: object) -> str:
     return ""
 
 
+def _extract_cf_ip(headers: object) -> str:
+    """Cloudflare-proxied traffic carries the real client IP in
+    ``CF-Connecting-IP``. When orange-cloud is on, request.remote_ip is a
+    Cloudflare edge IP; the real bot IP lives in the header. For
+    non-proxied direct requests (local dev, origin-IP probes), the header
+    is absent and the caller falls back to the connection's remote_ip."""
+    if isinstance(headers, dict):
+        v = (
+            headers.get("Cf-Connecting-Ip")
+            or headers.get("CF-Connecting-IP")
+            or headers.get("cf-connecting-ip")
+        )
+        if isinstance(v, list) and v:
+            return str(v[0])
+        if isinstance(v, str):
+            return v
+    return ""
+
+
 def parse_lines(lines: Iterable[str]) -> Iterable[dict]:
     """Yield {ts, ua, bot_name, path, status, remote_ip} for matching lines.
 
@@ -135,7 +154,13 @@ def parse_lines(lines: Iterable[str]) -> Iterable[dict]:
             continue
 
         path = str(req.get("uri") or "")
-        remote_ip = str(req.get("remote_ip") or req.get("client_ip") or "")
+        # Prefer CF-Connecting-IP — real client/bot IP behind Cloudflare
+        # proxy. Fall back to the connection's remote_ip for direct-origin
+        # requests (local dev, edge-IP probes).
+        remote_ip = (
+            _extract_cf_ip(req.get("headers"))
+            or str(req.get("remote_ip") or req.get("client_ip") or "")
+        )
         status = entry.get("status")
         try:
             status_int = int(status) if status is not None else 0
