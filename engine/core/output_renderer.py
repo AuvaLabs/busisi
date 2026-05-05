@@ -241,6 +241,7 @@ _STATIC_PAGES = (
     ("privacy", "Privacy", "Data we collect, what we don't, and your rights."),
     ("terms", "Terms", "Usage terms and operating-entity disclosure."),
     ("licensing", "Licensing", "Quotation, AI inference, and reuse terms."),
+    ("advertise", "Advertise", "Sponsorship, ads, and affiliate partnerships."),
 )
 
 

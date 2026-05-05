@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+.advertise { max-width: 44rem; }
+.advertise h1 { font-family: var(--serif); font-size: 2rem; margin: 0 0 0.5rem 0; font-weight: 500; }
+.advertise .lede { font-family: var(--sans); color: var(--text-mute); font-size: 1rem; margin: 0 0 2rem 0; }
+.advertise h2 { font-family: var(--sans); font-size: 0.95rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); margin: 2rem 0 0.6rem 0; }
+.advertise p, .advertise li { font-size: 1rem; line-height: 1.65; }
+.advertise .product-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 1rem 0; }
+@media (min-width: 36rem) { .advertise .product-grid { grid-template-columns: 1fr 1fr; } }
+.advertise .product { border: 1px solid var(--rule); border-radius: 6px; padding: 1rem 1.25rem; background: var(--bg-elev); }
+.advertise .product h3 { font-family: var(--sans); font-size: 0.95rem; margin: 0 0 0.4rem 0; color: var(--accent); }
+.advertise .product .price { font-family: var(--mono); font-size: 0.9rem; color: var(--text); margin: 0.4rem 0; }
+.advertise .product p { font-size: 0.9rem; margin: 0.4rem 0 0 0; }
+.advertise form { background: var(--bg-mute); border-radius: 6px; padding: 1.25rem; margin-top: 1rem; }
+.advertise form label { font-family: var(--sans); font-size: 0.85rem; color: var(--text-mute); display: block; margin: 0.6rem 0 0.3rem 0; }
+.advertise form input, .advertise form select, .advertise form textarea {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+}
+.advertise form textarea { min-height: 6rem; }
+.advertise form button {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  font-family: var(--sans);
+  font-weight: 500;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.advertise .integrity {
+  border-left: 3px solid var(--accent);
+  padding: 0.6rem 1rem;
+  margin: 1rem 0;
+  background: var(--bg-elev);
+  font-family: var(--sans);
+  font-size: 0.9rem;
+}
+.advertise .form-status {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--text-faint);
+  min-height: 1.1em;
+  margin-top: 0.5rem;
+}
+{% endblock %}
+
+{% block content %}
+<article class="advertise">
+  <h1>Advertise on {{ vertical.display_name }}</h1>
+  <p class="lede">
+    Sponsorship, display ads, and affiliate partnerships — three simple
+    surfaces that compound rather than compete with editorial. We do not
+    sell paywalled access; the entire site stays free.
+  </p>
+
+  <h2>Editorial integrity (read this first)</h2>
+  <div class="integrity">
+    Sponsored content is labelled "Sponsored" on every surface. Affiliate
+    links carry rel="sponsored" + footnote disclosure. We do not run
+    sponsorships from companies whose products we have actively criticised
+    in editorial. We will not recommend a tool we wouldn't use ourselves.
+    Editorial decisions are independent of advertising relationships —
+    full policy in <a href="/methodology">methodology</a>.
+  </div>
+
+  <h2>Products</h2>
+  <div class="product-grid">
+    <div class="product">
+      <h3>Newsletter sponsorship</h3>
+      <p class="price">One slot per issue · weekly digest</p>
+      <p>
+        A single sponsored placement at the top of the weekly digest.
+        Audience is engaged, opt-in, low spam-fatigue. One slot per
+        issue, two-week minimum lead time, ad copy reviewed for
+        editorial fit.
+      </p>
+    </div>
+    <div class="product">
+      <h3>Display advertising</h3>
+      <p class="price">Carbon Ads / EthicalAds · CPM-based</p>
+      <p>
+        One tasteful slot between fold and footer. Network-served (we
+        don't deal with creative or invoicing — Carbon/EthicalAds do).
+        Activates when traffic crosses each network's threshold; until
+        then this surface stays empty.
+      </p>
+    </div>
+    <div class="product">
+      <h3>Affiliate partnerships</h3>
+      <p class="price">Inline disclosure · UTM-attributed</p>
+      <p>
+        For tools we already use and would recommend regardless. Add
+        you to <code>verticals/{{ vertical.name }}/partners.yaml</code>;
+        editorial mentions become tracked links via /r/&lt;you&gt;/&lt;slug&gt;.
+        Click + conversion attribution; you handle the affiliate
+        infrastructure.
+      </p>
+    </div>
+    <div class="product">
+      <h3>AI-citation aggregators</h3>
+      <p class="price">Perplexity Publisher · TollBit · Cloudflare PPC</p>
+      <p>
+        We're indexed and licensable for inference. Aggregators
+        revenue-share with publishers when our content cites in their
+        answers. See <a href="/licensing">/licensing</a> and
+        <code>/.well-known/rsl.json</code> for the manifest.
+      </p>
+    </div>
+  </div>
+
+  <h2>What we don't sell</h2>
+  <ul>
+    <li>Editorial coverage. You can't pay us to cover you.</li>
+    <li>Backlinks. Sale of links is grounds for a Google manual action; we won't risk the domain.</li>
+    <li>Auto-played video, popups, interstitials, or anything that breaks the reading experience.</li>
+    <li>Surveillance ads. No third-party trackers, no behavioural retargeting.</li>
+  </ul>
+
+  <h2>Inquiry</h2>
+  <p>
+    Brief us in the form below. We'll come back within two business
+    days with a rate card tailored to your goal (newsletter sponsor,
+    affiliate, or aggregator partnership). Direct enquiries:
+    <a href="mailto:legal@auvalabs.com">legal@auvalabs.com</a>.
+  </p>
+
+  <form action="/api/sponsor" method="POST">
+    <label for="advertise-name">Your name</label>
+    <input id="advertise-name" name="name" type="text" required maxlength="128">
+
+    <label for="advertise-email">Email</label>
+    <input id="advertise-email" name="email" type="email" required maxlength="320">
+
+    <label for="advertise-company">Company (optional)</label>
+    <input id="advertise-company" name="company" type="text" maxlength="256">
+
+    <label for="advertise-budget">Budget band</label>
+    <select id="advertise-budget" name="budget_band">
+      <option value="under_5k">Under $5k</option>
+      <option value="5k_25k">$5k – $25k</option>
+      <option value="25k_100k">$25k – $100k</option>
+      <option value="over_100k">$100k+</option>
+      <option value="custom" selected>Let's discuss</option>
+    </select>
+
+    <label for="advertise-message">What are you trying to achieve?</label>
+    <textarea id="advertise-message" name="message" maxlength="4000"
+              placeholder="Newsletter sponsor for the next 4 issues, target audience: senior ML engineers..."></textarea>
+
+    <input type="hidden" name="vertical" value="{{ vertical.name }}">
+    <input type="text" name="hp" tabindex="-1" autocomplete="off"
+           style="position: absolute; left: -9999px;" aria-hidden="true">
+    <button type="submit">Send inquiry</button>
+    <p class="form-status"></p>
+  </form>
+</article>
+
+<script>
+(function () {
+  var form = document.querySelector('.advertise form');
+  if (!form) return;
+  var status = form.querySelector('.form-status');
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    status.textContent = 'Sending…';
+    var data = new FormData(form);
+    fetch(form.action, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (resp) {
+        if (resp.ok) {
+          status.textContent = 'Got it — we\'ll reply within two business days.';
+          form.reset();
+        } else {
+          status.textContent = (resp.body && resp.body.detail) || 'Something went wrong; try email instead.';
+        }
+      })
+      .catch(function () { status.textContent = 'Network error. Try emailing legal@auvalabs.com.'; });
+  });
+})();
+</script>
+{% endblock %}
