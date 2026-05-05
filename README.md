@@ -1,8 +1,8 @@
 # Grimoire
 
-Multi-vertical knowledge platform. Ships Modelwatch (AI/ML) first, then
-Vested (personal finance for tech workers), with N additional verticals
-as configuration.
+Multi-vertical knowledge platform. Ships **The Embedding Report**
+(`embedding.report`, AI/ML) and **Vested** (`vested.news`, personal
+finance for tech workers), with N additional verticals as configuration.
 
 See `docs/BUILD-DIRECTIVE.md` for the complete v2 build directive.
 

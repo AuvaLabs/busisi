@@ -1,7 +1,7 @@
 # Launch readiness checklist
 
 **Captured:** 2026-05-02
-**Scope:** Modelwatch + Vested. Each property has its own section below;
+**Scope:** The Embedding Report + Vested. Each property has its own section below;
 shared infrastructure items appear once at the top.
 
 A property may launch when every box in its section is ticked. Items
@@ -14,7 +14,7 @@ gated on the operator (DNS, billing accounts, API keys) are flagged
 
 - [x] **[ENG]** Hardened Ubuntu 24.04 VPS (`grimoire-auvalabs-01`) — UFW default-deny, SSH on 2222, key-only, fail2ban, unattended-upgrades, 4G swap.
 - [x] **[ENG]** Docker + Postgres 16 + Redis 7 healthy.
-- [x] **[ENG]** Caddy serving placeholder hostnames (`modelwatch.local`, `vested.local`) over HTTP. Security headers global.
+- [x] **[ENG]** Caddy serving real domains (`embedding.report`, `vested.news`) with auto-HTTPS via Let's Encrypt + dev placeholders (`embedding.local`, `vested.local`) over HTTP. Security headers global.
 - [x] **[ENG]** Local nightly Postgres dump (03:30 UTC, 14-day retention).
 - [x] **[ENG]** Cloudflare R2 bucket `grimoire-backups` provisioned (account `22fe4279...`, S3-compatible). `ops/backup.sh` pushes via aws CLI when `AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY` are present.
 - [ ] **[OP]** R2 API token (bucket-scoped) added to `/srv/grimoire/.env`; install `awscli` on VPS. Verify with one-shot `sudo /srv/grimoire/ops/backup.sh`.
@@ -40,7 +40,7 @@ gated on the operator (DNS, billing accounts, API keys) are flagged
 - [x] **[ENG]** Affiliate macro `_affiliate.html` + `/r/<partner>/<slug>` redirect with UTM + click logging (`affiliate_clicks` table).
 - [x] **[ENG]** Per-vertical `partners.yaml` registry (placeholder ref codes).
 - [x] **[ENG]** Bot UA logging — Caddy log → `bot_hits` table via `engine.core.bot_log_parser`, wired into cron.
-- [ ] **[OP]** Replace `?ref=auvalabs` placeholders in `verticals/{modelwatch,vested}/partners.yaml` with real affiliate codes before commercial use.
+- [ ] **[OP]** Replace `?ref=auvalabs` placeholders in `verticals/{embedding,vested}/partners.yaml` with real affiliate codes before commercial use.
 - [ ] **[OP]** Verify LinkedIn slug `https://www.linkedin.com/company/auvalabs/` in `base.html` Organization JSON-LD; correct if different.
 - [ ] **[OP]** Apply to Perplexity Publisher Program (needs ≥30 days indexed clean).
 - [ ] **[OP]** Apply to TollBit + Cloudflare Pay-Per-Crawl after ≥30 days of bot_hits telemetry.
@@ -48,7 +48,7 @@ gated on the operator (DNS, billing accounts, API keys) are flagged
 
 ---
 
-## Modelwatch
+## The Embedding Report
 
 - [x] **[ENG]** All 9 page paths return 200 via Host header (`/`, `/about`, `/methodology`, `/privacy`, `/terms`, `/sources`, `/tools/`, `/llms.txt`, `/robots.txt`, `/sitemap.xml`).
 - [x] **[ENG]** Cron pipeline ingesting + persisting + rendering every 10 min.
@@ -102,6 +102,6 @@ gated on the operator (DNS, billing accounts, API keys) are flagged
 3. **Caddy.** Update `caddy/Caddyfile` site blocks with the real hostnames + `tls { dns cloudflare {env.CF_API_TOKEN} }`. `systemctl reload caddy`. First request triggers Let's Encrypt issuance via DNS-01.
 4. **Smoke.** `curl https://<domain>/` returns 200; `cf-ray` header present; `Server` header stripped.
 5. **Indexing.** Submit sitemap to Google Search Console + Bing Webmaster Tools. Trigger IndexNow ping.
-6. **Announcement (sequenced 24h apart).** See `docs/launch-announcements.md`. HN Show first; LinkedIn next; Twitter thread; Reddit (r/MachineLearning for Modelwatch, r/personalfinance for Vested) third day. Threads/Bluesky/Mastodon as a single batch on day four.
+6. **Announcement (sequenced 24h apart).** See `docs/launch-announcements.md`. HN Show first; LinkedIn next; Twitter thread; Reddit (r/MachineLearning for The Embedding Report, r/personalfinance for Vested) third day. Threads/Bluesky/Mastodon as a single batch on day four.
 7. **Watch.** First-72-hours observation window. Source health, harness score, sponsor-inquiry inbox, Pro-tier signups, error logs.
 8. **Tag.** `git tag launch-modelwatch-<date>` / `launch-vested-<date>`.

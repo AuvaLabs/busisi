@@ -58,14 +58,35 @@ both retaining only sha256-peppered IP hashes.
 **Tests:** 186/186 green at this snapshot (was 146 baseline; +40 new
 across `test_api_v1`, `test_bot_log_parser`, `test_affiliates`).
 
+**Brand commit (V1 rebrand, 2026-05-05):** `Modelwatch` → `The Embedding
+Report` (slug: `modelwatch` → `embedding`). Real domains registered:
+`embedding.report` (canonical), `embeddings.report` (defensive plural →
+301 redirect), `vested.news` (V2). Filesystem renamed via `git mv`,
+Caddy site blocks updated, alembic 0004 ships the DB-side rename
+(`UPDATE verticals SET name='embedding'...` — FK references are by ID
+so no fixup needed). Vested unchanged.
+
 **Operator actions queued post-deploy:**
-1. Push 9 commits queued local-only on `main` (or pull from GitHub on VPS).
-2. `alembic upgrade head` on VPS (creates `bot_hits` + `affiliate_clicks`).
-3. Caddy reload — apply `/api/*` + `/r/*` reverse_proxy fix; previously broken in production.
-4. Append R2 token to `/srv/grimoire/.env` and install `awscli`.
-5. Replace `?ref=auvalabs` placeholders in `verticals/*/partners.yaml`.
-6. Verify LinkedIn slug in `engine/shared/templates/base.html` Organization JSON-LD.
-7. After ≥30 days of bot_hits data: apply to Perplexity Publisher Program, TollBit, Cloudflare PPC.
+1. Pull from GitHub on VPS (`cd /srv/grimoire && git pull origin main`).
+2. `alembic upgrade head` on VPS (runs 0001→0004; creates `bot_hits` +
+   `affiliate_clicks`; renames vertical row `modelwatch` → `embedding`).
+3. `mv /srv/grimoire/data/output/modelwatch /srv/grimoire/data/output/embedding`
+   (or let the next render tick recreate the new path; old dir then deletable).
+4. DNS at Cloudflare: A-records for `embedding.report`, `embeddings.report`,
+   `vested.news` → `178.104.214.16` (grey-cloud / DNS-only first).
+5. `caddy reload` — apply real-domain site blocks + `/api/*` + `/r/*`
+   reverse_proxy fix. First request triggers Let's Encrypt issuance.
+6. Append the canonical-base env vars to `/srv/grimoire/.env`:
+   `EMBEDDING_CANONICAL_BASE=https://embedding.report` and
+   `VESTED_CANONICAL_BASE=https://vested.news`.
+7. Append R2 token to `/srv/grimoire/.env` and install `awscli` (for
+   the backup leg shipped earlier).
+8. Replace `?ref=auvalabs` placeholders in
+   `verticals/{embedding,vested}/partners.yaml` with real affiliate codes.
+9. Verify LinkedIn slug in `engine/shared/templates/base.html`
+   Organization JSON-LD.
+10. After ≥30 days of bot_hits data: apply to Perplexity Publisher
+    Program, TollBit, Cloudflare PPC.
 
 ---
 
