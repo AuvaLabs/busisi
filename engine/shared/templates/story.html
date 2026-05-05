@@ -238,5 +238,59 @@
       {% endfor %}
     </ul>
   </section>
+
+  <details class="report-issue" style="margin-top: 2rem; font-family: var(--sans); font-size: 0.85rem; color: var(--text-mute);">
+    <summary style="cursor: pointer; user-select: none;">Spot something wrong? <span style="color: var(--accent);">Report an issue</span></summary>
+    <form action="/api/feedback" method="POST"
+          style="margin-top: 0.8rem; padding: 0.8rem; border: 1px solid var(--rule); border-radius: 4px; background: var(--bg-elev); max-width: 30rem;">
+      <label for="fb-issue-kind" style="display: block; margin-bottom: 0.3rem;">What's the issue?</label>
+      <select id="fb-issue-kind" name="issue_kind" required
+              style="width: 100%; padding: 0.4rem; font-family: var(--sans); font-size: 0.9rem; border: 1px solid var(--rule); border-radius: 4px; background: var(--bg); color: var(--text);">
+        <option value="factual_error">Factual error</option>
+        <option value="broken_link">Broken or wrong link</option>
+        <option value="outdated">Information is outdated</option>
+        <option value="spam">Spam / not news</option>
+        <option value="other">Other</option>
+      </select>
+      <label for="fb-note" style="display: block; margin: 0.6rem 0 0.3rem 0;">Details (optional, max 1000 chars)</label>
+      <textarea id="fb-note" name="note" maxlength="1000" rows="3"
+                placeholder="What did you spot?"
+                style="width: 100%; padding: 0.4rem; font-family: var(--sans); font-size: 0.9rem; border: 1px solid var(--rule); border-radius: 4px; background: var(--bg); color: var(--text);"></textarea>
+      <input type="hidden" name="vertical" value="{{ vertical.name }}">
+      <input type="hidden" name="slug" value="{{ article.slug }}">
+      <input type="text" name="hp" tabindex="-1" autocomplete="off"
+             style="position: absolute; left: -9999px;" aria-hidden="true">
+      <button type="submit"
+              style="margin-top: 0.6rem; padding: 0.4rem 0.9rem; font-family: var(--sans); font-size: 0.85rem;
+                     border: 1px solid var(--accent); background: var(--accent); color: var(--bg);
+                     border-radius: 4px; cursor: pointer;">
+        Send
+      </button>
+      <p class="report-status" style="margin: 0.5rem 0 0; min-height: 1em; font-size: 0.8rem; color: var(--text-faint);"></p>
+    </form>
+  </details>
+  <script>
+  (function () {
+    var form = document.querySelector('.report-issue form');
+    if (!form) return;
+    var status = form.querySelector('.report-status');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      status.textContent = 'Sending…';
+      var data = new FormData(form);
+      fetch(form.action, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })
+        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+        .then(function (resp) {
+          if (resp.ok) {
+            status.textContent = 'Thanks — flagged for review.';
+            form.reset();
+          } else {
+            status.textContent = (resp.body && resp.body.detail) || 'Something went wrong.';
+          }
+        })
+        .catch(function () { status.textContent = 'Network error. Try again later.'; });
+    });
+  })();
+  </script>
 </article>
 {% endblock %}

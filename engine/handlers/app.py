@@ -16,7 +16,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from engine.core.config import LOG_LEVEL, site_origins
-from engine.handlers import affiliates, api_v1, sponsors, subscribers, tools
+from engine.handlers import (
+    affiliates,
+    api_v1,
+    feedback,
+    sponsors,
+    subscribers,
+    tools,
+)
 
 logging.basicConfig(
     level=LOG_LEVEL,
@@ -53,3 +60,4 @@ app.include_router(sponsors.router)
 app.include_router(tools.router)
 app.include_router(api_v1.router)
 app.include_router(affiliates.router)
+app.include_router(feedback.router)
