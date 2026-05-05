@@ -1,8 +1,73 @@
 # Build complete — Grimoire handoff
 
 **Captured:** 2026-05-02 (initial); republished 2026-05-03 with the GitHub mirror live.
-**Build state:** Phases 0–7 shipped; Phase 8 finishing items pending operator-supplied credentials.
+**Last updated:** 2026-05-05 (Phase 22–24 monetization foundation shipped — see addendum below).
+**Build state:** Phases 0–7 shipped; Phase 8 launch items pending operator-supplied credentials; Phase 22–24 (curator + researcher arc + monetization foundation) shipped.
 **Handoff to:** the operator (`nicholai@auvalabs.com`) and any future agent resuming the build.
+
+## Phase 22-24 update — 2026-05-05
+
+Layered onto the original Phase 0–7 platform. All purely additive; original
+schema and pipeline behaviour preserved unless explicitly noted below.
+
+**Editorial pipeline depth (Phase 22a–22e):**
+- Curator: rule-based score + tier (`skip` / `standard` / `researcher`); LLM-judge for the gray zone; per-row signals JSON.
+- Skip-tier articles excluded from front page, sitemap, RSS, JSON Feed, llms-full, and `/api/v1/articles` (Phase 22c).
+- Researcher: per-article web/scholar bundles in `research_bundles` table for downstream rewriter grounding (Phase 22e).
+
+**Monetization foundation (Phase 23 + Phase 24a–i):** Four-lane revenue
+strategy. **No premium subscription** — operator pivot 2026-05-05;
+revisited only after ~12 months. See `docs/launch-checklist.md`
+"Monetization + AI-citation surface" for the full enumerated list.
+
+- AI citations / AEO / GEO: robots.txt allow-list, `/llms-full.txt`,
+  `/feed.json`, `/.well-known/rsl.json`, `/.well-known/security.txt`,
+  `/licensing`, FAQPage + BreadcrumbList + Organization+sameAs +
+  NewsArticle author-Organization JSON-LD.
+- Affiliates: `_affiliate.html` Jinja macro + `/r/<partner>/<slug>`
+  redirect + per-vertical `partners.yaml` + `affiliate_clicks` table.
+- Ads: `/advertise` rate-card surface (sponsorship intake reuses
+  `/api/sponsor`); display-ad slots deferred until Carbon/EthicalAds
+  thresholds.
+- Backlinks: structural — sitemap, JSON Feed, structured data. Do not
+  sell links (explicitly stated on `/advertise`).
+- Telemetry: `bot_hits` table populated from Caddy JSON log via
+  `engine.core.bot_log_parser` (cron-wired, idempotent).
+- Read API: `/api/v1/{health,articles,entities}` for AI ingestion +
+  partner integrations; rate-limited; skip-tier filtered.
+
+**Pre-existing bug fixed during this run:** Caddyfile lacked any
+`/api/*` reverse_proxy block, so all FastAPI handler endpoints
+(`/api/subscribe`, `/api/sponsor`, `/api/v1/*`, `/r/*`) were 404'ing on
+the live site despite docs claiming otherwise. Each per-vertical site
+block now routes `/api/*`, `/r/*`, `/confirm`, `/unsubscribe` →
+`127.0.0.1:8001` and falls through to `file_server` for the static site.
+
+**R2 backup leg activated:** `ops/backup.sh` now pushes the local
+pg_dumpall to `grimoire-backups` via aws CLI (S3-compatible). Skipped
+silently if `AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY` aren't in
+`/srv/grimoire/.env`. Restic flow in the runbook was aspirational and
+unbuilt — replaced with the simpler aws-CLI path that ships here.
+
+**Migrations:** alembic chain extended `0001 → 0002 → 0003`. The 0003
+migration adds two telemetry tables (`bot_hits`, `affiliate_clicks`),
+both retaining only sha256-peppered IP hashes.
+
+**Tests:** 186/186 green at this snapshot (was 146 baseline; +40 new
+across `test_api_v1`, `test_bot_log_parser`, `test_affiliates`).
+
+**Operator actions queued post-deploy:**
+1. Push 9 commits queued local-only on `main` (or pull from GitHub on VPS).
+2. `alembic upgrade head` on VPS (creates `bot_hits` + `affiliate_clicks`).
+3. Caddy reload — apply `/api/*` + `/r/*` reverse_proxy fix; previously broken in production.
+4. Append R2 token to `/srv/grimoire/.env` and install `awscli`.
+5. Replace `?ref=auvalabs` placeholders in `verticals/*/partners.yaml`.
+6. Verify LinkedIn slug in `engine/shared/templates/base.html` Organization JSON-LD.
+7. After ≥30 days of bot_hits data: apply to Perplexity Publisher Program, TollBit, Cloudflare PPC.
+
+---
+
+## Original capture (2026-05-02) — Phase 0–7
 
 ## Repository
 
