@@ -29,24 +29,50 @@ fi
 ZONE="$1"
 HOST="$2"
 
-: "${CF_API_TOKEN:?CF_API_TOKEN must be set (Account:Web Analytics:Edit)}"
 : "${CF_ACCOUNT_ID:?CF_ACCOUNT_ID must be set}"
 
 API="https://api.cloudflare.com/client/v4"
-AUTH=(-H "Authorization: Bearer $CF_API_TOKEN" -H "Content-Type: application/json")
+if [ -n "${CF_API_TOKEN:-}" ]; then
+  AUTH=(-H "Authorization: Bearer $CF_API_TOKEN" -H "Content-Type: application/json")
+elif [ -n "${CF_API_KEY:-}" ] && [ -n "${CF_API_EMAIL:-}" ]; then
+  AUTH=(-H "X-Auth-Email: $CF_API_EMAIL" -H "X-Auth-Key: $CF_API_KEY" -H "Content-Type: application/json")
+else
+  echo "Set CF_API_TOKEN, or CF_API_KEY + CF_API_EMAIL." >&2
+  exit 2
+fi
 
-existing_json="$(curl -fsS "${AUTH[@]}" \
+# CF list endpoint returns site_tags but omits host/zone_tag at the top
+# level — the binding lives under result[].ruleset.zone_tag. We fetch
+# the list, then GET each site individually to find any whose ruleset
+# is bound to the target zone.
+list_json="$(curl -fsS "${AUTH[@]}" \
   "$API/accounts/$CF_ACCOUNT_ID/rum/site_info/list?per_page=100" || echo '{"result":[]}')"
 
-existing_tag="$(echo "$existing_json" | python3 -c '
-import json,sys
-host = sys.argv[1]
-data = json.load(sys.stdin)
-for r in data.get("result", []) or []:
-    if r.get("host") == host:
-        print(r.get("site_tag",""))
-        break
-' "$HOST")"
+site_tags="$(echo "$list_json" | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+for r in d.get("result") or []:
+    print(r.get("site_tag",""))
+')"
+
+existing_tag=""
+for st in $site_tags; do
+  [ -z "$st" ] && continue
+  detail="$(curl -fsS "${AUTH[@]}" \
+    "$API/accounts/$CF_ACCOUNT_ID/rum/site_info/$st" || echo '{}')"
+  hit="$(echo "$detail" | python3 -c '
+import json, sys
+zone = sys.argv[1]
+d = (json.load(sys.stdin).get("result") or {})
+rs = d.get("ruleset") or {}
+if rs.get("zone_tag") == zone:
+    print(d.get("site_tag",""))
+' "$ZONE")"
+  if [ -n "$hit" ]; then
+    existing_tag="$hit"
+    break
+  fi
+done
 
 if [ -n "$existing_tag" ]; then
   echo "[cf-rum] $HOST -> already registered (site_tag=$existing_tag), no-op"
@@ -62,11 +88,12 @@ resp="$(curl -fsS -X POST "${AUTH[@]}" -d "$body" \
   "$API/accounts/$CF_ACCOUNT_ID/rum/site_info")"
 
 echo "$resp" | python3 -c '
-import json,sys
+import json, sys
 d = json.load(sys.stdin)
 if not d.get("success"):
     print("FAIL:", json.dumps(d.get("errors", []), indent=2))
     sys.exit(1)
-r = d.get("result", {})
-print(f"[cf-rum] registered site_tag={r.get(\"site_tag\")} ruleset_id={r.get(\"ruleset_id\")}")
+r = d.get("result") or {}
+rs = r.get("ruleset") or {}
+print("[cf-rum] registered site_tag=" + (r.get("site_tag") or "?") + " zone=" + (rs.get("zone_name") or "?"))
 '

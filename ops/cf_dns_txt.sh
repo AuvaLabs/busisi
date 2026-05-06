@@ -23,10 +23,12 @@
 # first existing TXT with the same name (use only when you know there's
 # a single verification slot — DON'T use it for SPF/DMARC).
 #
-# Env:
-#   CF_API_TOKEN — scoped token with Zone:DNS:Edit on the target zone.
-#                  Tier-A — store in ~/kb_center/server_credentials.md,
-#                  not in repo .env.
+# Env (one of):
+#   CF_API_TOKEN    — scoped Bearer token (Zone:DNS:Edit on target zone), OR
+#   CF_API_KEY +    — Global API Key (legacy auth)
+#   CF_API_EMAIL
+#   Tier-A in either case — store in ~/kb_center/server_credentials.md,
+#   not in repo .env.
 set -euo pipefail
 
 if [ "$#" -ne 3 ]; then
@@ -37,10 +39,15 @@ ZONE="$1"
 NAME="$2"
 VALUE="$3"
 
-: "${CF_API_TOKEN:?CF_API_TOKEN must be set (Zone:DNS:Edit scope)}"
-
 API="https://api.cloudflare.com/client/v4"
-AUTH=(-H "Authorization: Bearer $CF_API_TOKEN" -H "Content-Type: application/json")
+if [ -n "${CF_API_TOKEN:-}" ]; then
+  AUTH=(-H "Authorization: Bearer $CF_API_TOKEN" -H "Content-Type: application/json")
+elif [ -n "${CF_API_KEY:-}" ] && [ -n "${CF_API_EMAIL:-}" ]; then
+  AUTH=(-H "X-Auth-Email: $CF_API_EMAIL" -H "X-Auth-Key: $CF_API_KEY" -H "Content-Type: application/json")
+else
+  echo "Set CF_API_TOKEN, or CF_API_KEY + CF_API_EMAIL." >&2
+  exit 2
+fi
 
 existing_json="$(curl -fsS "${AUTH[@]}" \
   "$API/zones/$ZONE/dns_records?type=TXT&name=$NAME&per_page=100")"
