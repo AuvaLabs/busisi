@@ -386,16 +386,59 @@ def render_meta_files(
         {"loc": f"{base}/methodology", "lastmod": now_date, "changefreq": "monthly", "priority": 0.5},
         {"loc": f"{base}/privacy", "lastmod": now_date, "changefreq": "yearly", "priority": 0.3},
         {"loc": f"{base}/terms", "lastmod": now_date, "changefreq": "yearly", "priority": 0.3},
+        {"loc": f"{base}/licensing", "lastmod": now_date, "changefreq": "yearly", "priority": 0.3},
+        {"loc": f"{base}/advertise", "lastmod": now_date, "changefreq": "monthly", "priority": 0.4},
         {"loc": f"{base}/sources", "lastmod": now_date, "changefreq": "daily", "priority": 0.6},
+        {"loc": f"{base}/entity/", "lastmod": now_date, "changefreq": "daily", "priority": 0.6},
+        {"loc": f"{base}/tools/", "lastmod": now_date, "changefreq": "weekly", "priority": 0.5},
+        {"loc": f"{base}/digest/", "lastmod": now_date, "changefreq": "weekly", "priority": 0.5},
+        {"loc": f"{base}/search/", "lastmod": now_date, "changefreq": "weekly", "priority": 0.5},
     ]
-    for a in articles:
-        loc = a.link  # external links — we sitemap our own canonical pages once they exist
-        if loc.startswith(base):
+
+    # Stories: separate query (no 500-row cap, all live non-skip
+    # articles with a slug). Sitemap.xml supports up to 50K URLs per
+    # file — embedding ~3K + vested ~2K stays well under.
+    Session = get_sessionmaker()
+    with Session() as session:
+        story_rows = session.execute(
+            select(Article.slug, Article.fetched_at, Article.published_at)
+            .where(
+                Article.vertical_id == v.id,
+                Article.deleted_at.is_(None),
+                (Article.curator_tier != "skip") | Article.curator_tier.is_(None),
+                Article.slug.is_not(None),
+            )
+            .order_by(Article.published_at.desc())
+        ).all()
+        for slug, fetched_at, published_at in story_rows:
+            mod = published_at or fetched_at or datetime.now(timezone.utc)
             urls.append({
-                "loc": loc,
-                "lastmod": (a.fetched_at or a.published_at or datetime.now(timezone.utc)).strftime("%Y-%m-%d"),
+                "loc": f"{base}/story/{slug}/",
+                "lastmod": mod.strftime("%Y-%m-%d"),
                 "changefreq": "weekly",
                 "priority": 0.7,
+            })
+
+        # Per-entity pages: only those with ≥1 linked article — same
+        # gate render_entities() applies, so every URL we emit is a
+        # rendered page on disk.
+        entity_rows = session.execute(
+            select(Entity.type, Entity.slug)
+            .join(ArticleEntity, ArticleEntity.entity_id == Entity.id)
+            .join(Article, Article.id == ArticleEntity.article_id)
+            .where(
+                Entity.vertical_id == v.id,
+                Article.deleted_at.is_(None),
+                (Article.curator_tier != "skip") | Article.curator_tier.is_(None),
+            )
+            .distinct()
+        ).all()
+        for ent_type, ent_slug in entity_rows:
+            urls.append({
+                "loc": f"{base}/entity/{ent_type}/{ent_slug}/",
+                "lastmod": now_date,
+                "changefreq": "weekly",
+                "priority": 0.5,
             })
 
     env = _env()
