@@ -64,6 +64,20 @@ _NUM_TOKEN_RE = re.compile(
 _SUFFIX_MULT = {"k": 1_000.0, "m": 1_000_000.0, "b": 1_000_000_000.0}
 _TOLERANCE = 0.01  # ±1 % wiggle for rounding ($676k ≈ 676,000)
 
+# Model-name patterns whose numeric tail (e.g. GPT-5.5, Claude-4.6, Llama-3.1)
+# must NOT be counted as a quantitative claim by the grounding validator.
+# Without this, "GPT-5.5" gets parsed as the float 5.5 and the validator
+# rejects any summary that mentions the model when the source body uses a
+# different surface form. Strip before numeric extraction in both summary
+# and source for symmetry.
+_MODEL_NAME_RE = re.compile(
+    r"\b[A-Za-z][A-Za-z\-]*[-/]\d+(?:\.\d+)?\b"
+)
+
+
+def _strip_model_names(text: str) -> str:
+    return _MODEL_NAME_RE.sub("", text)
+
 
 def _numeric_values(text: str) -> set[float]:
     """Return the set of numeric values in ``text``.
@@ -96,8 +110,11 @@ def _validate_grounded(summary: str, source_text: str) -> tuple[bool, str]:
     if not summary or not source_text:
         return True, ""
 
-    summary_values = _numeric_values(summary)
-    source_values = _numeric_values(source_text)
+    # Strip model-name tokens (GPT-5.5, Claude-4.6, Llama-3.1) before numeric
+    # extraction so the validator doesn't reject summaries that mention the
+    # model by name when the source body's surface form differs.
+    summary_values = _numeric_values(_strip_model_names(summary))
+    source_values = _numeric_values(_strip_model_names(source_text))
 
     def _matches(v: float) -> bool:
         for s in source_values:
