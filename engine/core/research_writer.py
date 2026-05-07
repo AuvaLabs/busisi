@@ -134,12 +134,23 @@ def _members_with_extracts(session, story_id: int) -> list[dict[str, Any]]:
     for article, _link in rows:
         if article.structured_extract is None:
             continue
+        # `host` = article link host (used for citation display + StorySource).
+        # `feed_host` = feed URL host (used for agency_class lookup, since the
+        # agency_class map indexes by feed URL — not article URL — and these
+        # often differ, e.g. arxiv.org vs export.arxiv.org).
+        link_host = urlparse(article.link).netloc.removeprefix("www.").lower()
+        feed_host = (
+            urlparse(article.source).netloc.removeprefix("www.").lower()
+            if article.source
+            else link_host
+        )
         members.append(
             {
                 "source_idx": len(members),
                 "article_id": article.id,
                 "source_url": article.link,
-                "host": urlparse(article.link).netloc.removeprefix("www.").lower(),
+                "host": link_host,
+                "feed_host": feed_host,
                 "agency_class": "?",  # filled by caller
                 "title": article.title,
                 "body": (article.body or "")[:3000],  # tone reference
@@ -436,7 +447,13 @@ def rewrite_story(
             return None
 
         for m in members:
-            m["agency_class"] = agency_map.get(m["host"], "?")
+            # Try feed_host first (canonical source-list match), fall back to
+            # article-link host. This covers feeds whose feed URL host differs
+            # from the article URL host (arxiv.org vs export.arxiv.org).
+            m["agency_class"] = (
+                agency_map.get(m.get("feed_host", ""), None)
+                or agency_map.get(m["host"], "?")
+            )
 
         primary_count = sum(
             1 for m in members if m["agency_class"] in {"A", "B", "C", "D", "E"}
