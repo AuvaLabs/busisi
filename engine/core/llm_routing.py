@@ -5,6 +5,30 @@ so the pipeline can route cheap work (curator scoring, entity extraction,
 classify) to a small model and reserve premium-tier reasoning models for the
 multi-source rewriter's narrative composition pass.
 
+CAVEAT (2026-05-07, Featherless catalog reality)
+================================================
+Per Featherless ``/docs/tool-calling``, ``response_format={"type":"json_object"}``
+is documented as a *workaround for models without native function calling*,
+not a guaranteed feature. Native tool/function calling is supported only on:
+
+  - moonshotai/Kimi-K2-Instruct
+  - Qwen 3 family (Qwen3, Qwen3.5, Qwen3.6)
+
+Models in this registry that AREN'T in the above list (Qwen 2.5, DeepSeek
+V3/V4, Gemma, etc.) honor JSON mode in practice but Featherless does not
+guarantee it. Observed failure modes:
+
+  - DeepSeek V4-Flash returns malformed JSON (missing wrapping braces)
+  - Qwen 3.5 9B sometimes returns empty body
+
+When adding a new caller, prefer Qwen 3 family or Kimi-K2 if structured
+output is mandatory; otherwise validate empirically before swapping a
+working default.
+
+Concurrency cost (per ``/docs/concurrency``):
+  7-15B → 1u   24-34B → 2u   70-72B → 4u   DeepSeek (all) + Kimi → 4u
+  MoE pricing not documented — verify empirically before relying.
+
 The map is overridable via env vars at three levels of specificity:
 
   1. Per-vertical, per-caller:  ``LLM_MODEL__<vertical>__<caller>``

@@ -126,14 +126,17 @@ the second.
 | **P3** | Add daily `citation_intelligence` flow + Slack/email reporting | When we want passive ops visibility | 0.5 day |
 | **P4** | ControlFlow editorial-triage agent | When validators-only logic stops cleanly expressing what we want | 3-5 days |
 
-### Trigger criteria (don't adopt before these fire)
+### Trigger criteria (status updated 2026-05-07)
 
-- V3 vertical launches (more cron contention)
-- Featherless 429 contention happens >2× per week in production
-- Operator wants daily/weekly automated reports without running CLIs manually
-- Partner-webhook ingest becomes a real product requirement
+- ❌ V3 vertical launches (not yet)
+- ✅ **Featherless 429 contention happens >2× per week** — fired same-day on
+  the first rewrite attempt; the concurrency-doc citation above confirms
+  this is the platform's designed behavior, not transient. P1 promoted.
+- ❌ Operator wants daily/weekly automated reports (manual CLI sufficient
+  for now)
+- ❌ Partner-webhook ingest (no partner asks yet)
 
-Any one of the above → start with P1 spike (1 day, reversible).
+One trigger fired → **P1 scheduled this sprint**. P2-P4 stay deferred.
 
 ### Why N8N is NOT recommended for the core pipeline
 
