@@ -19,7 +19,13 @@ set -a; source .env; set +a
 
 for V in "${VERTICALS[@]}"; do
   echo "[$(date -Iseconds)] pipeline start vertical=$V"
-  PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --enrich --enrich-max 20 --log-level WARNING || \
+  # RW1 (2026-05-07) — site is the rewritten product. Drop --enrich (no new
+  # single-source summaries); add --extract (Pass 0 structured fact extract)
+  # and --rewrite (Pass 1 + Pass 2 narrative composition). Existing
+  # Article.summary rows preserved as historical fallback; new articles flow
+  # extract → cluster → rewrite. See docs/strategy.md "Orchestration
+  # roadmap" + docs/REWRITER_BUILD_LOG.md.
+  PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --extract --extract-max 200 --rewrite --rewrite-max 20 --log-level WARNING || \
     echo "[$(date -Iseconds)] pipeline FAILED vertical=$V (continuing)"
   # Extract named entities. --max 10 caps per-tick LLM cost; backfill of
   # the historical corpus drains organically. Idempotent via

@@ -94,6 +94,63 @@ When the gate is passed, V3 candidates (in order of topical fit):
 - **Pre-commit secret scanning:** future addition (atelier pattern — `secret-scan.sh`).
 - **Backup:** `ops/backup.sh` does pg_dumpall → 14-day local rolling → R2 grimoire-backups via aws CLI.
 
+## Orchestration roadmap (deferred — re-evaluate Q3 2026)
+
+Captured 2026-05-07 during the rewriter rollout. Decision deferred; do not
+adopt until the trigger criteria below are met. The current systemd + cron +
+Python scripts setup is sufficient for V1+V2 size.
+
+### Tools considered
+
+| Tool | License | Strength | Fit for grimoire |
+|---|---|---|---|
+| **Prefect** (core) | Apache 2.0 | Pythonic workflow orchestration; concurrency pools; UI dashboard; retries | **Strong** — replaces cron+systemd with observability + concurrency-aware scheduling. Same Python codebase, no rewrite. |
+| **ControlFlow** (Prefect agent layer) | Apache 2.0 | Agent runtime built on Prefect; every agent step is a traceable task | **Latent** — relevant when grimoire wants autonomous editorial judgment (triage, source qualification, failure recovery). Not yet. |
+| **N8N** | Sustainable Use License | Visual workflow editor; 500+ SaaS connectors; non-developer authoring | **Niche** — wins for SaaS glue (Stripe → Notion → Slack); awkward for our compute-heavy core pipeline. |
+
+### Why this matters
+
+The 2026-05-07 first-rewrite attempt hit a Featherless 429 because the hourly
+cron `run_pipeline.sh` was already consuming the 4 concurrency units. Prefect's
+**concurrency limits** (named pools tagged on tasks) would have queued the
+interactive rewrite behind the cron tick instead of failing it. That's the
+single most concrete "structural fix" Prefect would land — observability is
+the second.
+
+### Adoption path (when triggered)
+
+| Phase | Scope | Trigger | Effort |
+|---|---|---|---|
+| **P1** | Wrap `run_pipeline.sh` as a Prefect flow that calls existing `python -m engine.core.X` commands. Add Prefect Server in Docker on the VPS. | First time we want failure alerts + a run-history dashboard | 1 day |
+| **P2** | Convert rewriter pipeline to native Prefect tasks with `featherless` concurrency tag (limit=4) | First time Featherless 429 contention happens at non-trivial scale (probably as soon as cron starts running `--rewrite` daily) | 2 days |
+| **P3** | Add daily `citation_intelligence` flow + Slack/email reporting | When we want passive ops visibility | 0.5 day |
+| **P4** | ControlFlow editorial-triage agent | When validators-only logic stops cleanly expressing what we want | 3-5 days |
+
+### Trigger criteria (don't adopt before these fire)
+
+- V3 vertical launches (more cron contention)
+- Featherless 429 contention happens >2× per week in production
+- Operator wants daily/weekly automated reports without running CLIs manually
+- Partner-webhook ingest becomes a real product requirement
+
+Any one of the above → start with P1 spike (1 day, reversible).
+
+### Why N8N is NOT recommended for the core pipeline
+
+The core rewriter (Pass 0/1/2 + validators) is code-shaped, not workflow-shaped.
+Putting it in N8N means either (a) a single "exec python" node — cosmetic, or
+(b) re-implementing validators in N8N expressions — strictly worse than the
+current 279-test Python. N8N's right scope is **partner webhook routing** when
+that surface exists (Stripe, Cloudflare PPC events, sponsor inquiries).
+
+### Decision marker
+
+If we pick Prefect, ControlFlow comes free in the same install — adopting
+Prefect doesn't lock out the agent layer. Pure-Python alternatives if Prefect
+ever feels too heavy: **Dagster** (more opinionated, asset-graph-shaped) or
+just keep cron + add `ops/notify.sh` for failure alerts (~50 lines).
+
 ## Last updated
 
-2026-05-06 — Phase 5 complete; Phase 6 in progress (Tier-0 SEO submissions + IndexNow integration shipping next).
+2026-05-07 — multi-source rewriter (R1-R7 + C1-C6) deployed to production;
+schema at 0006; first end-to-end Pass 1+2 live-LLM run pending (cron contention).
