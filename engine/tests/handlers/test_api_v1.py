@@ -170,3 +170,124 @@ def test_entities_unknown_vertical_404(client, seeded_entities) -> None:
 def test_articles_limit_validation(client, seeded_articles) -> None:
     r = client.get("/api/v1/articles?vertical=modelwatch&limit=10000")
     assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# C3 — /api/v1/stories
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def seeded_stories(test_engine, seeded_vertical):
+    """One published Story with two StorySource rows, plus one draft Story."""
+    from engine.core.db import Article as _Article
+    from engine.core.db import Story, StoryArticle, StorySource
+
+    SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
+    with SM() as s:
+        a1 = _Article(
+            vertical_id=seeded_vertical,
+            hash="story-h1",
+            slug="story-primary",
+            title="Reuters report: $10B raise",
+            link="https://reuters.com/x",
+            source="https://reuters.com/feed",
+            feed_region="US",
+            summary="seed",
+            summary_source="feed",
+            published_at=_utc(2026, 5, 5, 12, 0),
+        )
+        a2 = _Article(
+            vertical_id=seeded_vertical,
+            hash="story-h2",
+            slug="story-secondary",
+            title="Bloomberg: same raise, parallel",
+            link="https://bloomberg.com/y",
+            source="https://bloomberg.com/feed",
+            feed_region="US",
+            summary="seed",
+            summary_source="feed",
+            published_at=_utc(2026, 5, 5, 13, 0),
+        )
+        s.add_all([a1, a2])
+        s.commit()
+        published = Story(
+            vertical_id=seeded_vertical,
+            canonical_headline="OpenAI raises $10B",
+            primary_published_at=_utc(2026, 5, 5, 12, 0),
+            importance=0.9,
+            state="published",
+            narrative="OpenAI[1] raised $10 billion at a $300 billion valuation[2].",
+            why_this_matters="Materially shifts AI industry capital concentration.",
+            narrative_version=1,
+            narrative_word_count=10,
+            narrative_updated_at=_utc(2026, 5, 5, 14, 0),
+            narrative_model="deepseek-ai/DeepSeek-V3",
+        )
+        draft = Story(
+            vertical_id=seeded_vertical,
+            canonical_headline="Pending cluster",
+            primary_published_at=_utc(2026, 5, 5, 9, 0),
+            importance=0.3,
+            state="draft",
+        )
+        s.add_all([published, draft])
+        s.commit()
+        s.add_all(
+            [
+                StoryArticle(story_id=published.id, article_id=a1.id, is_primary=True),
+                StoryArticle(story_id=published.id, article_id=a2.id, is_primary=False),
+                StorySource(
+                    story_id=published.id,
+                    source_url="https://reuters.com/x",
+                    host="reuters.com",
+                    agency_class="A",
+                    cited_as_n=1,
+                    article_id=a1.id,
+                ),
+                StorySource(
+                    story_id=published.id,
+                    source_url="https://bloomberg.com/y",
+                    host="bloomberg.com",
+                    agency_class="A",
+                    cited_as_n=2,
+                    article_id=a2.id,
+                ),
+            ]
+        )
+        s.commit()
+
+
+def test_stories_default_returns_published_only(client, seeded_stories) -> None:
+    r = client.get("/api/v1/stories?vertical=modelwatch")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["state"] == "published"
+    assert body["count"] == 1
+    rec = body["data"][0]
+    assert rec["headline"] == "OpenAI raises $10B"
+    assert rec["narrative"].startswith("OpenAI[1]")
+    assert rec["version"] == 1
+    assert len(rec["sources"]) == 2
+    assert {s["agency_class"] for s in rec["sources"]} == {"A"}
+    assert {s["n"] for s in rec["sources"]} == {1, 2}
+
+
+def test_stories_state_filter(client, seeded_stories) -> None:
+    r = client.get("/api/v1/stories?vertical=modelwatch&state=draft")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["state"] == "draft"
+    assert body["count"] == 1
+    assert body["data"][0]["headline"] == "Pending cluster"
+    assert body["data"][0]["narrative"] is None
+
+
+def test_stories_invalid_state_rejected(client) -> None:
+    r = client.get("/api/v1/stories?vertical=modelwatch&state=banana")
+    assert r.status_code == 422
+
+
+def test_stories_unknown_vertical_404(client) -> None:
+    r = client.get("/api/v1/stories?vertical=ghost")
+    assert r.status_code == 404

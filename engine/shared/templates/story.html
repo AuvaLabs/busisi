@@ -63,6 +63,63 @@
     .sources ul { list-style: none; padding: 0; margin: 0; }
     .sources li { margin: 0 0 0.5rem 0; font-family: var(--sans); font-size: 0.875rem; }
     .sources li .pub { color: var(--text); font-weight: 500; }
+    .sources ol.cited-sources { list-style: decimal inside; padding: 0; margin: 0; }
+    .sources ol.cited-sources li { margin: 0 0 0.6rem 0; padding-left: 0.25rem; }
+    .agency-class {
+      display: inline-block;
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      padding: 0.05rem 0.4rem;
+      margin: 0 0.4rem 0 0.3rem;
+      border-radius: 3px;
+      vertical-align: middle;
+    }
+    /* Agency class — color-tiered so scanning a sources block separates
+       wire/newspaper-of-record from trade press from commentary at a glance. */
+    .agency-class-a { background: var(--accent); color: white; font-weight: 500; }
+    .agency-class-b { background: var(--accent); color: white; font-weight: 500; opacity: 0.9; }
+    .agency-class-c { background: var(--rule); color: var(--text); font-weight: 500; }
+    .agency-class-d {
+      background: var(--bg-elev); color: var(--text);
+      border: 1px solid var(--rule);
+    }
+    .agency-class-e {
+      background: var(--bg-elev); color: var(--text-mute);
+      border: 1px dashed var(--rule); font-style: italic;
+    }
+    .agency-class-f {
+      background: transparent; color: var(--text-faint);
+      border: 1px solid var(--text-faint); font-style: italic;
+    }
+    sup.cite-ref {
+      font-size: 0.72em;
+      vertical-align: super;
+      line-height: 0;
+      margin: 0 0.05em;
+    }
+    sup.cite-ref a {
+      color: var(--accent);
+      text-decoration: none;
+      padding: 0 0.15em;
+      border-radius: 2px;
+    }
+    sup.cite-ref a:hover,
+    sup.cite-ref a:focus {
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      outline: none;
+    }
+    /* Highlight the cited source briefly when navigated to via #cite-N. */
+    .cited-sources li:target {
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      transition: background 1.2s ease-out;
+    }
+    .narrative p { margin: 0 0 1rem 0; }
+    @media print {
+      sup.cite-ref a { color: var(--text); }
+    }
     .entity-chips {
       list-style: none;
       padding: 0;
@@ -139,33 +196,63 @@
     </ul>
   {% endif %}
 
-  {% if article.summary_source == 'feed' %}
+  {% if article.story_rewrite %}
+    {# R5/R6 — Multi-source rewritten narrative with linkified [N] citations. #}
     <p class="summary-banner">
-      <strong>Auto-summary pending LLM enrichment.</strong> The body below is the
-      source-provided excerpt; once the grounded summariser runs, this is
-      replaced by {{ vertical.display_name }}'s canonical 50-80-word lede with
-      full source grounding (see <a href="/methodology">methodology</a>).
+      <strong>Multi-source synthesis</strong> by {{ vertical.display_name }} from
+      {{ article.story_rewrite.n_sources }}
+      {% if article.story_rewrite.n_sources == 1 %}source{% else %}sources{% endif %}.
+      Every numeric and quoted claim traces to a cited source body
+      (see <a href="/methodology">methodology</a>).
+      {% if article.story_rewrite.version > 1 %}
+        Revision {{ article.story_rewrite.version }} ·
+        updated {{ article.story_rewrite.updated_iso }}.
+      {% endif %}
     </p>
-  {% elif article.summary_source == 'manual' %}
-    <p class="summary-banner">
-      <strong>Editor-reviewed summary.</strong> Manually verified against the
-      primary source.
-    </p>
-  {% endif %}
 
-  <div class="summary">
-    {% if article.summary %}
-      <p>{{ article.summary | safe }}</p>
-    {% else %}
-      <p><em>No summary available yet.</em></p>
+    <div class="narrative">
+      {% for paragraph in article.story_rewrite.narrative_html.split('\n\n') %}
+        {% if paragraph.strip() %}
+          <p>{{ paragraph | safe }}</p>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if article.story_rewrite.why_this_matters %}
+      <aside class="why">
+        <span class="label">Why this matters</span>
+        {{ article.story_rewrite.why_this_matters }}
+      </aside>
     {% endif %}
-  </div>
+  {% else %}
+    {% if article.summary_source == 'feed' %}
+      <p class="summary-banner">
+        <strong>Auto-summary pending LLM enrichment.</strong> The body below is the
+        source-provided excerpt; once the grounded summariser runs, this is
+        replaced by {{ vertical.display_name }}'s canonical 50-80-word lede with
+        full source grounding (see <a href="/methodology">methodology</a>).
+      </p>
+    {% elif article.summary_source == 'manual' %}
+      <p class="summary-banner">
+        <strong>Editor-reviewed summary.</strong> Manually verified against the
+        primary source.
+      </p>
+    {% endif %}
 
-  {% if article.why_this_matters %}
-    <aside class="why">
-      <span class="label">Why this matters</span>
-      {{ article.why_this_matters }}
-    </aside>
+    <div class="summary">
+      {% if article.summary %}
+        <p>{{ article.summary | safe }}</p>
+      {% else %}
+        <p><em>No summary available yet.</em></p>
+      {% endif %}
+    </div>
+
+    {% if article.why_this_matters %}
+      <aside class="why">
+        <span class="label">Why this matters</span>
+        {{ article.why_this_matters }}
+      </aside>
+    {% endif %}
   {% endif %}
 
   {% if article.labels %}
@@ -197,6 +284,27 @@
       "url": {{ canonical_url | tojson }}
     },
     "isBasedOn": {{ article.link | tojson }},
+    {% if article.story_rewrite %}
+    "articleBody": {{ article.story_rewrite.narrative | tojson }},
+    {% if article.story_rewrite.word_count %}"wordCount": {{ article.story_rewrite.word_count }},{% endif %}
+    {% if article.story_rewrite.updated_iso %}"dateModified": "{{ article.story_rewrite.updated_iso }}",{% endif %}
+    {% if article.story_rewrite.sources %}
+    "citation": [
+      {% for s in article.story_rewrite.sources %}
+      {
+        "@type": "NewsArticle",
+        "url": {{ s.url | tojson }},
+        {% if s.headline %}"headline": {{ s.headline | tojson }},{% endif %}
+        {% if s.date_published %}"datePublished": {{ s.date_published | tojson }},{% endif %}
+        "publisher": {
+          "@type": "NewsMediaOrganization",
+          "name": {{ s.host | tojson }}
+        }
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ],
+    {% endif %}
+    {% endif %}
     "inLanguage": "en"
   }
   </script>
@@ -216,28 +324,49 @@
     </section>
   {% endif %}
 
-  <section class="sources">
-    <h2>
-      {% if article.siblings %}
-        Sources covering this ({{ article.siblings | length + 1 }})
-      {% else %}
-        Sources
-      {% endif %}
-    </h2>
-    <ul>
-      <li>
-        <span class="pub">{{ article.source_short }}</span> —
-        <a href="{{ article.link }}" rel="noopener nofollow" target="_blank">{{ article.title }} ↗</a>
-      </li>
-      {% for s in article.siblings %}
+  {% if article.story_rewrite and article.story_rewrite.sources %}
+    {# R5 — Citation-graph sources block. Each entry has its [N] index, host,
+       and agency-class badge. Inline [N] citations in the narrative resolve
+       to these via the #cite-N anchor below. #}
+    <section class="sources">
+      <h2>Sources cited ({{ article.story_rewrite.n_sources }})</h2>
+      <ol class="cited-sources">
+        {% for s in article.story_rewrite.sources %}
+          <li id="cite-{{ s.n }}">
+            <span class="pub">{{ s.host }}</span>
+            <span class="agency-class agency-class-{{ s.agency_class | lower }}"
+                  title="Class {{ s.agency_class }} — {{ s.agency_label }}">
+              {{ s.agency_class }} · {{ s.agency_label }}
+            </span> —
+            <a href="{{ s.url }}" rel="noopener" target="_blank">{{ s.url }} ↗</a>
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+  {% else %}
+    <section class="sources">
+      <h2>
+        {% if article.siblings %}
+          Sources covering this ({{ article.siblings | length + 1 }})
+        {% else %}
+          Sources
+        {% endif %}
+      </h2>
+      <ul>
         <li>
-          <span class="pub">{{ s.source_short }}</span> —
-          <a href="/story/{{ s.slug }}/">{{ s.title }}</a>
-          {% if s.feed_region %}<span style="color: var(--text-faint);">· {{ s.feed_region }}</span>{% endif %}
+          <span class="pub">{{ article.source_short }}</span> —
+          <a href="{{ article.link }}" rel="noopener nofollow" target="_blank">{{ article.title }} ↗</a>
         </li>
-      {% endfor %}
-    </ul>
-  </section>
+        {% for s in article.siblings %}
+          <li>
+            <span class="pub">{{ s.source_short }}</span> —
+            <a href="/story/{{ s.slug }}/">{{ s.title }}</a>
+            {% if s.feed_region %}<span style="color: var(--text-faint);">· {{ s.feed_region }}</span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
 
   <details class="report-issue" style="margin-top: 2rem; font-family: var(--sans); font-size: 0.85rem; color: var(--text-mute);">
     <summary style="cursor: pointer; user-select: none;">Spot something wrong? <span style="color: var(--accent);">Report an issue</span></summary>

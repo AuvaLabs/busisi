@@ -11,6 +11,7 @@ glossary, learn, tools, /today, RSS, Atom, sitemap, llms.txt.
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -509,6 +510,17 @@ def render_meta_files(
     p.write_text(rsl, encoding="utf-8")
     paths["rsl"] = p
 
+    # RSL 1.0 XML — industry-adopted standard (rslstandard.org); the JSON
+    # variant above is a legacy placeholder retained during transition.
+    rsl_xml = env.get_template(".well-known/rsl.xml").render(
+        vertical=vertical_ctx,
+        base_url=base,
+        generated_at=generated_at,
+    )
+    p = well_known_dir / "rsl.xml"
+    p.write_text(rsl_xml, encoding="utf-8")
+    paths["rsl_xml"] = p
+
     expires = (
         datetime.now(timezone.utc) + timedelta(days=365)
     ).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -699,6 +711,158 @@ def _research_bundles_map(
     return out
 
 
+def _non_primary_redirects(
+    session, article_ids: list[int]
+) -> dict[int, str]:
+    """Return ``{non_primary_article_id: primary_slug}``.
+
+    C2 — non-primary cluster members get a 0-byte redirect page pointing to
+    the primary's /story/<slug>/ instead of a duplicate full render. Reduces
+    near-duplicate-content SEO penalty and concentrates link equity.
+    """
+    if not article_ids:
+        return {}
+    link_rows = session.execute(
+        select(StoryArticle.article_id, StoryArticle.story_id, StoryArticle.is_primary)
+        .where(StoryArticle.article_id.in_(article_ids))
+    ).all()
+    if not link_rows:
+        return {}
+    story_ids = list({sid for _, sid, _ in link_rows})
+    primaries = session.execute(
+        select(StoryArticle.story_id, Article.slug)
+        .join(Article, Article.id == StoryArticle.article_id)
+        .where(
+            StoryArticle.story_id.in_(story_ids),
+            StoryArticle.is_primary.is_(True),
+        )
+    ).all()
+    primary_slug_by_story: dict[int, str] = {sid: slug for sid, slug in primaries}
+    out: dict[int, str] = {}
+    for aid, sid, is_primary in link_rows:
+        if is_primary:
+            continue
+        primary_slug = primary_slug_by_story.get(sid)
+        if primary_slug:
+            out[aid] = primary_slug
+    return out
+
+
+_AGENCY_CLASS_LABELS = {
+    "A": "wire",
+    "B": "newspaper",
+    "C": "trade press",
+    "D": "primary",
+    "E": "research",
+    "F": "commentary",
+}
+
+_CITATION_TOKEN_RE = re.compile(r"\[(\d+)\]")
+
+
+def _linkify_citations(narrative: str) -> str:
+    """Wrap inline ``[N]`` tokens with ``<sup><a href="#cite-N">[N]</a></sup>``.
+
+    The escape is enough for plain news prose — narrative comes from our LLM
+    pipeline and never carries hostile HTML. The renderer template also calls
+    this through Jinja's ``| safe`` filter, so HTML entities in the narrative
+    are preserved in the surrounding text but the citation wrapper itself is
+    structurally HTML.
+    """
+    return _CITATION_TOKEN_RE.sub(
+        lambda m: (
+            f'<sup class="cite-ref">'
+            f'<a href="#cite-{m.group(1)}">[{m.group(1)}]</a>'
+            f'</sup>'
+        ),
+        narrative,
+    )
+
+
+def _story_rewrite_map(
+    session, article_ids: list[int]
+) -> dict[int, dict[str, Any]]:
+    """Return ``{article_id: rewrite_dict}`` for articles whose Story has a
+    committed narrative. ``rewrite_dict`` contains the rendered fields the
+    story.html template consumes.
+    """
+    if not article_ids:
+        return {}
+    from engine.core.db import StorySource as _SS
+
+    link_rows = session.execute(
+        select(StoryArticle.article_id, StoryArticle.story_id).where(
+            StoryArticle.article_id.in_(article_ids)
+        )
+    ).all()
+    if not link_rows:
+        return {}
+    article_to_story: dict[int, int] = {aid: sid for aid, sid in link_rows}
+    story_ids = list({sid for _, sid in link_rows})
+
+    story_rows = session.execute(
+        select(Story).where(Story.id.in_(story_ids))
+    ).scalars().all()
+    by_story_id: dict[int, Story] = {st.id: st for st in story_rows}
+
+    source_rows = session.execute(
+        select(_SS).where(_SS.story_id.in_(story_ids)).order_by(_SS.cited_as_n)
+    ).scalars().all()
+    # C5 — fetch article title + datePublished per source for richer JSON-LD.
+    cited_article_ids = [sr.article_id for sr in source_rows if sr.article_id]
+    article_meta_by_id: dict[int, dict[str, Any]] = {}
+    if cited_article_ids:
+        for art in session.execute(
+            select(Article).where(Article.id.in_(cited_article_ids))
+        ).scalars():
+            published = art.published_at
+            if published is not None and published.tzinfo is None:
+                published = published.replace(tzinfo=timezone.utc)
+            article_meta_by_id[art.id] = {
+                "headline": art.title,
+                "datePublished": published.isoformat() if published else None,
+            }
+    sources_by_story: dict[int, list[dict[str, Any]]] = {}
+    for sr in source_rows:
+        meta = article_meta_by_id.get(sr.article_id, {}) if sr.article_id else {}
+        sources_by_story.setdefault(sr.story_id, []).append(
+            {
+                "n": sr.cited_as_n,
+                "host": sr.host,
+                "url": sr.source_url,
+                "agency_class": sr.agency_class,
+                "agency_label": _AGENCY_CLASS_LABELS.get(
+                    sr.agency_class, sr.agency_class
+                ),
+                "article_id": sr.article_id,
+                "headline": meta.get("headline"),
+                "date_published": meta.get("datePublished"),
+            }
+        )
+
+    out: dict[int, dict[str, Any]] = {}
+    for aid, sid in article_to_story.items():
+        story = by_story_id.get(sid)
+        if story is None or not story.narrative:
+            continue
+        updated = story.narrative_updated_at
+        if updated is not None and updated.tzinfo is None:
+            updated = updated.replace(tzinfo=timezone.utc)
+        out[aid] = {
+            "narrative": story.narrative,
+            "narrative_html": _linkify_citations(story.narrative),
+            "why_this_matters": story.why_this_matters,
+            "version": story.narrative_version or 0,
+            "model": story.narrative_model,
+            "word_count": story.narrative_word_count,
+            "updated_iso": updated.isoformat() if updated else "",
+            "state": story.state,
+            "sources": sources_by_story.get(sid, []),
+            "n_sources": len(sources_by_story.get(sid, [])),
+        }
+    return out
+
+
 def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
     """Render one canonical /story/<slug>/ page per persisted article.
 
@@ -734,12 +898,31 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
         siblings_by_id = _siblings_map(session, article_ids)
         entities_by_id = _entities_map(session, article_ids)
         research_by_id = _research_bundles_map(session, article_ids)
+        rewrite_by_id = _story_rewrite_map(session, article_ids)
+        redirect_by_id = _non_primary_redirects(session, article_ids)
 
     env = _env()
     base_dir = _output_dir(vertical_name) / "story"
     base_dir.mkdir(parents=True, exist_ok=True)
 
     for a in rows:
+        # C2 — non-primary cluster members redirect to the primary's slug
+        # rather than emit a duplicate full page.
+        redirect_to = redirect_by_id.get(a.id)
+        if redirect_to:
+            redirect_html = (
+                "<!doctype html>\n<html><head>"
+                f'<meta http-equiv="refresh" content="0; url=/story/{redirect_to}/">'
+                f'<link rel="canonical" href="/story/{redirect_to}/">'
+                f'<title>{a.title}</title></head>'
+                f'<body><p>This story has moved to <a href="/story/{redirect_to}/">'
+                f'/story/{redirect_to}/</a>.</p></body></html>'
+            )
+            story_dir = base_dir / a.slug
+            story_dir.mkdir(parents=True, exist_ok=True)
+            (story_dir / "index.html").write_text(redirect_html, encoding="utf-8")
+            out[a.slug] = story_dir / "index.html"
+            continue
         pub_dt = a.published_at
         if pub_dt is not None and pub_dt.tzinfo is None:
             pub_dt = pub_dt.replace(tzinfo=timezone.utc)
@@ -765,6 +948,7 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
             "curator_tier": a.curator_tier,
             "curator_score": a.curator_score,
             "research": research_by_id.get(a.id, []),
+            "story_rewrite": rewrite_by_id.get(a.id),
         }
         ctx = {
             "vertical": vertical_ctx,

@@ -89,20 +89,46 @@ _QUESTION_END = re.compile(r"\?\s*$")
 _SHORT_TITLE_THRESHOLD = 6  # words
 
 
-# Default source authority — applied when sources.yaml has no `tier:` entry.
+# Default source authority — applied when sources.yaml has no annotation.
 _SOURCE_AUTH_DEFAULT = 0.20
 
 # Authority-tier → multiplier on _SOURCE_AUTH_WEIGHT.
+# Legacy `tier:` keys are kept for backward compatibility; new sources should
+# use `agency_class:` (A-F).
 _TIER_WEIGHTS: dict[str, float] = {
     "tier_a": 1.00,   # Reuters, AP, Bloomberg, official lab blogs
     "tier_b": 0.65,   # trade press, established blogs, gov agencies
-    "tier_c": 0.30,   # forums, Reddit, discussion sites
+    "tier_c": 0.30,   # forums, Reddit, discussion sites (deprecated; Class G removed)
     "default": 0.50,
+}
+
+# R1 — agency_class → multiplier on _SOURCE_AUTH_WEIGHT.
+#   A  Wire / news agency           full authority
+#   B  Newspaper of record          full authority
+#   C  Trade press                  mid authority (original reporting, not wire)
+#   D  Primary / official source    full authority for own announcements
+#   E  Research aggregator          mid authority (credible, not breaking)
+#   F  Analysis / commentary        low authority (NEVER primary citation;
+#                                    rewriter validator rejects F-only sources)
+# Class G is removed at the source-list level — see verticals/*/sources.yaml.
+_AGENCY_CLASS_WEIGHTS: dict[str, float] = {
+    "a": 1.00,
+    "b": 1.00,
+    "c": 0.65,
+    "d": 1.00,
+    "e": 0.65,
+    "f": 0.30,
 }
 
 
 def _load_source_tier_map(vertical_name: str) -> dict[str, str]:
-    """Read ``verticals/<v>/sources.yaml`` and return ``{host: tier}``."""
+    """Read ``verticals/<v>/sources.yaml`` → ``{host: 'tier_x'}``.
+
+    Reads `agency_class` first (canonical, R1+), falls back to legacy `tier:`.
+    Returned values use the legacy `tier_a/b/c` vocabulary so downstream
+    weighting stays uniform; ``_load_agency_class_map`` exposes the raw
+    A-F letter for the rewriter's primary-citation eligibility check.
+    """
     path = vertical_dir(vertical_name) / "sources.yaml"
     if not path.exists():
         return {}
@@ -120,12 +146,58 @@ def _load_source_tier_map(vertical_name: str) -> dict[str, str]:
         if not isinstance(entry, dict):
             continue
         url = entry.get("url") or entry.get("rss") or entry.get("feed")
-        tier = entry.get("tier", "").strip().lower()
-        if not url or not tier:
+        if not url:
+            continue
+        host = urlparse(url).netloc.removeprefix("www.").lower()
+        if not host:
+            continue
+        agency = str(entry.get("agency_class", "")).strip().lower()
+        if agency in _AGENCY_CLASS_WEIGHTS:
+            # Translate A-F into the legacy tier vocabulary so downstream
+            # weighting stays uniform.
+            weight = _AGENCY_CLASS_WEIGHTS[agency]
+            if weight >= 0.95:
+                out[host] = "tier_a"
+            elif weight >= 0.50:
+                out[host] = "tier_b"
+            else:
+                out[host] = "tier_c"
+            continue
+        legacy = str(entry.get("tier", "")).strip().lower()
+        if legacy:
+            out[host] = legacy
+    return out
+
+
+def _load_agency_class_map(vertical_name: str) -> dict[str, str]:
+    """Read ``verticals/<v>/sources.yaml`` → ``{host: 'A'..'F'}``.
+
+    Used by the rewriter validator to enforce primary-citation eligibility
+    (Class F can never be the sole source of a factual claim).
+    """
+    path = vertical_dir(vertical_name) / "sources.yaml"
+    if not path.exists():
+        return {}
+    try:
+        with open(path, encoding="utf-8") as fp:
+            data = yaml.safe_load(fp) or {}
+    except Exception as exc:
+        logger.warning("could not read %s: %s", path, exc)
+        return {}
+    out: dict[str, str] = {}
+    sources = data.get("sources", []) if isinstance(data, dict) else data
+    if not isinstance(sources, list):
+        return out
+    for entry in sources:
+        if not isinstance(entry, dict):
+            continue
+        url = entry.get("url") or entry.get("rss") or entry.get("feed")
+        agency = str(entry.get("agency_class", "")).strip().upper()
+        if not url or agency not in {"A", "B", "C", "D", "E", "F"}:
             continue
         host = urlparse(url).netloc.removeprefix("www.").lower()
         if host:
-            out[host] = tier
+            out[host] = agency
     return out
 
 

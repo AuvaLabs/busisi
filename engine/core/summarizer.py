@@ -31,7 +31,7 @@ from typing import Any
 
 from sqlalchemy import select
 
-from engine.core import llm_cache, llm_client
+from engine.core import llm_cache, llm_client, llm_routing
 from engine.core.config import MAX_CONTENT_CHARS
 from engine.core.db import Article, Vertical, get_sessionmaker
 
@@ -143,13 +143,19 @@ def summarize_one(article: Article, *, vertical: str) -> dict[str, Any] | None:
         }
 
     user = _build_user_prompt(article.title, grounding)
+    # R2 — caller-aware routing. "summarize" maps to Qwen 2.5 7B (1u) by
+    # default; per-vertical env override remains available.
+    routed_model = llm_routing.model_for("summarize", vertical=vertical)
     try:
         raw = llm_client.call_llm(
             user_content=user,
             system_prompt=_SYSTEM_PROMPT,
             response_format={"type": "json_object"},
             caller="summarize",
+            model=routed_model,
             max_tokens=400,
+            vertical_id=article.vertical_id,
+            article_id=article.id,
         )
     except RuntimeError as exc:
         logger.warning("summarize call failed for %r: %s", article.title[:60], exc)

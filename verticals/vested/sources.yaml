@@ -1,14 +1,79 @@
 # Vested — personal finance for tech workers.
-# Schema: see engine/core/feed_loader.py.
-# 38 feeds across priority bands. URLs are best-known-public-feed; operator
-# should verify and replace any 404s during launch QA (mirrors the same
-# audit cadence as modelwatch — see source_health for live status).
+#
+# Schema: see engine/core/feed_loader.py and verticals/_template/README.md.
+# Each entry now carries a per-source `agency_class` (A-F) consumed by the
+# editorial curator and the multi-source rewriter.
+#
+# Agency classes (R1, 2026-05-06):
+#   A  Wire / news agency        Reuters, AP, AFP, Bloomberg, Dow Jones
+#   B  Newspaper of record       FT, WSJ, NYT, BBC, Guardian, Economist
+#   C  Trade press               Levels.fyi, NerdWallet, MarketWatch
+#   D  Primary / official        Brokerages, regulators (IRS/Fed/SEC/CFPB)
+#   E  Research aggregator       (rare for PF; SSRN-style if added)
+#   F  Analysis / commentary     PF blogs, FIRE community creators
+#
+# Class G (Reddit / forums) is REMOVED at the source list — community signals
+# are excluded from the rewriter pipeline. See docs/REWRITER_BUILD_LOG.md.
 
-# ====== TIER 1.00 — Direct sources (regulator / official) ======
+# ====== Class A — Wire / news agency ======
+
+- url: https://www.bloomberg.com/feed/podcast/wealth.xml
+  type: rss
+  region: US
+  agency_class: A
+  priority_weight: 0.95
+  category_hints: [brokerage-investing, retirement-planning]
+
+# ====== Class B — Newspaper of record ======
+
+- url: https://feeds.a.dj.com/rss/RSSPersonalFinance.xml
+  type: rss
+  region: US
+  agency_class: B
+  priority_weight: 0.95
+  category_hints: [taxes, retirement-planning, brokerage-investing]
+
+- url: https://feeds.bbci.co.uk/news/business/rss.xml
+  type: rss
+  region: UK
+  agency_class: B
+  priority_weight: 0.90
+  category_hints: [brokerage-investing, regulation]
+
+- url: https://www.theguardian.com/money/rss
+  type: rss
+  region: UK
+  agency_class: B
+  priority_weight: 0.90
+  category_hints: [taxes, debt-management, brokerage-investing]
+
+- url: https://feeds.npr.org/1006/rss.xml
+  type: rss
+  region: US
+  agency_class: B
+  priority_weight: 0.85
+  category_hints: [brokerage-investing, taxes]
+
+- url: https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/your-money/index.html/rss.xml
+  type: rss
+  region: US
+  agency_class: B
+  priority_weight: 0.90
+  category_hints: [brokerage-investing, retirement-planning]
+
+- url: https://rss.nytimes.com/services/xml/rss/nyt/DealBook.xml
+  type: rss
+  region: US
+  agency_class: B
+  priority_weight: 0.85
+  category_hints: [brokerage-investing, regulation]
+
+# ====== Class D — Regulators (primary source) ======
 
 - url: https://www.irs.gov/newsroom/feed
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [taxes, regulation]
 
@@ -18,190 +83,156 @@
 - url: https://www.federalreserve.gov/feeds/press_all.xml
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [retirement-planning, brokerage-investing]
 
 - url: https://www.sec.gov/news/pressreleases.rss
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [brokerage-investing, regulation]
 
 - url: https://www.consumerfinance.gov/about-us/blog/feed/
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [credit, debt-management, banking]
 
-# ====== TIER 0.90 — Brokerages ======
+# ====== Class D — Brokerages (primary source for their own products) ======
 
 - url: https://www.fidelity.com/learning-center/personal-finance/rss
   type: rss
   region: US
+  agency_class: D
   priority_weight: 0.90
   category_hints: [brokerage-investing, retirement-planning]
 
 - url: https://newsroom.fidelity.com/pressreleases.rss
   type: rss
   region: US
+  agency_class: D
   priority_weight: 0.90
   category_hints: [brokerage-investing]
 
 - url: https://www.schwab.com/learn/rss
   type: rss
   region: US
+  agency_class: D
   priority_weight: 0.90
   category_hints: [brokerage-investing]
 
 - url: https://investor.vanguard.com/investing/insights/feed
   type: rss
   region: US
+  agency_class: D
   priority_weight: 0.90
   category_hints: [brokerage-investing, retirement-planning]
 
 - url: https://www.wealthfront.com/blog/feed
   type: rss
   region: US
+  agency_class: D
   priority_weight: 0.90
   category_hints: [brokerage-investing, banking]
 
 # DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
 # https://blog.public.com/rss
-
-# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
 # https://blog.robinhood.com/rss
 
-# ====== TIER 0.85 — Tech-compensation primary ======
+# ====== Class C — Trade press / data publisher ======
 
 - url: https://www.levels.fyi/blog/rss
   type: rss
   region: US
+  agency_class: C
   priority_weight: 0.85
   category_hints: [salary-negotiation, equity-compensation]
 
 # DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
 # https://compensation.fyi/feed
 
-# ====== TIER 0.80 — Major PF press ======
-
-# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
-# https://wsj.com/news/personal-finance/feed
-
-- url: https://www.bloomberg.com/feed/podcast/wealth.xml
+- url: https://nerdwallet.com/blog/feed
   type: rss
   region: US
-  priority_weight: 0.80
-  category_hints: [brokerage-investing, retirement-planning]
+  agency_class: C
+  priority_weight: 0.55
+  category_hints: [credit, banking, debt-management]
 
-- url: https://feeds.npr.org/1006/rss.xml
-  type: rss
-  region: US
-  priority_weight: 0.80
-  category_hints: [brokerage-investing, taxes]
-
-- url: https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/your-money/index.html/rss.xml
-  type: rss
-  region: US
-  priority_weight: 0.80
-  category_hints: [brokerage-investing, retirement-planning]
-
-# ====== TIER 0.75 — Tech-specific finance creators ======
-
-# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
-# https://holisticwealth.io/feed
+# ====== Class F — Analysis / commentary (NEVER primary citation) ======
+#
+# Personal-finance blogs and FIRE community creators. Useful for context and
+# sidebar surfaces; NEVER used as the sole source for a factual claim by the
+# rewriter. The narrative validator rejects rewrites whose sole inline citation
+# is a Class F source.
 
 - url: https://thefinancebuff.com/feed
   type: rss
   region: US
+  agency_class: F
   priority_weight: 0.75
   category_hints: [taxes, retirement-planning]
 
 - url: https://www.physicianonfire.com/feed
   type: rss
   region: US
+  agency_class: F
   priority_weight: 0.75
   category_hints: [financial-independence, taxes]
 
 - url: https://www.whitecoatinvestor.com/feed
   type: rss
   region: US
+  agency_class: F
   priority_weight: 0.75
   category_hints: [taxes, brokerage-investing, financial-independence]
-
-- url: https://www.bogleheads.org/forum/feed.php
-  type: rss
-  region: US
-  priority_weight: 0.70
-  category_hints: [brokerage-investing, retirement-planning]
-
-# ====== TIER 0.70 — FIRE community + creators ======
 
 - url: https://www.mrmoneymustache.com/feed
   type: rss
   region: US
+  agency_class: F
   priority_weight: 0.70
   category_hints: [financial-independence]
 
 - url: https://www.choosefi.com/feed
   type: rss
   region: US
+  agency_class: F
   priority_weight: 0.70
   category_hints: [financial-independence]
 
 - url: https://www.gocurrycracker.com/feed
   type: rss
   region: US
+  agency_class: F
   priority_weight: 0.70
   category_hints: [financial-independence, taxes]
 
 - url: https://earlyretirementnow.com/feed
   type: rss
   region: US
+  agency_class: F
   priority_weight: 0.70
   category_hints: [financial-independence, retirement-planning]
 
 - url: https://ofdollarsanddata.com/feed
   type: rss
   region: US
+  agency_class: F
   priority_weight: 0.70
   category_hints: [brokerage-investing, financial-independence]
 
-# ====== TIER 0.60 — Community signals ======
-
-- url: https://www.reddit.com/r/financialindependence/.rss
-  type: rss
-  region: US
-  priority_weight: 0.60
-  category_hints: [financial-independence]
-
-- url: https://www.reddit.com/r/personalfinance/.rss
-  type: rss
-  region: US
-  priority_weight: 0.60
-  category_hints: [taxes, debt-management, banking]
-
-- url: https://www.reddit.com/r/Bogleheads/.rss
-  type: rss
-  region: US
-  priority_weight: 0.60
-  category_hints: [brokerage-investing]
-
-- url: https://www.reddit.com/r/cscareerquestions/.rss
-  type: rss
-  region: US
-  priority_weight: 0.60
-  category_hints: [salary-negotiation, equity-compensation]
-
-# ====== TIER 0.55 — Newsletters / commentary ======
+# ====== Class G — Forum / community ======
+# REMOVED 2026-05-06 (R1). Reddit and discussion forums are excluded from the
+# rewriter pipeline. See docs/REWRITER_BUILD_LOG.md § R1.
+#   - https://www.bogleheads.org/forum/feed.php
+#   - https://www.reddit.com/r/financialindependence/.rss
+#   - https://www.reddit.com/r/personalfinance/.rss
+#   - https://www.reddit.com/r/Bogleheads/.rss
+#   - https://www.reddit.com/r/cscareerquestions/.rss
 
 # DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
 # https://morningbrew.com/money/feed
-
-- url: https://nerdwallet.com/blog/feed
-  type: rss
-  region: US
-  priority_weight: 0.55
-  category_hints: [credit, banking, debt-management]
-
-# DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
 # https://bankrate.com/feed

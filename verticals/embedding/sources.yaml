@@ -1,22 +1,74 @@
-# Modelwatch — AI/ML knowledge platform sources.
+# The Embedding Report — AI/ML knowledge platform sources.
 #
 # Schema: see engine/core/feed_loader.py and verticals/_template/README.md.
-# 50 feeds across 7 priority bands. Reviewed quarterly; broken sources are
-# auto-disabled by source_health when consecutive failures > 5.
+# Each entry now carries a per-source `agency_class` (A-F) consumed by the
+# editorial curator and the multi-source rewriter.
 #
-# Priority bands (per BUILD-DIRECTIVE Phase 3):
-#   1.00  AI labs (first-party announcements)
-#   0.90  Research aggregators (ArXiv, Papers with Code)
-#   0.85  AI newsletters / regulatory bodies
-#   0.80  Tech press (AI sections only)
-#   0.70  Independent voices
-#   0.60  Community signals (subreddit hot, HN ML > score 100)
+# Agency classes (R1, 2026-05-06):
+#   A  Wire / news agency        Reuters, AP, AFP, Bloomberg, Dow Jones
+#   B  Newspaper of record       FT, WSJ, NYT, BBC, Guardian, Economist
+#   C  Trade press               TechCrunch, Verge, IEEE Spectrum, MIT TR
+#   D  Primary / official        Lab blogs, regulators, think-tank releases
+#   E  Research aggregator       ArXiv, PapersWithCode, HF daily papers
+#   F  Analysis / commentary     Substacks, analyst blogs, individual voices
+#
+# Class G (Reddit / HN / forums) is REMOVED at the source list — community
+# signals are excluded from the rewriter pipeline. See docs/REWRITER_BUILD_LOG.md.
+#
+# `priority_weight` is the SCHEDULER signal (refresh ordering). `agency_class`
+# is the EDITORIAL signal (curator authority + rewriter primary-citation
+# eligibility). Both coexist — they answer different questions.
 
-# ====== TIER 1.00 — AI labs (first-party) ======
+# ====== Class A — Wire / news agency ======
+
+# Reuters discontinued public RSS for most coverage in 2024. Operator
+# evaluation candidates (verify each before enabling — Reuters has been
+# inconsistent about RSS availability):
+#   - https://www.reuters.com/arc/outboundfeeds/v3/category/technology/?outputType=xml
+#   - https://www.reuters.com/pf/api/v3/content/fetch/articles-by-section?query=...
+# AP RSS — limited but partial:
+#   - https://apnews.com/hub/artificial-intelligence/feed (was 404 in mid-2024;
+#     re-check periodically)
+# AFP, Dow Jones — paid syndication only; not RSS-accessible.
+# Bloomberg — see Class A entry under Vested for the wealth podcast feed; no
+# AI-section RSS as of 2026-05-07.
+
+# ====== Class B — Newspaper of record ======
+
+- url: https://feeds.bbci.co.uk/news/technology/rss.xml
+  type: rss
+  region: UK
+  agency_class: B
+  priority_weight: 0.95
+  category_hints: [model-release, product-launch, commentary, regulation]
+
+- url: https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml
+  type: rss
+  region: US
+  agency_class: B
+  priority_weight: 0.95
+  category_hints: [model-release, product-launch, commentary, regulation]
+
+- url: https://www.theguardian.com/technology/rss
+  type: rss
+  region: UK
+  agency_class: B
+  priority_weight: 0.95
+  category_hints: [model-release, product-launch, commentary, regulation]
+
+- url: https://feeds.a.dj.com/rss/RSSWSJD.xml
+  type: rss
+  region: US
+  agency_class: B
+  priority_weight: 0.95
+  category_hints: [model-release, product-launch, regulation, funding]
+
+# ====== Class D — AI labs (first-party) ======
 
 - url: https://openai.com/news/rss.xml
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [model-release, product-launch, commentary]
 
@@ -26,12 +78,14 @@
 - url: https://blog.google/technology/ai/rss
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [model-release, product-launch]
 
 - url: https://deepmind.google/blog/rss.xml
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [research-paper, model-release]
 
@@ -44,6 +98,7 @@
 - url: https://www.cohere.com/blog/rss.xml
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [model-release, product-launch]
 
@@ -53,44 +108,88 @@
 - url: https://blogs.nvidia.com/feed/
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [infrastructure, model-release]
 
 - url: https://blogs.microsoft.com/ai/feed/
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [model-release, product-launch, infrastructure]
 
 - url: https://machinelearning.apple.com/rss.xml
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [research-paper, application]
 
 - url: https://www.amazon.science/index.rss
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [research-paper, application]
 
 - url: https://research.ibm.com/blog/rss.xml
   type: rss
   region: US
+  agency_class: D
   priority_weight: 1.00
   category_hints: [research-paper]
 
 - url: https://huggingface.co/blog/feed.xml
   type: rss
   region: Global
+  agency_class: D
   priority_weight: 1.00
   category_hints: [model-release, tool-release, application]
 
-# ====== TIER 0.90 — Research aggregators ======
+- url: https://www.anyscale.com/blog/rss.xml
+  type: rss
+  region: US
+  agency_class: D
+  priority_weight: 0.70
+  category_hints: [infrastructure, application]
+
+# ====== Class D — Policy / regulator / think-tank ======
+
+- url: https://www.brookings.edu/topic/artificial-intelligence/feed/
+  type: rss
+  region: US
+  agency_class: D
+  priority_weight: 0.85
+  category_hints: [regulation, commentary]
+
+- url: https://cset.georgetown.edu/feed/
+  type: rss
+  region: US
+  agency_class: D
+  priority_weight: 0.85
+  category_hints: [regulation, commentary, safety-research]
+
+- url: https://www.aei.org/policy-areas/technology-innovation/feed/
+  type: rss
+  region: US
+  agency_class: D
+  priority_weight: 0.85
+  category_hints: [regulation, commentary]
+
+- url: https://www.aisi.gov.uk/rss.xml
+  type: rss
+  region: UK
+  agency_class: D
+  priority_weight: 0.85
+  category_hints: [regulation, safety-research]
+
+# ====== Class E — Research aggregators ======
 
 - url: http://export.arxiv.org/rss/cs.CL
   type: rss
   region: Global
+  agency_class: E
   priority_weight: 0.90
   category_hints: [research-paper]
   refresh_interval: 3600
@@ -98,6 +197,7 @@
 - url: http://export.arxiv.org/rss/cs.LG
   type: rss
   region: Global
+  agency_class: E
   priority_weight: 0.90
   category_hints: [research-paper]
   refresh_interval: 3600
@@ -105,6 +205,7 @@
 - url: http://export.arxiv.org/rss/cs.AI
   type: rss
   region: Global
+  agency_class: E
   priority_weight: 0.90
   category_hints: [research-paper]
   refresh_interval: 3600
@@ -112,6 +213,7 @@
 - url: http://export.arxiv.org/rss/cs.CV
   type: rss
   region: Global
+  agency_class: E
   priority_weight: 0.90
   category_hints: [research-paper]
   refresh_interval: 3600
@@ -119,6 +221,7 @@
 - url: http://export.arxiv.org/rss/stat.ML
   type: rss
   region: Global
+  agency_class: E
   priority_weight: 0.90
   category_hints: [research-paper]
   refresh_interval: 3600
@@ -126,181 +229,162 @@
 - url: https://paperswithcode.com/feed.xml
   type: rss
   region: Global
+  agency_class: E
   priority_weight: 0.90
   category_hints: [research-paper, benchmark]
 
-# ====== TIER 0.85 — Newsletters + regulatory ======
-
-- url: https://importai.substack.com/feed
+- url: https://huggingface.co/api/daily-papers/feed
   type: rss
   region: Global
+  agency_class: E
   priority_weight: 0.85
-  category_hints: [commentary, model-release]
+  category_hints: [research-paper]
 
-- url: https://www.deeplearning.ai/the-batch/feed/
-  type: rss
-  region: US
-  priority_weight: 0.85
-  category_hints: [commentary]
-
-- url: https://lastweekinai.substack.com/feed
-  type: rss
-  region: Global
-  priority_weight: 0.85
-  category_hints: [commentary]
-
-- url: https://www.bensbites.co/feed
-  type: rss
-  region: Global
-  priority_weight: 0.85
-  category_hints: [commentary, product-launch]
-
-- url: https://www.oneusefulthing.org/feed
-  type: rss
-  region: US
-  priority_weight: 0.85
-  category_hints: [commentary, application]
-
-- url: https://www.interconnects.ai/feed
-  type: rss
-  region: US
-  priority_weight: 0.85
-  category_hints: [commentary, model-release]
-
-- url: https://www.aisnakeoil.com/feed
-  type: rss
-  region: US
-  priority_weight: 0.85
-  category_hints: [commentary, controversy]
-
-- url: https://www.brookings.edu/topic/artificial-intelligence/feed/
-  type: rss
-  region: US
-  priority_weight: 0.85
-  category_hints: [regulation, commentary]
-
-- url: https://cset.georgetown.edu/feed/
-  type: rss
-  region: US
-  priority_weight: 0.85
-  category_hints: [regulation, commentary, safety-research]
-
-- url: https://www.aei.org/policy-areas/technology-innovation/feed/
-  type: rss
-  region: US
-  priority_weight: 0.85
-  category_hints: [regulation, commentary]
-
-- url: https://www.aisi.gov.uk/rss.xml
-  type: rss
-  region: UK
-  priority_weight: 0.85
-  category_hints: [regulation, safety-research]
-
-# ====== TIER 0.80 — Tech press (AI sections) ======
+# ====== Class C — Trade press (original AI reporting) ======
 
 - url: https://techcrunch.com/category/artificial-intelligence/feed/
   type: rss
   region: US
+  agency_class: C
   priority_weight: 0.80
   category_hints: [funding, product-launch, commentary]
 
 - url: https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
   type: rss
   region: US
+  agency_class: C
   priority_weight: 0.80
   category_hints: [product-launch, commentary]
 
 - url: https://arstechnica.com/ai/feed/
   type: rss
   region: US
+  agency_class: C
   priority_weight: 0.80
   category_hints: [commentary, application, controversy]
 
 - url: https://spectrum.ieee.org/rss/topic/artificial-intelligence
   type: rss
   region: US
+  agency_class: C
   priority_weight: 0.80
   category_hints: [research-paper, commentary]
 
 - url: https://www.wired.com/feed/tag/ai/latest/rss
   type: rss
   region: US
+  agency_class: C
   priority_weight: 0.80
   category_hints: [commentary, application]
 
 - url: https://venturebeat.com/category/ai/feed/
   type: rss
   region: US
+  agency_class: C
   priority_weight: 0.80
   category_hints: [funding, product-launch, commentary]
 
 - url: https://www.technologyreview.com/topic/artificial-intelligence/feed
   type: rss
   region: US
+  agency_class: C
   priority_weight: 0.80
   category_hints: [commentary, research-paper]
 
-# ====== TIER 0.70 — Independent voices ======
+# ====== Class F — Analysis / commentary (NEVER primary citation) ======
+#
+# These feeds are ingested for context only. The rewriter must not cite Class F
+# as the sole source for a factual claim. They surface in /story/<slug>/ as
+# sidebar context and on /commentary/ pages, never in the primary narrative
+# inline citation graph.
+
+- url: https://importai.substack.com/feed
+  type: rss
+  region: Global
+  agency_class: F
+  priority_weight: 0.85
+  category_hints: [commentary, model-release]
+
+- url: https://www.deeplearning.ai/the-batch/feed/
+  type: rss
+  region: US
+  agency_class: F
+  priority_weight: 0.85
+  category_hints: [commentary]
+
+- url: https://lastweekinai.substack.com/feed
+  type: rss
+  region: Global
+  agency_class: F
+  priority_weight: 0.85
+  category_hints: [commentary]
+
+- url: https://www.bensbites.co/feed
+  type: rss
+  region: Global
+  agency_class: F
+  priority_weight: 0.85
+  category_hints: [commentary, product-launch]
+
+- url: https://www.oneusefulthing.org/feed
+  type: rss
+  region: US
+  agency_class: F
+  priority_weight: 0.85
+  category_hints: [commentary, application]
+
+- url: https://www.interconnects.ai/feed
+  type: rss
+  region: US
+  agency_class: F
+  priority_weight: 0.85
+  category_hints: [commentary, model-release]
+
+- url: https://www.aisnakeoil.com/feed
+  type: rss
+  region: US
+  agency_class: F
+  priority_weight: 0.85
+  category_hints: [commentary, controversy]
 
 - url: https://simonwillison.net/atom/everything/
   type: atom
   region: UK
+  agency_class: F
   priority_weight: 0.70
   category_hints: [commentary, tool-release]
 
 - url: https://www.latent.space/feed
   type: rss
   region: US
+  agency_class: F
   priority_weight: 0.70
   category_hints: [commentary]
 
 - url: https://www.dbreunig.com/feed.xml
   type: rss
   region: US
+  agency_class: F
   priority_weight: 0.70
   category_hints: [commentary]
 
 - url: https://thegradient.pub/rss/
   type: rss
   region: US
+  agency_class: F
   priority_weight: 0.70
   category_hints: [commentary, research-paper]
 
 - url: https://lilianweng.github.io/index.xml
   type: rss
   region: Global
+  agency_class: F
   priority_weight: 0.70
   category_hints: [research-paper, commentary]
 
-- url: https://www.anyscale.com/blog/rss.xml
-  type: rss
-  region: US
-  priority_weight: 0.70
-  category_hints: [infrastructure, application]
-
-# ====== TIER 0.60 — Community signals ======
-
-- url: https://www.reddit.com/r/MachineLearning/.rss
-  type: rss
-  region: Global
-  priority_weight: 0.60
-  category_hints: [research-paper, commentary]
-
-- url: https://www.reddit.com/r/LocalLLaMA/.rss
-  type: rss
-  region: Global
-  priority_weight: 0.60
-  category_hints: [model-release, tool-release]
-
-- url: https://huggingface.co/api/daily-papers/feed
-  type: rss
-  region: Global
-  priority_weight: 0.60
-  category_hints: [research-paper]
-
-- url: https://hnrss.org/newest?points=100&q=AI+OR+LLM+OR+machine+learning
-  type: rss
-  region: Global
-  priority_weight: 0.60
-  category_hints: [commentary]
+# ====== Class G — Forum / community ======
+# REMOVED 2026-05-06 (R1). Reddit, HN, and discussion forums are excluded
+# from the rewriter pipeline. See docs/REWRITER_BUILD_LOG.md § R1.
+#   - https://www.reddit.com/r/MachineLearning/.rss
+#   - https://www.reddit.com/r/LocalLLaMA/.rss
+#   - https://hnrss.org/newest?points=100&q=AI+OR+LLM+OR+machine+learning

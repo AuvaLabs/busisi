@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Really Simple Licensing (RSL) 1.0 manifest.
+  https://rslstandard.org/rsl
+
+  Adopted by AP, Vox, Guardian, BuzzFeed, USA Today, Stack Overflow, O'Reilly,
+  Yahoo, Ziff Davis (1500+ publishers as of 2025-Q3). XML-based, machine-readable
+  licensing terms; supports per-use-case licensing (search/citation vs training).
+
+  Companion file: /.well-known/rsl.json (legacy JSON manifest, kept during
+  transition for clients that have not migrated to the XML standard).
+-->
+<rsl xmlns="https://rslstandard.org/rsl"
+     version="1.0"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <content url="{{ base_url }}/"
+           recursive="true"
+           server="{{ base_url }}/.well-known/rsl.xml">
+
+    <licensor>
+      <name>Auva Labs FZE</name>
+      <publication>{{ vertical.display_name }}</publication>
+      <url>{{ base_url }}</url>
+      <contact>legal@auvalabs.com</contact>
+    </licensor>
+
+    <!-- Use case 1: Search / citation surfaces — permitted with attribution -->
+    <license>
+      <permits type="usage">search</permits>
+      <permits type="usage">ai-summary</permits>
+      <permits type="usage">ai-inference</permits>
+      <permits type="user">crawler</permits>
+      <prohibits type="usage">ai-train</prohibits>
+      <attribution required="true">
+        <text>Originally reported and synthesised by {{ vertical.display_name }}, Auva Labs FZE.</text>
+        <link href="{{ base_url }}" />
+      </attribution>
+      <payment type="free" />
+      <terms href="{{ base_url }}/licensing" />
+    </license>
+
+    <!-- Use case 2: AI training — requires explicit license (paid) -->
+    <license>
+      <permits type="usage">ai-train</permits>
+      <permits type="user">commercial</permits>
+      <payment type="purchase">
+        <standard>https://rslstandard.org/license/ai-train</standard>
+        <currency>USD</currency>
+        <amount type="negotiated" />
+        <contact>legal@auvalabs.com</contact>
+      </payment>
+      <terms href="{{ base_url }}/licensing" />
+    </license>
+
+    <!-- Use case 3: Bulk redistribution — prohibited without license -->
+    <license>
+      <prohibits type="usage">bulk-redistribution</prohibits>
+      <prohibits type="usage">republication</prohibits>
+      <payment type="purchase">
+        <currency>USD</currency>
+        <amount type="negotiated" />
+        <contact>legal@auvalabs.com</contact>
+      </payment>
+      <terms href="{{ base_url }}/licensing" />
+    </license>
+
+    <!-- Quotation policy — fair-use excerpts permitted with attribution -->
+    <license>
+      <permits type="usage">quotation</permits>
+      <constraint type="excerpt-words" max="90" />
+      <attribution required="true">
+        <text>{{ vertical.display_name }}</text>
+        <link href="{{ base_url }}" />
+      </attribution>
+      <payment type="free" />
+    </license>
+
+    <!-- Aggregator preferences — accept revenue via these rails -->
+    <preferred-aggregator>https://rslcollective.org</preferred-aggregator>
+    <preferred-aggregator>https://www.cloudflare.com/paypercrawl/</preferred-aggregator>
+    <preferred-aggregator>https://tollbit.com</preferred-aggregator>
+    <preferred-aggregator>https://www.perplexity.ai/comet-plus</preferred-aggregator>
+
+    <metadata>
+      <generated>{{ generated_at }}</generated>
+      <schema>https://rslstandard.org/rsl/schema/1.0</schema>
+    </metadata>
+
+  </content>
+</rsl>

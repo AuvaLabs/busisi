@@ -32,6 +32,8 @@ _ARTICLES_LIMIT_DEFAULT = 50
 _ARTICLES_LIMIT_MAX = 200
 _ENTITIES_LIMIT_DEFAULT = 100
 _ENTITIES_LIMIT_MAX = 500
+_STORIES_LIMIT_DEFAULT = 25
+_STORIES_LIMIT_MAX = 100
 
 
 def _client_ip(request: Request) -> str:
@@ -193,6 +195,102 @@ def list_entities(
         {
             "vertical": vertical,
             "type": type,
+            "count": len(data),
+            "limit": limit,
+            "data": data,
+        }
+    )
+
+
+@router.get("/stories")
+def list_stories(
+    request: Request,
+    vertical: str = Query(..., min_length=1, max_length=64),
+    limit: int = Query(_STORIES_LIMIT_DEFAULT, ge=1, le=_STORIES_LIMIT_MAX),
+    since: str | None = Query(None),
+    state: str | None = Query(
+        None,
+        pattern=r"^(draft|ready|published|revising|archived)$",
+    ),
+) -> JSONResponse:
+    """C3 — list canonical Stories with narrative + citation graph.
+
+    Returns one record per Story with the full multi-source narrative,
+    `[N]`-indexed sources, and citation provenance. Designed for AI
+    ingestion (Perplexity, ChatGPT Search) and partner RAG pipelines.
+
+    Default ``state`` filter is ``published`` so consumers see narrative-
+    bearing rows only. Pass an explicit ``state`` (e.g. ``revising``) to
+    include in-progress rewrites.
+    """
+    ip = _client_ip(request)
+    if not rate_limit_hit("api_v1", ip):
+        raise HTTPException(status_code=429, detail="too many requests")
+
+    since_dt = _parse_since(since)
+    target_state = state or "published"
+
+    # Local imports keep top-of-file lean; these models are only needed here.
+    from engine.core.db import Story, StorySource
+
+    Session = get_sessionmaker()
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical)
+        ).scalar_one_or_none()
+        if v is None:
+            raise HTTPException(status_code=404, detail=f"unknown vertical: {vertical}")
+
+        stmt = (
+            select(Story)
+            .where(Story.vertical_id == v.id, Story.state == target_state)
+            .order_by(Story.primary_published_at.desc())
+            .limit(limit)
+        )
+        if since_dt is not None:
+            stmt = stmt.where(Story.primary_published_at >= since_dt)
+        stories = session.execute(stmt).scalars().all()
+
+        story_ids = [s.id for s in stories]
+        sources_by_story: dict[int, list[dict[str, Any]]] = {}
+        if story_ids:
+            for sr in session.execute(
+                select(StorySource)
+                .where(StorySource.story_id.in_(story_ids))
+                .order_by(StorySource.cited_as_n)
+            ).scalars().all():
+                sources_by_story.setdefault(sr.story_id, []).append(
+                    {
+                        "n": sr.cited_as_n,
+                        "url": sr.source_url,
+                        "host": sr.host,
+                        "agency_class": sr.agency_class,
+                        "article_id": sr.article_id,
+                    }
+                )
+
+        data: list[dict[str, Any]] = []
+        for s in stories:
+            data.append(
+                {
+                    "id": s.id,
+                    "headline": s.canonical_headline,
+                    "narrative": s.narrative,
+                    "why_this_matters": s.why_this_matters,
+                    "version": s.narrative_version,
+                    "word_count": s.narrative_word_count,
+                    "model": s.narrative_model,
+                    "state": s.state,
+                    "primary_published": _isoformat(s.primary_published_at),
+                    "narrative_updated": _isoformat(s.narrative_updated_at),
+                    "sources": sources_by_story.get(s.id, []),
+                }
+            )
+
+    return JSONResponse(
+        {
+            "vertical": vertical,
+            "state": target_state,
             "count": len(data),
             "limit": limit,
             "data": data,

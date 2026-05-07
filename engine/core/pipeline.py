@@ -30,8 +30,11 @@ from engine.core import (
     article_scraper,
     classifier,
     deduplicator,
+    extractor,
     feed_fetcher,
     feed_loader,
+    research_writer,
+    story_lifecycle,
     summarizer,
 )
 from engine.core.config import vertical_dir
@@ -118,6 +121,10 @@ def run_vertical(
     scrape: bool = False,
     enrich: bool = False,
     enrich_max: int = 20,
+    extract: bool = False,
+    extract_max: int = 20,
+    rewrite: bool = False,
+    rewrite_max: int = 10,
 ) -> list[dict[str, Any]]:
     """Run the ingestion pipeline for one vertical and return enriched articles."""
     install_ssrf_guard()
@@ -180,6 +187,38 @@ def run_vertical(
         counts = summarizer.enrich_pending(vertical_id, max_articles=enrich_max)
         logger.info("[%s] summariser enrichment: %s", vertical_id, counts)
 
+    if extract and persist:
+        # R4a — Pass 0 per-article structured extract. Runs after summarizer
+        # so the same per-tick budget visibility applies. The extract is the
+        # input to R4b's cluster-level rewriter (Pass 1 + Pass 2).
+        ex_counts = extractor.extract_pending(
+            vertical_id, max_articles=extract_max
+        )
+        logger.info("[%s] pass0_extract: %s", vertical_id, ex_counts)
+
+    if rewrite and persist:
+        # R7 — pre-rewrite lifecycle: promote draft Stories that satisfy the
+        # ripeness criterion (≥2 Class A-C members + cooldown elapsed), then
+        # archive stale published Stories before the rewriter runs.
+        ready_counts = story_lifecycle.mark_ready(vertical_id)
+        logger.info("[%s] mark_ready: %s", vertical_id, ready_counts)
+        archive_counts = story_lifecycle.archive_stale(vertical_id)
+        logger.info("[%s] archive_stale: %s", vertical_id, archive_counts)
+
+        # R4b — multi-source rewriter. Operates on Stories whose state is
+        # draft/ready/revising, requires ≥2 cluster members each carrying a
+        # Pass 0 structured_extract. Pass 1 (Qwen 32B, 2u) + Pass 2 (DeepSeek
+        # V3 / Llama 4 Maverick, 4u).
+        rw_counts = research_writer.rewrite_pending(
+            vertical_id, max_stories=rewrite_max
+        )
+        logger.info("[%s] research_writer: %s", vertical_id, rw_counts)
+
+        # R7 — post-rewrite citation rollup: aggregate any new bot_hits whose
+        # path resolves to a Story slug into per-(story, bot, day) buckets.
+        rollup_counts = story_lifecycle.rollup_citations(vertical_id)
+        logger.info("[%s] rollup_citations: %s", vertical_id, rollup_counts)
+
     return unique
 
 
@@ -199,6 +238,14 @@ def main(argv: list[str] | None = None) -> int:
                         help="Run grounded LLM summariser on pending rows")
     parser.add_argument("--enrich-max", type=int, default=20,
                         help="Max rows to summarise per call (cron-friendly)")
+    parser.add_argument("--extract", action="store_true",
+                        help="Run Pass 0 structured extractor (R4a)")
+    parser.add_argument("--extract-max", type=int, default=20,
+                        help="Max rows to Pass-0-extract per call")
+    parser.add_argument("--rewrite", action="store_true",
+                        help="Run multi-source rewriter (R4b)")
+    parser.add_argument("--rewrite-max", type=int, default=10,
+                        help="Max stories to rewrite per call")
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
 
@@ -215,6 +262,10 @@ def main(argv: list[str] | None = None) -> int:
         scrape=args.scrape,
         enrich=args.enrich,
         enrich_max=args.enrich_max,
+        extract=args.extract,
+        extract_max=args.extract_max,
+        rewrite=args.rewrite,
+        rewrite_max=args.rewrite_max,
     )
     print(f"\n=== summary ===\n{len(out)} articles after pipeline\n")
     for article in out[:10]:

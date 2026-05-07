@@ -1,7 +1,20 @@
 # {{ vertical.display_name }} — robots.txt
-# Honest declaration of what is + isn't crawlable. See /llms.txt for the
-# fuller editorial policy and /licensing for citation/quotation terms.
-# Inference licensing terms: see /.well-known/rsl.json (Really Simple Licensing).
+#
+# 6-tier bot policy (R1, 2026-05-06). See /llms.txt for full editorial policy
+# and /licensing for citation/quotation terms. Inference licensing terms:
+# /.well-known/rsl.xml (Really Simple Licensing 1.0).
+#
+# Tier 1 — Allow (citation / search): bots that surface content with a
+#   user-visible link back. Highest reciprocity value to publishers.
+# Tier 2 — Allow conditionally (training): bots that may train on content;
+#   gated only via RSL XML + Cloudflare Pay-Per-Crawl rather than blanket
+#   robots.txt block, since outright blocking removes citation visibility too.
+# Tier 3 — Allow (general crawl): standard search engines.
+# Tier 4 — Allow (other AI / commerce): vendors with documented citation
+#   surfaces or commerce intent.
+# Tier 5 — Blocked: aggregators with no citation surface.
+# Tier 6 — Blocked (egregious): bots with documented robots.txt-ignoring
+#   behaviour. Cloudflare WAF rule additionally enforced upstream.
 
 User-agent: *
 Allow: /
@@ -9,12 +22,9 @@ Disallow: /api/admin
 Disallow: /sponsorship/admin
 Crawl-delay: 2
 
-# AI crawlers — explicitly allowed under the licensing terms in /licensing
-# and /.well-known/rsl.json. Editorial summaries are AI-assisted but
-# human-supervised; quotation with attribution + canonical link-back is
-# fair use, bulk redistribution requires permission.
+# ───── Tier 1 — Citation / search bots (allow, highest priority) ─────
 
-User-agent: GPTBot
+User-agent: OAI-SearchBot
 Allow: /
 Crawl-delay: 2
 
@@ -22,19 +32,11 @@ User-agent: ChatGPT-User
 Allow: /
 Crawl-delay: 2
 
-User-agent: OAI-SearchBot
+User-agent: Claude-SearchBot
 Allow: /
 Crawl-delay: 2
 
-User-agent: ClaudeBot
-Allow: /
-Crawl-delay: 2
-
-User-agent: Claude-Web
-Allow: /
-Crawl-delay: 2
-
-User-agent: anthropic-ai
+User-agent: Claude-User
 Allow: /
 Crawl-delay: 2
 
@@ -46,9 +48,41 @@ User-agent: Perplexity-User
 Allow: /
 Crawl-delay: 2
 
+# ───── Tier 2 — Training bots (allow; gate via RSL XML) ─────
+
+User-agent: GPTBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: ClaudeBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: anthropic-ai
+Allow: /
+Crawl-delay: 2
+
+User-agent: Claude-Web
+Allow: /
+Crawl-delay: 2
+
 User-agent: Google-Extended
 Allow: /
 Crawl-delay: 2
+
+User-agent: Meta-ExternalAgent
+Allow: /
+Crawl-delay: 2
+
+User-agent: cohere-ai
+Allow: /
+Crawl-delay: 2
+
+User-agent: Applebot-Extended
+Allow: /
+Crawl-delay: 2
+
+# ───── Tier 3 — General search crawlers ─────
 
 User-agent: Googlebot
 Allow: /
@@ -63,24 +97,21 @@ User-agent: Applebot
 Allow: /
 Crawl-delay: 2
 
-User-agent: Applebot-Extended
-Allow: /
-Crawl-delay: 2
+# ───── Tier 4 — Other allowed AI / commerce ─────
 
 User-agent: Amazonbot
 Allow: /
 Crawl-delay: 2
 
-User-agent: cohere-ai
-Allow: /
-Crawl-delay: 2
+# ───── Tier 5 — Blocked: no citation surface ─────
 
 User-agent: CCBot
-Allow: /
-Crawl-delay: 2
+Disallow: /
 
-# Bytespider (TikTok/ByteDance) — declined; aggressive scraping behaviour
-# without clear citation surface.
+# ───── Tier 6 — Blocked: documented robots.txt violators ─────
+# Bytespider (TikTok / ByteDance) — documented as ignoring robots.txt; also
+# blocked at Cloudflare WAF.
+
 User-agent: Bytespider
 Disallow: /
 

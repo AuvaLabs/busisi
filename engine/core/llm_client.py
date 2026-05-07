@@ -149,12 +149,35 @@ def call_llm(
     response_format: dict[str, Any] | None = None,
     caller: str | None = None,
     model: str | None = None,
+    vertical_id: int | None = None,
+    story_id: int | None = None,
+    article_id: int | None = None,
 ) -> str:
-    """Call the LLM API with key failover."""
+    """Call the LLM API with key failover.
+
+    C1 — when ``vertical_id`` is supplied, the daily concurrency-unit cap
+    (env: ``LLM_DAILY_UNIT_CAP__<vertical>``) is enforced and every call
+    leaves an LLMCall audit row. Existing callers that omit ``vertical_id``
+    bypass the audit (backward-compatible).
+    """
     if _circuit_open():
         raise RuntimeError(
             f"LLM circuit breaker open: >= {LLM_CIRCUIT_THRESHOLD} consecutive failures"
         )
+
+    resolved_model = model or LLM_MODEL
+    if vertical_id is not None:
+        from engine.core import llm_audit
+
+        units = llm_audit.units_for_model(resolved_model)
+        exceeded, used, cap = llm_audit.cap_exceeded(
+            vertical_id, additional_units=units
+        )
+        if exceeded:
+            raise RuntimeError(
+                f"daily LLM unit cap exceeded for vertical_id={vertical_id}: "
+                f"used={used}, cap={cap}, this_call={units}"
+            )
 
     url = f"{LLM_BASE_URL.rstrip('/')}/chat/completions"
     base_payload: dict[str, Any] = {
@@ -219,6 +242,24 @@ def call_llm(
                 except Exception as exc:
                     logger.debug("llm_usage record failed: %s", exc)
 
+                # C1 — Postgres audit row for cost rollups + daily cap.
+                if vertical_id is not None:
+                    try:
+                        from engine.core import llm_audit
+
+                        in_tok, out_tok = llm_audit.extract_token_counts(data)
+                        llm_audit.record_call(
+                            caller=caller or "unknown",
+                            model=resolved_model,
+                            vertical_id=vertical_id,
+                            story_id=story_id,
+                            article_id=article_id,
+                            input_tokens=in_tok,
+                            output_tokens=out_tok,
+                        )
+                    except Exception as exc:
+                        logger.debug("llm_audit.record_call failed: %s", exc)
+
                 content = data["choices"][0]["message"]["content"]
                 return str(content).strip()
 
@@ -241,6 +282,20 @@ def call_llm(
                 break
 
     _record_failure()
+    if vertical_id is not None:
+        try:
+            from engine.core import llm_audit
+
+            llm_audit.record_call(
+                caller=caller or "unknown",
+                model=resolved_model,
+                vertical_id=vertical_id,
+                story_id=story_id,
+                article_id=article_id,
+                error=str(last_error)[:500] if last_error else "exhausted",
+            )
+        except Exception as exc:
+            logger.debug("llm_audit.record_call (failure path) failed: %s", exc)
     raise RuntimeError(f"All {attempts} API keys exhausted: {last_error}")
 
 

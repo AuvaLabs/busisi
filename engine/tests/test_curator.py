@@ -9,6 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+import engine.core.config as _cfg_module
 import engine.core.db as db_module
 from engine.core import curator as cur
 from engine.core.db import (
@@ -239,3 +240,116 @@ class TestScorePending:
         assert counts["considered"] == 1
         with SM() as s:
             assert s.get(Article, a1).curator_score is not None
+
+
+# ---------------------------------------------------------------------------
+# R1 — agency_class taxonomy
+# ---------------------------------------------------------------------------
+
+
+class TestAgencyClassLoader:
+    """R1 — agency_class A-F is the canonical authority signal.
+
+    The legacy ``tier:`` annotation is still accepted as a fallback during
+    migration. Class G (forums/Reddit) is removed at the source-list level
+    and therefore not represented in the loader.
+    """
+
+    def _write_sources(
+        self,
+        tmp_path,
+        monkeypatch: pytest.MonkeyPatch,
+        vertical: str,
+        body: str,
+    ) -> None:
+        v_dir = tmp_path / "verticals" / vertical
+        v_dir.mkdir(parents=True)
+        (v_dir / "sources.yaml").write_text(body, encoding="utf-8")
+        # vertical_dir() reads VERTICALS_DIR at call time. monkeypatch reverts.
+        monkeypatch.setattr(_cfg_module, "VERTICALS_DIR", tmp_path / "verticals")
+
+    def test_agency_class_a_maps_to_tier_a(
+        self, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._write_sources(
+            tmp_path,
+            monkeypatch,
+            "v1",
+            "- url: https://www.reuters.com/feed\n  agency_class: A\n",
+        )
+        m = cur._load_source_tier_map("v1")
+        assert m == {"reuters.com": "tier_a"}
+
+    def test_agency_class_f_maps_to_tier_c(
+        self, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._write_sources(
+            tmp_path,
+            monkeypatch,
+            "v1",
+            "- url: https://thefinancebuff.com/feed\n  agency_class: F\n",
+        )
+        m = cur._load_source_tier_map("v1")
+        assert m == {"thefinancebuff.com": "tier_c"}
+
+    def test_agency_class_map_returns_raw_letter(
+        self, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._write_sources(
+            tmp_path,
+            monkeypatch,
+            "v1",
+            (
+                "- url: https://www.reuters.com/feed\n  agency_class: A\n"
+                "- url: https://thefinancebuff.com/feed\n  agency_class: F\n"
+                "- url: https://www.theverge.com/feed\n  agency_class: C\n"
+            ),
+        )
+        m = cur._load_agency_class_map("v1")
+        assert m == {
+            "reuters.com": "A",
+            "thefinancebuff.com": "F",
+            "theverge.com": "C",
+        }
+
+    def test_legacy_tier_annotation_still_works(
+        self, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._write_sources(
+            tmp_path,
+            monkeypatch,
+            "v1",
+            "- url: https://example.com/feed\n  tier: tier_b\n",
+        )
+        m = cur._load_source_tier_map("v1")
+        assert m == {"example.com": "tier_b"}
+
+    def test_agency_class_supersedes_legacy_tier(
+        self, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._write_sources(
+            tmp_path,
+            monkeypatch,
+            "v1",
+            (
+                "- url: https://example.com/feed\n"
+                "  agency_class: A\n"
+                "  tier: tier_c\n"
+            ),
+        )
+        m = cur._load_source_tier_map("v1")
+        # agency_class A wins → tier_a, not legacy tier_c.
+        assert m == {"example.com": "tier_a"}
+
+    def test_unknown_class_falls_through(
+        self, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # 'Z' is not a valid agency_class — entry should be skipped silently.
+        self._write_sources(
+            tmp_path,
+            monkeypatch,
+            "v1",
+            "- url: https://example.com/feed\n  agency_class: Z\n",
+        )
+        assert cur._load_agency_class_map("v1") == {}
+        assert cur._load_source_tier_map("v1") == {}
