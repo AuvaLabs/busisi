@@ -125,6 +125,8 @@ def run_vertical(
     extract_max: int = 20,
     rewrite: bool = False,
     rewrite_max: int = 10,
+    rewrite_orphans: bool = False,
+    rewrite_orphans_max: int = 20,
 ) -> list[dict[str, Any]]:
     """Run the ingestion pipeline for one vertical and return enriched articles."""
     install_ssrf_guard()
@@ -219,6 +221,16 @@ def run_vertical(
         rollup_counts = story_lifecycle.rollup_citations(vertical_id)
         logger.info("[%s] rollup_citations: %s", vertical_id, rollup_counts)
 
+    if rewrite_orphans and persist:
+        # F2 (2026-05-10) — single-source enriched rewriter for orphan
+        # articles (cluster of 1). Cluster-wins precedence: skips articles
+        # already in a published Story.narrative. Targets standard +
+        # researcher tier articles with structured_extract.
+        orphan_counts = research_writer.rewrite_orphan_pending(
+            vertical_id, max_articles=rewrite_orphans_max
+        )
+        logger.info("[%s] rewrite_orphan_pending: %s", vertical_id, orphan_counts)
+
     return unique
 
 
@@ -246,6 +258,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="Run multi-source rewriter (R4b)")
     parser.add_argument("--rewrite-max", type=int, default=10,
                         help="Max stories to rewrite per call")
+    parser.add_argument("--rewrite-orphans", action="store_true",
+                        help="Run single-source enriched rewriter for orphan articles (F2)")
+    parser.add_argument("--rewrite-orphans-max", type=int, default=20,
+                        help="Max orphan articles to rewrite per call")
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
 
@@ -266,6 +282,8 @@ def main(argv: list[str] | None = None) -> int:
         extract_max=args.extract_max,
         rewrite=args.rewrite,
         rewrite_max=args.rewrite_max,
+        rewrite_orphans=args.rewrite_orphans,
+        rewrite_orphans_max=args.rewrite_orphans_max,
     )
     print(f"\n=== summary ===\n{len(out)} articles after pipeline\n")
     for article in out[:10]:

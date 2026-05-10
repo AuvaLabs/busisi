@@ -53,6 +53,7 @@ from engine.core import llm_cache, llm_client, llm_routing
 from engine.core.curator import _load_agency_class_map
 from engine.core.db import (
     Article,
+    ResearchBundle,
     Story,
     StoryArticle,
     StoryRevision,
@@ -566,6 +567,370 @@ def rewrite_pending(
     return counts
 
 
+# ---- F2 (2026-05-10) — Orphan rewriter (single-source enriched rewrite) ----
+#
+# For the 84% of articles that aren't part of a multi-source cluster, compose
+# a 200-450 word researched narrative using:
+#   - the primary article body + Pass 0 structured_extract  (cited as [1])
+#   - the article's research_bundle entries from Exa/ArXiv   (cited as [2..N])
+#
+# Every numeric/quote claim must trace to either the primary or a bundle
+# excerpt. Class F primaries (commentary) are rejected upstream by the tier
+# filter (curator routes them to skip), but the validator double-checks.
+# Articles in a published cluster (Story.narrative IS NOT NULL) are skipped —
+# the cluster-level rewrite is canonical.
+
+
+_PASS_ORPHAN_SYSTEM = """You are a senior wire-service editor. Compose an original news report enriched with research-bundle context.
+
+INPUT JSON:
+  primary: the article's structured fact extract (lead_claim, key_facts, numerics, entities, quotes)
+  primary_body: the original article body (use for tone + grounding)
+  research_bundle: list of supporting docs from web/scholar search [{n, url, host, excerpt}]
+  sources: list of {n, host, agency_class, source_url, kind} where kind is "primary" or "research"
+
+OUTPUT JSON:
+{
+  "lead": "<inverted-pyramid first paragraph, 30-50 words>",
+  "body": "<remaining paragraphs, 200-450 words total including lead, with inline [N] citations>",
+  "why_this_matters": "<1-2 sentence editorial caption>"
+}
+
+RULES:
+  1. NEVER invent facts. Every claim must trace to either the primary body or a research_bundle excerpt.
+  2. The PRIMARY source is [1] — every factual claim from the primary cites [1].
+  3. Research-bundle entries are [2..N] — use them to (a) confirm primary facts independently
+     OR (b) add context the primary doesn't include (history, regulation, alternative angles).
+  4. Every numeric / quote / quote-attribution must have an inline [N] citation pointing
+     to the source where that fact appears.
+  5. NEVER use these phrases: "game-changer", "experts say", "could revolutionize",
+     "many believe", "industry insiders", "sources close to".
+  6. Tone: declarative, neutral, byline-grade. Short sentences. No hype.
+  7. Use only [N] tokens that resolve to entries in `sources`.
+  8. Output strict JSON only. No commentary outside the three fields.
+"""
+
+
+def _pass_orphan_user_prompt(
+    primary_extract: dict[str, Any],
+    primary_body: str,
+    bundles: list[dict[str, Any]],
+    sources: list[dict[str, Any]],
+) -> str:
+    return (
+        "primary:\n"
+        + json.dumps(primary_extract, indent=2)
+        + "\n\nresearch_bundle:\n"
+        + json.dumps(bundles, indent=2)
+        + "\n\nsources:\n"
+        + json.dumps(sources, indent=2)
+        + "\n\nprimary_body:\n"
+        + primary_body[:6000]
+        + "\n\nReturn the composed narrative as JSON."
+    )
+
+
+def pass_orphan_compose(
+    primary_extract: dict[str, Any],
+    primary_body: str,
+    bundles: list[dict[str, Any]],
+    sources: list[dict[str, Any]],
+    *,
+    vertical: str,
+    vertical_id: int | None = None,
+    article_id: int | None = None,
+) -> dict[str, Any] | None:
+    """Compose the byline-grade single-source narrative."""
+    cache_seed = json.dumps(
+        {"primary": primary_extract, "bundles": bundles, "sources": sources},
+        sort_keys=True,
+    )
+    cache_key = llm_cache.make_cache_key("rewrite_single", cache_seed)
+    cached = llm_cache.get(cache_key)
+    if isinstance(cached, dict):
+        return cached
+    try:
+        raw = llm_client.call_llm(
+            user_content=_pass_orphan_user_prompt(
+                primary_extract, primary_body, bundles, sources
+            ),
+            system_prompt=_PASS_ORPHAN_SYSTEM,
+            response_format={"type": "json_object"},
+            caller="rewrite_single",
+            model=llm_routing.model_for("rewrite_single", vertical=vertical),
+            max_tokens=1500,
+            vertical_id=vertical_id,
+            article_id=article_id,
+        )
+    except RuntimeError as exc:
+        logger.warning("rewrite_single failed: %s", exc)
+        return None
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.warning("rewrite_single returned non-JSON")
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    for key in ("lead", "body", "why_this_matters"):
+        if key not in parsed or not isinstance(parsed[key], str):
+            logger.warning("rewrite_single missing field: %s", key)
+            return None
+    llm_cache.put(cache_key, parsed)
+    return parsed
+
+
+def validate_orphan_narrative(
+    narrative: dict[str, Any],
+    sources: list[dict[str, Any]],
+    bodies: list[str],
+) -> tuple[bool, str]:
+    """Validator for orphan rewrites.
+
+    Differs from ``validate_narrative`` (cluster path) in two ways:
+      1. Sources include a single primary [1] (must be Class A-E) plus
+         research-bundle entries [2..N] which carry no agency_class
+         requirement (Exa results are diverse).
+      2. The "≥1 primary-eligible (A-E) source" rule applies only to the
+         primary source [1]; bundle entries are accepted as supporting cites.
+    """
+    full_text = (narrative["lead"] + "\n\n" + narrative["body"]).strip()
+    word_count = len(full_text.split())
+    if word_count < 150 or word_count > 600:
+        return False, f"word_count out of range: {word_count}"
+
+    lower = full_text.lower()
+    for phrase in _BANNED_PHRASES:
+        if phrase in lower:
+            return False, f"banned phrase: {phrase!r}"
+
+    cited_ns = {int(m) for m in _CITATION_RE.findall(full_text)}
+    source_ns = {int(s["n"]) for s in sources}
+    missing = cited_ns - source_ns
+    if missing:
+        return False, f"unresolved [N] citations: {sorted(missing)}"
+
+    primary = next((s for s in sources if s.get("kind") == "primary"), None)
+    if primary is None:
+        return False, "no primary source in sources list"
+    if primary.get("agency_class") in {"F", "G"}:
+        return False, f"primary is Class {primary['agency_class']} — not eligible"
+    if primary.get("agency_class") not in {"A", "B", "C", "D", "E"}:
+        return False, f"primary agency_class={primary.get('agency_class')!r} not A-E"
+
+    body_pool = "\n".join(bodies)
+    source_values = _numeric_values(body_pool)
+    narr_for_numerics = _CITATION_RE.sub("", full_text)
+    narr_values = _numeric_values(narr_for_numerics)
+    leaked = sorted(
+        v for v in narr_values
+        if not any(
+            abs(v - s) <= max(0.01 * max(abs(v), abs(s)), 0.5) for s in source_values
+        )
+    )
+    if leaked:
+        return False, f"narrative cites numbers not in source bodies: {leaked[:3]}"
+
+    return True, ""
+
+
+def _persist_orphan_rewrite(
+    session,
+    article: Article,
+    narrative: dict[str, Any],
+    *,
+    model_used: str,
+) -> None:
+    """Overwrite Article.summary with the orphan rewrite. Cluster-wins
+    elsewhere — this only fires for orphan articles."""
+    full_text = narrative["lead"] + "\n\n" + narrative["body"]
+    article.summary = full_text
+    article.summary_source = "rewrite_single"
+    article.why_this_matters = narrative.get("why_this_matters")
+
+
+def rewrite_orphan(
+    article_id: int, *, vertical: str
+) -> dict[str, Any] | None:
+    """Run the orphan rewriter for one article.
+
+    Skips when:
+      - Article is in a published cluster (cluster-wins precedence)
+      - Article has no structured_extract (Pass 0 not yet run)
+      - Article body too thin (< 200 chars)
+      - Primary source agency_class is F/G (not eligible — caught by tier
+        gate too, double-checked here)
+      - Validator rejects the composed narrative
+    """
+    Session = get_sessionmaker()
+    agency_map = _load_agency_class_map(vertical)
+    with Session() as session:
+        article = session.get(Article, article_id)
+        if article is None:
+            return None
+        if article.curator_tier not in ("standard", "researcher"):
+            return None
+        if not article.structured_extract:
+            return None
+        body = (article.body or "").strip()
+        if len(body) < 200:
+            return None
+        # Cluster-wins precedence: skip if part of a published Story.
+        link = session.execute(
+            select(StoryArticle).where(StoryArticle.article_id == article.id)
+        ).scalar_one_or_none()
+        if link is not None:
+            parent = session.get(Story, link.story_id)
+            if parent is not None and parent.narrative:
+                logger.info(
+                    "orphan rewrite skipped art %d: in published Story %d",
+                    article.id,
+                    parent.id,
+                )
+                return None
+        # Resolve agency class from feed_host (matches cluster-rewriter logic).
+        feed_host = (
+            urlparse(article.source).netloc.removeprefix("www.").lower()
+            if article.source
+            else urlparse(article.link).netloc.removeprefix("www.").lower()
+        )
+        link_host = urlparse(article.link).netloc.removeprefix("www.").lower()
+        primary_class = agency_map.get(feed_host) or agency_map.get(link_host) or "?"
+        if primary_class in {"F", "?", "G"}:
+            logger.info(
+                "orphan rewrite skipped art %d: primary class=%s not eligible",
+                article.id,
+                primary_class,
+            )
+            return None
+
+        # Pull research-bundle context.
+        bundle_rows = (
+            session.execute(
+                select(ResearchBundle)
+                .where(ResearchBundle.article_id == article.id)
+                .order_by(ResearchBundle.ord.asc())
+                .limit(8)
+            )
+            .scalars()
+            .all()
+        )
+        bundles = [
+            {
+                "n": i + 2,  # primary is [1]; bundles start at [2]
+                "url": b.source_url,
+                "host": b.host,
+                "excerpt": (b.excerpt or "")[:1200],
+            }
+            for i, b in enumerate(bundle_rows)
+        ]
+
+        sources = [
+            {
+                "n": 1,
+                "host": link_host,
+                "agency_class": primary_class,
+                "source_url": article.link,
+                "kind": "primary",
+            }
+        ] + [
+            {
+                "n": b["n"],
+                "host": b["host"],
+                "agency_class": "?",
+                "source_url": b["url"],
+                "kind": "research",
+            }
+            for b in bundles
+        ]
+
+        narrative = pass_orphan_compose(
+            primary_extract=article.structured_extract,
+            primary_body=body,
+            bundles=bundles,
+            sources=sources,
+            vertical=vertical,
+            vertical_id=article.vertical_id,
+            article_id=article.id,
+        )
+        if narrative is None:
+            return None
+
+        # Validator — primary body + bundle excerpts make up the grounding pool.
+        bodies_for_validator = [body] + [b["excerpt"] for b in bundles]
+        ok, reason = validate_orphan_narrative(narrative, sources, bodies_for_validator)
+        if not ok:
+            logger.warning(
+                "orphan rewrite art %d failed validation: %s", article.id, reason
+            )
+            return None
+
+        model_used = llm_routing.model_for("rewrite_single", vertical=vertical)
+        _persist_orphan_rewrite(session, article, narrative, model_used=model_used)
+        session.commit()
+        return {
+            "article_id": article.id,
+            "word_count": len(article.summary.split()),
+            "n_sources": len(sources),
+            "model": model_used,
+        }
+
+
+def rewrite_orphan_pending(
+    vertical: str,
+    *,
+    max_articles: int = 20,
+    sleep_between: float = 0.5,
+) -> dict[str, int]:
+    """Find orphan articles needing enriched-rewrite; rewrite each.
+
+    Selection criteria (oldest-extracted first):
+      - curator_tier IN ('standard', 'researcher')
+      - structured_extract present
+      - summary_source != 'rewrite_single' (idempotent — already rewritten)
+      - body length >= 200 chars
+    """
+    import time
+
+    Session = get_sessionmaker()
+    counts = {"considered": 0, "written": 0, "skipped": 0, "failed": 0, "cached": 0}
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical)
+        ).scalar_one_or_none()
+        if v is None:
+            return counts
+        ids = (
+            session.execute(
+                select(Article.id)
+                .where(
+                    Article.vertical_id == v.id,
+                    Article.deleted_at.is_(None),
+                    Article.curator_tier.in_(("standard", "researcher")),
+                    Article.structured_extract.is_not(None),
+                    Article.summary_source != "rewrite_single",
+                    Article.body.is_not(None),
+                )
+                .order_by(Article.extracted_at.asc())
+                .limit(max_articles)
+            )
+            .scalars()
+            .all()
+        )
+        counts["considered"] = len(ids)
+
+    for aid in ids:
+        result = rewrite_orphan(aid, vertical=vertical)
+        if result is None:
+            counts["skipped"] += 1
+        else:
+            counts["written"] += 1
+            if sleep_between:
+                time.sleep(sleep_between)
+    logger.info("[%s] rewrite_orphan_pending: %s", vertical, counts)
+    return counts
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI: ``python -m engine.core.research_writer <vertical> [--max 10]``"""
     import argparse
@@ -573,12 +938,27 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the multi-source rewriter")
     parser.add_argument("vertical")
     parser.add_argument("--max", type=int, default=10, dest="max_stories")
+    parser.add_argument(
+        "--orphans",
+        action="store_true",
+        help="Run the F2 orphan (single-source enriched) rewriter instead",
+    )
+    parser.add_argument(
+        "--orphan-max",
+        type=int,
+        default=20,
+        dest="orphan_max",
+        help="Cap on orphan articles rewritten per call",
+    )
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=args.log_level, format="%(levelname)s %(name)s: %(message)s"
     )
-    counts = rewrite_pending(args.vertical, max_stories=args.max_stories)
+    if args.orphans:
+        counts = rewrite_orphan_pending(args.vertical, max_articles=args.orphan_max)
+    else:
+        counts = rewrite_pending(args.vertical, max_stories=args.max_stories)
     print(counts)
     return 0
 

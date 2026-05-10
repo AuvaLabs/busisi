@@ -25,7 +25,7 @@ for V in "${VERTICALS[@]}"; do
   # Article.summary rows preserved as historical fallback; new articles flow
   # extract → cluster → rewrite. See docs/strategy.md "Orchestration
   # roadmap" + docs/REWRITER_BUILD_LOG.md.
-  PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --extract --extract-max 200 --rewrite --rewrite-max 20 --log-level WARNING || \
+  PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --extract --extract-max 200 --rewrite --rewrite-max 20 --rewrite-orphans --rewrite-orphans-max 20 --log-level WARNING || \
     echo "[$(date -Iseconds)] pipeline FAILED vertical=$V (continuing)"
   # Extract named entities. --max 10 caps per-tick LLM cost; backfill of
   # the historical corpus drains organically. Idempotent via

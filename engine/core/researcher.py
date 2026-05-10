@@ -415,7 +415,11 @@ def research_pending(
                 .where(
                     Article.vertical_id == v.id,
                     Article.deleted_at.is_(None),
-                    Article.curator_tier == "researcher",
+                    # F1 (2026-05-10) — also fetch supporting docs for top-quality
+                    # `standard` tier articles so the orphan rewriter has
+                    # research-bundle context for every non-skip article. Was
+                    # previously researcher-only (gray zone).
+                    Article.curator_tier.in_(("standard", "researcher")),
                     Article.researched_at.is_(None),
                 )
                 .order_by(Article.fetched_at.asc())

@@ -86,6 +86,10 @@ _DEFAULT_REGISTRY: Final[dict[Caller, str]] = {
     # Default Pass 2 — overridden per-vertical for tone (Vested → DeepSeek
     # for analytical copy; Embedding → Llama 4 Maverick for general byline).
     "pass2_compose":        "deepseek-ai/DeepSeek-V3",
+    # F2 (2026-05-10) — single-source enriched rewriter for orphan articles
+    # (cluster of 1). Uses primary source body + structured_extract + research
+    # bundle as input. Same model as cluster pass2 for voice consistency.
+    "rewrite_single":       "deepseek-ai/DeepSeek-V3",
 }
 
 
