@@ -25,7 +25,7 @@ for V in "${VERTICALS[@]}"; do
   # Article.summary rows preserved as historical fallback; new articles flow
   # extract → cluster → rewrite. See docs/strategy.md "Orchestration
   # roadmap" + docs/REWRITER_BUILD_LOG.md.
-  PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --extract --extract-max 200 --rewrite --rewrite-max 20 --rewrite-orphans --rewrite-orphans-max 20 --log-level WARNING || \
+  PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --extract --extract-max 200 --rewrite --rewrite-max 20 --log-level WARNING || \
     echo "[$(date -Iseconds)] pipeline FAILED vertical=$V (continuing)"
   # Extract named entities. --max 10 caps per-tick LLM cost; backfill of
   # the historical corpus drains organically. Idempotent via
@@ -47,6 +47,13 @@ for V in "${VERTICALS[@]}"; do
   # spend predictable.
   PYTHONPATH=. python -m engine.core.researcher "$V" --log-level WARNING || \
     echo "[$(date -Iseconds)] researcher FAILED vertical=$V (continuing)"
+  # F2 (2026-05-14, restructured) — orphan rewriter runs AFTER curator +
+  # researcher so it sees articles with curator_tier set AND research_bundle
+  # populated. Cap 50/tick. Earlier placement (inside pipeline.py invocation)
+  # ran before curator → zero eligible articles → starvation. See
+  # docs/REWRITER_BUILD_LOG.md F2.
+  PYTHONPATH=. python -m engine.core.research_writer "$V" --orphans --orphan-max 50 --log-level WARNING || \
+    echo "[$(date -Iseconds)] orphan_rewriter FAILED vertical=$V (continuing)"
   # Cluster fresh articles into multi-source Story rows BEFORE rendering so
   # the front page picks up new clusters this tick. Idempotent — articles
   # already linked to a Story are skipped.
