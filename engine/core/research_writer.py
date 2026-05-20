@@ -589,25 +589,38 @@ INPUT JSON:
   research_bundle: list of supporting docs from web/scholar search [{n, url, host, excerpt}]
   sources: list of {n, host, agency_class, source_url, kind} where kind is "primary" or "research"
 
-OUTPUT JSON:
-{
-  "lead": "<inverted-pyramid first paragraph, 30-50 words>",
-  "body": "<remaining paragraphs, 200-450 words total including lead, with inline [N] citations>",
-  "why_this_matters": "<1-2 sentence editorial caption>"
-}
+OUTPUT JSON (one of two shapes):
+
+  Shape A — full narrative:
+  {
+    "lead": "<inverted-pyramid first paragraph>",
+    "body": "<remaining paragraphs with inline [N] citations>",
+    "why_this_matters": "<1-2 sentence editorial caption>"
+  }
+
+  Shape B — insufficient material (use when primary + bundles cannot honestly sustain 220+ grounded words):
+  {"insufficient": true, "reason": "<short explanation>"}
 
 RULES:
-  1. NEVER invent facts. Every claim must trace to either the primary body or a research_bundle excerpt.
-  2. The PRIMARY source is [1] — every factual claim from the primary cites [1].
-  3. Research-bundle entries are [2..N] — use them to (a) confirm primary facts independently
+  1. LENGTH IS A HARD REQUIREMENT. The combined lead + body MUST total 220-450 words.
+     Counts under 220 will be rejected. Use the research_bundle excerpts to extend with
+     grounded context (history, regulation, comparable cases, expert commentary) rather
+     than padding the primary's claims. If even with bundles you cannot reach 220
+     grounded words, return Shape B instead of a short narrative.
+  2. The lead is the first paragraph, 30-50 words, inverted-pyramid.
+  3. NEVER invent facts. Every claim must trace to either the primary body or a research_bundle excerpt.
+  4. The PRIMARY source is [1] — every factual claim from the primary cites [1].
+  5. Research-bundle entries are [2..N] — use them to (a) confirm primary facts independently
      OR (b) add context the primary doesn't include (history, regulation, alternative angles).
-  4. Every numeric / quote / quote-attribution must have an inline [N] citation pointing
-     to the source where that fact appears.
-  5. NEVER use these phrases: "game-changer", "experts say", "could revolutionize",
+  6. Every numeric / quote / quote-attribution must have an inline [N] citation pointing
+     to the source where that fact appears. Quote numerics verbatim from the source —
+     do NOT paraphrase ("six months" when the source says "180 days", or "20 percent" when
+     the source says "one-fifth"). If unsure of the exact form, omit the number.
+  7. NEVER use these phrases: "game-changer", "experts say", "could revolutionize",
      "many believe", "industry insiders", "sources close to".
-  6. Tone: declarative, neutral, byline-grade. Short sentences. No hype.
-  7. Use only [N] tokens that resolve to entries in `sources`.
-  8. Output strict JSON only. No commentary outside the three fields.
+  8. Tone: declarative, neutral, byline-grade. Short sentences. No hype.
+  9. Use only [N] tokens that resolve to entries in `sources`.
+  10. Output strict JSON only. No commentary outside the schema.
 """
 
 
@@ -671,6 +684,13 @@ def pass_orphan_compose(
         logger.warning("rewrite_single returned non-JSON")
         return None
     if not isinstance(parsed, dict):
+        return None
+    if parsed.get("insufficient") is True:
+        logger.info(
+            "rewrite_single declined as insufficient: %s",
+            parsed.get("reason", "<no reason>"),
+        )
+        llm_cache.put(cache_key, parsed)
         return None
     for key in ("lead", "body", "why_this_matters"):
         if key not in parsed or not isinstance(parsed[key], str):
