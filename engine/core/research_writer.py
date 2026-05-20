@@ -47,7 +47,7 @@ from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from engine.core import llm_cache, llm_client, llm_routing
 from engine.core.curator import _load_agency_class_map
@@ -937,11 +937,17 @@ def rewrite_orphan_pending(
 ) -> dict[str, int]:
     """Find orphan articles needing enriched-rewrite; rewrite each.
 
-    Selection criteria (oldest-extracted first):
+    Selection criteria (bundle-rich first, then oldest-extracted as tiebreak):
       - curator_tier IN ('standard', 'researcher')
       - structured_extract present
       - summary_source != 'rewrite_single' (idempotent — already rewritten)
       - body length >= 200 chars
+      - has ≥2 research bundles (cheap pre-filter for the in-call gate)
+
+    Selection (2026-05-21) prioritizes articles with the deepest research
+    bundles. The prior oldest-extracted-first ordering picked exclusively
+    un-researched rows whose F2 attempts were rejected by the bundle gate,
+    starving the rewriter while 200+ well-bundled candidates waited.
     """
     import time
 
@@ -953,9 +959,18 @@ def rewrite_orphan_pending(
         ).scalar_one_or_none()
         if v is None:
             return counts
+        bundle_count = (
+            select(
+                ResearchBundle.article_id.label("article_id"),
+                func.count(ResearchBundle.id).label("n"),
+            )
+            .group_by(ResearchBundle.article_id)
+            .subquery()
+        )
         ids = (
             session.execute(
                 select(Article.id)
+                .join(bundle_count, bundle_count.c.article_id == Article.id)
                 .where(
                     Article.vertical_id == v.id,
                     Article.deleted_at.is_(None),
@@ -963,8 +978,9 @@ def rewrite_orphan_pending(
                     Article.structured_extract.is_not(None),
                     Article.summary_source != "rewrite_single",
                     Article.body.is_not(None),
+                    bundle_count.c.n >= 2,
                 )
-                .order_by(Article.extracted_at.asc())
+                .order_by(bundle_count.c.n.desc(), Article.extracted_at.asc())
                 .limit(max_articles)
             )
             .scalars()
