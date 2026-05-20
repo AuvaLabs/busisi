@@ -666,7 +666,19 @@ def pass_orphan_compose(
     cache_key = llm_cache.make_cache_key("rewrite_single_v3", cache_seed)
     cached = llm_cache.get(cache_key)
     if isinstance(cached, dict):
-        return cached
+        # Honor the insufficient escape on cache hits too — otherwise a
+        # cached Shape-B response gets returned as a narrative and crashes
+        # the validator on narrative["lead"].
+        if cached.get("insufficient") is True:
+            return None
+        # Reject malformed cached entries (defense in depth — should never
+        # happen given the put-time check, but a corrupt cache entry would
+        # otherwise crash the validator).
+        if all(
+            isinstance(cached.get(k), str)
+            for k in ("lead", "body", "why_this_matters")
+        ):
+            return cached
     try:
         raw = llm_client.call_llm(
             user_content=_pass_orphan_user_prompt(
@@ -843,6 +855,18 @@ def rewrite_orphan(
             .scalars()
             .all()
         )
+        # Hard gate (2026-05-21) — articles with <2 bundles can't honestly
+        # produce a 220+ word grounded narrative. The model would just write
+        # a thin output and fail the validator; skipping here saves the
+        # LLM call. Re-research the article (raise EXA_DAILY_CAP, add
+        # source providers) to unblock orphans stuck in this state.
+        if len(bundle_rows) < 2:
+            logger.info(
+                "orphan rewrite skipped art %d: only %d bundle(s) — needs ≥2 for honest expansion",
+                article.id,
+                len(bundle_rows),
+            )
+            return None
         bundles = [
             {
                 "n": i + 2,  # primary is [1]; bundles start at [2]
