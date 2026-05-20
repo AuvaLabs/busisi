@@ -25,7 +25,12 @@ for V in "${VERTICALS[@]}"; do
   # Article.summary rows preserved as historical fallback; new articles flow
   # extract → cluster → rewrite. See docs/strategy.md "Orchestration
   # roadmap" + docs/REWRITER_BUILD_LOG.md.
-  PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --extract --extract-max 200 --rewrite --rewrite-max 20 --log-level WARNING || \
+  # Per-tick caps tightened (2026-05-21) so a single tick completes in
+  # ~5-7 min and the next */10-min cron doesn't overlap with an in-flight
+  # tick. Overlapping ticks compounded Featherless concurrency-unit
+  # contention into cascading 429s. Backlog drains across more ticks
+  # rather than fewer-but-slower ones.
+  PYTHONPATH=. python -m engine.core.pipeline "$V" --persist --scrape --extract --extract-max 30 --rewrite --rewrite-max 5 --log-level WARNING || \
     echo "[$(date -Iseconds)] pipeline FAILED vertical=$V (continuing)"
   # Extract named entities. --max 10 caps per-tick LLM cost; backfill of
   # the historical corpus drains organically. Idempotent via
@@ -52,7 +57,11 @@ for V in "${VERTICALS[@]}"; do
   # populated. Cap 50/tick. Earlier placement (inside pipeline.py invocation)
   # ran before curator → zero eligible articles → starvation. See
   # docs/REWRITER_BUILD_LOG.md F2.
-  PYTHONPATH=. python -m engine.core.research_writer "$V" --orphans --orphan-max 50 --log-level WARNING || \
+  # orphan-max tightened 50 → 15 (2026-05-21) for tick budget. F2 now
+  # produces 220-500 word grounded outputs on well-bundled articles
+  # (verified post-bundle-deepening); shallow-bundle articles trigger
+  # the insufficient escape and skip cleanly.
+  PYTHONPATH=. python -m engine.core.research_writer "$V" --orphans --orphan-max 15 --log-level WARNING || \
     echo "[$(date -Iseconds)] orphan_rewriter FAILED vertical=$V (continuing)"
   # Cluster fresh articles into multi-source Story rows BEFORE rendering so
   # the front page picks up new clusters this tick. Idempotent — articles

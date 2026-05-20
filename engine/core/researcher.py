@@ -356,8 +356,12 @@ def fetch_supporting_docs(
     if not queries:
         return []
     docs: list[dict[str, Any]] = []
+    # arXiv max_results 3 → 5/query is free (no daily cap, no key required)
+    # and pushes embedding-vertical articles into the deeper-bundle regime
+    # where F2 reliably produces 220+ word grounded outputs. Exa stays at
+    # its module default (3/query) because EXA_DAILY_CAP is the binding cost.
     for q in queries:
-        docs.extend(search_arxiv(q))
+        docs.extend(search_arxiv(q, max_results=5))
         docs.extend(search_exa(q))
         if len(_dedup_and_rank(docs)) >= RESEARCH_BUNDLE_SIZE:
             break
