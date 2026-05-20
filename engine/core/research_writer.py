@@ -658,7 +658,10 @@ def pass_orphan_compose(
         {"primary": primary_extract, "bundles": bundles, "sources": sources},
         sort_keys=True,
     )
-    cache_key = llm_cache.make_cache_key("rewrite_single", cache_seed)
+    # Cache-key version is bumped when the prompt contract changes so old
+    # cached narratives (composed under a prior prompt) are not served back.
+    # v2 (2026-05-20) — 220w floor + insufficient escape + verbatim numerics.
+    cache_key = llm_cache.make_cache_key("rewrite_single_v2", cache_seed)
     cached = llm_cache.get(cache_key)
     if isinstance(cached, dict):
         return cached
