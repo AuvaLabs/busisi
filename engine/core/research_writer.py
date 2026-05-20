@@ -855,15 +855,17 @@ def rewrite_orphan(
             .scalars()
             .all()
         )
-        # Hard gate (2026-05-21) — articles with 0 bundles can't honestly
-        # produce a "based on research" rewrite — only the primary body to
-        # draw on, which would invite padding. Skipping at 0 saves the call.
-        # 1-bundle articles still get attempted: validator (150-600w +
-        # numeric grounding) enforces quality from there.
-        if len(bundle_rows) < 1:
+        # Hard gate (2026-05-21) — empirically, 1-bundle articles produce a
+        # 100% validator-failure rate (model either undershoots word count
+        # or hallucinates numbers under thin source coverage). Requiring ≥2
+        # bundles saves the LLM call AND keeps the corpus honest. Volume is
+        # bottlenecked upstream at EXA_DAILY_CAP / arXiv availability — fix
+        # there to unlock more F2 candidates, not by relaxing this gate.
+        if len(bundle_rows) < 2:
             logger.info(
-                "orphan rewrite skipped art %d: no research bundles — nothing to extend from",
+                "orphan rewrite skipped art %d: only %d bundle(s) — needs ≥2 for honest expansion",
                 article.id,
+                len(bundle_rows),
             )
             return None
         bundles = [

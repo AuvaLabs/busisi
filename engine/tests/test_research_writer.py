@@ -412,3 +412,73 @@ class TestRewriteStory:
             story = s.get(Story, story_id)
             assert story.narrative is None
             assert story.state == "ready"
+
+
+class TestPassOrphanComposeCacheHandling:
+    """Regression coverage for F2 cache-hit safety.
+
+    A prior session shipped Shape-B ({"insufficient": true}) into the cache
+    but didn't honor it on cache hits — the next call returned the cached
+    dict as if it were a narrative, crashing validate_orphan_narrative on
+    narrative["lead"].
+    """
+
+    def test_cache_hit_insufficient_returns_none(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cached_insufficient = {"insufficient": True, "reason": "thin"}
+        monkeypatch.setattr(rw.llm_cache, "get", lambda key: cached_insufficient)
+        out = rw.pass_orphan_compose(
+            primary_extract={"lead_claim": "x"},
+            primary_body="x",
+            bundles=[],
+            sources=[],
+            vertical="embedding",
+        )
+        assert out is None
+
+    def test_cache_hit_malformed_falls_through_to_recompute(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Defense-in-depth: a corrupt cache entry shouldn't be served as a
+        narrative — we fall through to recompute. The recompute returning a
+        clean narrative confirms the malformed entry was rejected."""
+        monkeypatch.setattr(
+            rw.llm_cache, "get", lambda key: {"unexpected": "shape"}
+        )
+        monkeypatch.setattr(rw.llm_cache, "put", lambda key, value: None)
+        good = {
+            "lead": "Lead text.",
+            "body": "Body text.",
+            "why_this_matters": "Caption.",
+        }
+        import json as _json
+        monkeypatch.setattr(
+            rw.llm_client, "call_llm", lambda **kw: _json.dumps(good)
+        )
+        out = rw.pass_orphan_compose(
+            primary_extract={"lead_claim": "x"},
+            primary_body="x",
+            bundles=[],
+            sources=[],
+            vertical="embedding",
+        )
+        assert out == good
+
+    def test_cache_hit_valid_narrative_returns_dict(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cached_good = {
+            "lead": "Lead text.",
+            "body": "Body text.",
+            "why_this_matters": "Caption.",
+        }
+        monkeypatch.setattr(rw.llm_cache, "get", lambda key: cached_good)
+        out = rw.pass_orphan_compose(
+            primary_extract={"lead_claim": "x"},
+            primary_body="x",
+            bundles=[],
+            sources=[],
+            vertical="embedding",
+        )
+        assert out == cached_good
