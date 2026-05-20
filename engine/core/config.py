@@ -99,7 +99,7 @@ RESEARCH_QUERY_TIMEOUT: Final[float] = float(
     os.environ.get("RESEARCH_QUERY_TIMEOUT", "10")
 )
 RESEARCH_BUNDLE_SIZE: Final[int] = int(
-    os.environ.get("RESEARCH_BUNDLE_SIZE", "5")
+    os.environ.get("RESEARCH_BUNDLE_SIZE", "10")
 )
 # Researcher cache (Phase 22h): cache search-provider responses in Redis
 # so re-runs against the same article (or shared-query articles) avoid

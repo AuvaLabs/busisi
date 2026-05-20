@@ -602,11 +602,12 @@ OUTPUT JSON (one of two shapes):
   {"insufficient": true, "reason": "<short explanation>"}
 
 RULES:
-  1. LENGTH IS A HARD REQUIREMENT. The combined lead + body MUST total 220-450 words.
-     Counts under 220 will be rejected. Use the research_bundle excerpts to extend with
-     grounded context (history, regulation, comparable cases, expert commentary) rather
-     than padding the primary's claims. If even with bundles you cannot reach 220
-     grounded words, return Shape B instead of a short narrative.
+  1. LENGTH IS A HARD REQUIREMENT. The combined lead + body MUST total 220-500 words.
+     Counts under 220 will be rejected. The honest path to length is the
+     research_bundle: weave at least 3 distinct bundle excerpts into the body to
+     add context (history, regulation, comparable cases, expert commentary) the
+     primary doesn't carry on its own. NEVER pad the primary's claims with
+     filler — extend with grounded bundle material or return Shape B.
   2. The lead is the first paragraph, 30-50 words, inverted-pyramid.
   3. NEVER invent facts. Every claim must trace to either the primary body or a research_bundle excerpt.
   4. The PRIMARY source is [1] — every factual claim from the primary cites [1].
@@ -660,8 +661,9 @@ def pass_orphan_compose(
     )
     # Cache-key version is bumped when the prompt contract changes so old
     # cached narratives (composed under a prior prompt) are not served back.
-    # v2 (2026-05-20) — 220w floor + insufficient escape + verbatim numerics.
-    cache_key = llm_cache.make_cache_key("rewrite_single_v2", cache_seed)
+    # v3 (2026-05-21) — explicit "weave 3+ bundle excerpts" mandate;
+    # deepened bundle inputs (12 × 2500 chars) and max_tokens 3000.
+    cache_key = llm_cache.make_cache_key("rewrite_single_v3", cache_seed)
     cached = llm_cache.get(cache_key)
     if isinstance(cached, dict):
         return cached
@@ -674,7 +676,7 @@ def pass_orphan_compose(
             response_format={"type": "json_object"},
             caller="rewrite_single",
             model=llm_routing.model_for("rewrite_single", vertical=vertical),
-            max_tokens=1500,
+            max_tokens=3000,
             vertical_id=vertical_id,
             article_id=article_id,
         )
@@ -827,13 +829,16 @@ def rewrite_orphan(
             )
             return None
 
-        # Pull research-bundle context.
+        # Pull research-bundle context. Honest expansion lever: more grounded
+        # source material → model produces proportionally longer narrative.
+        # 12 bundles × 2500 chars ≈ 30k chars of context; well within the
+        # premium-tier context budget after primary_body[:6000].
         bundle_rows = (
             session.execute(
                 select(ResearchBundle)
                 .where(ResearchBundle.article_id == article.id)
                 .order_by(ResearchBundle.ord.asc())
-                .limit(8)
+                .limit(12)
             )
             .scalars()
             .all()
@@ -843,7 +848,7 @@ def rewrite_orphan(
                 "n": i + 2,  # primary is [1]; bundles start at [2]
                 "url": b.source_url,
                 "host": b.host,
-                "excerpt": (b.excerpt or "")[:1200],
+                "excerpt": (b.excerpt or "")[:2500],
             }
             for i, b in enumerate(bundle_rows)
         ]
