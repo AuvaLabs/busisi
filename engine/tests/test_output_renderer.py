@@ -71,11 +71,18 @@ def _seed(test_engine):
                 source=f"https://src{i}.example.com/feed",
                 feed_region="US",
                 summary=title,
-                summary_source="llm",
+                # Cluster members are also F2-rewritten in production —
+                # F2 can run on an article before clustering picks it up.
+                # Without this, the "wipe cluster, render as orphans" test
+                # would drop these under Path A's filter.
+                summary_source="rewrite_single",
                 published_at=base - timedelta(hours=2 + i),
             )
             s.add(a)
             cluster_articles.append(a)
+        # Orphans seeded as F2-rewritten so Path A's renderable filter
+        # (summary_source='rewrite_single' OR cluster-with-narrative)
+        # keeps them visible on the public index/story surfaces.
         orphans = [
             Article(
                 vertical_id=v.id,
@@ -86,7 +93,7 @@ def _seed(test_engine):
                 source="https://fresh.example.com/feed",
                 feed_region="US",
                 summary="Fresh.",
-                summary_source="llm",
+                summary_source="rewrite_single",
                 published_at=base - timedelta(minutes=30),
             ),
             Article(
@@ -98,7 +105,7 @@ def _seed(test_engine):
                 source="https://stale.example.com/feed",
                 feed_region="EU",
                 summary="Stale.",
-                summary_source="llm",
+                summary_source="rewrite_single",
                 published_at=base - timedelta(days=2),
             ),
         ]
@@ -108,9 +115,12 @@ def _seed(test_engine):
         for a in cluster_articles:
             s.refresh(a)
 
+        # Story seeded with a narrative so the cluster card surfaces
+        # under Path A's "Story.narrative IS NOT NULL" filter.
         story = Story(
             vertical_id=v.id,
             canonical_headline=cluster_articles[0].title,
+            narrative="Pentagon awarded AI cloud contracts to multiple vendors [1].",
             primary_published_at=cluster_articles[0].published_at,
             importance=1.3863,
         )
@@ -194,7 +204,7 @@ class TestRenderSearch:
                 source="https://example.com/feed",
                 feed_region="US",
                 summary="A short summary about Anthropic.",
-                summary_source="llm",
+                summary_source="rewrite_single",
                 published_at=_dt(2026, 5, 4, tzinfo=_tz.utc),
             )
             s.add(a)
@@ -236,7 +246,7 @@ class TestRenderEntities:
                 source="https://reuters.example.com/feed",
                 feed_region="US",
                 summary="x",
-                summary_source="llm",
+                summary_source="rewrite_single",
                 published_at=_dt(2026, 5, 4, 12, 0, tzinfo=_tz.utc),
             )
             s.add(a)
@@ -323,7 +333,7 @@ class TestRenderStoriesSiblings:
                 source="https://example.com/feed",
                 feed_region="US",
                 summary="A short summary.",
-                summary_source="llm",
+                summary_source="rewrite_single",
                 published_at=_dt(2026, 5, 4, 12, 0, tzinfo=_tz.utc),
             )
             s.add(a)
@@ -382,7 +392,7 @@ class TestRenderStoriesSiblings:
                 source="https://example.com/feed",
                 feed_region="US",
                 summary="x",
-                summary_source="llm",
+                summary_source="rewrite_single",
                 published_at=_dt(2026, 5, 4, tzinfo=_tz.utc),
             )
             s.add(a)

@@ -74,6 +74,29 @@ def _output_dir(vertical_name: str) -> Path:
     return DATA_DIR / "output" / vertical_name
 
 
+def _renderable_article_clause():
+    """SQLAlchemy clause: True iff the Article should appear on the public site.
+
+    Path A (2026-05-21) — only render articles whose body is a quality rewrite:
+      * ``summary_source = 'rewrite_single'`` (F2 orphan rewriter output), OR
+      * the article belongs to a cluster whose Story.narrative is set
+        (F1 multi-source cluster rewriter output).
+
+    Articles that only have a feed-supplied summary are hidden from the index,
+    /story pages, sitemap, and llms-full.txt. They stay in the database so the
+    rewriter can pick them up once they're researched + extracted.
+    """
+    cluster_member_with_narrative = (
+        select(StoryArticle.article_id)
+        .join(Story, Story.id == StoryArticle.story_id)
+        .where(Story.narrative.is_not(None))
+    )
+    return (
+        (Article.summary_source == "rewrite_single")
+        | Article.id.in_(cluster_member_with_narrative)
+    )
+
+
 def _load_story_cards(session, vertical_id: int, limit: int) -> list[dict[str, Any]]:
     """Pull recent Stories with their primary Article + n_sources count.
 
@@ -102,6 +125,10 @@ def _load_story_cards(session, vertical_id: int, limit: int) -> list[dict[str, A
             StoryArticle.is_primary.is_(True),
             Article.deleted_at.is_(None),
             (Article.curator_tier != "skip") | Article.curator_tier.is_(None),
+            # Path A — only surface clusters whose multi-source narrative
+            # has been composed by the F1 rewriter. Draft/ready clusters
+            # without a narrative would render an empty body otherwise.
+            Story.narrative.is_not(None),
         )
         .order_by(fresh_subq.c.latest_at.desc())
         .limit(limit)
@@ -140,6 +167,10 @@ def _load_orphan_articles(
                 Article.deleted_at.is_(None),
                 ~Article.id.in_(clustered),
                 (Article.curator_tier != "skip") | Article.curator_tier.is_(None),
+                # Path A — only orphans with an F2 rewrite are quality
+                # enough to appear on the index. Feed-only summaries are
+                # hidden until the rewriter catches up.
+                Article.summary_source == "rewrite_single",
             )
             .order_by(Article.fetched_at.desc())
             .limit(limit)
@@ -369,6 +400,10 @@ def render_meta_files(
                     Article.deleted_at.is_(None),
                     (Article.curator_tier != "skip")
                     | Article.curator_tier.is_(None),
+                    # Path A — llms-full.txt and sitemap entries below should
+                    # match what we actually render. Feed-only articles are
+                    # not on the public site, so they don't belong in either.
+                    _renderable_article_clause(),
                 )
                 .order_by(Article.fetched_at.desc())
                 .limit(500)
@@ -408,6 +443,8 @@ def render_meta_files(
                 Article.deleted_at.is_(None),
                 (Article.curator_tier != "skip") | Article.curator_tier.is_(None),
                 Article.slug.is_not(None),
+                # Path A — only emit sitemap entries for URLs we render.
+                _renderable_article_clause(),
             )
             .order_by(Article.published_at.desc())
         ).all()
@@ -887,7 +924,12 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
         rows = (
             session.execute(
                 select(Article)
-                .where(Article.vertical_id == v.id, Article.deleted_at.is_(None))
+                .where(
+                    Article.vertical_id == v.id,
+                    Article.deleted_at.is_(None),
+                    # Path A — only render articles with a quality rewrite.
+                    _renderable_article_clause(),
+                )
                 .order_by(Article.fetched_at.desc())
                 .limit(limit)
             )
@@ -965,6 +1007,35 @@ def render_stories(vertical_name: str, *, limit: int = 2000) -> dict[str, Path]:
         story_path = story_dir / "index.html"
         story_path.write_text(html, encoding="utf-8")
         out[a.slug] = story_path
+
+    # Sweep stale on-disk story directories whose slug no longer qualifies
+    # under Path A — feed-only articles previously rendered before the
+    # filter was added, and any slugs whose Article row was deleted.
+    # Idempotent: only removes slugs not in the freshly-rendered set.
+    kept_slugs = set(out.keys())
+    swept = 0
+    if base_dir.exists():
+        for child in base_dir.iterdir():
+            if not child.is_dir() or child.name in kept_slugs:
+                continue
+            index_html = child / "index.html"
+            if index_html.exists():
+                try:
+                    index_html.unlink()
+                    # Clean up other files (assets) in the dir if present,
+                    # then the dir itself.
+                    for leftover in child.iterdir():
+                        leftover.unlink()
+                    child.rmdir()
+                    swept += 1
+                except OSError as exc:
+                    logger.warning(
+                        "sweep: failed to remove %s: %s", child, exc
+                    )
+    if swept:
+        logger.info(
+            "swept %s stale %s story dirs (Path A filter)", swept, vertical_name
+        )
 
     logger.info("rendered %s stories (%d pages)", vertical_name, len(rows))
     return out
