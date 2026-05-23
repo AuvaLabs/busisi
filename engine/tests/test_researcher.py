@@ -208,6 +208,83 @@ class TestExa:
         assert r.search_exa("q") == []
 
 
+_WIKI_PAYLOAD = {
+    "query": {
+        "pages": {
+            "5043734": {
+                "pageid": 5043734,
+                "index": 1,
+                "title": "OpenAI",
+                "fullurl": "https://en.wikipedia.org/wiki/OpenAI",
+                "extract": (
+                    "OpenAI is an American artificial intelligence research "
+                    "laboratory founded in December 2015 in San Francisco."
+                ),
+            },
+            "9999999": {
+                "pageid": 9999999,
+                "index": 2,
+                "title": "Claude (AI model)",
+                "fullurl": "https://en.wikipedia.org/wiki/Claude_(AI_model)",
+                "extract": (
+                    "Claude is a family of large language models developed by "
+                    "Anthropic, first released in March 2023."
+                ),
+            },
+        }
+    }
+}
+
+
+class TestWikipedia:
+    @responses.activate
+    def test_parses_extract(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from engine.core import config as cfg
+
+        monkeypatch.setattr(r, "WIKIPEDIA_ENABLED", True)
+        responses.add(
+            responses.GET, cfg.WIKIPEDIA_ENDPOINT, json=_WIKI_PAYLOAD, status=200
+        )
+        results = r.search_wikipedia("OpenAI Claude")
+        assert len(results) == 2
+        assert results[0]["host"] == "en.wikipedia.org"
+        assert results[0]["title"] == "OpenAI"
+        assert "founded in December 2015" in results[0]["text"]
+        # Results respect the MediaWiki `index` ordering, not dict iteration.
+        assert results[1]["title"] == "Claude (AI model)"
+
+    def test_disabled(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(r, "WIKIPEDIA_ENABLED", False)
+        assert r.search_wikipedia("anything") == []
+
+    @responses.activate
+    def test_non_200_returns_empty(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from engine.core import config as cfg
+
+        monkeypatch.setattr(r, "WIKIPEDIA_ENABLED", True)
+        responses.add(responses.GET, cfg.WIKIPEDIA_ENDPOINT, status=500)
+        assert r.search_wikipedia("q") == []
+
+    @responses.activate
+    def test_missing_extract_or_url_is_skipped(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from engine.core import config as cfg
+
+        monkeypatch.setattr(r, "WIKIPEDIA_ENABLED", True)
+        responses.add(
+            responses.GET,
+            cfg.WIKIPEDIA_ENDPOINT,
+            json={"query": {"pages": {"1": {"title": "Stub", "index": 1}}}},
+            status=200,
+        )
+        # Page without an extract or url should be skipped, not returned
+        # with empty fields the rewriter can't use.
+        assert r.search_wikipedia("q") == []
+
+
 class TestPersistBundle:
     def test_writes_rows_and_marks_article(
         self, test_engine, stub_ssrf

@@ -92,6 +92,19 @@ ARXIV_ENABLED: Final[bool] = os.environ.get("ARXIV_ENABLED", "1") not in (
 ARXIV_ENDPOINT: Final[str] = os.environ.get(
     "ARXIV_ENDPOINT", "https://export.arxiv.org/api/query"
 )
+# Wikipedia search — free, keyless, no daily cap. Returns title +
+# extract (intro paragraph) per result. Especially useful for "history,
+# regulation, comparable cases, expert commentary" expansion (what the
+# F2 prompt explicitly asks bundles for).
+WIKIPEDIA_ENABLED: Final[bool] = os.environ.get("WIKIPEDIA_ENABLED", "1") not in (
+    "0",
+    "false",
+    "False",
+    "",
+)
+WIKIPEDIA_ENDPOINT: Final[str] = os.environ.get(
+    "WIKIPEDIA_ENDPOINT", "https://en.wikipedia.org/w/api.php"
+)
 RESEARCH_MAX_PER_TICK: Final[int] = int(
     os.environ.get("RESEARCH_MAX_PER_TICK", "5")
 )

@@ -15,6 +15,11 @@ Sources:
     when ``EXA_API_KEY`` is configured. Falls back to arXiv-only when
     unset, so the researcher works out of the box and grows in
     capability when an operator wires the key.
+  * **Wikipedia** (free, keyless, no quota) — 0-3 encyclopedic
+    extracts. Especially useful for the "history, regulation, comparable
+    cases, expert commentary" expansion the F2 prompt asks bundles for.
+    Added 2026-05-23 to backfill bundle depth on verticals/articles
+    where Exa's daily cap leaves rows under-researched.
 
 All HTTP goes through the existing SSRF guard (``safe_http``) and a
 soft timeout (``RESEARCH_QUERY_TIMEOUT``). Per-source results are
@@ -44,6 +49,8 @@ from engine.core.config import (
     RESEARCH_CACHE_TTL_DAYS,
     RESEARCH_MAX_PER_TICK,
     RESEARCH_QUERY_TIMEOUT,
+    WIKIPEDIA_ENABLED,
+    WIKIPEDIA_ENDPOINT,
 )
 from engine.core.db import (
     Article,
@@ -289,9 +296,76 @@ def _search_exa_uncached(
     return out
 
 
+def _search_wikipedia_uncached(
+    query: str, *, max_results: int = 3
+) -> list[dict[str, Any]]:
+    """Hit the Wikipedia MediaWiki API. Free, no key, no quota.
+
+    Uses ``generator=search`` + ``prop=extracts`` so titles + intro extracts
+    arrive in a single round-trip. Returns at most ``max_results`` entries
+    with the same dict shape as the arXiv / Exa helpers.
+    """
+    if not WIKIPEDIA_ENABLED or not query:
+        return []
+    params = {
+        "action": "query",
+        "format": "json",
+        "generator": "search",
+        "gsrsearch": query[:300],
+        "gsrlimit": max_results,
+        "gsrnamespace": 0,
+        "prop": "extracts|info",
+        "exintro": 1,
+        "explaintext": 1,
+        "exlimit": max_results,
+        "inprop": "url",
+        "utf8": 1,
+    }
+    try:
+        resp = requests.get(
+            WIKIPEDIA_ENDPOINT,
+            params=params,
+            headers={"User-Agent": "grimoire-researcher/1.0 (+https://embedding.report)"},
+            timeout=RESEARCH_QUERY_TIMEOUT,
+        )
+    except requests.RequestException as exc:
+        logger.warning("wikipedia search failed for %r: %s", query[:40], exc)
+        return []
+    if resp.status_code != 200:
+        logger.warning(
+            "wikipedia non-200 for %r: %s", query[:40], resp.status_code
+        )
+        return []
+    try:
+        data = resp.json()
+    except ValueError:
+        return []
+    pages = ((data.get("query") or {}).get("pages") or {})
+    # Wikipedia returns a dict keyed by page id; preserve search rank via
+    # the `index` field MediaWiki includes for generator=search.
+    ordered = sorted(
+        pages.values(), key=lambda p: p.get("index", 1_000_000)
+    )
+    out: list[dict[str, Any]] = []
+    for page in ordered[:max_results]:
+        url = page.get("fullurl") or ""
+        extract = (page.get("extract") or "").strip()
+        if not url or not extract:
+            continue
+        out.append(
+            {
+                "url": url,
+                "title": (page.get("title") or "").strip(),
+                "text": extract[:4000],
+                "host": "en.wikipedia.org",
+            }
+        )
+    return out
+
+
 # Public cached wrappers — every external caller of search_arxiv /
-# search_exa goes through these so the cache + budget cap apply
-# uniformly. Signatures preserved for backward compatibility.
+# search_exa / search_wikipedia goes through these so the cache + budget
+# cap apply uniformly. Signatures preserved for backward compatibility.
 
 def search_arxiv(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
     cached = _cache_get("arxiv", query)
@@ -321,6 +395,15 @@ def search_exa(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
         return []
     results = _search_exa_uncached(query, max_results=max_results)
     _cache_put("exa", query, results)
+    return results
+
+
+def search_wikipedia(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
+    cached = _cache_get("wikipedia", query)
+    if cached is not None:
+        return cached[:max_results]
+    results = _search_wikipedia_uncached(query, max_results=max_results)
+    _cache_put("wikipedia", query, results)
     return results
 
 
@@ -360,9 +443,13 @@ def fetch_supporting_docs(
     # and pushes embedding-vertical articles into the deeper-bundle regime
     # where F2 reliably produces 220+ word grounded outputs. Exa stays at
     # its module default (3/query) because EXA_DAILY_CAP is the binding cost.
+    # Wikipedia (added 2026-05-23) provides keyless, quota-free encyclopedic
+    # context — particularly useful for vested (companies/regulators) and
+    # for embedding articles when Exa is exhausted.
     for q in queries:
         docs.extend(search_arxiv(q, max_results=5))
         docs.extend(search_exa(q))
+        docs.extend(search_wikipedia(q))
         if len(_dedup_and_rank(docs)) >= RESEARCH_BUNDLE_SIZE:
             break
     return _dedup_and_rank(docs)
