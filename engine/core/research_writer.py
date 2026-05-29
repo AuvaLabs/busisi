@@ -577,12 +577,29 @@ def rewrite_pending(
         ).scalar_one_or_none()
         if v is None:
             return counts
+        # Pre-filter to stories whose member articles have ≥2 Pass-0 extracts.
+        # Without this gate, rewrite_pending picks 5 newest-published stories
+        # regardless of extract status, and in-call rewrite_story drops every
+        # one with "<2 members with structured_extract", silently wasting the
+        # tick budget. Mirrors the F2 selection fix (commit f883183).
+        extract_counts = (
+            select(
+                StoryArticle.story_id.label("story_id"),
+                func.count(Article.id).label("n_extracted"),
+            )
+            .join(Article, Article.id == StoryArticle.article_id)
+            .where(Article.structured_extract.is_not(None))
+            .group_by(StoryArticle.story_id)
+            .subquery()
+        )
         ids = (
             session.execute(
                 select(Story.id)
+                .join(extract_counts, extract_counts.c.story_id == Story.id)
                 .where(
                     Story.vertical_id == v.id,
                     Story.state.in_(("draft", "ready", "revising")),
+                    extract_counts.c.n_extracted >= 2,
                 )
                 .order_by(Story.primary_published_at.desc())
                 .limit(max_stories)
