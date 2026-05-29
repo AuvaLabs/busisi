@@ -227,25 +227,39 @@ INPUT JSON:
   sources: list of {n, host, agency_class, source_url}  -- n is the [N] you use inline
   tone_excerpt: a representative source body for stylistic anchoring
 
-OUTPUT JSON:
-{
-  "lead": "<inverted-pyramid first paragraph, 30-50 words>",
-  "body": "<remaining paragraphs, total 200-450 words including lead, with inline [N] citations>",
-  "why_this_matters": "<1-2 sentence editorial caption>"
-}
+OUTPUT JSON (one of two shapes):
+
+  Shape A — full narrative:
+  {
+    "lead": "<inverted-pyramid first paragraph>",
+    "body": "<remaining paragraphs with inline [N] citations>",
+    "why_this_matters": "<1-2 sentence editorial caption>"
+  }
+
+  Shape B — insufficient material (use when the fact graph + sources cannot honestly sustain 220+ grounded words):
+  {"insufficient": true, "reason": "<short explanation>"}
 
 RULES:
-  1. NEVER invent facts. Every claim must trace to pass1.canonical_events
+  1. LENGTH IS A HARD REQUIREMENT. The combined lead + body MUST total 220-500 words.
+     Counts under 220 will be rejected. With multi-source clusters you have
+     pass1.canonical_events from multiple sources — weave events from at least
+     3 distinct source_idxs into the body. If even with all available events
+     you cannot reach 220 grounded words, return Shape B instead of a short narrative.
+  2. The lead is the first paragraph, 30-50 words, inverted-pyramid.
+  3. NEVER invent facts. Every claim must trace to pass1.canonical_events
      and at least one of those events' supporting_source_idxs.
-  2. Every numeric / quote / quote-attribution must have an inline [N] citation
-     pointing to a source where that fact appears.
-  3. When sources disagree, attribute explicitly: "Reuters[1] reported X, while
+  4. Every numeric / quote / quote-attribution must have an inline [N] citation
+     pointing to a source where that fact appears. Quote numerics verbatim from
+     the source — do NOT paraphrase ("six months" when the source says "180 days",
+     or "20 percent" when the source says "one-fifth"). If unsure of the exact
+     form, omit the number.
+  5. When sources disagree, attribute explicitly: "Reuters[1] reported X, while
      Bloomberg[2] said Y."
-  4. NEVER use these phrases: "game-changer", "experts say", "could revolutionize",
+  6. NEVER use these phrases: "game-changer", "experts say", "could revolutionize",
      "many believe", "industry insiders", "sources close to".
-  5. Tone: declarative, neutral, byline-grade. Short sentences. No hype.
-  6. Use only [N] tokens that resolve to entries in `sources`.
-  7. Output strict JSON only. No commentary outside the three fields.
+  7. Tone: declarative, neutral, byline-grade. Short sentences. No hype.
+  8. Use only [N] tokens that resolve to entries in `sources`.
+  9. Output strict JSON only. No commentary outside the schema.
 """
 
 
@@ -276,10 +290,23 @@ def pass2_compose(
 ) -> dict[str, Any] | None:
     """Compose the byline-grade narrative."""
     cache_seed = json.dumps({"pass1": pass1, "sources": sources}, sort_keys=True)
-    cache_key = llm_cache.make_cache_key("pass2_compose", cache_seed)
+    # Cache-key version bumped 2026-05-29 (v2) — prompt contract changed:
+    # 220-word hard floor, Shape B insufficient escape, verbatim numerics.
+    # Old cached narratives composed under the prior prompt would otherwise
+    # be served back and silently defeat the new floor.
+    cache_key = llm_cache.make_cache_key("pass2_compose_v2", cache_seed)
     cached = llm_cache.get(cache_key)
     if isinstance(cached, dict):
-        return cached
+        # Honor the insufficient escape on cache hits too — otherwise a
+        # cached Shape-B response gets returned as a narrative and crashes
+        # the validator on narrative["lead"]. Mirrors the F2 fix.
+        if cached.get("insufficient") is True:
+            return None
+        if all(
+            isinstance(cached.get(k), str)
+            for k in ("lead", "body", "why_this_matters")
+        ):
+            return cached
     try:
         raw = llm_client.call_llm(
             user_content=_pass2_user_prompt(pass1, sources, tone_excerpt),
@@ -287,7 +314,7 @@ def pass2_compose(
             response_format={"type": "json_object"},
             caller="pass2_compose",
             model=llm_routing.model_for("pass2_compose", vertical=vertical),
-            max_tokens=1500,
+            max_tokens=3000,
             vertical_id=vertical_id,
             story_id=story_id,
         )
@@ -300,6 +327,13 @@ def pass2_compose(
         logger.warning("pass2_compose returned non-JSON")
         return None
     if not isinstance(parsed, dict):
+        return None
+    if parsed.get("insufficient") is True:
+        logger.info(
+            "pass2_compose declined as insufficient: %s",
+            parsed.get("reason", "<no reason>"),
+        )
+        llm_cache.put(cache_key, parsed)
         return None
     for key in ("lead", "body", "why_this_matters"):
         if key not in parsed or not isinstance(parsed[key], str):
