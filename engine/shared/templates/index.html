@@ -49,6 +49,55 @@
       color: var(--text-faint);
       margin-top: 2rem;
     }
+
+    /* ---- Vested: FT-inspired front page (scoped; Embedding keeps the list) ----
+       Desktop: a 3-column ruled grid where the first story is the "lead"
+       (spans the wide column, larger serif headline). Mobile: one column.
+       Same markup as the shared list — only CSS reflows it for Vested. */
+    [data-vertical="vested"] .stories {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 0 2rem;
+      align-items: start;
+    }
+    [data-vertical="vested"] .stories li {
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    /* Lead story: first card takes the wide column and spans the right rows. */
+    [data-vertical="vested"] .stories li:first-child {
+      grid-column: 1;
+      grid-row: span 4;
+      border-right: 1px solid var(--rule);
+      padding-right: 2rem;
+      padding-top: 0;
+    }
+    [data-vertical="vested"] .stories li:first-child .story-title {
+      font-size: 2.1rem;
+      line-height: 1.15;
+      font-weight: 600;
+    }
+    [data-vertical="vested"] .story-title { font-weight: 600; }
+    [data-vertical="vested"] .story-title a:hover { color: var(--link); }
+    [data-vertical="vested"] .story-meta .source { color: var(--text); }
+
+    /* Mobile: single stacked column. The lead story stops spanning rows so it
+       reads as a normal (slightly larger) top story. */
+    @media (max-width: 48rem) {
+      [data-vertical="vested"] .stories {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+      [data-vertical="vested"] .stories li:first-child {
+        grid-row: auto;
+        border-right: 0;
+        padding-right: 0;
+        padding-top: 1.25rem;
+      }
+      [data-vertical="vested"] .stories li:first-child .story-title {
+        font-size: 1.7rem;
+      }
+    }
 {% endblock %}
 
 {% block content %}

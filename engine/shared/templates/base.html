@@ -94,6 +94,33 @@
         --accent: {{ vertical.accent_dark or '#D49464' }};
       }
     }
+    /* ---- Vested: FT-inspired editorial theme (scoped; Embedding unaffected) ----
+       Salmon "paper" background, FT link-blue, serif masthead. Placed after the
+       :root/dark blocks so equal-specificity source order wins. Vested renders
+       theme="light" always, so the dark blocks above never apply here. */
+    [data-vertical="vested"] {
+      --bg: #FFF1E5;
+      --bg-elev: #F9E7D6;
+      --bg-mute: #F2DDC9;
+      --text: #1A1A1A;
+      --text-mute: #5C5147;
+      --text-faint: #8C7F72;
+      --rule: #E6D9CC;
+      --link: #0F5499;
+      --link-hover: #0A3D75;
+      /* --accent stays Vested teal from config (accent_light #2D5F5D) */
+    }
+    [data-vertical="vested"] header.site {
+      border-bottom: 2px solid var(--text);
+      padding-bottom: 1rem;
+    }
+    [data-vertical="vested"] header.site .wordmark {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2rem;
+      letter-spacing: -0.01em;
+    }
+    [data-vertical="vested"] nav.primary a:hover { color: var(--link); }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body {
