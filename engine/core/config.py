@@ -35,6 +35,13 @@ LLM_BASE_URL: Final[str] = os.environ.get(
 LLM_MODEL: Final[str] = os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile")
 LLM_TIMEOUT: Final[float] = float(os.environ.get("LLM_TIMEOUT", "30"))
 LLM_CIRCUIT_THRESHOLD: Final[int] = int(os.environ.get("LLM_CIRCUIT_THRESHOLD", "3"))
+# Bounded retry-with-backoff when ALL keys are exhausted on a retryable status
+# (429 / 5xx / timeout). With a single key, key-rotation has nothing to rotate
+# to, so a transient 429 became an instant hard failure; this recovers it.
+# Retry-After is honored but capped at LLM_BACKOFF_CAP (see llm_client).
+LLM_MAX_RETRIES: Final[int] = int(os.environ.get("LLM_MAX_RETRIES", "3"))
+LLM_BACKOFF_BASE: Final[float] = float(os.environ.get("LLM_BACKOFF_BASE", "2.0"))
+LLM_BACKOFF_CAP: Final[float] = float(os.environ.get("LLM_BACKOFF_CAP", "30.0"))
 MAX_CONTENT_CHARS: Final[int] = int(os.environ.get("MAX_CONTENT_CHARS", "8000"))
 
 # ---- Storage ----
