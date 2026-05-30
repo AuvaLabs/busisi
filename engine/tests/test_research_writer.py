@@ -313,6 +313,68 @@ class TestRewriteStory:
             assert len(revisions) == 1
             assert revisions[0].reason == "initial"
 
+    def test_number_past_3000_chars_is_grounded(
+        self, test_engine, tmp_path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Regression: a figure appearing only past char 3000 of a source body
+        must validate. The validator pool was previously built from the
+        3000-char tone slice (``m["body"]``), so real numbers deep in long
+        articles were falsely rejected as hallucinations — the dominant cause
+        of zero-write pipeline ticks. The fix grounds against ``full_body``.
+        """
+        story_id = _seed_cluster(test_engine, tmp_path, monkeypatch)
+
+        monkeypatch.setattr(rw.llm_cache, "get", lambda key: None)
+        monkeypatch.setattr(rw.llm_cache, "put", lambda key, value: None)
+        monkeypatch.setattr(
+            rw,
+            "pass1_merge",
+            lambda members, *, vertical, **kw: {
+                "canonical_events": [
+                    {
+                        "claim": "OpenAI raised $10B at $300B valuation.",
+                        "supporting_source_idxs": [0, 1],
+                        "is_numeric": True,
+                    }
+                ],
+                "contradictions": [],
+                "timeline": [],
+                "headline_seed": "OpenAI raises $10B Series F",
+            },
+        )
+
+        # Bury a distinctive figure (47915 accelerators) PAST char 3000 of the
+        # primary body — beyond the old tone-slice cutoff. Early text keeps the
+        # $10B / $300B figures the narrative also cites.
+        deep_number = "The cluster will run 47915 accelerators by year end."
+        SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
+        with SM() as s:
+            arts = s.execute(select(Article).order_by(Article.id)).scalars().all()
+            arts[0].body = (
+                _BODY_REUTERS
+                + " Plans for 5 data centers. Up 30 percent from 2024. "
+                + ("filler padding sentence. " * 200)  # ~5000 chars of padding
+                + deep_number
+            )
+            s.commit()
+            # Sanity: the figure really is past char 3000.
+            assert arts[0].body.index("47915") > 3000
+
+        narrative_with_deep_num = {
+            **_GOOD_NARRATIVE,
+            "body": _GOOD_NARRATIVE["body"]
+            + " The deployment spans 47915 accelerators[1].",
+        }
+        monkeypatch.setattr(
+            rw,
+            "pass2_compose",
+            lambda pass1, sources, tone, *, vertical, **kw: narrative_with_deep_num,
+        )
+
+        result = rw.rewrite_story(story_id, vertical="embedding")
+        assert result is not None, "number past char 3000 was falsely rejected"
+        assert result["version"] == 1
+
     def test_skips_when_no_primary_class_member(
         self, test_engine, tmp_path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

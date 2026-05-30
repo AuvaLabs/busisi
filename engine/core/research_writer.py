@@ -154,7 +154,8 @@ def _members_with_extracts(session, story_id: int) -> list[dict[str, Any]]:
                 "feed_host": feed_host,
                 "agency_class": "?",  # filled by caller
                 "title": article.title,
-                "body": (article.body or "")[:3000],  # tone reference
+                "body": (article.body or "")[:3000],  # tone reference (prompt)
+                "full_body": article.body or "",  # untruncated — validator pool
                 **(article.structured_extract or {}),
             }
         )
@@ -538,7 +539,12 @@ def rewrite_story(
         if narrative is None:
             return None
 
-        bodies = [m.get("body", "") for m in members]
+        # Validator grounds numerics against the FULL article text, not the
+        # 3000-char tone slice. Figures appearing past char 3000 were being
+        # falsely rejected as hallucinations (the dominant cause of pass-2
+        # rejections — full bodies run 12-15k chars). Tone excerpt stays
+        # truncated; only the grounding pool widens.
+        bodies = [m.get("full_body") or m.get("body", "") for m in members]
         ok, reason = validate_narrative(narrative, sources, bodies)
         if not ok:
             logger.warning(
@@ -961,6 +967,9 @@ def rewrite_orphan(
             return None
 
         # Validator — primary body + bundle excerpts make up the grounding pool.
+        # `body` here is already the full untruncated article text (line ~863
+        # does only .strip(), no slice); the 6000-char cap is applied inside
+        # pass_orphan_compose for the prompt only. So no widening is needed.
         bodies_for_validator = [body] + [b["excerpt"] for b in bundles]
         ok, reason = validate_orphan_narrative(narrative, sources, bodies_for_validator)
         if not ok:
