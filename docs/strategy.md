@@ -153,7 +153,38 @@ Prefect doesn't lock out the agent layer. Pure-Python alternatives if Prefect
 ever feels too heavy: **Dagster** (more opinionated, asset-graph-shaped) or
 just keep cron + add `ops/notify.sh` for failure alerts (~50 lines).
 
+## Rewriter zero-write incident (2026-05-30)
+
+Pipeline ticks were writing **0 narratives** — every candidate rejected on
+"narrative cites numbers not in source bodies". Diagnosis (replaying the
+validator against production stories) found two root causes, both fixed +
+deployed:
+
+1. **Truncated validation pool** (commit 394d755). The numeric-grounding
+   validator built its source pool from the member `body` field, truncated to
+   3000 chars for use as a *tone reference*. Full articles run 12–15k chars, so
+   any figure past char 3000 was invisible and falsely rejected as
+   hallucinated — ~85% of rejections were this false positive. Fix: validate
+   against an untruncated `full_body`; tone slice stays 3000. Regression test
+   asserts a number past char 3000 validates.
+
+2. **Single-key 429 = instant failure** (commit 53935da). The client rotated
+   keys on 429/5xx but with one configured key (`keys=1`) had nothing to rotate
+   to, so `attempts=1` → transient 429 became a hard drop. Logs showed ~7.6k
+   429s + ~4.3k 504s over history. Fix: bounded retry-with-backoff (capped
+   exponential + jitter, honors Retry-After up to `LLM_BACKOFF_CAP`) around the
+   key-rotation pass. Env knobs: `LLM_MAX_RETRIES=3`, `LLM_BACKOFF_BASE=2.0`,
+   `LLM_BACKOFF_CAP=30`.
+
+This is the Prefect-P2 concurrency trigger firing in practice — but the
+in-process backoff defers Prefect: revisit P2 only if write-rate stays
+inadequate after these land, or once a 2nd Featherless key is provisioned
+(rotation infra already exists; just append to `LLM_API_KEYS`).
+
+**Open follow-ups:** (a) provision a 2nd Featherless key for true throughput;
+(b) confirm next cron tick writes > 0 narratives.
+
 ## Last updated
 
-2026-05-07 — multi-source rewriter (R1-R7 + C1-C6) deployed to production;
-schema at 0006; first end-to-end Pass 1+2 live-LLM run pending (cron contention).
+2026-05-30 — rewriter zero-write fixed (full-body numeric validation +
+single-key 429 backoff); both deployed (HEAD 53935da). 295 tests green.
