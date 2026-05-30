@@ -81,6 +81,38 @@
     [data-vertical="vested"] .story-title a:hover { color: var(--link); }
     [data-vertical="vested"] .story-meta .source { color: var(--text); }
 
+    /* FT-style section kicker: lift the labels above the headline and restyle
+       them as an uppercase teal section tag instead of pills. The "imagery" is
+       typographic — section color + serif scale stand in for a lead photo.
+       Flex-column + order reorders the existing DOM (labels on top) with no
+       markup change. Cards without labels simply have no kicker. */
+    [data-vertical="vested"] .stories li {
+      display: flex;
+      flex-direction: column;
+    }
+    [data-vertical="vested"] .stories li .labels {
+      order: -1;
+      margin: 0 0 0.35rem 0;
+    }
+    [data-vertical="vested"] .stories li .story-title { order: 1; }
+    [data-vertical="vested"] .stories li .story-meta { order: 2; }
+    [data-vertical="vested"] .labels .label {
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+      margin-right: 0.75rem;
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    /* Lead story kicker a touch larger to anchor the page. */
+    [data-vertical="vested"] .stories li:first-child .labels .label {
+      font-size: 0.74rem;
+    }
+
     /* Mobile: single stacked column. The lead story stops spanning rows so it
        reads as a normal (slightly larger) top story. */
     @media (max-width: 48rem) {
