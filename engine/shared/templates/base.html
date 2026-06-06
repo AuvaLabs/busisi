@@ -126,30 +126,46 @@
       --shadow-lift: 0 6px 16px rgba(27,26,23,.08), 0 18px 40px rgba(255,90,77,.12);
       --display: 'Fraunces', Georgia, serif;
     }
-    /* Masthead: friendly cream bar, rounded pill nav, coral wordmark dot. */
+    /* Compact horizontal masthead: wordmark left, nav pills right on one row.
+       Kills the tall stacked header + the big empty gap into the content (the
+       header used to compound its own padding with the inner .container's). */
     [data-vertical="vested"] header.site {
       border-bottom: 0;
-      padding: 1.6rem 0 1.1rem;
-      margin-bottom: 1.75rem;
+      padding: 0;
+      margin-bottom: 0.9rem;
       background: linear-gradient(180deg, #FFF6E6 0%, var(--bg) 100%);
+    }
+    [data-vertical="vested"] header.site .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      padding-top: 1.15rem;
+      padding-bottom: 1.15rem;
     }
     [data-vertical="vested"] header.site .wordmark {
       font-family: var(--display);
       font-weight: 600;
-      font-size: 2.1rem;
+      font-size: 1.95rem;
       letter-spacing: -0.02em;
+      line-height: 1;
     }
     [data-vertical="vested"] header.site .wordmark .accent { color: var(--accent); }
-    [data-vertical="vested"] nav.primary { margin-top: 0.9rem; }
+    [data-vertical="vested"] nav.primary {
+      margin-top: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
     [data-vertical="vested"] nav.primary a {
-      display: inline-block;
-      margin: 0 0.4rem 0.4rem 0;
-      padding: 0.34rem 0.82rem;
+      margin: 0;
+      padding: 0.36rem 0.85rem;
       border-radius: 999px;
-      background: #FFFFFF;
+      background: rgba(255, 255, 255, 0.7);
       border: 1px solid var(--rule);
       color: var(--text-mute);
-      letter-spacing: 0.07em;
+      letter-spacing: 0.06em;
       transition: transform .15s ease, color .15s ease,
                   background .15s ease, border-color .15s ease;
     }
@@ -160,6 +176,14 @@
       transform: translateY(-1px);
       text-decoration: none;
     }
+    /* Current page tab — coral fill so the nav reads as intentional. */
+    [data-vertical="vested"] nav.primary a.active {
+      color: #FFFFFF;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    /* Tighten the run-in from masthead to content. */
+    [data-vertical="vested"] main.container { padding-top: 1.1rem; }
     /* Footer: rounded, warmer panel + rounded-full CTA with a hover pop. */
     [data-vertical="vested"] footer.site {
       border-top: 0;
@@ -422,6 +446,20 @@
           status.textContent = 'Network error. Try again later.';
         });
       });
+    })();
+  </script>
+  <script>
+    // Mark the current nav tab so it reads as "active" (styled on Vested).
+    (function () {
+      var path = location.pathname.replace(/\/+$/, '') || '/';
+      var links = document.querySelectorAll('nav.primary a');
+      for (var i = 0; i < links.length; i++) {
+        var href = (links[i].getAttribute('href') || '').replace(/\/+$/, '') || '/';
+        var on = href === '/'
+          ? path === '/'
+          : (path === href || path.indexOf(href + '/') === 0);
+        if (on) links[i].classList.add('active');
+      }
     })();
   </script>
 </body>
