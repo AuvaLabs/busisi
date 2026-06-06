@@ -98,6 +98,86 @@ class TestEntityStrength:
         assert cur.score_entity_strength(8) == pytest.approx(0.30)
 
 
+class TestTopicRelevance:
+    def test_require_off_is_noop(self) -> None:
+        assert cur.score_topic_relevance([], require=False) == 1.0
+        assert cur.score_topic_relevance(None, require=False) == 1.0
+
+    def test_strong_label_full(self) -> None:
+        labels = [{"label": "taxes", "confidence": 80}]
+        assert cur.score_topic_relevance(labels, require=True) == 1.0
+
+    def test_weak_label_discounted(self) -> None:
+        labels = [{"label": "taxes", "confidence": 20}]
+        assert cur.score_topic_relevance(labels, require=True) == pytest.approx(0.6)
+
+    def test_no_label_knocked_down(self) -> None:
+        assert cur.score_topic_relevance([], require=True) == pytest.approx(0.25)
+        assert cur.score_topic_relevance(None, require=True) == pytest.approx(0.25)
+
+    def test_bare_string_label_counts_on_topic(self) -> None:
+        assert cur.score_topic_relevance(["taxes"], require=True) == 1.0
+
+
+class TestRelevanceGateInScoring:
+    def test_offtopic_high_authority_skipped_when_required(self, test_engine) -> None:
+        """A tier-A, entity-rich, declarative headline with NO taxonomy label
+        (off-topic) is forced to skip when the vertical requires relevance —
+        the World Cup-drinks-on-a-finance-site case."""
+        aid = _seed_article(
+            test_engine,
+            source="https://www.bbc.co.uk/feed",
+            title="The best World Cup drinks and snacks for all 48 teams",
+            n_entities=4,
+            labels=[],  # classifier found no personal-finance topic
+        )
+        result = cur.score_article(
+            aid,
+            vertical_name="modelwatch",
+            tier_map={"bbc.co.uk": "tier_a"},
+            require_topic=True,
+        )
+        assert result is not None
+        assert result["tier"] == "skip"
+        assert result["signals"]["topic_relevance"] == pytest.approx(0.25)
+
+    def test_ontopic_unaffected_when_required(self, test_engine) -> None:
+        aid = _seed_article(
+            test_engine,
+            source="https://www.reuters.com/feed",
+            title="Federal Reserve holds rates steady, signals one cut",
+            n_entities=4,
+            labels=[{"label": "brokerage-investing", "confidence": 85}],
+        )
+        result = cur.score_article(
+            aid,
+            vertical_name="modelwatch",
+            tier_map={"reuters.com": "tier_a"},
+            require_topic=True,
+        )
+        assert result is not None
+        assert result["tier"] == "standard"
+        assert result["score"] == pytest.approx(1.0, abs=1e-6)
+
+    def test_offtopic_passes_when_not_required(self, test_engine) -> None:
+        """Same off-topic article, gate OFF (legacy behaviour) → still passes."""
+        aid = _seed_article(
+            test_engine,
+            source="https://www.bbc.co.uk/feed",
+            title="The best World Cup drinks and snacks for all 48 teams",
+            n_entities=4,
+            labels=[],
+        )
+        result = cur.score_article(
+            aid,
+            vertical_name="modelwatch",
+            tier_map={"bbc.co.uk": "tier_a"},
+            require_topic=False,
+        )
+        assert result is not None
+        assert result["tier"] == "standard"
+
+
 class TestDecideTier:
     def test_standard(self) -> None:
         assert cur._decide_tier(0.95) == "standard"
@@ -116,7 +196,12 @@ class TestDecideTier:
 
 
 def _seed_article(
-    test_engine, *, source: str, title: str, n_entities: int = 0
+    test_engine,
+    *,
+    source: str,
+    title: str,
+    n_entities: int = 0,
+    labels: list | None = None,
 ) -> int:
     SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
     with SM() as s:
@@ -143,6 +228,7 @@ def _seed_article(
             feed_region="US",
             summary="x",
             summary_source="llm",
+            labels=labels,
             published_at=datetime(2026, 5, 4, tzinfo=timezone.utc),
         )
         s.add(a)

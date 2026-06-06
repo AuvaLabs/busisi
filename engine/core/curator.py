@@ -49,7 +49,10 @@ logger = logging.getLogger(__name__)
 
 # Bump on rule-weight changes — backfill re-scores rows where
 # Article.curator_version < this value.
-CURATOR_VERSION = 1
+# v2 (2026-06-06): topic-relevance multiplier (opt-in per vertical via
+# config.yaml `curator.require_topic_relevance`). Re-scores all rows; verticals
+# that don't opt in score identically to v1.
+CURATOR_VERSION = 2
 
 
 # Score weights — keep total of max contributions == 1.0.
@@ -61,6 +64,17 @@ _ENTITY_STRENGTH_WEIGHT = 0.30
 # Tier thresholds.
 _TIER_STANDARD = 0.70
 _TIER_RESEARCHER = 0.40
+
+
+# Topic-relevance multiplier (v2). Applied to the quality score only when the
+# vertical opts in via config.yaml `curator.require_topic_relevance: true`.
+# An off-topic article (no classifier taxonomy label for this vertical) is
+# knocked below the skip threshold so it never reaches the front page; a
+# well-classified article is unaffected (×1.0).
+_RELEVANCE_CONF_MIN = 50
+_RELEVANCE_FACTOR_STRONG = 1.0
+_RELEVANCE_FACTOR_WEAK = 0.6
+_RELEVANCE_FACTOR_NONE = 0.25
 
 
 # Title shape — discussion-style penalties (lowercased title matched).
@@ -205,7 +219,61 @@ def _short_host(source_url: str) -> str:
     return urlparse(source_url).netloc.removeprefix("www.").lower()
 
 
+def _load_curator_settings(vertical_name: str) -> dict[str, Any]:
+    """Read the ``curator:`` block from ``verticals/<v>/config.yaml``.
+
+    Currently only ``require_topic_relevance`` (bool). Missing file/block →
+    empty dict, so a vertical that doesn't opt in keeps the legacy v1 scoring.
+    """
+    try:
+        path = vertical_dir(vertical_name) / "config.yaml"
+    except ValueError:
+        return {}
+    if not path.exists():
+        return {}
+    try:
+        with open(path, encoding="utf-8") as fp:
+            data = yaml.safe_load(fp) or {}
+    except Exception as exc:
+        logger.warning("could not read curator config %s: %s", path, exc)
+        return {}
+    block = data.get("curator") if isinstance(data, dict) else None
+    return block if isinstance(block, dict) else {}
+
+
 # ---- Per-signal scorers -----------------------------------------------------
+
+
+def score_topic_relevance(labels: Any, *, require: bool) -> float:
+    """Multiplier in [0, 1] on the quality score from taxonomy match.
+
+    ``require=False`` → always 1.0 (legacy behaviour; non-opted-in verticals
+    are unchanged). When required, an article carrying a strong classifier
+    label keeps full score; a weak/low-confidence label is discounted; an
+    article with NO label for this vertical (off-topic — e.g. a lifestyle piece
+    on a finance site) is knocked down hard so even a high-authority,
+    entity-rich item lands in "skip".
+
+    ``labels`` is ``Article.labels`` — a list of ``{"label", "confidence"}``
+    dicts (or bare strings on older rows).
+    """
+    if not require:
+        return _RELEVANCE_FACTOR_STRONG
+    best = 0
+    for item in labels or []:
+        if isinstance(item, dict):
+            try:
+                conf = int(item.get("confidence", 0) or 0)
+            except (TypeError, ValueError):
+                conf = 0
+            best = max(best, conf)
+        elif isinstance(item, str) and item.strip():
+            best = max(best, _RELEVANCE_CONF_MIN)  # bare label counts as on-topic
+    if best >= _RELEVANCE_CONF_MIN:
+        return _RELEVANCE_FACTOR_STRONG
+    if best > 0:
+        return _RELEVANCE_FACTOR_WEAK
+    return _RELEVANCE_FACTOR_NONE
 
 
 def score_source_authority(
@@ -261,10 +329,19 @@ def score_article(
     *,
     vertical_name: str,
     tier_map: dict[str, str] | None = None,
+    require_topic: bool | None = None,
 ) -> dict[str, Any] | None:
-    """Score one article in-DB. Persists ``curator_*`` columns."""
+    """Score one article in-DB. Persists ``curator_*`` columns.
+
+    ``require_topic`` toggles the v2 topic-relevance multiplier; ``None`` loads
+    it from the vertical's ``config.yaml`` (default off).
+    """
     if tier_map is None:
         tier_map = _load_source_tier_map(vertical_name)
+    if require_topic is None:
+        require_topic = bool(
+            _load_curator_settings(vertical_name).get("require_topic_relevance", False)
+        )
 
     SessionLocal = get_sessionmaker()
     with SessionLocal() as session:
@@ -279,6 +356,7 @@ def score_article(
             ).scalar()
             or 0
         )
+        relevance = score_topic_relevance(article.labels, require=require_topic)
         signals = {
             "source_auth": round(
                 score_source_authority(article.source, tier_map), 4
@@ -286,14 +364,15 @@ def score_article(
             "title_shape": round(score_title_shape(article.title), 4),
             "entity_strength": round(score_entity_strength(entity_count), 4),
             "entity_count": int(entity_count),
+            "topic_relevance": round(relevance, 4),
             "judge": None,  # Filled in Phase 22d for gray-zone rows.
         }
-        score = round(
+        quality = (
             signals["source_auth"]
             + signals["title_shape"]
-            + signals["entity_strength"],
-            4,
+            + signals["entity_strength"]
         )
+        score = round(quality * relevance, 4)
         tier = _decide_tier(score)
 
         article.curator_score = score
@@ -325,6 +404,9 @@ def score_pending(
         "standard": 0,
     }
     tier_map = _load_source_tier_map(vertical_name)
+    require_topic = bool(
+        _load_curator_settings(vertical_name).get("require_topic_relevance", False)
+    )
     with SessionLocal() as session:
         v = session.execute(
             select(Vertical).where(Vertical.name == vertical_name)
@@ -347,7 +429,12 @@ def score_pending(
         )
 
     for aid in ids:
-        result = score_article(aid, vertical_name=vertical_name, tier_map=tier_map)
+        result = score_article(
+            aid,
+            vertical_name=vertical_name,
+            tier_map=tier_map,
+            require_topic=require_topic,
+        )
         if result is None:
             continue
         counts["considered"] += 1

@@ -9,11 +9,11 @@ from engine.core import llm_routing as r
 
 class TestModelForDefaults:
     def test_known_caller_returns_registry_default(self) -> None:
-        # Qwen 2.5 7B is the documented R2 default for cheap callers.
-        assert r.model_for("classify").startswith("Qwen/")
+        # Llama-3.1-8B-Turbo (DeepInfra) is the default for cheap callers.
+        assert r.model_for("classify").startswith("meta-llama/")
 
     def test_pass2_default_is_deepseek(self) -> None:
-        assert r.model_for("pass2_compose") == "deepseek-ai/DeepSeek-V3"
+        assert r.model_for("pass2_compose") == "deepseek-ai/DeepSeek-V4-Pro"
 
     def test_known_callers_returns_sorted(self) -> None:
         callers = r.known_callers()
@@ -30,13 +30,13 @@ class TestVerticalOverrides:
 
     def test_vested_pass2_uses_deepseek(self) -> None:
         assert r.model_for("pass2_compose", vertical="vested") == (
-            "deepseek-ai/DeepSeek-V3"
+            "deepseek-ai/DeepSeek-V4-Pro"
         )
 
     def test_unknown_vertical_falls_back_to_default(self) -> None:
-        # 'fictional' has no override → default DeepSeek V3.
+        # 'fictional' has no override → default DeepSeek V4-Pro.
         assert r.model_for("pass2_compose", vertical="fictional") == (
-            "deepseek-ai/DeepSeek-V3"
+            "deepseek-ai/DeepSeek-V4-Pro"
         )
 
 
@@ -62,7 +62,7 @@ class TestEnvOverrides:
     ) -> None:
         monkeypatch.setenv("LLM_MODEL__classify", "   ")
         # Blank env should fall through to default, not return empty string.
-        assert r.model_for("classify").startswith("Qwen/")
+        assert r.model_for("classify").startswith("meta-llama/")
 
 
 class TestUnknownCaller:

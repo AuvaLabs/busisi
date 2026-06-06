@@ -17,6 +17,7 @@ is Phase 10b — needs a ``last_digest_sent_at`` column + Postmark token.
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -25,7 +26,14 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import select
 
 from engine.core.config import DATA_DIR, GRIMOIRE_ROOT
-from engine.core.db import Article, Subscriber, Vertical, get_sessionmaker
+from engine.core.db import (
+    Article,
+    Story,
+    StoryArticle,
+    Subscriber,
+    Vertical,
+    get_sessionmaker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,13 +75,50 @@ def _week_window(
     return start, end
 
 
-def _top_articles(
+_CITE_RE = re.compile(r"\s*\[\d+\]")
+
+
+def _lead(narrative: str | None, *, max_chars: int = 280) -> str:
+    """First paragraph of a rewriter narrative, citations stripped, trimmed.
+
+    The on-site narrative carries inline ``[N]`` citation markers and runs
+    several paragraphs; the digest wants a short, clean lead blurb.
+    """
+    if not narrative:
+        return ""
+    text = _CITE_RE.sub("", narrative).strip()
+    text = text.split("\n\n")[0].strip()
+    if len(text) <= max_chars:
+        return text
+    cut = text[:max_chars]
+    for sep in (". ", "! ", "? "):
+        idx = cut.rfind(sep)
+        if idx > 80:
+            return cut[: idx + 1]
+    return cut.rsplit(" ", 1)[0] + "…"
+
+
+def _week_items(
     vertical_name: str,
     *,
     start: datetime,
     end: datetime,
     limit: int,
-) -> list[Article]:
+) -> list[dict[str, Any]]:
+    """Top items for one ISO week, newest first, as digest-ctx dicts.
+
+    Sourced from what the site actually publishes:
+
+      * **Published Stories** — the rewriter's multi-source narratives
+        (``state="published"``, ``narrative`` set), bucketed by the week the
+        story broke (``primary_published_at``). This is the current product.
+      * **Legacy llm Articles** — single-source items enriched before the
+        rewriter migration (``summary_source == "llm"``). Kept so historical
+        weeks still populate; deduped against story primaries by slug.
+
+    Before this, selection keyed only on ``summary_source == "llm"``, so every
+    week after the 2026-05-07 rewriter cutover came up empty.
+    """
     SessionLocal = get_sessionmaker()
     with SessionLocal() as session:
         v = session.execute(
@@ -81,7 +126,44 @@ def _top_articles(
         ).scalar_one_or_none()
         if v is None:
             return []
-        rows = session.execute(
+
+        items: dict[str, dict[str, Any]] = {}
+
+        # Any story with a composed narrative — NOT only state=="published".
+        # The lifecycle moves a story to "archived" ~24h after publish, so a
+        # state filter would drop almost every past week. `narrative IS NOT
+        # NULL` is the same "has been published" signal the front page uses and
+        # already excludes draft/ready clusters (which have no narrative yet).
+        story_rows = session.execute(
+            select(Story, Article)
+            .join(StoryArticle, StoryArticle.story_id == Story.id)
+            .join(Article, Article.id == StoryArticle.article_id)
+            .where(
+                Story.vertical_id == v.id,
+                Story.narrative.is_not(None),
+                Story.state != "draft",
+                StoryArticle.is_primary.is_(True),
+                Article.deleted_at.is_(None),
+                Story.primary_published_at >= start,
+                Story.primary_published_at < end,
+            )
+            .order_by(Story.primary_published_at.desc())
+        ).all()
+        for s, a in story_rows:
+            items[a.slug] = {
+                "title": s.canonical_headline,
+                "slug": a.slug,
+                "summary": _lead(s.narrative) or (s.why_this_matters or ""),
+                "why_this_matters": s.why_this_matters,
+                "source": a.source,
+                "feed_region": a.feed_region,
+                "published_at": s.primary_published_at,
+                "story_path": f"/story/{a.slug}/",
+                "vertical": vertical_name,
+                "_sort": s.primary_published_at,
+            }
+
+        art_rows = session.execute(
             select(Article)
             .where(
                 Article.vertical_id == v.id,
@@ -92,9 +174,29 @@ def _top_articles(
                 Article.deleted_at.is_(None),
             )
             .order_by(Article.published_at.desc())
-            .limit(limit)
         ).scalars().all()
-        return list(rows)
+        for a in art_rows:
+            if a.slug in items:
+                continue
+            items[a.slug] = {
+                "title": a.title,
+                "slug": a.slug,
+                "summary": a.summary,
+                "why_this_matters": a.why_this_matters,
+                "source": a.source,
+                "feed_region": a.feed_region,
+                "published_at": a.published_at,
+                "story_path": f"/story/{a.slug}/",
+                "vertical": vertical_name,
+                "_sort": a.published_at,
+            }
+
+        ordered = sorted(
+            items.values(), key=lambda d: d["_sort"], reverse=True
+        )[:limit]
+        for d in ordered:
+            d.pop("_sort", None)
+        return ordered
 
 
 def _vertical_meta(vertical_name: str) -> dict[str, Any]:
@@ -113,20 +215,6 @@ def _vertical_meta(vertical_name: str) -> dict[str, Any]:
         }
 
 
-def _article_ctx(a: Article, vertical_name: str) -> dict[str, Any]:
-    return {
-        "title": a.title,
-        "slug": a.slug,
-        "summary": a.summary,
-        "why_this_matters": a.why_this_matters,
-        "source": a.source,
-        "feed_region": a.feed_region,
-        "published_at": a.published_at,
-        "story_path": f"/story/{a.slug}/",
-        "vertical": vertical_name,
-    }
-
-
 def generate_digest(
     vertical_name: str,
     *,
@@ -140,7 +228,7 @@ def generate_digest(
     Empty ``articles`` is allowed — caller decides whether to suppress send.
     """
     start, end = _week_window(week_offset=week_offset, now=now)
-    articles = _top_articles(
+    articles = _week_items(
         vertical_name, start=start, end=end, limit=limit
     )
     vertical = _vertical_meta(vertical_name)
@@ -157,7 +245,7 @@ def generate_digest(
         "week_start": start,
         "week_end": end,
         "subject": subject,
-        "articles": [_article_ctx(a, vertical_name) for a in articles],
+        "articles": articles,
     }
     html = env.get_template("email/weekly_digest.html").render(**ctx)
     text = env.get_template("email/weekly_digest.txt").render(**ctx)

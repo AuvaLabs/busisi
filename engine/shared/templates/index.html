@@ -50,85 +50,141 @@
       margin-top: 2rem;
     }
 
-    /* ---- Vested: FT-inspired front page (scoped; Embedding keeps the list) ----
-       Desktop: a 3-column ruled grid where the first story is the "lead"
-       (spans the wide column, larger serif headline). Mobile: one column.
-       Same markup as the shared list — only CSS reflows it for Vested. */
+    /* ===== Vested "Bright" front page — colourful rounded card grid (scoped;
+       the Embedding vertical keeps the plain ruled list above). A responsive
+       grid of white cards; the first card is a larger warm-tinted "lead" that
+       spans two columns + rows. Category kickers become filled rounded pills in
+       a rotating bright palette — the dopamine ladder: every card offers a small
+       hit of colour, a hover lift, and a colour-matched top edge that wipes in.
+       Same markup as the shared list — only CSS restyles it for Vested. ===== */
     [data-vertical="vested"] .stories {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
-      gap: 0 2rem;
-      align-items: start;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.1rem;
+      align-items: stretch;
     }
     [data-vertical="vested"] .stories li {
-      padding: 1.25rem 0;
-      border-bottom: 1px solid var(--rule);
-    }
-    /* Lead story: first card takes the wide column and spans the right rows. */
-    [data-vertical="vested"] .stories li:first-child {
-      grid-column: 1;
-      grid-row: span 4;
-      border-right: 1px solid var(--rule);
-      padding-right: 2rem;
-      padding-top: 0;
-    }
-    [data-vertical="vested"] .stories li:first-child .story-title {
-      font-size: 2.1rem;
-      line-height: 1.15;
-      font-weight: 600;
-    }
-    [data-vertical="vested"] .story-title { font-weight: 600; }
-    [data-vertical="vested"] .story-title a:hover { color: var(--link); }
-    [data-vertical="vested"] .story-meta .source { color: var(--text); }
-
-    /* FT-style section kicker: lift the labels above the headline and restyle
-       them as an uppercase teal section tag instead of pills. The "imagery" is
-       typographic — section color + serif scale stand in for a lead photo.
-       Flex-column + order reorders the existing DOM (labels on top) with no
-       markup change. Cards without labels simply have no kicker. */
-    [data-vertical="vested"] .stories li {
+      position: relative;
       display: flex;
       flex-direction: column;
+      padding: 1.15rem 1.2rem 1.25rem;
+      background: var(--bg-elev);
+      border: 1px solid var(--rule);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      animation: vested-rise .5s ease backwards;
     }
-    [data-vertical="vested"] .stories li .labels {
-      order: -1;
-      margin: 0 0 0.35rem 0;
+    /* Coloured top edge — wipes in on hover (the small "reward"). */
+    [data-vertical="vested"] .stories li::before {
+      content: "";
+      position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: var(--c1);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform .22s ease;
     }
-    [data-vertical="vested"] .stories li .story-title { order: 1; }
-    [data-vertical="vested"] .stories li .story-meta { order: 2; }
-    [data-vertical="vested"] .labels .label {
-      border: 0;
-      border-radius: 0;
-      padding: 0;
-      margin-right: 0.75rem;
-      font-family: var(--sans);
-      font-weight: 600;
-      font-size: 0.68rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--accent);
+    [data-vertical="vested"] .stories li:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lift);
+      border-color: #F0E2CE;
     }
-    /* Lead story kicker a touch larger to anchor the page. */
-    [data-vertical="vested"] .stories li:first-child .labels .label {
-      font-size: 0.74rem;
+    [data-vertical="vested"] .stories li:hover::before { transform: scaleX(1); }
+
+    /* Lead card: span two columns + two rows, warm tinted panel, big headline. */
+    [data-vertical="vested"] .stories li:first-child {
+      grid-column: span 2;
+      grid-row: span 2;
+      background: linear-gradient(135deg, #FFF4DF 0%, #FFE9E5 100%);
+      border-color: #F6E2CF;
+      padding: 1.8rem 1.85rem 1.9rem;
+    }
+    [data-vertical="vested"] .stories li:first-child .story-title {
+      font-size: 2.2rem;
+      line-height: 1.1;
     }
 
-    /* Mobile: single stacked column. The lead story stops spanning rows so it
-       reads as a normal (slightly larger) top story. */
-    @media (max-width: 48rem) {
-      [data-vertical="vested"] .stories {
-        grid-template-columns: 1fr;
-        gap: 0;
-      }
+    /* Headlines in the Fraunces display serif; colour on hover. */
+    [data-vertical="vested"] .story-title {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 1.32rem;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+    [data-vertical="vested"] .story-title a { color: var(--text); }
+    [data-vertical="vested"] .story-title a:hover { color: var(--accent); text-decoration: none; }
+    [data-vertical="vested"] .story-meta .source { color: var(--text); }
+    [data-vertical="vested"] .story-meta .region { color: var(--text-faint); }
+
+    /* Kicker above the headline; meta below (reorder fixed DOM, no markup change). */
+    [data-vertical="vested"] .stories li .labels { order: -1; margin: 0 0 0.6rem 0; }
+    [data-vertical="vested"] .stories li .story-title { order: 1; }
+    [data-vertical="vested"] .stories li .story-meta { order: 2; margin-top: 0.55rem; }
+
+    /* Category kicker -> filled rounded pill. */
+    [data-vertical="vested"] .labels .label {
+      display: inline-block;
+      border: 0;
+      padding: 0.2rem 0.62rem;
+      margin: 0 0.3rem 0.3rem 0;
+      border-radius: 999px;
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 0.66rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #FFFFFF;
+      background: var(--c1);
+    }
+    /* Rotate the bright palette across cards so the grid feels alive — and match
+       each card's hover top-edge to its tag colour. */
+    [data-vertical="vested"] .stories li:nth-child(6n+2) .label { background: var(--c2); }
+    [data-vertical="vested"] .stories li:nth-child(6n+3) .label { background: var(--c3); color: #3A2C00; }
+    [data-vertical="vested"] .stories li:nth-child(6n+4) .label { background: var(--c4); }
+    [data-vertical="vested"] .stories li:nth-child(6n+5) .label { background: var(--c5); }
+    [data-vertical="vested"] .stories li:nth-child(6n)   .label { background: var(--c6); }
+    [data-vertical="vested"] .stories li:nth-child(6n+2)::before { background: var(--c2); }
+    [data-vertical="vested"] .stories li:nth-child(6n+3)::before { background: var(--c3); }
+    [data-vertical="vested"] .stories li:nth-child(6n+4)::before { background: var(--c4); }
+    [data-vertical="vested"] .stories li:nth-child(6n+5)::before { background: var(--c5); }
+    [data-vertical="vested"] .stories li:nth-child(6n)::before   { background: var(--c6); }
+
+    /* "N sources" -> encouraging green chip. */
+    [data-vertical="vested"] .n-sources {
+      background: var(--c6);
+      color: #FFFFFF;
+      font-weight: 600;
+    }
+
+    /* Staggered fade-up entrance (dopamine: content arrives with a little life).
+       `backwards` fill keeps cards hidden during their delay, then reverts to
+       base styles so the :hover lift still works. */
+    @keyframes vested-rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    [data-vertical="vested"] .stories li:nth-child(1) { animation-delay: 0s; }
+    [data-vertical="vested"] .stories li:nth-child(2) { animation-delay: .05s; }
+    [data-vertical="vested"] .stories li:nth-child(3) { animation-delay: .1s; }
+    [data-vertical="vested"] .stories li:nth-child(4) { animation-delay: .15s; }
+    [data-vertical="vested"] .stories li:nth-child(5) { animation-delay: .2s; }
+    [data-vertical="vested"] .stories li:nth-child(6) { animation-delay: .25s; }
+    [data-vertical="vested"] .stories li:nth-child(n+7) { animation-delay: .3s; }
+
+    /* Tablet: two columns; lead spans both. Mobile: single column. */
+    @media (max-width: 60rem) {
+      [data-vertical="vested"] .stories { grid-template-columns: repeat(2, 1fr); }
       [data-vertical="vested"] .stories li:first-child {
-        grid-row: auto;
-        border-right: 0;
-        padding-right: 0;
-        padding-top: 1.25rem;
+        grid-column: span 2; grid-row: auto;
       }
-      [data-vertical="vested"] .stories li:first-child .story-title {
-        font-size: 1.7rem;
+    }
+    @media (max-width: 40rem) {
+      [data-vertical="vested"] .stories { grid-template-columns: 1fr; gap: 0.9rem; }
+      [data-vertical="vested"] .stories li:first-child {
+        grid-column: auto; padding: 1.4rem 1.3rem;
       }
+      [data-vertical="vested"] .stories li:first-child .story-title { font-size: 1.7rem; }
     }
 {% endblock %}
 

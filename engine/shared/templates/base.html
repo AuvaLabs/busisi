@@ -57,7 +57,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  {% if vertical.name == 'vested' %}
+  <!-- Vested "Bright" theme: warm optimistic display serif (Vested only). -->
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&display=swap" rel="stylesheet">
+  {% endif %}
   <style>
     :root {
       --bg: #FBFAF7;
@@ -94,33 +98,240 @@
         --accent: {{ vertical.accent_dark or '#D49464' }};
       }
     }
-    /* ---- Vested: FT-inspired editorial theme (scoped; Embedding unaffected) ----
-       Salmon "paper" background, FT link-blue, serif masthead. Placed after the
-       :root/dark blocks so equal-specificity source order wins. Vested renders
-       theme="light" always, so the dark blocks above never apply here. */
+    /* ===== Vested: "Bright" theme — Positive.news-inspired, dopamine-ladder UX
+       (scoped; the Embedding vertical is fully unaffected). Warm cream paper,
+       rounded white cards, coral primary + a rotating bright palette for the
+       category tags, and gentle hover/entrance micro-interactions. Placed after
+       the :root/dark blocks so source order wins; Vested always renders
+       theme="light", so the dark blocks above never apply here. ===== */
     [data-vertical="vested"] {
-      --bg: #FFF1E5;
-      --bg-elev: #F9E7D6;
-      --bg-mute: #F2DDC9;
-      --text: #1A1A1A;
-      --text-mute: #5C5147;
-      --text-faint: #8C7F72;
-      --rule: #E6D9CC;
-      --link: #0F5499;
-      --link-hover: #0A3D75;
-      /* --accent stays Vested teal from config (accent_light #2D5F5D) */
+      --bg: #FFFBF2;          /* warm cream paper */
+      --bg-elev: #FFFFFF;     /* white cards */
+      --bg-mute: #FFF3E0;     /* soft warm tint */
+      --text: #1B1A17;
+      --text-mute: #6B655C;
+      --text-faint: #9A9388;
+      --rule: #EFE7D8;
+      --link: #1B1A17;        /* headlines read near-black, colour on hover */
+      --link-hover: #FF5A4D;
+      --accent: #FF5A4D;      /* coral primary (CTAs, wordmark dot) */
+      /* Dopamine palette — rotated across category tags for cheerful variety. */
+      --c1: #FF5A4D;  /* coral     */
+      --c2: #0FA3A3;  /* teal      */
+      --c3: #F5A623;  /* sunflower */
+      --c4: #7C5CFC;  /* violet    */
+      --c5: #2D9CDB;  /* sky       */
+      --c6: #2BB673;  /* leaf      */
+      --shadow: 0 1px 2px rgba(27,26,23,.04), 0 8px 24px rgba(27,26,23,.06);
+      --shadow-lift: 0 6px 16px rgba(27,26,23,.08), 0 18px 40px rgba(255,90,77,.12);
+      --display: 'Fraunces', Georgia, serif;
     }
+    /* Compact horizontal masthead: wordmark left, nav pills right on one row.
+       Kills the tall stacked header + the big empty gap into the content (the
+       header used to compound its own padding with the inner .container's). */
     [data-vertical="vested"] header.site {
-      border-bottom: 2px solid var(--text);
-      padding-bottom: 1rem;
+      border-bottom: 0;
+      padding: 0;
+      margin-bottom: 0.9rem;
+      background: linear-gradient(180deg, #FFF6E6 0%, var(--bg) 100%);
+    }
+    [data-vertical="vested"] header.site .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      padding-top: 1.15rem;
+      padding-bottom: 1.15rem;
     }
     [data-vertical="vested"] header.site .wordmark {
-      font-family: var(--serif);
+      font-family: var(--display);
       font-weight: 600;
-      font-size: 2rem;
-      letter-spacing: -0.01em;
+      font-size: 1.95rem;
+      letter-spacing: -0.02em;
+      line-height: 1;
     }
-    [data-vertical="vested"] nav.primary a:hover { color: var(--link); }
+    [data-vertical="vested"] header.site .wordmark .accent { color: var(--accent); }
+    [data-vertical="vested"] nav.primary {
+      margin-top: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    [data-vertical="vested"] nav.primary a {
+      margin: 0;
+      padding: 0.36rem 0.85rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--rule);
+      color: var(--text-mute);
+      letter-spacing: 0.06em;
+      transition: transform .15s ease, color .15s ease,
+                  background .15s ease, border-color .15s ease;
+    }
+    [data-vertical="vested"] nav.primary a:hover {
+      color: #FFFFFF;
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+    /* Current page tab — coral fill so the nav reads as intentional. */
+    [data-vertical="vested"] nav.primary a.active {
+      color: #FFFFFF;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    /* Tighten the run-in from masthead to content. */
+    [data-vertical="vested"] main.container { padding-top: 1.1rem; }
+    /* Footer: rounded, warmer panel + rounded-full CTA with a hover pop. */
+    [data-vertical="vested"] footer.site {
+      border-top: 0;
+      background: var(--bg-mute);
+      border-radius: 22px;
+      margin-top: 3.5rem;
+      padding: 0;
+      color: var(--text-mute);
+    }
+    [data-vertical="vested"] footer.site .container { padding: 2rem 1.75rem; }
+    [data-vertical="vested"] footer.site input[type="email"] {
+      border-radius: 999px !important;
+      border-color: var(--rule) !important;
+      background: #FFFFFF !important;
+    }
+    [data-vertical="vested"] footer.site button[type="submit"] {
+      border-radius: 999px !important;
+      border-color: var(--accent) !important;
+      color: #FFFFFF !important;
+      font-weight: 600 !important;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    [data-vertical="vested"] footer.site button[type="submit"]:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 6px 18px rgba(255,90,77,.30);
+    }
+    /* ----- Vested "Bright": secondary pages (entities, digest, search, tools,
+       prose). One shared, higher-specificity block so every surface matches the
+       redesigned front page — Fraunces display titles, coral kicker eyebrows,
+       rounded-card list rows with a hover lift, brighter chips. The
+       [data-vertical="vested"] prefix outranks each page's plain class rules, so
+       this overrides their FT-era extra_css without touching those templates.
+       Scoped to Vested; the Embedding vertical is unaffected. ----- */
+    [data-vertical="vested"] .ei-title,
+    [data-vertical="vested"] .ep-title,
+    [data-vertical="vested"] .di-title,
+    [data-vertical="vested"] .sx-title,
+    [data-vertical="vested"] .digest-title,
+    [data-vertical="vested"] .prose h1,
+    [data-vertical="vested"] .prose h2 {
+      font-family: var(--display);
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
+    /* Eyebrows -> coral bright kicker. */
+    [data-vertical="vested"] .ei-eyebrow,
+    [data-vertical="vested"] .ep-eyebrow,
+    [data-vertical="vested"] .di-eyebrow,
+    [data-vertical="vested"] .sx-eyebrow,
+    [data-vertical="vested"] .digest-eyebrow {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    /* Ruled list rows -> rounded white cards with a gentle hover lift. */
+    [data-vertical="vested"] .ep-list > li,
+    [data-vertical="vested"] .di-list > li,
+    [data-vertical="vested"] .sx-results > li,
+    [data-vertical="vested"] .digest-stories > li,
+    [data-vertical="vested"] .tools li {
+      border-bottom: 0;
+      background: var(--bg-elev);
+      border: 1px solid var(--rule);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 1rem 1.15rem;
+      margin-bottom: 0.8rem;
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    }
+    [data-vertical="vested"] .ep-list > li:hover,
+    [data-vertical="vested"] .di-list > li:hover,
+    [data-vertical="vested"] .sx-results > li:hover,
+    [data-vertical="vested"] .digest-stories > li:hover,
+    [data-vertical="vested"] .tools li:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lift);
+      border-color: #F0E2CE;
+    }
+    /* Card titles -> Fraunces display. */
+    [data-vertical="vested"] .ep-story-title,
+    [data-vertical="vested"] .digest-story-title,
+    [data-vertical="vested"] .sx-rt,
+    [data-vertical="vested"] .di-range,
+    [data-vertical="vested"] .tool-title {
+      font-family: var(--display);
+      font-weight: 600;
+    }
+    /* Entity chips -> brighter, coral hover. */
+    [data-vertical="vested"] .ei-chip {
+      transition: transform .14s ease, border-color .14s ease, color .14s ease;
+    }
+    [data-vertical="vested"] .ei-chip:hover { transform: translateY(-1px); border-color: var(--accent); }
+    [data-vertical="vested"] .ei-chip:hover a { color: var(--accent); }
+    /* Rounded search field; coral focus ring. */
+    [data-vertical="vested"] .sx-input {
+      border-radius: 999px;
+      background: #FFFFFF;
+    }
+    [data-vertical="vested"] .sx-input:focus { outline-color: var(--accent); }
+    /* "Why this matters" callout -> soft tinted rounded panel. */
+    [data-vertical="vested"] .digest-wtm {
+      background: var(--bg-mute);
+      border-left: 3px solid var(--accent);
+      border-radius: 10px;
+    }
+    /* Mobile: the digest-archive row is a 3-column flex (week · title · count)
+       that cramps on narrow screens — stack it vertically inside the card. */
+    @media (max-width: 40rem) {
+      [data-vertical="vested"] .di-list > li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
+      }
+      [data-vertical="vested"] .di-list > li .di-week { flex: none; }
+    }
+    /* Content pages (article + prose) become a two-column layout: the reading
+       column + a sticky ad/sponsor rail that fills the previously-empty right
+       side. Detected via :has() so no per-template edits are needed; full-width
+       pages (front, lists) and mobile keep a single column with the rail hidden.
+       Scoped to Vested — the Embedding rail stays hidden. */
+    [data-vertical="vested"] main.container:has(.story),
+    [data-vertical="vested"] main.container:has(.prose) {
+      display: grid;
+      grid-template-columns: minmax(0, 38rem) minmax(240px, 300px);
+      justify-content: center;
+      gap: 3rem;
+      align-items: start;
+    }
+    [data-vertical="vested"] main.container:has(.story) .ad-rail,
+    [data-vertical="vested"] main.container:has(.prose) .ad-rail {
+      display: block;
+      position: sticky;
+      top: 1rem;
+    }
+    @media (max-width: 60rem) {
+      [data-vertical="vested"] main.container:has(.story),
+      [data-vertical="vested"] main.container:has(.prose) {
+        grid-template-columns: 1fr;
+      }
+      [data-vertical="vested"] .ad-rail { display: none !important; }
+    }
+
+    /* Respect users who prefer less motion. */
+    @media (prefers-reduced-motion: reduce) {
+      [data-vertical="vested"] *,
+      [data-vertical="vested"] *::before {
+        transition: none !important; animation: none !important;
+      }
+    }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body {
@@ -175,6 +386,89 @@
       color: var(--text-faint);
     }
     footer.site a { color: var(--text-mute); }
+    /* Reserved ad/sponsor rail — hidden by default everywhere (so the Embedding
+       vertical and full-width pages never show it); Vested content pages opt in
+       below. Empty, standard-sized reserved container ready to drop an ad unit
+       or sponsor card into later. */
+    .ad-rail { display: none; }
+    .ad-slot {
+      border: 1px dashed var(--rule);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.45);
+      min-height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ad-slot__label {
+      font-family: var(--sans);
+      font-size: 0.6rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+    /* Affiliate/sponsor card variant — a real partner unit in the rail slot
+       (replaces the dashed placeholder). Solid card, sized to content. */
+    [data-vertical="vested"] .ad-slot--partner {
+      display: block;
+      min-height: 0;
+      padding: 0.55rem 0 0;
+      border: 1px solid var(--rule);
+      border-radius: 14px;
+      background: var(--bg-elev);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    [data-vertical="vested"] .ad-slot--partner .ad-slot__label {
+      display: block;
+      padding: 0 0.9rem;
+    }
+    [data-vertical="vested"] .partner-card {
+      display: block;
+      padding: 0.25rem 0.9rem 0.85rem;
+      color: var(--text);
+      transition: transform .15s ease;
+    }
+    [data-vertical="vested"] .partner-card:hover { text-decoration: none; }
+    [data-vertical="vested"] .partner-card__name {
+      display: block;
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 1.15rem;
+      margin: 0.3rem 0 0.4rem;
+    }
+    [data-vertical="vested"] .partner-card__pitch {
+      display: block;
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--text-mute);
+      margin-bottom: 0.75rem;
+    }
+    [data-vertical="vested"] .partner-card__cta {
+      display: inline-block;
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 0.82rem;
+      color: #FFFFFF;
+      background: var(--accent);
+      border-radius: 999px;
+      padding: 0.42rem 0.95rem;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    [data-vertical="vested"] .partner-card:hover .partner-card__cta {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(255, 90, 77, .28);
+    }
+    [data-vertical="vested"] .ad-slot__disc {
+      margin: 0;
+      padding: 0 0.9rem 0.8rem;
+      font-family: var(--sans);
+      font-size: 0.66rem;
+      line-height: 1.4;
+      color: var(--text-faint);
+    }
+    [data-vertical="vested"] .ad-slot__disc a { color: var(--text-mute); text-decoration: underline; }
     {% block extra_css %}{% endblock %}
   </style>
 </head>
@@ -190,14 +484,38 @@
         <a href="/tools/">Tools</a>
         <a href="/entity/">Entities</a>
         <a href="/digest/">Digest</a>
+        {% if vertical.name != 'vested' %}
         <a href="/about">About</a>
         <a href="/methodology">Methodology</a>
+        {% endif %}
       </nav>
     </div>
   </header>
 
   <main class="container">
-    {% block content %}{% endblock %}
+    <div class="main-col">
+      {% block content %}{% endblock %}
+    </div>
+    <aside class="ad-rail" aria-label="Sponsored">
+      {% if vertical.name == 'vested' %}
+      <div class="ad-slot ad-slot--partner">
+        <span class="ad-slot__label">Sponsored</span>
+        <a class="partner-card" href="/r/interactive_brokers/rail"
+           rel="sponsored noopener" target="_blank" data-partner="interactive_brokers">
+          <span class="partner-card__name">Interactive Brokers</span>
+          <span class="partner-card__pitch">Low-cost access to stocks, ETFs, and
+            options across 150+ markets — built for serious investors.</span>
+          <span class="partner-card__cta">Compare accounts →</span>
+        </a>
+        <p class="ad-slot__disc">Affiliate link — we may earn a commission, at no
+          cost to you. <a href="/terms">Terms</a>.</p>
+      </div>
+      {% else %}
+      <div class="ad-slot" data-ad-slot="rail-1">
+        <span class="ad-slot__label">Advertisement</span>
+      </div>
+      {% endif %}
+    </aside>
   </main>
 
   <footer class="site">
@@ -230,7 +548,7 @@
                   margin: 0.5rem 0 0; min-height: 1.1em;"></p>
       </form>
       <p>{{ vertical.display_name }} — operated by Auva Labs FZE.
-        <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/licensing">Licensing</a> · <a href="/methodology">Methodology</a> · <a href="/advertise">Advertise</a> · <a href="/feed.rss">RSS</a></p>
+        <a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/licensing">Licensing</a> · <a href="/methodology">Methodology</a> · <a href="/advertise">Advertise</a> · <a href="/feed.rss">RSS</a></p>
     </div>
   </footer>
   <script>
@@ -261,6 +579,20 @@
           status.textContent = 'Network error. Try again later.';
         });
       });
+    })();
+  </script>
+  <script>
+    // Mark the current nav tab so it reads as "active" (styled on Vested).
+    (function () {
+      var path = location.pathname.replace(/\/+$/, '') || '/';
+      var links = document.querySelectorAll('nav.primary a');
+      for (var i = 0; i < links.length; i++) {
+        var href = (links[i].getAttribute('href') || '').replace(/\/+$/, '') || '/';
+        var on = href === '/'
+          ? path === '/'
+          : (path === href || path.indexOf(href + '/') === 0);
+        if (on) links[i].classList.add('active');
+      }
     })();
   </script>
 </body>
