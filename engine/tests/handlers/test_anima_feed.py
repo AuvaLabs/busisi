@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy.orm import sessionmaker
@@ -189,3 +189,90 @@ def test_anima_calendar_upcoming_only_filters(client, repo_verticals_dir) -> Non
 def test_anima_calendar_unknown_vertical_traversal_404(client) -> None:
     r = client.get("/api/v1/anima/calendar?vertical=../etc")
     assert r.status_code == 404
+
+
+# ---- topics ----
+
+
+@pytest.fixture
+def seeded_topics(test_engine, seeded_vertical):
+    """Two recent published stories sharing the 'Federal Reserve' entity, each
+    with a Fed primary source + key stat — should cluster into one topic."""
+    now = datetime.now(timezone.utc)
+    SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
+    with SM() as s:
+        ent = Entity(
+            vertical_id=seeded_vertical, type="employer",
+            slug="federal-reserve", name="Federal Reserve",
+        )
+        s.add(ent)
+        s.commit()
+        for i, hrs in enumerate([2, 5]):
+            a = Article(
+                vertical_id=seeded_vertical,
+                hash=f"tp-h{i}",
+                slug=f"fed-{i}",
+                title=f"Fed holds rates as inflation cools to {2 + i}.1%",
+                link=f"https://vested.news/story/fed-{i}",
+                source="https://federalreserve.gov/feed",
+                feed_region="US",
+                summary="The Fed kept rates steady.",
+                summary_source="llm",
+                published_at=now - timedelta(hours=hrs),
+                labels=[{"label": "brokerage-investing", "confidence": 80}],
+                structured_extract={"numerics": [{"value": f"{2 + i}.1%"}]},
+            )
+            s.add(a)
+            s.commit()
+            story = Story(
+                vertical_id=seeded_vertical,
+                canonical_headline=a.title,
+                primary_published_at=now - timedelta(hours=hrs),
+                importance=0.8 - 0.1 * i,
+                state="published",
+                narrative=f"The Fed held rates[1] as inflation cooled to {2 + i}.1%.",
+                why_this_matters="Rate path shapes savings and mortgage costs.",
+                narrative_version=1,
+            )
+            s.add(story)
+            s.commit()
+            s.add_all([
+                StoryArticle(story_id=story.id, article_id=a.id, is_primary=True),
+                StorySource(
+                    story_id=story.id,
+                    source_url="https://www.federalreserve.gov/monetarypolicy.htm",
+                    host="federalreserve.gov",
+                    agency_class="D",
+                    cited_as_n=1,
+                    article_id=a.id,
+                ),
+                ArticleEntity(article_id=a.id, entity_id=ent.id),
+            ])
+            s.commit()
+
+
+def test_anima_topics_clusters_sourced_stories(client, seeded_topics) -> None:
+    r = client.get("/api/v1/anima/topics?vertical=modelwatch&min_cluster=2")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["vertical"] == "modelwatch"
+    assert "generated_at" in body and body["story_pool"] >= 2
+    assert body["count"] >= 1
+    topic = next(t for t in body["topics"] if t["theme_entity"] == "Federal Reserve")
+    assert topic["n_stories"] == 2
+    assert topic["lane"] == "Where Your Money Goes"  # brokerage-investing -> lane
+    assert len(topic["facts"]) == 2
+    # every fact is sourced to the Fed primary source
+    assert all(f["source_url"].startswith("https://www.federalreserve.gov") for f in topic["facts"])
+    assert "https://www.federalreserve.gov/monetarypolicy.htm" in topic["sources"]
+    assert topic["story_ids"]  # ids present for Anima to dereference
+
+
+def test_anima_topics_unknown_vertical_404(client) -> None:
+    r = client.get("/api/v1/anima/topics?vertical=ghost")
+    assert r.status_code == 404
+
+
+def test_anima_topics_limit_validation(client) -> None:
+    r = client.get("/api/v1/anima/topics?vertical=modelwatch&limit=9999")
+    assert r.status_code == 422
