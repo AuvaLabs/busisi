@@ -264,6 +264,16 @@
       border-left: 3px solid var(--accent);
       border-radius: 10px;
     }
+    /* Mobile: the digest-archive row is a 3-column flex (week · title · count)
+       that cramps on narrow screens — stack it vertically inside the card. */
+    @media (max-width: 40rem) {
+      [data-vertical="vested"] .di-list > li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
+      }
+      [data-vertical="vested"] .di-list > li .di-week { flex: none; }
+    }
 
     /* Respect users who prefer less motion. */
     @media (prefers-reduced-motion: reduce) {
