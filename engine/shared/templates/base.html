@@ -298,6 +298,32 @@
       }
       [data-vertical="vested"] .di-list > li .di-week { flex: none; }
     }
+    /* Content pages (article + prose) become a two-column layout: the reading
+       column + a sticky ad/sponsor rail that fills the previously-empty right
+       side. Detected via :has() so no per-template edits are needed; full-width
+       pages (front, lists) and mobile keep a single column with the rail hidden.
+       Scoped to Vested — the Embedding rail stays hidden. */
+    [data-vertical="vested"] main.container:has(.story),
+    [data-vertical="vested"] main.container:has(.prose) {
+      display: grid;
+      grid-template-columns: minmax(0, 38rem) minmax(240px, 300px);
+      justify-content: center;
+      gap: 3rem;
+      align-items: start;
+    }
+    [data-vertical="vested"] main.container:has(.story) .ad-rail,
+    [data-vertical="vested"] main.container:has(.prose) .ad-rail {
+      display: block;
+      position: sticky;
+      top: 1rem;
+    }
+    @media (max-width: 60rem) {
+      [data-vertical="vested"] main.container:has(.story),
+      [data-vertical="vested"] main.container:has(.prose) {
+        grid-template-columns: 1fr;
+      }
+      [data-vertical="vested"] .ad-rail { display: none !important; }
+    }
 
     /* Respect users who prefer less motion. */
     @media (prefers-reduced-motion: reduce) {
@@ -360,6 +386,27 @@
       color: var(--text-faint);
     }
     footer.site a { color: var(--text-mute); }
+    /* Reserved ad/sponsor rail — hidden by default everywhere (so the Embedding
+       vertical and full-width pages never show it); Vested content pages opt in
+       below. Empty, standard-sized reserved container ready to drop an ad unit
+       or sponsor card into later. */
+    .ad-rail { display: none; }
+    .ad-slot {
+      border: 1px dashed var(--rule);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.45);
+      min-height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ad-slot__label {
+      font-family: var(--sans);
+      font-size: 0.6rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
     {% block extra_css %}{% endblock %}
   </style>
 </head>
@@ -382,7 +429,14 @@
   </header>
 
   <main class="container">
-    {% block content %}{% endblock %}
+    <div class="main-col">
+      {% block content %}{% endblock %}
+    </div>
+    <aside class="ad-rail" aria-label="Sponsored">
+      <div class="ad-slot" data-ad-slot="rail-1">
+        <span class="ad-slot__label">Advertisement</span>
+      </div>
+    </aside>
   </main>
 
   <footer class="site">
