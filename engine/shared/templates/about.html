@@ -13,6 +13,60 @@
 <article class="prose">
   <h1>About {{ vertical.display_name }}</h1>
 
+  {% if vertical.name == 'vested' %}
+  <p class="lede">
+    Personal finance, decoded for people who work in tech. The money
+    decisions that come with a $100K–$500K income — equity comp, taxes,
+    retirement, financial independence — explained with the actual
+    numbers, traced back to the source that published them.
+  </p>
+
+  <h2>What this is</h2>
+  <p>
+    {{ vertical.display_name }} aggregates personal-finance reporting from
+    wires, papers of record, brokerages, and primary data agencies — the
+    IRS, the Federal Reserve, SEC, CFPB, Social Security, and the BLS. It
+    clusters parallel coverage of a single story so the front page reads
+    like a curator's desk, not a press-release feed. Layered on top:
+    calculators and decision tools that make the trade-offs concrete.
+  </p>
+
+  <h2>Who it's for</h2>
+  <p>
+    Software engineers, data scientists, and AI researchers earning
+    $100K–$500K who want to make better money decisions — equity comp,
+    tax strategy, retirement, FIRE — without wading through generic
+    advice. Skim-friendly when you have ten minutes; deep when you want it.
+  </p>
+
+  <h2>What's different</h2>
+  <p>
+    Editorial discipline. Every story links its sources prominently,
+    AI-assisted summaries are explicitly grounded in those sources, and
+    analysis is marked separately from reporting. And the numbers that
+    matter — the deficit figure, the contribution limit, the depletion
+    year — are checked against the agency that published them, not a
+    second-hand retelling.
+  </p>
+
+  <h2>How to use it</h2>
+  <p>
+    Read the front page for the week's signal. Subscribe to the
+    <a href="/digest/">weekly digest</a> if you'd rather have it delivered.
+    Looking something up? <a href="/search/">Search</a> the archive.
+    Running the numbers? The <a href="/tools/">tools section</a> has
+    calculators and comparisons.
+  </p>
+
+  <h2>Who runs it</h2>
+  <p>
+    {{ vertical.display_name }} is operated by Auva Labs FZE. The operating
+    entity is identified on <a href="/privacy">/privacy</a> and
+    <a href="/terms">/terms</a>. Editorial methodology is documented at
+    <a href="/methodology">/methodology</a> — including the AI tools we
+    use, how we ground summaries, and what we won't do.
+  </p>
+  {% else %}
   <p class="lede">
     A real-time knowledge platform for the AI/ML field — news the day it
     breaks, evergreen reference for the concepts that don't, original
@@ -66,5 +120,6 @@
     documented at <a href="/methodology">/methodology</a> — including
     the AI tools we use, how we ground summaries, and what we won't do.
   </p>
+  {% endif %}
 </article>
 {% endblock %}

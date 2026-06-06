@@ -407,6 +407,68 @@
       text-transform: uppercase;
       color: var(--text-faint);
     }
+    /* Affiliate/sponsor card variant — a real partner unit in the rail slot
+       (replaces the dashed placeholder). Solid card, sized to content. */
+    [data-vertical="vested"] .ad-slot--partner {
+      display: block;
+      min-height: 0;
+      padding: 0.55rem 0 0;
+      border: 1px solid var(--rule);
+      border-radius: 14px;
+      background: var(--bg-elev);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    [data-vertical="vested"] .ad-slot--partner .ad-slot__label {
+      display: block;
+      padding: 0 0.9rem;
+    }
+    [data-vertical="vested"] .partner-card {
+      display: block;
+      padding: 0.25rem 0.9rem 0.85rem;
+      color: var(--text);
+      transition: transform .15s ease;
+    }
+    [data-vertical="vested"] .partner-card:hover { text-decoration: none; }
+    [data-vertical="vested"] .partner-card__name {
+      display: block;
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 1.15rem;
+      margin: 0.3rem 0 0.4rem;
+    }
+    [data-vertical="vested"] .partner-card__pitch {
+      display: block;
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--text-mute);
+      margin-bottom: 0.75rem;
+    }
+    [data-vertical="vested"] .partner-card__cta {
+      display: inline-block;
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 0.82rem;
+      color: #FFFFFF;
+      background: var(--accent);
+      border-radius: 999px;
+      padding: 0.42rem 0.95rem;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    [data-vertical="vested"] .partner-card:hover .partner-card__cta {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(255, 90, 77, .28);
+    }
+    [data-vertical="vested"] .ad-slot__disc {
+      margin: 0;
+      padding: 0 0.9rem 0.8rem;
+      font-family: var(--sans);
+      font-size: 0.66rem;
+      line-height: 1.4;
+      color: var(--text-faint);
+    }
+    [data-vertical="vested"] .ad-slot__disc a { color: var(--text-mute); text-decoration: underline; }
     {% block extra_css %}{% endblock %}
   </style>
 </head>
@@ -433,9 +495,24 @@
       {% block content %}{% endblock %}
     </div>
     <aside class="ad-rail" aria-label="Sponsored">
+      {% if vertical.name == 'vested' %}
+      <div class="ad-slot ad-slot--partner">
+        <span class="ad-slot__label">Sponsored</span>
+        <a class="partner-card" href="/r/interactive_brokers/rail"
+           rel="sponsored noopener" target="_blank" data-partner="interactive_brokers">
+          <span class="partner-card__name">Interactive Brokers</span>
+          <span class="partner-card__pitch">Low-cost access to stocks, ETFs, and
+            options across 150+ markets — built for serious investors.</span>
+          <span class="partner-card__cta">Compare accounts →</span>
+        </a>
+        <p class="ad-slot__disc">Affiliate link — we may earn a commission, at no
+          cost to you. <a href="/terms">Terms</a>.</p>
+      </div>
+      {% else %}
       <div class="ad-slot" data-ad-slot="rail-1">
         <span class="ad-slot__label">Advertisement</span>
       </div>
+      {% endif %}
     </aside>
   </main>
 
