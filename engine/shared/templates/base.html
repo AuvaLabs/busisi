@@ -186,6 +186,85 @@
       transform: translateY(-1px) scale(1.02);
       box-shadow: 0 6px 18px rgba(255,90,77,.30);
     }
+    /* ----- Vested "Bright": secondary pages (entities, digest, search, tools,
+       prose). One shared, higher-specificity block so every surface matches the
+       redesigned front page — Fraunces display titles, coral kicker eyebrows,
+       rounded-card list rows with a hover lift, brighter chips. The
+       [data-vertical="vested"] prefix outranks each page's plain class rules, so
+       this overrides their FT-era extra_css without touching those templates.
+       Scoped to Vested; the Embedding vertical is unaffected. ----- */
+    [data-vertical="vested"] .ei-title,
+    [data-vertical="vested"] .ep-title,
+    [data-vertical="vested"] .di-title,
+    [data-vertical="vested"] .sx-title,
+    [data-vertical="vested"] .digest-title,
+    [data-vertical="vested"] .prose h1,
+    [data-vertical="vested"] .prose h2 {
+      font-family: var(--display);
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
+    /* Eyebrows -> coral bright kicker. */
+    [data-vertical="vested"] .ei-eyebrow,
+    [data-vertical="vested"] .ep-eyebrow,
+    [data-vertical="vested"] .di-eyebrow,
+    [data-vertical="vested"] .sx-eyebrow,
+    [data-vertical="vested"] .digest-eyebrow {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    /* Ruled list rows -> rounded white cards with a gentle hover lift. */
+    [data-vertical="vested"] .ep-list > li,
+    [data-vertical="vested"] .di-list > li,
+    [data-vertical="vested"] .sx-results > li,
+    [data-vertical="vested"] .digest-stories > li,
+    [data-vertical="vested"] .tools li {
+      border-bottom: 0;
+      background: var(--bg-elev);
+      border: 1px solid var(--rule);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 1rem 1.15rem;
+      margin-bottom: 0.8rem;
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    }
+    [data-vertical="vested"] .ep-list > li:hover,
+    [data-vertical="vested"] .di-list > li:hover,
+    [data-vertical="vested"] .sx-results > li:hover,
+    [data-vertical="vested"] .digest-stories > li:hover,
+    [data-vertical="vested"] .tools li:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lift);
+      border-color: #F0E2CE;
+    }
+    /* Card titles -> Fraunces display. */
+    [data-vertical="vested"] .ep-story-title,
+    [data-vertical="vested"] .digest-story-title,
+    [data-vertical="vested"] .sx-rt,
+    [data-vertical="vested"] .di-range,
+    [data-vertical="vested"] .tool-title {
+      font-family: var(--display);
+      font-weight: 600;
+    }
+    /* Entity chips -> brighter, coral hover. */
+    [data-vertical="vested"] .ei-chip {
+      transition: transform .14s ease, border-color .14s ease, color .14s ease;
+    }
+    [data-vertical="vested"] .ei-chip:hover { transform: translateY(-1px); border-color: var(--accent); }
+    [data-vertical="vested"] .ei-chip:hover a { color: var(--accent); }
+    /* Rounded search field; coral focus ring. */
+    [data-vertical="vested"] .sx-input {
+      border-radius: 999px;
+      background: #FFFFFF;
+    }
+    [data-vertical="vested"] .sx-input:focus { outline-color: var(--accent); }
+    /* "Why this matters" callout -> soft tinted rounded panel. */
+    [data-vertical="vested"] .digest-wtm {
+      background: var(--bg-mute);
+      border-left: 3px solid var(--accent);
+      border-radius: 10px;
+    }
+
     /* Respect users who prefer less motion. */
     @media (prefers-reduced-motion: reduce) {
       [data-vertical="vested"] *,
