@@ -33,12 +33,11 @@
   priority_weight: 0.95
   category_hints: [taxes, retirement-planning, brokerage-investing]
 
-- url: https://feeds.bbci.co.uk/news/business/rss.xml
-  type: rss
-  region: UK
-  agency_class: B
-  priority_weight: 0.90
-  category_hints: [brokerage-investing, regulation]
+# REMOVED 2026-06-06 — BBC general Business RSS injected off-topic UK lifestyle
+# pieces (e.g. "best World Cup drinks and snacks") onto a US personal-finance
+# front page. No BBC personal-finance-specific feed exists; the dedicated US
+# finance sources below + the curator topic-relevance gate cover the gap.
+#   - https://feeds.bbci.co.uk/news/business/rss.xml
 
 - url: https://www.theguardian.com/money/rss
   type: rss
