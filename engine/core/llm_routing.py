@@ -71,25 +71,26 @@ logger = logging.getLogger(__name__)
 Caller = str
 
 
+# Migrated 2026-06-07 from Featherless (flat-rate, 32K cap) to DeepInfra
+# (per-token serverless, 128K+ ctx, OpenAI-compatible). IDs below are
+# DeepInfra catalog IDs. All were verified to return CLEAN JSON under
+# response_format=json_object — Qwen3-32B was rejected here because it emits
+# <think> tokens that corrupt JSON mode (the pipeline parses strict JSON).
 _DEFAULT_REGISTRY: Final[dict[Caller, str]] = {
-    # ── 1 unit — small workhorse ─────────────────────────────────────────
-    "curator_score":        "Qwen/Qwen2.5-7B-Instruct",
-    "classify":             "Qwen/Qwen2.5-7B-Instruct",
-    "entity_extract":       "Qwen/Qwen2.5-7B-Instruct",
-    "pass0_extract":        "Qwen/Qwen2.5-7B-Instruct",
-    "why_this_matters":     "Qwen/Qwen2.5-7B-Instruct",
-    "summarize":            "Qwen/Qwen2.5-7B-Instruct",   # legacy alias
-    # ── 2 units — mid tier ───────────────────────────────────────────────
-    "summarize_orphan":     "Qwen/Qwen2.5-32B-Instruct",
-    "pass1_merge":          "Qwen/Qwen2.5-32B-Instruct",
-    # ── 4 units — Premium-only, byline-grade prose ───────────────────────
-    # Default Pass 2 — overridden per-vertical for tone (Vested → DeepSeek
-    # for analytical copy; Embedding → Llama 4 Maverick for general byline).
-    "pass2_compose":        "deepseek-ai/DeepSeek-V3",
-    # F2 (2026-05-10) — single-source enriched rewriter for orphan articles
-    # (cluster of 1). Uses primary source body + structured_extract + research
-    # bundle as input. Same model as cluster pass2 for voice consistency.
-    "rewrite_single":       "deepseek-ai/DeepSeek-V3",
+    # ── small workhorse — high-volume extract/classify/entities (~96% of vol)
+    "curator_score":        "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    "classify":             "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    "entity_extract":       "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    "pass0_extract":        "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    "why_this_matters":     "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    "summarize":            "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",  # legacy alias
+    # ── mid tier — fact merge (the substance). 70B > the old 32B. Non-thinking.
+    "summarize_orphan":     "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "pass1_merge":          "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    # ── byline-grade prose compose. Overridden per-vertical below.
+    "pass2_compose":        "deepseek-ai/DeepSeek-V4-Pro",
+    # Single-source enriched rewriter for orphan articles (cluster of 1).
+    "rewrite_single":       "deepseek-ai/DeepSeek-V4-Pro",
 }
 
 
@@ -97,14 +98,13 @@ _DEFAULT_REGISTRY: Final[dict[Caller, str]] = {
 # ``vertical=<name>`` to ``model_for()`` so we can pick a tone model.
 _VERTICAL_OVERRIDES: Final[dict[str, dict[Caller, str]]] = {
     "embedding": {
-        # General-tech byline voice. Maverick is a strong open-weights pick;
-        # Featherless catalogs it Premium-tier.
-        "pass2_compose": "meta-llama/Llama-4-Maverick-17B-128E-Instruct",
+        # General-tech byline voice — Llama 4 Maverick (DeepInfra FP8 build).
+        "pass2_compose": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
     },
     "vested": {
-        # Analytical/financial-copy voice. DeepSeek V3's reasoning trace
-        # produces tighter quantitative prose.
-        "pass2_compose": "deepseek-ai/DeepSeek-V3",
+        # Analytical/financial-copy voice — DeepSeek V4-Pro (clean JSON, the
+        # strongest factual-prose model in the DeepInfra catalog for our use).
+        "pass2_compose": "deepseek-ai/DeepSeek-V4-Pro",
     },
 }
 
