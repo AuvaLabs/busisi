@@ -47,7 +47,8 @@ topics:
     - \bpension\b
 
   brokerage-investing:
-    - \b(Fidelity|Schwab|Vanguard|Robinhood|Public)\b
+    # "Public" (the broker) dropped — matched the ordinary word "public".
+    - \b(Fidelity|Schwab|Vanguard|Robinhood)\b
     - \bETF[s]?\b
     - \bindex fund[s]?\b
     - \bbroker(age)?\b
@@ -71,7 +72,8 @@ topics:
   salary-negotiation:
     - \bnegotiat(e|ing|ion)\b
     - \boffer letter\b
-    - \blevels\b
+    - \blevels\.fyi\b
+    - \b(comp|compensation|pay|job) band[s]?\b
     - \btotal compensation\b
     - \bbase salary\b
     - \bsign-on bonus\b
@@ -104,16 +106,20 @@ topics:
     - \bT-?bill[s]?\b
     - \bTreasur(y|ies)\b
     - \bSoFi\b
-    - \bMercury\b
+    - \bMercury (bank|banking)\b
 
   credit:
+    # NB: bare \bpoints\b / \bmiles\b / \bChase\b matched common words ("points
+    # to", "miles away", "chase down"). Require finance context. (2026-06-06)
     - \bcredit score\b
     - \bFICO\b
     - \bcredit card\b
-    - \b(Amex|Chase|Capital One)\b
+    - \b(Amex|American Express|Capital One)\b
+    - \bChase (Sapphire|Freedom|Ink|United|Marriott)\b
     - \btransfer (bonus|partner)\b
-    - \bpoints\b
-    - \bmiles\b
+    - \b(reward|credit[- ]card|membership|transferable) points\b
+    - \bpoints and miles\b
+    - \b(airline|reward|frequent[- ]?flyer|award) miles\b
 
   insurance-life-stage:
     - \bterm life\b
@@ -129,11 +135,17 @@ topics:
     - \bappreciated stock\b
 
   estate-planning:
-    - \bwill\b
-    - \btrust\b
-    - \bestate (tax|plan)\b
-    - \bbeneficiary\b
+    # NB: bare \bwill\b / \btrust\b matched the ordinary verb/noun ("prices will
+    # rise", "trust the data") and mislabelled general news. Require finance
+    # context. (2026-06-06)
+    - \b(last will|living will|will and testament|leave[s]? (a|their) will)\b
+    - \b(living|revocable|irrevocable|family|testamentary) trust\b
+    - \btrust fund\b
+    - \bestate (tax|plan(ning)?)\b
+    - \bbeneficiar(y|ies)\b
     - \bpower of attorney\b
+    - \bprobate\b
+    - \binheritance\b
 
 # ---- Entity types ----
 entity_types:
