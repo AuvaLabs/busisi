@@ -155,6 +155,61 @@ class TestGenerateDigest:
         digest = ng.generate_digest("modelwatch", limit=2, now=seeded)
         assert len(digest["articles"]) == 2
 
+    def test_includes_published_rewritten_story(self, seeded, test_engine) -> None:
+        """Post-rewriter weeks: a published Story (narrative on the Story, not an
+        llm Article summary) must appear in the digest. Regression for the
+        empty-digest bug after the 2026-05-07 rewriter migration."""
+        from sqlalchemy import select as _select
+
+        from engine.core.db import Story, StoryArticle
+
+        SM = sessionmaker(test_engine, expire_on_commit=False, future=True)
+        with SM() as s:
+            v_id = s.execute(
+                _select(Vertical).where(Vertical.name == "modelwatch")
+            ).scalar_one().id
+            primary = Article(
+                vertical_id=v_id,
+                hash="hash-story-primary",
+                slug="rewritten-cluster",
+                title="Primary feed headline",
+                link="https://example.com/cluster",
+                source="https://example.com/feed",
+                feed_region="US",
+                summary="feed placeholder",
+                summary_source="feed",  # NOT llm — the rewriter put text on the Story
+                published_at=seeded - timedelta(hours=3),
+            )
+            s.add(primary)
+            s.commit()
+            s.refresh(primary)
+            story = Story(
+                vertical_id=v_id,
+                canonical_headline="Rewritten multi-source headline",
+                narrative="The cluster narrative[1] with citations[2] and detail.",
+                why_this_matters="This is why it matters.",
+                primary_published_at=seeded - timedelta(hours=3),
+                importance=0.9,
+                state="published",
+            )
+            s.add(story)
+            s.commit()
+            s.add(
+                StoryArticle(
+                    story_id=story.id, article_id=primary.id, is_primary=True
+                )
+            )
+            s.commit()
+
+        digest = ng.generate_digest("modelwatch", now=seeded)
+        titles = [a["title"] for a in digest["articles"]]
+        assert "Rewritten multi-source headline" in titles
+        rec = next(a for a in digest["articles"] if a["slug"] == "rewritten-cluster")
+        # narrative -> clean lead (citation markers stripped)
+        assert "[1]" not in rec["summary"]
+        assert rec["why_this_matters"] == "This is why it matters."
+        assert rec["story_path"] == "/story/rewritten-cluster/"
+
 
 class TestSendPendingDigests:
     def _seed_subscribers(
