@@ -484,8 +484,10 @@
         <a href="/tools/">Tools</a>
         <a href="/entity/">Entities</a>
         <a href="/digest/">Digest</a>
+        {% if vertical.name != 'vested' %}
         <a href="/about">About</a>
         <a href="/methodology">Methodology</a>
+        {% endif %}
       </nav>
     </div>
   </header>
@@ -546,7 +548,7 @@
                   margin: 0.5rem 0 0; min-height: 1.1em;"></p>
       </form>
       <p>{{ vertical.display_name }} — operated by Auva Labs FZE.
-        <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/licensing">Licensing</a> · <a href="/methodology">Methodology</a> · <a href="/advertise">Advertise</a> · <a href="/feed.rss">RSS</a></p>
+        <a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/licensing">Licensing</a> · <a href="/methodology">Methodology</a> · <a href="/advertise">Advertise</a> · <a href="/feed.rss">RSS</a></p>
     </div>
   </footer>
   <script>
