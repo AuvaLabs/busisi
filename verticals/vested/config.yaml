@@ -160,6 +160,16 @@ always_escalate:
 # ---- Per-run LLM escalation budget ----
 escalation_budget: 25
 
+# ---- Curator (editorial gate) ----
+# require_topic_relevance: when true, the curator multiplies an article's
+# quality score by a topic-relevance factor derived from the classifier's
+# taxonomy labels. Articles with no personal-finance label (off-topic lifestyle
+# / general-news pieces that slip in via broad feeds) are knocked into the
+# "skip" tier so the front page stays on personal finance. See engine/core/
+# curator.py `score_topic_relevance`.
+curator:
+  require_topic_relevance: true
+
 # ---- Pipeline tuning ----
 fuzzy_dedup_threshold: 0.70
 news_cutoff_days: 14
