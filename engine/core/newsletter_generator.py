@@ -129,14 +129,19 @@ def _week_items(
 
         items: dict[str, dict[str, Any]] = {}
 
+        # Any story with a composed narrative — NOT only state=="published".
+        # The lifecycle moves a story to "archived" ~24h after publish, so a
+        # state filter would drop almost every past week. `narrative IS NOT
+        # NULL` is the same "has been published" signal the front page uses and
+        # already excludes draft/ready clusters (which have no narrative yet).
         story_rows = session.execute(
             select(Story, Article)
             .join(StoryArticle, StoryArticle.story_id == Story.id)
             .join(Article, Article.id == StoryArticle.article_id)
             .where(
                 Story.vertical_id == v.id,
-                Story.state == "published",
                 Story.narrative.is_not(None),
+                Story.state != "draft",
                 StoryArticle.is_primary.is_(True),
                 Article.deleted_at.is_(None),
                 Story.primary_published_at >= start,
