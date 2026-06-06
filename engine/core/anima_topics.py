@@ -100,16 +100,26 @@ def build_topics(
     ``key_stat`` or ``primary_source_url`` become single-story topics so no
     sourced item is lost. Topics are ranked by aggregate momentum.
     """
+    # Only finance-lane-classified stories are topic-worthy — drops uncategorised
+    # / off-topic items that slipped into the archive before curation.
+    pool = [s for s in stories if s.get("lane")]
+
     by_entity: dict[str, list[dict[str, Any]]] = {}
-    for s in stories:
+    for s in pool:
         for e in s.get("entities") or []:
             by_entity.setdefault(e, []).append(s)
+
+    # A theme entity present across too many stories (geographies, people) makes
+    # incoherent clusters — cap it so themes stay tight + on-subject.
+    broad_ceiling = max(5, int(0.30 * len(pool)))
 
     used: set[str] = set()
     topics: list[dict[str, Any]] = []
 
-    # Multi-story themed topics, largest cluster first (ties broken by name).
+    # Multi-story themed topics, largest tight cluster first (ties broken by name).
     for entity in sorted(by_entity, key=lambda e: (-len(by_entity[e]), e)):
+        if len(by_entity[entity]) > broad_ceiling:
+            continue  # too generic to be a coherent topic theme
         members = [s for s in by_entity[entity] if str(s.get("id")) not in used]
         if len(members) < min_cluster:
             continue
@@ -118,7 +128,7 @@ def build_topics(
         topics.append(_assemble(members, theme_entity=entity))
 
     # Leftover singles that still have something sourced to anchor a video on.
-    for s in stories:
+    for s in pool:
         if str(s.get("id")) in used:
             continue
         if not s.get("key_stat") and not s.get("primary_source_url"):
@@ -126,5 +136,7 @@ def build_topics(
         used.add(str(s.get("id")))
         topics.append(_assemble([s], theme_entity=None))
 
-    topics.sort(key=lambda t: t["momentum"], reverse=True)
+    # Sourced (fact-gateable) topics first, then by demand — the whole point is
+    # "facts with sources" for Anima's fact-gate.
+    topics.sort(key=lambda t: (bool(t["sources"]), t["momentum"]), reverse=True)
     return topics[:limit]
