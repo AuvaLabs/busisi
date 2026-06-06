@@ -9,6 +9,14 @@
       margin: 0 0 1rem 0;
       font-weight: 500;
     }
+    /* Vested "Bright": article headline in the Fraunces display serif so the
+       story page matches the redesigned front page (scoped; Embedding unaffected).
+       Colours/accents come from the cream+coral tokens in base.html already. */
+    [data-vertical="vested"] .story h1 {
+      font-family: var(--display, 'Fraunces', Georgia, serif);
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
     .meta {
       font-family: var(--sans);
       font-size: 0.75rem;

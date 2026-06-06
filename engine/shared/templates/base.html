@@ -57,7 +57,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  {% if vertical.name == 'vested' %}
+  <!-- Vested "Bright" theme: warm optimistic display serif (Vested only). -->
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&display=swap" rel="stylesheet">
+  {% endif %}
   <style>
     :root {
       --bg: #FBFAF7;
@@ -94,33 +98,101 @@
         --accent: {{ vertical.accent_dark or '#D49464' }};
       }
     }
-    /* ---- Vested: FT-inspired editorial theme (scoped; Embedding unaffected) ----
-       Salmon "paper" background, FT link-blue, serif masthead. Placed after the
-       :root/dark blocks so equal-specificity source order wins. Vested renders
-       theme="light" always, so the dark blocks above never apply here. */
+    /* ===== Vested: "Bright" theme — Positive.news-inspired, dopamine-ladder UX
+       (scoped; the Embedding vertical is fully unaffected). Warm cream paper,
+       rounded white cards, coral primary + a rotating bright palette for the
+       category tags, and gentle hover/entrance micro-interactions. Placed after
+       the :root/dark blocks so source order wins; Vested always renders
+       theme="light", so the dark blocks above never apply here. ===== */
     [data-vertical="vested"] {
-      --bg: #FFF1E5;
-      --bg-elev: #F9E7D6;
-      --bg-mute: #F2DDC9;
-      --text: #1A1A1A;
-      --text-mute: #5C5147;
-      --text-faint: #8C7F72;
-      --rule: #E6D9CC;
-      --link: #0F5499;
-      --link-hover: #0A3D75;
-      /* --accent stays Vested teal from config (accent_light #2D5F5D) */
+      --bg: #FFFBF2;          /* warm cream paper */
+      --bg-elev: #FFFFFF;     /* white cards */
+      --bg-mute: #FFF3E0;     /* soft warm tint */
+      --text: #1B1A17;
+      --text-mute: #6B655C;
+      --text-faint: #9A9388;
+      --rule: #EFE7D8;
+      --link: #1B1A17;        /* headlines read near-black, colour on hover */
+      --link-hover: #FF5A4D;
+      --accent: #FF5A4D;      /* coral primary (CTAs, wordmark dot) */
+      /* Dopamine palette — rotated across category tags for cheerful variety. */
+      --c1: #FF5A4D;  /* coral     */
+      --c2: #0FA3A3;  /* teal      */
+      --c3: #F5A623;  /* sunflower */
+      --c4: #7C5CFC;  /* violet    */
+      --c5: #2D9CDB;  /* sky       */
+      --c6: #2BB673;  /* leaf      */
+      --shadow: 0 1px 2px rgba(27,26,23,.04), 0 8px 24px rgba(27,26,23,.06);
+      --shadow-lift: 0 6px 16px rgba(27,26,23,.08), 0 18px 40px rgba(255,90,77,.12);
+      --display: 'Fraunces', Georgia, serif;
     }
+    /* Masthead: friendly cream bar, rounded pill nav, coral wordmark dot. */
     [data-vertical="vested"] header.site {
-      border-bottom: 2px solid var(--text);
-      padding-bottom: 1rem;
+      border-bottom: 0;
+      padding: 1.6rem 0 1.1rem;
+      margin-bottom: 1.75rem;
+      background: linear-gradient(180deg, #FFF6E6 0%, var(--bg) 100%);
     }
     [data-vertical="vested"] header.site .wordmark {
-      font-family: var(--serif);
+      font-family: var(--display);
       font-weight: 600;
-      font-size: 2rem;
-      letter-spacing: -0.01em;
+      font-size: 2.1rem;
+      letter-spacing: -0.02em;
     }
-    [data-vertical="vested"] nav.primary a:hover { color: var(--link); }
+    [data-vertical="vested"] header.site .wordmark .accent { color: var(--accent); }
+    [data-vertical="vested"] nav.primary { margin-top: 0.9rem; }
+    [data-vertical="vested"] nav.primary a {
+      display: inline-block;
+      margin: 0 0.4rem 0.4rem 0;
+      padding: 0.34rem 0.82rem;
+      border-radius: 999px;
+      background: #FFFFFF;
+      border: 1px solid var(--rule);
+      color: var(--text-mute);
+      letter-spacing: 0.07em;
+      transition: transform .15s ease, color .15s ease,
+                  background .15s ease, border-color .15s ease;
+    }
+    [data-vertical="vested"] nav.primary a:hover {
+      color: #FFFFFF;
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+    /* Footer: rounded, warmer panel + rounded-full CTA with a hover pop. */
+    [data-vertical="vested"] footer.site {
+      border-top: 0;
+      background: var(--bg-mute);
+      border-radius: 22px;
+      margin-top: 3.5rem;
+      padding: 0;
+      color: var(--text-mute);
+    }
+    [data-vertical="vested"] footer.site .container { padding: 2rem 1.75rem; }
+    [data-vertical="vested"] footer.site input[type="email"] {
+      border-radius: 999px !important;
+      border-color: var(--rule) !important;
+      background: #FFFFFF !important;
+    }
+    [data-vertical="vested"] footer.site button[type="submit"] {
+      border-radius: 999px !important;
+      border-color: var(--accent) !important;
+      color: #FFFFFF !important;
+      font-weight: 600 !important;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    [data-vertical="vested"] footer.site button[type="submit"]:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 6px 18px rgba(255,90,77,.30);
+    }
+    /* Respect users who prefer less motion. */
+    @media (prefers-reduced-motion: reduce) {
+      [data-vertical="vested"] *,
+      [data-vertical="vested"] *::before {
+        transition: none !important; animation: none !important;
+      }
+    }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body {
