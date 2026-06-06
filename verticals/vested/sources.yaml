@@ -142,6 +142,52 @@
 # https://blog.public.com/rss
 # https://blog.robinhood.com/rss
 
+# ====== Class D — Primary economic-data agencies (Anima fact-gate sources) ======
+#
+# Added 2026-06-06 for the Vested → Anima channel feeder. These agencies carry
+# the actual NUMBERS the finance channel fact-gates against. agency_class D =
+# primary/official; primary_source_url enrichment prefers these hosts. Some
+# agencies (FRED, Treasury Fiscal Data, SEC/EDGAR) are query APIs rather than
+# RSS — they are not listed as feeds here but ARE recognised as authoritative
+# hosts by engine/core/anima_enricher.py PRIMARY_HOSTS.
+
+- url: https://www.bls.gov/feed/bls_latest.rss
+  type: rss
+  region: US
+  agency_class: D
+  priority_weight: 1.00
+  category_hints: [salary-negotiation, taxes, retirement-planning]
+
+- url: https://www.bea.gov/rss.xml
+  type: rss
+  region: US
+  agency_class: D
+  priority_weight: 1.00
+  category_hints: [brokerage-investing, taxes]
+
+- url: https://blog.ssa.gov/feed/
+  type: rss
+  region: US
+  agency_class: D
+  priority_weight: 1.00
+  category_hints: [retirement-planning, financial-independence]
+
+- url: https://www.cbo.gov/publications/all/rss.xml
+  type: rss
+  region: US
+  agency_class: D
+  priority_weight: 1.00
+  category_hints: [taxes, retirement-planning, regulation]
+
+# Treasury press feed — re-enabled with the news-feed path. If this 404s again
+# source_health prunes it; TreasuryDirect / Fiscal Data remain primary hosts.
+- url: https://home.treasury.gov/system/files/126/rss.xml
+  type: rss
+  region: US
+  agency_class: D
+  priority_weight: 0.95
+  category_hints: [taxes, banking, regulation]
+
 # ====== Class C — Trade press / data publisher ======
 
 - url: https://www.levels.fyi/blog/rss
@@ -150,6 +196,72 @@
   agency_class: C
   priority_weight: 0.85
   category_hints: [salary-negotiation, equity-compensation]
+
+# Consumer-finance outlets (added 2026-06-06, Anima feeder). US + consumer-impact
+# weighting — these explain the numbers to households. Class C: usable as
+# supporting context, never the sole primary citation for a fact-gated stat.
+
+- url: https://www.investopedia.com/feedbuilder/feed/getfeed?feedName=rss_articles
+  type: rss
+  region: US
+  agency_class: C
+  priority_weight: 0.60
+  category_hints: [brokerage-investing, taxes, retirement-planning]
+
+- url: https://www.kiplinger.com/feeds/all.rss
+  type: rss
+  region: US
+  agency_class: C
+  priority_weight: 0.60
+  category_hints: [taxes, retirement-planning, brokerage-investing]
+
+- url: https://www.bankrate.com/feed/
+  type: rss
+  region: US
+  agency_class: C
+  priority_weight: 0.55
+  category_hints: [banking, credit, debt-management]
+
+- url: https://www.morningstar.com/feeds/articles.rss
+  type: rss
+  region: US
+  agency_class: C
+  priority_weight: 0.60
+  category_hints: [brokerage-investing, retirement-planning]
+
+# ====== Class E — Research aggregators (added 2026-06-06, Anima feeder) ======
+#
+# Think-tanks and fund-industry research bodies. They publish the studies behind
+# "Where Your Money Goes" / "Money, Explained" episodes (fund flows, fees, fiscal
+# outlook, demographics). Class E = research aggregator.
+
+- url: https://www.pewresearch.org/feed/
+  type: rss
+  region: US
+  agency_class: E
+  priority_weight: 0.75
+  category_hints: [retirement-planning, financial-independence]
+
+- url: https://www.taxpolicycenter.org/rss.xml
+  type: rss
+  region: US
+  agency_class: E
+  priority_weight: 0.75
+  category_hints: [taxes, regulation]
+
+- url: https://www.pgpf.org/rss
+  type: rss
+  region: US
+  agency_class: E
+  priority_weight: 0.70
+  category_hints: [taxes, retirement-planning]
+
+- url: https://www.ici.org/rss/news.xml
+  type: rss
+  region: US
+  agency_class: E
+  priority_weight: 0.70
+  category_hints: [brokerage-investing, retirement-planning]
 
 # DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
 # https://compensation.fyi/feed
