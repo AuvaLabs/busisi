@@ -34,6 +34,14 @@ _ENTITIES_LIMIT_DEFAULT = 100
 _ENTITIES_LIMIT_MAX = 500
 _STORIES_LIMIT_DEFAULT = 25
 _STORIES_LIMIT_MAX = 100
+_ANIMA_LIMIT_DEFAULT = 40
+_ANIMA_LIMIT_MAX = 100
+_ANIMA_DEFAULT_VERTICAL = "vested"
+_TOPICS_DAYS_DEFAULT = 14
+_TOPICS_DAYS_MAX = 90
+_TOPICS_LIMIT_DEFAULT = 20
+_TOPICS_LIMIT_MAX = 50
+_TOPICS_STORY_POOL = 150  # recent stories to cluster over
 
 
 def _client_ip(request: Request) -> str:
@@ -294,5 +302,283 @@ def list_stories(
             "count": len(data),
             "limit": limit,
             "data": data,
+        }
+    )
+
+
+# ---------------------------------------------------------------------------
+# Anima channel feeder — §3 JSON contract + economic-release calendar.
+# Additive surface for the Vested → Anima finance-channel feeder. Computed on
+# read from existing story data; see engine/core/anima_enricher.py.
+# ---------------------------------------------------------------------------
+
+
+def _ordered_labels(articles: list[Any]) -> list[str]:
+    """Union of member-article labels, highest confidence first.
+
+    ``Article.labels`` is a JSON list of ``{"label", "confidence"}`` dicts (or
+    bare strings on older rows). Aggregate by max confidence so the lane mapper
+    sees the cluster's strongest topic first.
+    """
+    best: dict[str, float] = {}
+    for a in articles:
+        for item in a.labels or []:
+            if isinstance(item, dict):
+                name = item.get("label")
+                conf = float(item.get("confidence", 0) or 0)
+            else:
+                name, conf = str(item), 0.0
+            if not name:
+                continue
+            if name not in best or conf > best[name]:
+                best[name] = conf
+    return [name for name, _ in sorted(best.items(), key=lambda kv: kv[1], reverse=True)]
+
+
+def _union_numerics(articles: list[Any]) -> list[dict[str, Any]]:
+    """Flatten every member article's ``structured_extract.numerics``."""
+    out: list[dict[str, Any]] = []
+    for a in articles:
+        extract = a.structured_extract or {}
+        if isinstance(extract, dict):
+            for n in extract.get("numerics", []) or []:
+                out.append(n)
+    return out
+
+
+def _load_anima_story_contracts(
+    session: Any,
+    vertical_id: int,
+    *,
+    limit: int,
+    since_dt: datetime | None,
+) -> list[dict[str, Any]]:
+    """Load recent published Stories for a vertical as §3 contract dicts.
+
+    Shared by /anima/feed and /anima/topics — returns the per-story enriched
+    records (key_stat, primary_source_url, lane, momentum, entities, ...).
+    """
+    from engine.core import anima_enricher
+    from engine.core.db import ArticleEntity, Entity, Story, StoryArticle, StorySource
+
+    stmt = (
+        select(Story)
+        .where(Story.vertical_id == vertical_id, Story.state == "published")
+        .order_by(Story.primary_published_at.desc())
+        .limit(limit)
+    )
+    if since_dt is not None:
+        stmt = stmt.where(Story.primary_published_at >= since_dt)
+    stories = session.execute(stmt).scalars().all()
+    story_ids = [s.id for s in stories]
+
+    members_by_story: dict[int, list[Any]] = {}
+    primary_article_by_story: dict[int, Any] = {}
+    article_ids: list[int] = []
+    if story_ids:
+        links = session.execute(
+            select(StoryArticle).where(StoryArticle.story_id.in_(story_ids))
+        ).scalars().all()
+        article_id_set = {ln.article_id for ln in links}
+        articles_by_id = {
+            a.id: a
+            for a in session.execute(
+                select(Article).where(Article.id.in_(article_id_set))
+            ).scalars().all()
+        }
+        article_ids = list(article_id_set)
+        for ln in links:
+            art = articles_by_id.get(ln.article_id)
+            if art is None:
+                continue
+            members_by_story.setdefault(ln.story_id, []).append(art)
+            if ln.is_primary:
+                primary_article_by_story[ln.story_id] = art
+
+    sources_by_story: dict[int, list[dict[str, Any]]] = {}
+    if story_ids:
+        for sr in session.execute(
+            select(StorySource)
+            .where(StorySource.story_id.in_(story_ids))
+            .order_by(StorySource.cited_as_n)
+        ).scalars().all():
+            sources_by_story.setdefault(sr.story_id, []).append(
+                {
+                    "host": sr.host,
+                    "agency_class": sr.agency_class,
+                    "source_url": sr.source_url,
+                }
+            )
+
+    entities_by_article: dict[int, list[str]] = {}
+    if article_ids:
+        rows = session.execute(
+            select(ArticleEntity.article_id, Entity.name)
+            .join(Entity, Entity.id == ArticleEntity.entity_id)
+            .where(ArticleEntity.article_id.in_(article_ids))
+        ).all()
+        for art_id, name in rows:
+            entities_by_article.setdefault(art_id, []).append(name)
+
+    out: list[dict[str, Any]] = []
+    for s in stories:
+        members = members_by_story.get(s.id, [])
+        primary = primary_article_by_story.get(s.id) or (
+            members[0] if members else None
+        )
+        url = primary.link if primary is not None else ""
+        summary = s.why_this_matters or (
+            primary.summary if primary is not None else ""
+        )
+        seen: set[str] = set()
+        entities: list[str] = []
+        for art in members:
+            for name in entities_by_article.get(art.id, []):
+                if name not in seen:
+                    seen.add(name)
+                    entities.append(name)
+        out.append(
+            anima_enricher.story_to_contract(
+                story_id=s.id,
+                headline=s.canonical_headline,
+                summary=summary,
+                url=url,
+                labels=_ordered_labels(members),
+                numerics=_union_numerics(members),
+                sources=sources_by_story.get(s.id, []),
+                entities=entities,
+                narrative=s.narrative,
+                published_at=s.primary_published_at,
+            )
+        )
+    return out
+
+
+@router.get("/anima/feed")
+def anima_feed(
+    request: Request,
+    vertical: str = Query(_ANIMA_DEFAULT_VERTICAL, min_length=1, max_length=64),
+    limit: int = Query(_ANIMA_LIMIT_DEFAULT, ge=1, le=_ANIMA_LIMIT_MAX),
+    since: str | None = Query(None),
+) -> JSONResponse:
+    """Structured story source for Anima — the §3 contract.
+
+    One array entry per recent published Story, enriched with the fields
+    Anima's scorer + fact-gate consume: ``key_stat``, ``primary_source_url``,
+    ``lane``, ``evergreen``, ``momentum``, ``entities``. Read-only; derived
+    on the fly from the existing cluster / source / extract data.
+    """
+    ip = _client_ip(request)
+    if not rate_limit_hit("api_v1", ip):
+        raise HTTPException(status_code=429, detail="too many requests")
+
+    since_dt = _parse_since(since)
+
+    Session = get_sessionmaker()
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical)
+        ).scalar_one_or_none()
+        if v is None:
+            raise HTTPException(status_code=404, detail=f"unknown vertical: {vertical}")
+        data = _load_anima_story_contracts(
+            session, v.id, limit=limit, since_dt=since_dt
+        )
+
+    return JSONResponse(
+        {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "vertical": vertical,
+            "count": len(data),
+            "limit": limit,
+            "since": since,
+            "stories": data,
+        }
+    )
+
+
+@router.get("/anima/calendar")
+def anima_calendar(
+    request: Request,
+    vertical: str = Query(_ANIMA_DEFAULT_VERTICAL, min_length=1, max_length=64),
+    upcoming_only: bool = Query(False),
+) -> JSONResponse:
+    """Economic-release calendar — scheduled data drops for episode pre-planning.
+
+    Static per-vertical ``calendar.yaml`` (CPI, FOMC, jobs, SS Trustees, ...).
+    Each entry carries the release date and the ``primary_source_url`` the
+    numbers land on. ``upcoming_only=true`` filters to future-dated releases.
+    """
+    ip = _client_ip(request)
+    if not rate_limit_hit("api_v1", ip):
+        raise HTTPException(status_code=429, detail="too many requests")
+
+    from engine.core import anima_enricher
+
+    try:
+        releases = anima_enricher.load_calendar(vertical)
+    except ValueError:
+        raise HTTPException(status_code=404, detail=f"unknown vertical: {vertical}")
+    if upcoming_only:
+        releases = [r for r in releases if r.get("is_upcoming")]
+
+    return JSONResponse(
+        {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "vertical": vertical,
+            "count": len(releases),
+            "upcoming_only": upcoming_only,
+            "releases": releases,
+        }
+    )
+
+
+@router.get("/anima/topics")
+def anima_topics(
+    request: Request,
+    vertical: str = Query(_ANIMA_DEFAULT_VERTICAL, min_length=1, max_length=64),
+    days: int = Query(_TOPICS_DAYS_DEFAULT, ge=1, le=_TOPICS_DAYS_MAX),
+    limit: int = Query(_TOPICS_LIMIT_DEFAULT, ge=1, le=_TOPICS_LIMIT_MAX),
+    min_cluster: int = Query(2, ge=1, le=10),
+) -> JSONResponse:
+    """Evidence-backed finance topic candidates for Anima (deterministic).
+
+    Clusters the last ``days`` of published Stories by shared entity into topic
+    candidates, each with a fact pack — every claim tied to its ``key_stat`` and
+    ``primary_source_url`` — ready for Anima to score, fact-gate, and storyboard.
+    Vested supplies the sourced facts; Anima does the creative selection and
+    scripting. No LLM in the request path — purely derived from the corpus.
+    """
+    ip = _client_ip(request)
+    if not rate_limit_hit("api_v1", ip):
+        raise HTTPException(status_code=429, detail="too many requests")
+
+    from datetime import timedelta
+
+    from engine.core import anima_topics as topics_mod
+
+    since_dt = datetime.now(timezone.utc) - timedelta(days=days)
+
+    Session = get_sessionmaker()
+    with Session() as session:
+        v = session.execute(
+            select(Vertical).where(Vertical.name == vertical)
+        ).scalar_one_or_none()
+        if v is None:
+            raise HTTPException(status_code=404, detail=f"unknown vertical: {vertical}")
+        stories = _load_anima_story_contracts(
+            session, v.id, limit=_TOPICS_STORY_POOL, since_dt=since_dt
+        )
+
+    topics = topics_mod.build_topics(stories, min_cluster=min_cluster, limit=limit)
+
+    return JSONResponse(
+        {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "vertical": vertical,
+            "days": days,
+            "story_pool": len(stories),
+            "count": len(topics),
+            "topics": topics,
         }
     )

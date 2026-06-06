@@ -1,0 +1,100 @@
+# Vested — economic-release calendar (Anima channel feeder).
+#
+# Scheduled data drops the finance channel can pre-plan timely episodes around.
+# Read by engine/core/anima_enricher.load_calendar() and exposed at
+# GET /api/v1/anima/calendar. Additive feature — nothing else depends on it.
+#
+# Schema (one entry per scheduled release):
+#   id:        stable kebab-case slug (required)
+#   name:      human label (required)
+#   agency:    publishing body (required)
+#   date:      next/known release date, ISO-8601 YYYY-MM-DD (required)
+#   recurrence: monthly | every-6-weeks | every-6-months | quarterly | annual | one-off
+#   primary_source_url: where the actual numbers land (required)
+#   lane:      suggested Anima lane (optional)
+#   entities:  canonical entities the release touches (optional)
+#   note:      one-line planning hint (optional)
+#
+# Dates are forward-looking scheduling hints maintained by the operator; the API
+# returns them verbatim and flags whether each is in the future. Stale past
+# entries are harmless (the consumer filters on `date`). Refresh quarterly.
+
+releases:
+  - id: cpi-jun-2026
+    name: Consumer Price Index (CPI)
+    agency: BLS
+    date: 2026-06-11
+    recurrence: monthly
+    primary_source_url: https://www.bls.gov/cpi/
+    lane: What It Really Costs
+    entities: [Bureau of Labor Statistics, Consumer Price Index]
+    note: Headline + core inflation; drives "what it really costs" episodes.
+
+  - id: jobs-report-jun-2026
+    name: Employment Situation (Jobs Report)
+    agency: BLS
+    date: 2026-06-05
+    recurrence: monthly
+    primary_source_url: https://www.bls.gov/news.release/empsit.toc.htm
+    lane: Where Your Money Goes
+    entities: [Bureau of Labor Statistics, nonfarm payrolls]
+    note: Payrolls + unemployment + wage growth.
+
+  - id: fomc-jun-2026
+    name: FOMC Rate Decision
+    agency: Federal Reserve
+    date: 2026-06-17
+    recurrence: every-6-weeks
+    primary_source_url: https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm
+    lane: Where Your Money Goes
+    entities: [Federal Reserve, federal funds rate]
+    note: Rate decision + dot plot; ripples into HYSA/mortgage/credit episodes.
+
+  - id: pce-may-2026
+    name: PCE Price Index
+    agency: BEA
+    date: 2026-06-26
+    recurrence: monthly
+    primary_source_url: https://www.bea.gov/data/personal-consumption-expenditures-price-index
+    lane: What It Really Costs
+    entities: [Bureau of Economic Analysis, PCE]
+    note: The Fed's preferred inflation gauge.
+
+  - id: gdp-q1-2026-third
+    name: GDP (Third Estimate, Q1)
+    agency: BEA
+    date: 2026-06-25
+    recurrence: quarterly
+    primary_source_url: https://www.bea.gov/data/gdp/gross-domestic-product
+    lane: Money, Explained
+    entities: [Bureau of Economic Analysis, GDP]
+
+  - id: ss-trustees-2026
+    name: Social Security Trustees Report
+    agency: SSA
+    date: 2026-06-30
+    recurrence: annual
+    primary_source_url: https://www.ssa.gov/oact/TR/
+    lane: The Cost of Waiting
+    entities: [Social Security, Trust Fund]
+    note: Trust-fund depletion year — the canonical "cost of waiting" stat.
+
+  - id: irs-contribution-limits-2027
+    name: Retirement Contribution Limits (next year)
+    agency: IRS
+    date: 2026-11-01
+    recurrence: annual
+    primary_source_url: https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-401k-and-profit-sharing-plan-contribution-limits
+    lane: The Cost of Waiting
+    entities: [IRS, 401(k), IRA]
+    note: 401(k)/IRA limits for the coming tax year.
+
+  - id: treasury-i-bond-rate-2026-11
+    name: I-Bond Rate Reset
+    agency: Treasury
+    date: 2026-11-01
+    recurrence: every-6-months
+    primary_source_url: https://www.treasurydirect.gov/savings-bonds/i-bonds/i-bonds-interest-rates/
+    lane: Where Your Money Goes
+    entities: [TreasuryDirect, I-Bond]
+    note: Semi-annual I-bond composite rate reset (May + Nov).
