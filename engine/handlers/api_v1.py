@@ -361,9 +361,17 @@ def _load_anima_story_contracts(
     from engine.core import anima_enricher
     from engine.core.db import ArticleEntity, Entity, Story, StoryArticle, StorySource
 
+    # NOT state=="published": the lifecycle archives a story ~24h after publish,
+    # so a state filter would miss almost the whole corpus. `narrative IS NOT
+    # NULL` is the same "has been published" signal the front page + digest use,
+    # and it excludes draft/ready clusters (which have no narrative yet).
     stmt = (
         select(Story)
-        .where(Story.vertical_id == vertical_id, Story.state == "published")
+        .where(
+            Story.vertical_id == vertical_id,
+            Story.narrative.is_not(None),
+            Story.state != "draft",
+        )
         .order_by(Story.primary_published_at.desc())
         .limit(limit)
     )
