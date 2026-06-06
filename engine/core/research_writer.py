@@ -154,7 +154,7 @@ def _members_with_extracts(session, story_id: int) -> list[dict[str, Any]]:
                 "feed_host": feed_host,
                 "agency_class": "?",  # filled by caller
                 "title": article.title,
-                "body": (article.body or "")[:3000],  # tone reference (prompt)
+                "body": (article.body or "")[:8000],  # tone reference (prompt)
                 "full_body": article.body or "",  # untruncated — validator pool
                 **(article.structured_extract or {}),
             }
@@ -200,7 +200,7 @@ def pass1_merge(
             response_format={"type": "json_object"},
             caller="pass1_merge",
             model=llm_routing.model_for("pass1_merge", vertical=vertical),
-            max_tokens=2500,
+            max_tokens=4000,
             vertical_id=vertical_id,
             story_id=story_id,
         )
@@ -275,7 +275,7 @@ def _pass2_user_prompt(
         + "\n\nsources:\n"
         + json.dumps(sources, indent=2)
         + "\n\ntone_excerpt:\n"
-        + tone_excerpt[:6000]
+        + tone_excerpt[:12000]
         + "\n\nReturn the composed narrative as JSON."
     )
 
@@ -315,7 +315,7 @@ def pass2_compose(
             response_format={"type": "json_object"},
             caller="pass2_compose",
             model=llm_routing.model_for("pass2_compose", vertical=vertical),
-            max_tokens=3000,
+            max_tokens=5000,
             vertical_id=vertical_id,
             story_id=story_id,
         )
@@ -696,7 +696,7 @@ def _pass_orphan_user_prompt(
         + "\n\nsources:\n"
         + json.dumps(sources, indent=2)
         + "\n\nprimary_body:\n"
-        + primary_body[:6000]
+        + primary_body[:12000]
         + "\n\nReturn the composed narrative as JSON."
     )
 
@@ -745,7 +745,7 @@ def pass_orphan_compose(
             response_format={"type": "json_object"},
             caller="rewrite_single",
             model=llm_routing.model_for("rewrite_single", vertical=vertical),
-            max_tokens=3000,
+            max_tokens=5000,
             vertical_id=vertical_id,
             article_id=article_id,
         )
@@ -900,8 +900,9 @@ def rewrite_orphan(
 
         # Pull research-bundle context. Honest expansion lever: more grounded
         # source material → model produces proportionally longer narrative.
-        # 12 bundles × 2500 chars ≈ 30k chars of context; well within the
-        # premium-tier context budget after primary_body[:6000].
+        # 12 bundles × 3500 chars ≈ 42k chars of context; with primary_body
+        # [:12000] + extracts that's ~15k input tokens — still within the
+        # 32K premium-tier context budget alongside max_tokens=5000.
         bundle_rows = (
             session.execute(
                 select(ResearchBundle)
@@ -930,7 +931,7 @@ def rewrite_orphan(
                 "n": i + 2,  # primary is [1]; bundles start at [2]
                 "url": b.source_url,
                 "host": b.host,
-                "excerpt": (b.excerpt or "")[:2500],
+                "excerpt": (b.excerpt or "")[:3500],
             }
             for i, b in enumerate(bundle_rows)
         ]
