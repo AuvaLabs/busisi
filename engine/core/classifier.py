@@ -56,23 +56,39 @@ def _keyword_classify(
     title: str,
     content: str | None,
     taxonomy: dict[str, list[str]],
+    title_anchored: frozenset[str] | set[str] = frozenset(),
 ) -> list[dict[str, Any]]:
-    """Score each topic by counting regex hits in title (3x) + content."""
-    text = title.lower()
-    weighted_text = " ".join([text] * 3)
+    """Score each topic by counting regex hits in title (3x) + content.
+
+    ``title_anchored`` names broad/dual-use lanes (e.g. macro-economy) for which
+    a body-only mention is NOT enough: a finance term appearing once in the body
+    of an off-topic article (a social-media story that mentions "inflation")
+    must not tag it macro. For those lanes the article's subject — its title —
+    has to carry the term, or the label is dropped.
+    """
+    title_l = title.lower()
+    weighted_text = " ".join([title_l] * 3)
     if content:
         weighted_text += " " + content.lower()[:MAX_CONTENT_CHARS]
 
     out: list[dict[str, Any]] = []
     for topic, patterns in taxonomy.items():
         hits = 0
+        title_hit = False
+        anchored = topic in title_anchored
         for pat in patterns:
             try:
                 hits += len(re.findall(pat, weighted_text, flags=re.IGNORECASE))
+                if anchored and not title_hit and re.search(
+                    pat, title_l, flags=re.IGNORECASE
+                ):
+                    title_hit = True
             except re.error as exc:
                 logger.debug("Invalid regex for topic %s: %s", topic, exc)
         if hits == 0:
             continue
+        if anchored and not title_hit:
+            continue  # body-only mention of a broad lane → not the subject
         confidence = min(90, 30 + hits * 12)
         out.append({"label": topic, "confidence": confidence})
 
@@ -152,9 +168,10 @@ def classify_article(
     vertical: str = "default",
     always_escalate: list[str] | None = None,
     escalation_budget: int = _DEFAULT_ESCALATION_BUDGET,
+    title_anchored: frozenset[str] | set[str] = frozenset(),
 ) -> dict[str, Any]:
     """Classify an article using keyword-first, LLM-escalation hybrid."""
-    keyword_labels = _keyword_classify(title, content, taxonomy)
+    keyword_labels = _keyword_classify(title, content, taxonomy, title_anchored)
     top_conf = max((label["confidence"] for label in keyword_labels), default=0)
     keyword_topics = {label["label"] for label in keyword_labels}
 

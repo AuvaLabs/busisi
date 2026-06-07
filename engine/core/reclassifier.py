@@ -44,6 +44,17 @@ def _load_taxonomy(vertical_name: str) -> dict[str, list[str]]:
     return topics or {}
 
 
+def _load_title_anchored(vertical_name: str) -> frozenset[str]:
+    """Read ``classifier.title_anchored_topics`` from config. Empty on miss."""
+    path = vertical_dir(vertical_name) / "config.yaml"
+    if not path.exists():
+        return frozenset()
+    with open(path, encoding="utf-8") as fp:
+        data = yaml.safe_load(fp) or {}
+    block = data.get("classifier", {}) if isinstance(data, dict) else {}
+    return frozenset((block or {}).get("title_anchored_topics", []) or [])
+
+
 def _label_key(labels: Any) -> list[tuple[str, int]]:
     """Normalise a labels list to a comparable [(name, confidence)] sorted."""
     out: list[tuple[str, int]] = []
@@ -64,6 +75,7 @@ def reclassify_vertical(
     *,
     max_articles: int = 100_000,
     taxonomy: dict[str, list[str]] | None = None,
+    title_anchored: frozenset[str] | None = None,
     dry_run: bool = False,
 ) -> dict[str, int]:
     """Keyword-reclassify a vertical's stored articles. Returns counts.
@@ -73,6 +85,8 @@ def reclassify_vertical(
     """
     if taxonomy is None:
         taxonomy = _load_taxonomy(vertical_name)
+    if title_anchored is None:
+        title_anchored = _load_title_anchored(vertical_name)
     counts = {
         "considered": 0,
         "changed": 0,
@@ -114,6 +128,7 @@ def reclassify_vertical(
                 vertical=vertical_name,
                 always_escalate=[],
                 escalation_budget=0,  # keyword-only — free + deterministic
+                title_anchored=title_anchored,
             )
             new_labels = result["labels"]
             had = bool(_label_key(article.labels))
