@@ -15,11 +15,14 @@ import yaml
 from engine.core.classifier import _keyword_classify
 
 _CONFIG = Path(__file__).resolve().parents[2] / "verticals" / "vested" / "config.yaml"
-TAXONOMY: dict[str, list[str]] = yaml.safe_load(_CONFIG.read_text())["topics"]
+_CFG = yaml.safe_load(_CONFIG.read_text())
+TAXONOMY: dict[str, list[str]] = _CFG["topics"]
+ANCHORED = frozenset(_CFG.get("classifier", {}).get("title_anchored_topics", []))
 
 
 def _labels(title: str, content: str = "") -> set[str]:
-    return {d["label"] for d in _keyword_classify(title, content, TAXONOMY)}
+    # Mirror production: macro/markets/fiscal are title-anchored.
+    return {d["label"] for d in _keyword_classify(title, content, TAXONOMY, ANCHORED)}
 
 
 class TestMacroMarketsFiscalLanes:
@@ -52,6 +55,31 @@ class TestNoFalsePositives:
             "Federal agency X accounts are getting far more engagement",
         ):
             assert _labels(title) == set(), title
+
+
+class TestTitleAnchoring:
+    """Broad lanes (macro/markets/fiscal) require the term in the TITLE — a
+    body-only mention must not tag an off-topic article. Guards the ~3% leak
+    the feed audit surfaced (a social story mentioning 'inflation' once)."""
+
+    def test_body_only_macro_mention_is_dropped(self) -> None:
+        labels = _labels(
+            "Federal agency X accounts are getting far more engagement",
+            "the body happens to mention inflation and the jobs report once",
+        )
+        assert not (labels & ANCHORED), labels
+
+    def test_body_only_fiscal_mention_is_dropped(self) -> None:
+        labels = _labels(
+            "Americans say keeping up with the news is crucial",
+            "the study lists Social Security and Medicare as example topics",
+        )
+        assert "fiscal-policy" not in labels
+
+    def test_title_carried_macro_survives(self) -> None:
+        # Subject is macro → keep it even with no body.
+        assert "macro-economy" in _labels("Inflation cooled to 2.3% in May")
+        assert "markets" in _labels("Why the SpaceX IPO will affect your 401(k)")
 
 
 class TestRegexFixes:

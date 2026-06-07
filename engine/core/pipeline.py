@@ -137,6 +137,9 @@ def run_vertical(
     guard_patterns: list[str] = cfg.get("non_dedup_keys", []) or []
     always_escalate: list[str] = cfg.get("always_escalate", []) or []
     budget: int = int(cfg.get("escalation_budget", 30))
+    title_anchored: frozenset[str] = frozenset(
+        (cfg.get("classifier", {}) or {}).get("title_anchored_topics", []) or []
+    )
 
     feeds = feed_loader.load_feeds(vertical_id)
     if max_feeds is not None:
@@ -171,6 +174,7 @@ def run_vertical(
                 vertical=vertical_id,
                 always_escalate=always_escalate,
                 escalation_budget=budget,
+                title_anchored=title_anchored,
             )
             article["labels"] = result["labels"]
             article["_classifier"] = {

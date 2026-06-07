@@ -154,6 +154,9 @@ topics:
   # SPECIFIC (named indices, acronyms, multi-word anchors) — bare "Fed"/"rates"/
   # "economy"/"market" over-match general news. These directly affect the
   # $100K-$500K audience's money (rate path, inflation, 401(k) balances).
+  # TITLE-ANCHORED (see classifier.title_anchored_topics below): a body-only
+  # mention of "inflation"/"Social Security" won't tag an off-topic article —
+  # the subject (title) must carry the term.
   macro-economy:
     - \binflation\b
     - \bdisinflation\b
@@ -197,6 +200,18 @@ topics:
     - \bfiscal (policy|outlook|year|cliff)\b
     - \btax policy\b
     - \b(CBO|Congressional Budget Office)\b
+
+# ---- Classifier ----
+# title_anchored_topics: broad/dual-use lanes whose terms occur incidentally in
+# the BODY of off-topic articles (a social-media story that mentions "inflation"
+# once, a Pew media study that lists "Social Security"). For these, the
+# classifier requires the term in the article's TITLE — the subject — before
+# applying the label. Narrow lanes (RSU, 1031 exchange) are left body-matchable.
+classifier:
+  title_anchored_topics:
+    - macro-economy
+    - markets
+    - fiscal-policy
 
 # ---- Entity types ----
 entity_types:
