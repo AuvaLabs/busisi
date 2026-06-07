@@ -172,6 +172,47 @@ always_escalate:
 # ---- Per-run LLM escalation budget ----
 escalation_budget: 25
 
+# ---- Researcher (Exa) — finance + fiscal-research source bias ----
+# Read by engine/core/researcher._load_research_opts. Biases Exa neural search
+# toward authoritative finance press, primary agencies, AND fiscal-policy
+# research orgs (Peterson Foundation et al.) so per-article bundles carry
+# real, sourced research — not arXiv/Wikipedia. Per-vertical; Embedding keeps
+# its AI/ML defaults (no block).
+research:
+  # No category: a "news" category would drop research reports (pgpf/CBO/
+  # Brookings publish reports, not news). Omitting it lets the include_domains
+  # allowlist return BOTH news AND research papers from authoritative sources.
+  include_domains:
+    # fiscal-policy / economic research orgs (the pgpf.org family)
+    - pgpf.org
+    - taxpolicycenter.org
+    - crfb.org
+    - brookings.edu
+    - urban.org
+    - cbpp.org
+    - pewresearch.org
+    - ici.org
+    - bipartisanpolicy.org
+    - epi.org
+    # primary data agencies
+    - bls.gov
+    - bea.gov
+    - federalreserve.gov
+    - irs.gov
+    - cbo.gov
+    - treasury.gov
+    - treasurydirect.gov
+    - ssa.gov
+    - consumerfinance.gov
+    # authoritative finance press / consumer-finance
+    - reuters.com
+    - bloomberg.com
+    - wsj.com
+    - ft.com
+    - morningstar.com
+    - kiplinger.com
+    - nerdwallet.com
+
 # ---- Curator (editorial gate) ----
 # require_topic_relevance: when true, the curator multiplies an article's
 # quality score by a topic-relevance factor derived from the classifier's
