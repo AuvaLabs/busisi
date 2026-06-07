@@ -160,3 +160,14 @@ escalation_budget: 30
 fuzzy_dedup_threshold: 0.65
 news_cutoff_days: 7
 reference_cutoff_days: null
+
+# ---- Research ----
+research:
+  # Exa DISABLED on embedding for now (exa_tiers: []). Embedding has no
+  # curated research allowlist, so paid Exa here is unfocused general-web
+  # search — low value next to its free academic anchor (arXiv) + Wikipedia,
+  # which still run on every article. Re-enable once V1 gets the same
+  # ecosystem Vested has: a vetted include_domains allowlist (papers, model
+  # cards, lab/research orgs) + the fact-sourcing requirements. Until then,
+  # all paid Exa budget is concentrated on Vested where it has clear value.
+  exa_tiers: []

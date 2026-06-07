@@ -530,3 +530,24 @@ class TestExaGating:
         assert calls["exa"] == 0
         assert calls["arxiv"] >= 1  # arXiv + wiki still run (free context)
         assert calls["wiki"] >= 1
+
+
+class TestResolveExaTiers:
+    """exa_tiers config semantics: absent → researcher default; present list
+    honored verbatim; empty list disables paid Exa entirely."""
+
+    def test_absent_defaults_to_researcher(self) -> None:
+        assert r._resolve_exa_tiers({}) == {"researcher"}
+
+    def test_explicit_list_honored(self) -> None:
+        assert r._resolve_exa_tiers({"exa_tiers": ["researcher"]}) == {"researcher"}
+        assert r._resolve_exa_tiers(
+            {"exa_tiers": ["researcher", "standard"]}
+        ) == {"researcher", "standard"}
+
+    def test_empty_list_disables_exa(self) -> None:
+        # embedding's policy: exa_tiers: [] → no tier ever matches → Exa off.
+        tiers = r._resolve_exa_tiers({"exa_tiers": []})
+        assert tiers == set()
+        assert "researcher" not in tiers
+        assert "standard" not in tiers

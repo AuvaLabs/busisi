@@ -185,6 +185,23 @@ def _load_research_opts(vertical_name: str) -> dict[str, Any]:
     return block if isinstance(block, dict) else {}
 
 
+def _resolve_exa_tiers(opts: dict[str, Any]) -> set[str]:
+    """Curator tiers permitted to spend the capped (paid) Exa budget.
+
+    Config `research.exa_tiers` semantics:
+      absent          → default {"researcher"} (deep picks only)
+      list, e.g. [..] → honored verbatim
+      empty list []   → no tier matches → Exa DISABLED for the vertical
+
+    Routine `standard` news always keeps free arXiv + Wikipedia regardless;
+    only the paid source is gated.
+    """
+    raw = opts.get("exa_tiers")
+    if isinstance(raw, list):
+        return {str(t) for t in raw}
+    return {"researcher"}
+
+
 def expand_queries(article: Article, entities: list[Entity]) -> list[str]:
     """Build up to 3 search queries for one article.
 
@@ -572,15 +589,7 @@ def research_pending(
     opts = _load_research_opts(vertical)
     exa_category = opts.get("category") or None
     exa_domains = opts.get("include_domains") or None
-    # Which curator tiers may spend the (capped) paid Exa budget. Default:
-    # researcher-only — routine `standard` news gets free arXiv+Wikipedia but
-    # no Exa. Override per-vertical via config `research.exa_tiers`.
-    raw_tiers = opts.get("exa_tiers")
-    exa_tiers = (
-        {str(t) for t in raw_tiers}
-        if isinstance(raw_tiers, list) and raw_tiers
-        else {"researcher"}
-    )
+    exa_tiers = _resolve_exa_tiers(opts)
     SessionLocal = get_sessionmaker()
     counts = {"considered": 0, "researched": 0, "empty": 0, "failed": 0, "exa": 0}
     with SessionLocal() as session:
