@@ -17,21 +17,23 @@
 
 # ====== Class A — Wire / news agency ======
 
-- url: https://www.bloomberg.com/feed/podcast/wealth.xml
-  type: rss
-  region: US
-  agency_class: A
-  priority_weight: 0.95
-  category_hints: [brokerage-investing, retirement-planning]
+# DISABLED 2026-06-07 (403 IP/CF-blocked):
+#   - url: https://www.bloomberg.com/feed/podcast/wealth.xml
+#     type: rss
+#     region: US
+#     agency_class: A
+#     priority_weight: 0.95
+#     category_hints: [brokerage-investing, retirement-planning]
 
 # ====== Class B — Newspaper of record ======
 
-- url: https://feeds.a.dj.com/rss/RSSPersonalFinance.xml
-  type: rss
-  region: US
-  agency_class: B
-  priority_weight: 0.95
-  category_hints: [taxes, retirement-planning, brokerage-investing]
+# DISABLED 2026-06-07 (403 IP/CF-blocked (WSJ)):
+#   - url: https://feeds.a.dj.com/rss/RSSPersonalFinance.xml
+#     type: rss
+#     region: US
+#     agency_class: B
+#     priority_weight: 0.95
+#     category_hints: [taxes, retirement-planning, brokerage-investing]
 
 # REMOVED 2026-06-06 — BBC general Business RSS injected off-topic UK lifestyle
 # pieces (e.g. "best World Cup drinks and snacks") onto a US personal-finance
@@ -53,12 +55,13 @@
   priority_weight: 0.85
   category_hints: [brokerage-investing, taxes]
 
-- url: https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/your-money/index.html/rss.xml
-  type: rss
-  region: US
-  agency_class: B
-  priority_weight: 0.90
-  category_hints: [brokerage-investing, retirement-planning]
+# DISABLED 2026-06-07 (404 gone):
+#   - url: https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/your-money/index.html/rss.xml
+#     type: rss
+#     region: US
+#     agency_class: B
+#     priority_weight: 0.90
+#     category_hints: [brokerage-investing, retirement-planning]
 
 - url: https://rss.nytimes.com/services/xml/rss/nyt/DealBook.xml
   type: rss
@@ -69,12 +72,13 @@
 
 # ====== Class D — Regulators (primary source) ======
 
-- url: https://www.irs.gov/newsroom/feed
-  type: rss
-  region: US
-  agency_class: D
-  priority_weight: 1.00
-  category_hints: [taxes, regulation]
+# DISABLED 2026-06-07 (404 — IRS discontinued RSS):
+#   - url: https://www.irs.gov/newsroom/feed
+#     type: rss
+#     region: US
+#     agency_class: D
+#     priority_weight: 1.00
+#     category_hints: [taxes, regulation]
 
 # DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
 # https://home.treasury.gov/news/press-releases/feed
@@ -123,12 +127,13 @@
   priority_weight: 0.90
   category_hints: [brokerage-investing]
 
-- url: https://investor.vanguard.com/investing/insights/feed
-  type: rss
-  region: US
-  agency_class: D
-  priority_weight: 0.90
-  category_hints: [brokerage-investing, retirement-planning]
+# DISABLED 2026-06-07 (404 gone, no replacement):
+#   - url: https://investor.vanguard.com/investing/insights/feed
+#     type: rss
+#     region: US
+#     agency_class: D
+#     priority_weight: 0.90
+#     category_hints: [brokerage-investing, retirement-planning]
 
 - url: https://www.wealthfront.com/blog/feed
   type: rss
@@ -157,19 +162,20 @@
   priority_weight: 1.00
   category_hints: [salary-negotiation, taxes, retirement-planning]
 
-- url: https://www.bea.gov/rss.xml
+- url: https://apps.bea.gov/rss/rss.xml   # url fixed 2026-06-07
   type: rss
   region: US
   agency_class: D
   priority_weight: 1.00
   category_hints: [brokerage-investing, taxes]
 
-- url: https://blog.ssa.gov/feed/
-  type: rss
-  region: US
-  agency_class: D
-  priority_weight: 1.00
-  category_hints: [retirement-planning, financial-independence]
+# DISABLED 2026-06-07 (403 blocked):
+#   - url: https://blog.ssa.gov/feed/
+#     type: rss
+#     region: US
+#     agency_class: D
+#     priority_weight: 1.00
+#     category_hints: [retirement-planning, financial-independence]
 
 - url: https://www.cbo.gov/publications/all/rss.xml
   type: rss
@@ -189,37 +195,41 @@
 
 # ====== Class C — Trade press / data publisher ======
 
-- url: https://www.levels.fyi/blog/rss
-  type: rss
-  region: US
-  agency_class: C
-  priority_weight: 0.85
-  category_hints: [salary-negotiation, equity-compensation]
+# DISABLED 2026-06-07 (403 blocked):
+#   - url: https://www.levels.fyi/blog/rss
+#     type: rss
+#     region: US
+#     agency_class: C
+#     priority_weight: 0.85
+#     category_hints: [salary-negotiation, equity-compensation]
 
 # Consumer-finance outlets (added 2026-06-06, Anima feeder). US + consumer-impact
 # weighting — these explain the numbers to households. Class C: usable as
 # supporting context, never the sole primary citation for a fact-gated stat.
 
-- url: https://www.investopedia.com/feedbuilder/feed/getfeed?feedName=rss_articles
-  type: rss
-  region: US
-  agency_class: C
-  priority_weight: 0.60
-  category_hints: [brokerage-investing, taxes, retirement-planning]
+# DISABLED 2026-06-07 (403 blocked):
+#   - url: https://www.investopedia.com/feedbuilder/feed/getfeed?feedName=rss_articles
+#     type: rss
+#     region: US
+#     agency_class: C
+#     priority_weight: 0.60
+#     category_hints: [brokerage-investing, taxes, retirement-planning]
 
-- url: https://www.kiplinger.com/feeds/all.rss
-  type: rss
-  region: US
-  agency_class: C
-  priority_weight: 0.60
-  category_hints: [taxes, retirement-planning, brokerage-investing]
+# DISABLED 2026-06-07 (404 gone):
+#   - url: https://www.kiplinger.com/feeds/all.rss
+#     type: rss
+#     region: US
+#     agency_class: C
+#     priority_weight: 0.60
+#     category_hints: [taxes, retirement-planning, brokerage-investing]
 
-- url: https://www.bankrate.com/feed/
-  type: rss
-  region: US
-  agency_class: C
-  priority_weight: 0.55
-  category_hints: [banking, credit, debt-management]
+# DISABLED 2026-06-07 (404 gone):
+#   - url: https://www.bankrate.com/feed/
+#     type: rss
+#     region: US
+#     agency_class: C
+#     priority_weight: 0.55
+#     category_hints: [banking, credit, debt-management]
 
 - url: https://www.morningstar.com/feeds/articles.rss
   type: rss
@@ -241,12 +251,13 @@
   priority_weight: 0.75
   category_hints: [retirement-planning, financial-independence]
 
-- url: https://www.taxpolicycenter.org/rss.xml
-  type: rss
-  region: US
-  agency_class: E
-  priority_weight: 0.75
-  category_hints: [taxes, regulation]
+# DISABLED 2026-06-07 (403 blocked):
+#   - url: https://www.taxpolicycenter.org/rss.xml
+#     type: rss
+#     region: US
+#     agency_class: E
+#     priority_weight: 0.75
+#     category_hints: [taxes, regulation]
 
 - url: https://www.pgpf.org/rss
   type: rss
@@ -255,12 +266,13 @@
   priority_weight: 0.70
   category_hints: [taxes, retirement-planning]
 
-- url: https://www.ici.org/rss/news.xml
-  type: rss
-  region: US
-  agency_class: E
-  priority_weight: 0.70
-  category_hints: [brokerage-investing, retirement-planning]
+# DISABLED 2026-06-07 (404 gone):
+#   - url: https://www.ici.org/rss/news.xml
+#     type: rss
+#     region: US
+#     agency_class: E
+#     priority_weight: 0.70
+#     category_hints: [brokerage-investing, retirement-planning]
 
 # DISABLED 2026-05-02 (404/SSL/DNS). Replace when correct URL identified.
 # https://compensation.fyi/feed
@@ -279,12 +291,13 @@
 # rewriter. The narrative validator rejects rewrites whose sole inline citation
 # is a Class F source.
 
-- url: https://thefinancebuff.com/feed
-  type: rss
-  region: US
-  agency_class: F
-  priority_weight: 0.75
-  category_hints: [taxes, retirement-planning]
+# DISABLED 2026-06-07 (403 blocked):
+#   - url: https://thefinancebuff.com/feed
+#     type: rss
+#     region: US
+#     agency_class: F
+#     priority_weight: 0.75
+#     category_hints: [taxes, retirement-planning]
 
 - url: https://www.physicianonfire.com/feed
   type: rss
@@ -300,12 +313,13 @@
   priority_weight: 0.75
   category_hints: [taxes, brokerage-investing, financial-independence]
 
-- url: https://www.mrmoneymustache.com/feed
-  type: rss
-  region: US
-  agency_class: F
-  priority_weight: 0.70
-  category_hints: [financial-independence]
+# DISABLED 2026-06-07 (403 blocked):
+#   - url: https://www.mrmoneymustache.com/feed
+#     type: rss
+#     region: US
+#     agency_class: F
+#     priority_weight: 0.70
+#     category_hints: [financial-independence]
 
 - url: https://www.choosefi.com/feed
   type: rss

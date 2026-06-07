@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 _FEED_HEADERS = {
     "User-Agent": (
-        "GrimoireBot/0.1 (+https://grimoire.local/about) "
+        "GrimoireBot/0.1 (+https://embedding.report/about) "
         "(content aggregator; respects robots.txt)"
     ),
     "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
