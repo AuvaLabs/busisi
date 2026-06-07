@@ -16,7 +16,14 @@
 # quality harness, which audits the .local hosts, measures the same headers
 # production serves. Single source of truth; edit here, applies everywhere.
 (sec_headers) {
-    import sec_headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        -Server
+    }
 }
 
 # ---- Production site blocks (real domains) -------------------------------
