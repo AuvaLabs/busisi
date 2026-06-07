@@ -133,7 +133,7 @@
   priority_weight: 1.00
   category_hints: [research-paper, application]
 
-- url: https://research.ibm.com/blog/rss.xml
+- url: https://www.ibm.com/blogs/research/feed/   # url fixed 2026-06-07
   type: rss
   region: US
   agency_class: D
@@ -170,19 +170,21 @@
   priority_weight: 0.85
   category_hints: [regulation, commentary, safety-research]
 
-- url: https://www.aei.org/policy-areas/technology-innovation/feed/
-  type: rss
-  region: US
-  agency_class: D
-  priority_weight: 0.85
-  category_hints: [regulation, commentary]
+# DISABLED 2026-06-07 (403 blocked):
+#   - url: https://www.aei.org/policy-areas/technology-innovation/feed/
+#     type: rss
+#     region: US
+#     agency_class: D
+#     priority_weight: 0.85
+#     category_hints: [regulation, commentary]
 
-- url: https://www.aisi.gov.uk/rss.xml
-  type: rss
-  region: UK
-  agency_class: D
-  priority_weight: 0.85
-  category_hints: [regulation, safety-research]
+# DISABLED 2026-06-07 (404 — agency feed gone):
+#   - url: https://www.aisi.gov.uk/rss.xml
+#     type: rss
+#     region: UK
+#     agency_class: D
+#     priority_weight: 0.85
+#     category_hints: [regulation, safety-research]
 
 # ====== Class E — Research aggregators ======
 
@@ -233,12 +235,13 @@
   priority_weight: 0.90
   category_hints: [research-paper, benchmark]
 
-- url: https://huggingface.co/api/daily-papers/feed
-  type: rss
-  region: Global
-  agency_class: E
-  priority_weight: 0.85
-  category_hints: [research-paper]
+# DISABLED 2026-06-07 (404 — HF removed this API feed):
+#   - url: https://huggingface.co/api/daily-papers/feed
+#     type: rss
+#     region: Global
+#     agency_class: E
+#     priority_weight: 0.85
+#     category_hints: [research-paper]
 
 # ====== Class C — Trade press (original AI reporting) ======
 
@@ -305,12 +308,13 @@
   priority_weight: 0.85
   category_hints: [commentary, model-release]
 
-- url: https://www.deeplearning.ai/the-batch/feed/
-  type: rss
-  region: US
-  agency_class: F
-  priority_weight: 0.85
-  category_hints: [commentary]
+# DISABLED 2026-06-07 (404 gone):
+#   - url: https://www.deeplearning.ai/the-batch/feed/
+#     type: rss
+#     region: US
+#     agency_class: F
+#     priority_weight: 0.85
+#     category_hints: [commentary]
 
 - url: https://lastweekinai.substack.com/feed
   type: rss
@@ -319,12 +323,13 @@
   priority_weight: 0.85
   category_hints: [commentary]
 
-- url: https://www.bensbites.co/feed
-  type: rss
-  region: Global
-  agency_class: F
-  priority_weight: 0.85
-  category_hints: [commentary, product-launch]
+# DISABLED 2026-06-07 (404 — defunct):
+#   - url: https://www.bensbites.co/feed
+#     type: rss
+#     region: Global
+#     agency_class: F
+#     priority_weight: 0.85
+#     category_hints: [commentary, product-launch]
 
 - url: https://www.oneusefulthing.org/feed
   type: rss
