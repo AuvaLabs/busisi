@@ -29,7 +29,7 @@ topics:
     - \bQSBS\b
     - \b1099\b
     - \bW-?2\b
-    - \b401\(k\)\b
+    - \b401\(k\)
     - \bRoth\b
     - \bmega backdoor\b
     - \bpre-?tax\b
@@ -39,7 +39,7 @@ topics:
 
   retirement-planning:
     - \bretirement\b
-    - \b401\(k\)\b
+    - \b401\(k\)
     - \bIRA\b
     - \bRoth\b
     - \bHSA\b
@@ -146,6 +146,57 @@ topics:
     - \bpower of attorney\b
     - \bprobate\b
     - \binheritance\b
+
+  # Macro / policy / markets lanes (added 2026-06-07). The audit showed the
+  # taxonomy only knew tech-worker PF tactics, so legit macro finance from CBO/
+  # Fed/BLS/Treasury/NYT scored zero topic labels and the relevance gate either
+  # under-admitted it or let noise through on generic cues. Patterns are kept
+  # SPECIFIC (named indices, acronyms, multi-word anchors) — bare "Fed"/"rates"/
+  # "economy"/"market" over-match general news. These directly affect the
+  # $100K-$500K audience's money (rate path, inflation, 401(k) balances).
+  macro-economy:
+    - \binflation\b
+    - \bdisinflation\b
+    - \b(CPI|PCE|PPI)\b
+    - \bconsumer price index\b
+    - \bFOMC\b
+    - \bFederal Reserve\b
+    - \bthe Fed\b
+    - \brate (cut|hike|decision|pause)\b
+    - \binterest rate[s]?\b
+    - \bbasis points\b
+    - \bunemployment rate\b
+    - \bjobs report\b
+    - \bnonfarm payroll[s]?\b
+    - \b(GDP|gross domestic product)\b
+    - \brecession\b
+    - \bsoft landing\b
+    - \byield curve\b
+
+  markets:
+    - \bS&P 500\b
+    - \bNasdaq\b
+    - \bDow (Jones)?\b
+    - \bstock market\b
+    - \b(bull|bear) market\b
+    - \bmarket (selloff|sell-off|rally|correction|volatility)\b
+    - \bIPO\b
+    - \binitial public offering\b
+    - \bTreasury yield[s]?\b
+    - \bbond market\b
+    - \bearnings (season|report)\b
+
+  fiscal-policy:
+    - \bfederal (budget|deficit)\b
+    - \bnational debt\b
+    - \bdebt ceiling\b
+    - \bgovernment shutdown\b
+    - \bSocial Security\b
+    - \bMedicare\b
+    - \bentitlement[s]?\b
+    - \bfiscal (policy|outlook|year|cliff)\b
+    - \btax policy\b
+    - \b(CBO|Congressional Budget Office)\b
 
 # ---- Entity types ----
 entity_types:
