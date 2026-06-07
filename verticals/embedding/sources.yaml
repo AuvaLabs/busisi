@@ -133,12 +133,14 @@
   priority_weight: 1.00
   category_hints: [research-paper, application]
 
-- url: https://www.ibm.com/blogs/research/feed/   # url fixed 2026-06-07
-  type: rss
-  region: US
-  agency_class: D
-  priority_weight: 1.00
-  category_hints: [research-paper]
+# DISABLED 2026-06-07 (404 — research.ibm.com/blog/rss.xml gone; the /blogs/research/feed
+# path 301-redirects to a non-feed page. IBM Research appears to have dropped RSS.):
+#   - url: https://research.ibm.com/blog/rss.xml
+#     type: rss
+#     region: US
+#     agency_class: D
+#     priority_weight: 1.00
+#     category_hints: [research-paper]
 
 - url: https://huggingface.co/blog/feed.xml
   type: rss
