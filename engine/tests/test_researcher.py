@@ -494,3 +494,39 @@ class TestCacheAndBudget:
         monkeypatch.setattr(r, "_redis", lambda: None)
         monkeypatch.setattr(r, "EXA_DAILY_CAP", 1)
         assert r._exa_under_daily_cap() is True
+
+
+class TestExaGating:
+    """Exa is the only paid source; fetch_supporting_docs must skip it when
+    use_exa=False so the capped budget is reserved for research-grade tiers."""
+
+    def _article(self) -> Article:
+        return Article(
+            title="Federal Reserve holds rates steady",
+            source="x", hash="x", slug="x", link="x", vertical_id=1,
+        )
+
+    def _patch_sources(self, monkeypatch: pytest.MonkeyPatch) -> dict:
+        calls = {"exa": 0, "arxiv": 0, "wiki": 0}
+
+        def exa(q, **kw):
+            calls["exa"] += 1
+            return [{"url": "https://cbo.gov/x", "host": "cbo.gov", "text": "t"}]
+
+        monkeypatch.setattr(r, "search_arxiv", lambda q, **kw: (calls.__setitem__("arxiv", calls["arxiv"] + 1), [])[1])
+        monkeypatch.setattr(r, "search_exa", exa)
+        monkeypatch.setattr(r, "search_wikipedia", lambda q, **kw: (calls.__setitem__("wiki", calls["wiki"] + 1), [])[1])
+        return calls
+
+    def test_exa_fires_when_enabled(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        calls = self._patch_sources(monkeypatch)
+        r.fetch_supporting_docs(self._article(), [], use_exa=True)
+        assert calls["exa"] >= 1
+        assert calls["arxiv"] >= 1  # free sources always run
+
+    def test_exa_skipped_when_disabled(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        calls = self._patch_sources(monkeypatch)
+        r.fetch_supporting_docs(self._article(), [], use_exa=False)
+        assert calls["exa"] == 0
+        assert calls["arxiv"] >= 1  # arXiv + wiki still run (free context)
+        assert calls["wiki"] >= 1
