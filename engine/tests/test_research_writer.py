@@ -544,3 +544,26 @@ class TestPassOrphanComposeCacheHandling:
             vertical="embedding",
         )
         assert out == cached_good
+
+
+class TestLenientJsonLoader:
+    """Regression: instruct models (Llama-3.3-70B) fence JSON even under
+    response_format=json_object, which silently failed every cluster rewrite."""
+
+    def test_fenced_json_parses(self) -> None:
+        out = rw._loads_json_lenient(
+            '```json\n{"canonical_events": [], "headline_seed": "x"}\n```'
+        )
+        assert out["headline_seed"] == "x"
+
+    def test_plain_json_parses(self) -> None:
+        assert rw._loads_json_lenient('{"a": 1}') == {"a": 1}
+
+    def test_preamble_then_object_parses(self) -> None:
+        assert rw._loads_json_lenient('Sure:\n{"a": 2} done')["a"] == 2
+
+    def test_garbage_still_raises(self) -> None:
+        import json as _json
+
+        with pytest.raises(_json.JSONDecodeError):
+            rw._loads_json_lenient("not json at all")
