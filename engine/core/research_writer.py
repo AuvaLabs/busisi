@@ -80,6 +80,34 @@ _BANNED_PHRASES = (
     "sources close to",
 )
 
+_CODE_FENCE_RE = re.compile(
+    r"^\s*```(?:json)?\s*\n?(.*?)\n?\s*```\s*$", re.DOTALL | re.IGNORECASE
+)
+
+
+def _loads_json_lenient(raw: str) -> Any:
+    """``json.loads`` that tolerates models wrapping the reply in markdown
+    code fences (```` ```json … ``` ````) or surrounding prose.
+
+    Some instruct models — notably Llama-3.3-70B — fence their output even
+    under ``response_format={"type": "json_object"}``, which made every
+    multi-source cluster rewrite silently fail with "returned non-JSON".
+    Strips a fence if present, then falls back to the outermost ``{…}`` block.
+    Raises ``json.JSONDecodeError`` on genuinely malformed input so callers'
+    existing error handling is unchanged.
+    """
+    text = (raw or "").strip()
+    fenced = _CODE_FENCE_RE.match(text)
+    if fenced:
+        text = fenced.group(1).strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        start, end = text.find("{"), text.rfind("}")
+        if 0 <= start < end:
+            return json.loads(text[start : end + 1])
+        raise
+
 
 # ---- Pass 1 — cluster fact merge ------------------------------------------
 
@@ -208,7 +236,7 @@ def pass1_merge(
         logger.warning("pass1_merge failed: %s", exc)
         return None
     try:
-        parsed = json.loads(raw)
+        parsed = _loads_json_lenient(raw)
     except json.JSONDecodeError:
         logger.warning("pass1_merge returned non-JSON")
         return None
@@ -323,7 +351,7 @@ def pass2_compose(
         logger.warning("pass2_compose failed: %s", exc)
         return None
     try:
-        parsed = json.loads(raw)
+        parsed = _loads_json_lenient(raw)
     except json.JSONDecodeError:
         logger.warning("pass2_compose returned non-JSON")
         return None
@@ -753,7 +781,7 @@ def pass_orphan_compose(
         logger.warning("rewrite_single failed: %s", exc)
         return None
     try:
-        parsed = json.loads(raw)
+        parsed = _loads_json_lenient(raw)
     except json.JSONDecodeError:
         logger.warning("rewrite_single returned non-JSON")
         return None
