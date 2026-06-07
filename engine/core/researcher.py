@@ -502,6 +502,7 @@ def fetch_supporting_docs(
     *,
     exa_category: str | None = None,
     exa_domains: list[str] | None = None,
+    use_exa: bool = True,
 ) -> list[dict[str, Any]]:
     queries = expand_queries(article, entities)
     if not queries:
@@ -514,11 +515,17 @@ def fetch_supporting_docs(
     # Wikipedia (added 2026-05-23) provides keyless, quota-free encyclopedic
     # context — particularly useful for vested (companies/regulators) and
     # for embedding articles when Exa is exhausted.
+    #
+    # `use_exa` gates the only *paid* source. The caller fires it just for
+    # research-grade tiers (config `research.exa_tiers`) so the capped daily
+    # Exa budget lands on deep picks, not routine news — which keeps free
+    # arXiv + Wikipedia context on every article regardless.
     for q in queries:
         docs.extend(search_arxiv(q, max_results=5))
-        docs.extend(
-            search_exa(q, category=exa_category, include_domains=exa_domains)
-        )
+        if use_exa:
+            docs.extend(
+                search_exa(q, category=exa_category, include_domains=exa_domains)
+            )
         docs.extend(search_wikipedia(q))
         if len(_dedup_and_rank(docs)) >= RESEARCH_BUNDLE_SIZE:
             break
@@ -565,8 +572,17 @@ def research_pending(
     opts = _load_research_opts(vertical)
     exa_category = opts.get("category") or None
     exa_domains = opts.get("include_domains") or None
+    # Which curator tiers may spend the (capped) paid Exa budget. Default:
+    # researcher-only — routine `standard` news gets free arXiv+Wikipedia but
+    # no Exa. Override per-vertical via config `research.exa_tiers`.
+    raw_tiers = opts.get("exa_tiers")
+    exa_tiers = (
+        {str(t) for t in raw_tiers}
+        if isinstance(raw_tiers, list) and raw_tiers
+        else {"researcher"}
+    )
     SessionLocal = get_sessionmaker()
-    counts = {"considered": 0, "researched": 0, "empty": 0, "failed": 0}
+    counts = {"considered": 0, "researched": 0, "empty": 0, "failed": 0, "exa": 0}
     with SessionLocal() as session:
         v = session.execute(
             select(Vertical).where(Vertical.name == vertical)
@@ -599,10 +615,14 @@ def research_pending(
 
     for article, entities in payloads:
         counts["considered"] += 1
+        use_exa = article.curator_tier in exa_tiers
+        if use_exa:
+            counts["exa"] += 1
         try:
             docs = fetch_supporting_docs(
                 article, entities,
                 exa_category=exa_category, exa_domains=exa_domains,
+                use_exa=use_exa,
             )
         except Exception as exc:
             logger.warning(

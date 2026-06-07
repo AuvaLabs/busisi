@@ -179,6 +179,13 @@ escalation_budget: 25
 # real, sourced research — not arXiv/Wikipedia. Per-vertical; Embedding keeps
 # its AI/ML defaults (no block).
 research:
+  # exa_tiers: which curator tiers may spend the capped (paid) Exa budget.
+  # Researcher-only by design — Exa is a *research* tool, not a per-headline
+  # one. Routine `standard` news still gets free arXiv + Wikipedia context;
+  # only deep-pick `researcher`-tier stories burn an Exa search. This is also
+  # the module default, but pinned here to make the policy explicit.
+  exa_tiers:
+    - researcher
   # No category: a "news" category would drop research reports (pgpf/CBO/
   # Brookings publish reports, not news). Omitting it lets the include_domains
   # allowlist return BOTH news AND research papers from authoritative sources.
