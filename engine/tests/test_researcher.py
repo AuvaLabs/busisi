@@ -420,7 +420,7 @@ class TestCacheAndBudget:
     ) -> None:
         calls = {"n": 0}
 
-        def fake_uncached(query: str, *, max_results: int = 3):
+        def fake_uncached(query: str, *, max_results: int = 3, **kwargs):
             calls["n"] += 1
             return [
                 {
@@ -446,7 +446,7 @@ class TestCacheAndBudget:
         monkeypatch.setattr(r, "EXA_DAILY_CAP", 2)
         called = {"n": 0}
 
-        def fake_uncached(query: str, *, max_results: int = 3):
+        def fake_uncached(query: str, *, max_results: int = 3, **kwargs):
             called["n"] += 1
             return [
                 {
@@ -470,7 +470,7 @@ class TestCacheAndBudget:
         monkeypatch.setattr(r, "EXA_DAILY_CAP", 0)
         called = {"n": 0}
 
-        def fake_uncached(query: str, *, max_results: int = 3):
+        def fake_uncached(query: str, *, max_results: int = 3, **kwargs):
             called["n"] += 1
             return []
 

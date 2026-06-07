@@ -37,6 +37,7 @@ from urllib.parse import urlparse
 
 import feedparser
 import requests
+import yaml
 from sqlalchemy import select
 
 from engine.core.config import (
@@ -51,6 +52,7 @@ from engine.core.config import (
     RESEARCH_QUERY_TIMEOUT,
     WIKIPEDIA_ENABLED,
     WIKIPEDIA_ENDPOINT,
+    vertical_dir,
 )
 from engine.core.db import (
     Article,
@@ -159,6 +161,30 @@ def _entities_for_article(session, article_id: int) -> list[Entity]:
     )
 
 
+def _load_research_opts(vertical_name: str) -> dict[str, Any]:
+    """Read the ``research:`` block from ``verticals/<v>/config.yaml``.
+
+    Supports ``category`` (e.g. "news") and ``include_domains`` (a per-vertical
+    allowlist biasing Exa toward authoritative sources — for Vested, finance +
+    fiscal-research domains like pgpf.org). Missing → {} (no bias). Per-vertical
+    so Embedding's Exa stays AI/ML-relevant.
+    """
+    try:
+        path = vertical_dir(vertical_name) / "config.yaml"
+    except ValueError:
+        return {}
+    if not path.exists():
+        return {}
+    try:
+        with open(path, encoding="utf-8") as fp:
+            data = yaml.safe_load(fp) or {}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("could not read research config %s: %s", path, exc)
+        return {}
+    block = data.get("research") if isinstance(data, dict) else None
+    return block if isinstance(block, dict) else {}
+
+
 def expand_queries(article: Article, entities: list[Entity]) -> list[str]:
     """Build up to 3 search queries for one article.
 
@@ -242,21 +268,36 @@ def _search_arxiv_uncached(
 
 
 def _search_exa_uncached(
-    query: str, *, max_results: int = 3
+    query: str,
+    *,
+    max_results: int = 3,
+    category: str | None = None,
+    include_domains: list[str] | None = None,
 ) -> list[dict[str, Any]]:
-    """Hit Exa.ai semantic search. Returns [] if EXA_API_KEY is unset."""
+    """Hit Exa.ai /search (current API). Returns [] if EXA_API_KEY is unset.
+
+    Current API (per docs.exa.ai/reference/search-api-guide-for-coding-agents):
+    auth via ``x-api-key``; ``type="auto"``; content via ``contents.highlights``
+    (token-efficient excerpts — the right mode for our bundle pipeline). The
+    legacy ``Authorization: Bearer`` + ``useAutoprompt`` + ``contents.text`` of
+    the prior build are deprecated.
+    """
     if not EXA_API_KEY or not query:
         return []
     headers = {
-        "Authorization": f"Bearer {EXA_API_KEY}",
+        "x-api-key": EXA_API_KEY,
         "Content-Type": "application/json",
     }
-    payload = {
+    payload: dict[str, Any] = {
         "query": query,
+        "type": "auto",
         "numResults": max_results,
-        "useAutoprompt": True,
-        "contents": {"text": True},
+        "contents": {"highlights": True},
     }
+    if category:
+        payload["category"] = category
+    if include_domains:
+        payload["includeDomains"] = list(include_domains)
     try:
         resp = requests.post(
             EXA_ENDPOINT,
@@ -285,11 +326,17 @@ def _search_exa_uncached(
         if not url:
             continue
         host = urlparse(url).netloc.removeprefix("www.").lower()
+        # `highlights` is a list of query-relevant excerpts (our requested mode).
+        hl = item.get("highlights")
+        if isinstance(hl, list) and hl:
+            text = " … ".join(h for h in hl if h)
+        else:
+            text = item.get("text") or item.get("summary") or item.get("snippet") or ""
         out.append(
             {
                 "url": url,
                 "title": (item.get("title") or "").strip(),
-                "text": (item.get("text") or item.get("snippet") or "")[:4000],
+                "text": text[:4000],
                 "host": host,
             }
         )
@@ -379,8 +426,20 @@ def search_arxiv(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
 _exa_cap_warned = False  # log "cap reached" once per process
 
 
-def search_exa(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
-    cached = _cache_get("exa", query)
+def search_exa(
+    query: str,
+    *,
+    max_results: int = 3,
+    category: str | None = None,
+    include_domains: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    # Domains/category vary the result set, so fold them into the cache key.
+    ckey = query
+    if include_domains:
+        ckey = f"{query}|dom:{','.join(sorted(include_domains))}"
+    if category:
+        ckey = f"{ckey}|cat:{category}"
+    cached = _cache_get("exa", ckey)
     if cached is not None:
         return cached[:max_results]
     if not _exa_under_daily_cap():
@@ -393,8 +452,13 @@ def search_exa(query: str, *, max_results: int = 3) -> list[dict[str, Any]]:
             )
             _exa_cap_warned = True
         return []
-    results = _search_exa_uncached(query, max_results=max_results)
-    _cache_put("exa", query, results)
+    results = _search_exa_uncached(
+        query,
+        max_results=max_results,
+        category=category,
+        include_domains=include_domains,
+    )
+    _cache_put("exa", ckey, results)
     return results
 
 
@@ -433,7 +497,11 @@ def _dedup_and_rank(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def fetch_supporting_docs(
-    article: Article, entities: list[Entity]
+    article: Article,
+    entities: list[Entity],
+    *,
+    exa_category: str | None = None,
+    exa_domains: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     queries = expand_queries(article, entities)
     if not queries:
@@ -448,7 +516,9 @@ def fetch_supporting_docs(
     # for embedding articles when Exa is exhausted.
     for q in queries:
         docs.extend(search_arxiv(q, max_results=5))
-        docs.extend(search_exa(q))
+        docs.extend(
+            search_exa(q, category=exa_category, include_domains=exa_domains)
+        )
         docs.extend(search_wikipedia(q))
         if len(_dedup_and_rank(docs)) >= RESEARCH_BUNDLE_SIZE:
             break
@@ -492,6 +562,9 @@ def research_pending(
     """Run the researcher over tier=researcher rows whose researched_at IS NULL."""
     install_ssrf_guard()
     cap = max_articles if max_articles is not None else RESEARCH_MAX_PER_TICK
+    opts = _load_research_opts(vertical)
+    exa_category = opts.get("category") or None
+    exa_domains = opts.get("include_domains") or None
     SessionLocal = get_sessionmaker()
     counts = {"considered": 0, "researched": 0, "empty": 0, "failed": 0}
     with SessionLocal() as session:
@@ -527,7 +600,10 @@ def research_pending(
     for article, entities in payloads:
         counts["considered"] += 1
         try:
-            docs = fetch_supporting_docs(article, entities)
+            docs = fetch_supporting_docs(
+                article, entities,
+                exa_category=exa_category, exa_domains=exa_domains,
+            )
         except Exception as exc:
             logger.warning(
                 "researcher crashed on %r: %s", article.title[:60], exc
