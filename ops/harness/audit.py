@@ -19,7 +19,7 @@ pending the Synthesize API + axe-core install:
     Accessibility            10 pts (axe-core)
 
 CLI:
-    python -m ops.harness.audit modelwatch vested
+    python -m ops.harness.audit embedding vested
 """
 
 from __future__ import annotations
@@ -317,7 +317,7 @@ def render_markdown(generated_at: str, vertical_reports: list[dict[str, Any]]) -
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the grimoire quality harness")
-    parser.add_argument("verticals", nargs="*", default=["modelwatch", "vested"])
+    parser.add_argument("verticals", nargs="*", default=["embedding", "vested"])
     parser.add_argument("--base-url", default=DEFAULT_BASE_IP)
     parser.add_argument("--output-dir", default=str(REPORTS_DIR))
     parser.add_argument("--log-level", default="INFO")

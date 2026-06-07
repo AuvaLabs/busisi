@@ -12,6 +12,13 @@
     }
 }
 
+# Shared security headers — imported by every site block (prod + .local) so the
+# quality harness, which audits the .local hosts, measures the same headers
+# production serves. Single source of truth; edit here, applies everywhere.
+(sec_headers) {
+    import sec_headers
+}
+
 # ---- Production site blocks (real domains) -------------------------------
 # Caddy uses a Cloudflare Origin Certificate (multi-SAN, 15-year validity)
 # at /etc/ssl/grimoire/origin.{crt,key}. Cloudflare orange-cloud is in
@@ -29,14 +36,7 @@ embedding.report {
         output file /var/log/caddy/embedding.log
         format json
     }
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "geolocation=(), microphone=(), camera=()"
-        -Server
-    }
+    import sec_headers
     handle /api/* {
         reverse_proxy 127.0.0.1:8001 {
             header_up X-Real-IP {http.request.header.CF-Connecting-IP}
@@ -81,14 +81,7 @@ vested.news {
         output file /var/log/caddy/vested.log
         format json
     }
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "geolocation=(), microphone=(), camera=()"
-        -Server
-    }
+    import sec_headers
     handle /api/* {
         reverse_proxy 127.0.0.1:8001 {
             header_up X-Real-IP {http.request.header.CF-Connecting-IP}
@@ -129,9 +122,7 @@ embedding.local:80 {
         output file /var/log/caddy/embedding.log
         format json
     }
-    header {
-        -Server
-    }
+    import sec_headers
     handle /api/* {
         reverse_proxy 127.0.0.1:8001
     }
@@ -156,9 +147,7 @@ vested.local:80 {
         output file /var/log/caddy/vested.log
         format json
     }
-    header {
-        -Server
-    }
+    import sec_headers
     handle /api/* {
         reverse_proxy 127.0.0.1:8001
     }
@@ -194,11 +183,5 @@ vested.local:80 {
         output file /var/log/caddy/default.log
         format json
     }
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        -Server
-    }
+    import sec_headers
 }
