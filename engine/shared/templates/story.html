@@ -124,9 +124,47 @@
       background: color-mix(in srgb, var(--accent) 12%, transparent);
       transition: background 1.2s ease-out;
     }
-    .narrative p { margin: 0 0 1rem 0; }
+    /* Readable long-form body — generous measure, line-height, paragraph gap. */
+    .narrative {
+      font-size: 1.09rem;
+      line-height: 1.78;
+      color: var(--text);
+    }
+    .narrative p { margin: 0 0 1.35rem 0; }
+    .narrative p:last-child { margin-bottom: 0; }
+    /* Lead paragraph eases the reader in. */
+    .narrative > p:first-of-type { font-size: 1.2rem; line-height: 1.7; }
+    [data-vertical="vested"] .narrative { font-size: 1.12rem; line-height: 1.8; }
+    /* Collapsed "background sources" — research scaffolding, not reader copy.
+       De-emphasised so it never out-weighs the article itself. */
+    .context { margin: 2.5rem 0 0; font-family: var(--sans); }
+    .context > summary {
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      padding: 0.4rem 0;
+    }
+    .context > summary::-webkit-details-marker { display: none; }
+    .context > summary::before { content: "▸ "; }
+    .context[open] > summary::before { content: "▾ "; }
+    .context > summary:hover { color: var(--accent); }
+    .context-list { list-style: none; padding: 0.5rem 0 0; margin: 0; }
+    .context-list li { margin: 0 0 0.75rem; line-height: 1.5; }
+    .context-list li a { color: var(--text-mute); font-weight: 500; font-size: 0.85rem; }
+    .context-list li a:hover { color: var(--accent); }
+    .context-excerpt {
+      display: block;
+      color: var(--text-faint);
+      font-size: 0.8rem;
+      margin-top: 0.1rem;
+    }
     @media print {
       sup.cite-ref a { color: var(--text); }
+      .context { display: none; }
     }
     .entity-chips {
       list-style: none;
@@ -318,18 +356,19 @@
   </script>
 
   {% if article.research %}
-    <section class="sources" style="margin-top: 2rem;">
-      <h2>Context we found ({{ article.research | length }})</h2>
-      <ul>
+    {# Research scaffolding — collapsed by default so it never out-weighs the
+       article. The reader-facing citations are the "Sources cited" block below. #}
+    <details class="context">
+      <summary>Background sources we checked ({{ article.research | length }})</summary>
+      <ul class="context-list">
         {% for r in article.research %}
           <li>
-            <span class="pub">{{ r.host }}</span> —
-            <a href="{{ r.url }}" rel="noopener nofollow" target="_blank">{{ r.url }} ↗</a>
-            {% if r.excerpt %}<div style="color: var(--text-mute); font-size: 0.85rem; margin-top: 0.2rem;">{{ r.excerpt }}…</div>{% endif %}
+            <a href="{{ r.url }}" rel="noopener nofollow" target="_blank">{{ r.host }} ↗</a>
+            {% if r.excerpt %}<span class="context-excerpt">{{ r.excerpt }}…</span>{% endif %}
           </li>
         {% endfor %}
       </ul>
-    </section>
+    </details>
   {% endif %}
 
   {% if article.story_rewrite and article.story_rewrite.sources %}
@@ -341,12 +380,9 @@
       <ol class="cited-sources">
         {% for s in article.story_rewrite.sources %}
           <li id="cite-{{ s.n }}">
-            <span class="pub">{{ s.host }}</span>
+            <a href="{{ s.url }}" rel="noopener" target="_blank" class="pub">{{ s.host }} ↗</a>
             <span class="agency-class agency-class-{{ s.agency_class | lower }}"
-                  title="Class {{ s.agency_class }} — {{ s.agency_label }}">
-              {{ s.agency_class }} · {{ s.agency_label }}
-            </span> —
-            <a href="{{ s.url }}" rel="noopener" target="_blank">{{ s.url }} ↗</a>
+                  title="Class {{ s.agency_class }} — {{ s.agency_label }}">{{ s.agency_class }}</span>
           </li>
         {% endfor %}
       </ol>
