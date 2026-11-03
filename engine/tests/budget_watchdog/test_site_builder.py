@@ -70,6 +70,19 @@ def test_site_assets_preserve_filtered_hidden_state(tmp_path) -> None:
     assert "[hidden] { display: none !important; }" in stylesheet
 
 
+def test_site_assets_use_accessible_sans_typography_on_white(tmp_path) -> None:
+    build_site(GOLDEN_PATH, tmp_path)
+
+    stylesheet = (tmp_path / "assets" / "site.css").read_text(encoding="utf-8")
+
+    assert "--paper: #fff;" in stylesheet
+    assert "--text-xs: .8125rem;" in stylesheet
+    assert "Georgia" not in stylesheet
+    assert "Times New Roman" not in stylesheet
+    assert "font-size: var(--text-md);" in stylesheet
+    assert "@media (prefers-contrast: more)" in stylesheet
+
+
 def test_site_interactions_preserve_url_state_and_filtered_export(tmp_path) -> None:
     build_site(GOLDEN_PATH, tmp_path)
 

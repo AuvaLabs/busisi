@@ -39,16 +39,17 @@ civic records desk: structured lines, archival paper, source paths and explicit
 review states. The visual system uses:
 
 - deep ledger green for navigation, actions and evidence structure;
-- warm paper rather than pure white for the reading surface;
+- white reading surfaces with restrained gray-green dividers;
 - vermilion for review signals and editorial section labels;
 - amber only for quarantined or unresolved records;
-- serif display type for editorial hierarchy;
-- sans-serif text for navigation and explanations;
+- one sans-serif family for headings, navigation, controls and explanations;
 - monospace figures for identifiers and money.
 
-The interface type pair is self-hosted Source Sans 3 for navigation, controls
-and explanatory text, with Merriweather for editorial headings. Local WOFF2
-files prevent a runtime dependency on an external font service.
+The interface uses self-hosted Source Sans 3 throughout. Local WOFF2 files
+prevent a runtime dependency on an external font service. The base body size is
+16 px with a 1.6 line height. Interface labels do not fall below 13 px. Headings
+use a bounded responsive scale so hierarchy remains clear without pushing
+supporting context outside the viewport.
 
 The system deliberately avoids gradients, glass effects, floating rounded
 cards, decorative illustrations, excessive shadows and chat-style interface
@@ -72,7 +73,7 @@ The visual review used the official USAspending public interface as a service
 design reference, not as a brand template. The useful transferable patterns are:
 
 - a short public-status strip above the main navigation;
-- a clear sans-serif interface paired with an editorial serif;
+- a clear, consistent sans-serif interface;
 - strong page bands that separate exploration, explanation and disclosures;
 - large, explicit entry panels for different ways of navigating spending;
 - source and methodology links placed beside the data workflow.
@@ -133,6 +134,9 @@ The reviewed register retains a server-generated CSV endpoint.
 
 - Use semantic headings, landmarks, labels and native form controls.
 - Maintain visible keyboard focus and reduced-motion support.
+- Use white page backgrounds and text colors that meet WCAG AA contrast.
+- Preserve a minimum 13 px label size and 16 px body size at all breakpoints.
+- Prevent horizontal page overflow at desktop and mobile widths.
 - Never communicate confidence or quarantine through color alone.
 - Keep exact source terminology where paraphrase could change meaning.
 - Display the dataset boundary and review status beside public records.

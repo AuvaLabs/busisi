@@ -153,9 +153,10 @@ const verifyDesign = async () => {
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
-  for (const value of ['Source Sans 3', 'Merriweather', '.hero-art-note', '.explorer-shell']) {
+  for (const value of ['Source Sans 3', '--paper:#fff', '--text-xs:.8125rem', '.hero-art-note', '.explorer-shell']) {
     expectIncludes(cssText, value, 'design CSS');
   }
+  if (/Merriweather|Georgia|Times New Roman/i.test(cssText)) fail('design CSS: decorative serif font remains');
 
   const mark = await request('/assets/busisi-mark-v2.svg');
   expectStatus(mark, 200, 'brand mark');
@@ -171,15 +172,12 @@ const verifyDesign = async () => {
   expectBytes(mastheadBytes.subarray(0, 4), 'RIFF', 'masthead');
   expectBytes(mastheadBytes.subarray(8, 12), 'WEBP', 'masthead');
 
-  const [sourceSansBytes, merriweatherBytes] = await Promise.all([
-    verifyFont('/assets/source-sans-3-latin.woff2'),
-    verifyFont('/assets/merriweather-latin.woff2'),
-  ]);
+  const sourceSansBytes = await verifyFont('/assets/source-sans-3-latin.woff2');
 
   return {
     mark_bytes: Buffer.byteLength(markText),
     masthead_bytes: mastheadBytes.length,
-    font_bytes: sourceSansBytes + merriweatherBytes,
+    font_bytes: sourceSansBytes,
   };
 };
 

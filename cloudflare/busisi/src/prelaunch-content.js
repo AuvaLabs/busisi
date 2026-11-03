@@ -1,6 +1,7 @@
 import { SITE } from './prelaunch-config.js';
 import { dataCss } from './prelaunch-data-styles.js';
 import { siteCss as baseSiteCss } from './prelaunch-styles.js';
+import { typeCss } from './prelaunch-type-styles.js';
 import {
   evidenceOrbit,
   gateVisual,
@@ -180,6 +181,6 @@ export const methodologyBody = `
     <div class="section-heading"><p class="section-number">04 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#102f2a" stroke-width="2.5" stroke-linejoin="round"><path fill="#a7ddc3" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#fbf8ef" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fbf8ef" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#b83b27" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#102f2a"/><path fill="none" stroke="#f3efe4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/></svg>`;

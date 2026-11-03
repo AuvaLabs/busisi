@@ -1,13 +1,6 @@
 # Third-party notices
 
-Busisi self-hosts the following typefaces under the SIL Open Font License 1.1.
-
-## Merriweather
-
-- Copyright: The Merriweather Project Authors
-- Local asset: `public/assets/merriweather-latin.woff2`
-- License: `public/licenses/merriweather-OFL.txt`
-- Upstream: <https://github.com/google/fonts/tree/main/ofl/merriweather>
+Busisi self-hosts the following typeface under the SIL Open Font License 1.1.
 
 ## Source Sans 3
 

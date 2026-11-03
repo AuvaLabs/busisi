@@ -190,8 +190,14 @@ test('serves immutable assets and safe method boundaries', async () => {
 
   assert.match(css.headers.get('content-type'), /^text\/css/);
   assert.match(css.headers.get('cache-control'), /immutable/);
-  assert.match(await css.clone().text(), /font-family:'Source Sans 3'/);
-  assert.match(await css.clone().text(), /font-family:'Merriweather'/);
+  const cssText = await css.clone().text();
+  assert.match(cssText, /font-family:'Source Sans 3'/);
+  assert.doesNotMatch(cssText, /Merriweather|Georgia|Times New Roman/i);
+  assert.match(cssText, /--paper:#fff/);
+  assert.match(cssText, /--text-xs:\.8125rem/);
+  assert.match(cssText, /body\{[^}]*font-size:var\(--text-md\)[^}]*line-height:1\.6/);
+  assert.match(cssText, /body:before\{display:none/);
+  assert.match(cssText, /@media\(prefers-contrast:more\)/);
   assert.match(await css.clone().text(), /@keyframes orbit-pulse/);
   assert.match(await css.text(), /prefers-reduced-motion:reduce/);
   assert.match(icon.headers.get('content-type'), /^image\/svg\+xml/);
