@@ -1,0 +1,234 @@
+import {
+  document,
+  exploreBody,
+  favicon,
+  homeBody,
+  methodologyBody,
+  projectDossierBody,
+  signalsBody,
+  siteCss,
+} from './prelaunch-content.js';
+import { INDEX_NOW_KEY, SITE } from './prelaunch-config.js';
+import dataWorker from './index.js';
+import { getProject } from './query.js';
+
+const SECURITY_HEADERS = Object.freeze({
+  'content-security-policy': "default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'",
+  'permissions-policy': 'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
+  'referrer-policy': 'no-referrer',
+  'strict-transport-security': 'max-age=31536000',
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY',
+});
+
+const HOME_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE.name,
+  url: `${SITE.origin}/`,
+  description: SITE.description,
+  inLanguage: ['en-PH', 'fil-PH'],
+});
+
+const METHODOLOGY_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Methodology',
+  url: `${SITE.origin}/methodology/`,
+  description: 'The Busisi evidence, review, quarantine, and publication method for Philippine public budget records.',
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
+const EXPLORE_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi Philippine public budget source record explorer',
+  url: `${SITE.origin}/explore/`,
+  description: 'Search archived GAA appropriations, DPWH delivery records, candidate links, and reviewed project dossiers.',
+  temporalCoverage: '2022/2026',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+});
+
+const SIGNALS_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Busisi review signals',
+  url: `${SITE.origin}/signals/`,
+  description: 'Transparent deterministic review signals and their evidence limitations.',
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
+const page = (html, status = 200) => response(html, {
+  status,
+  type: 'text/html; charset=utf-8',
+  cache: status === 200 ? 'public, max-age=300' : 'no-store',
+});
+
+const response = (body, { status = 200, type, cache = 'public, max-age=3600' }) => new Response(body, {
+  status,
+  headers: {
+    ...SECURITY_HEADERS,
+    'cache-control': cache,
+    'content-type': type,
+  },
+});
+
+const home = () => page(document({
+  title: 'Busisi | Philippine public budget records',
+  description: SITE.description,
+  canonicalPath: '/',
+  body: homeBody,
+  schema: HOME_SCHEMA,
+}));
+
+const methodology = () => page(document({
+  title: 'Methodology | Busisi',
+  description: 'How Busisi acquires, verifies, links, reviews, quarantines, and publishes Philippine public budget records.',
+  canonicalPath: '/methodology/',
+  body: methodologyBody,
+  schema: METHODOLOGY_SCHEMA,
+}));
+
+const explore = () => page(document({
+  title: 'Explore Philippine budget records | Busisi',
+  description: 'Search archived GAA appropriations, DPWH delivery records, candidate links, and reviewed project dossiers.',
+  canonicalPath: '/explore/',
+  body: exploreBody,
+  schema: EXPLORE_SCHEMA,
+}));
+
+const signals = () => page(document({
+  title: 'Review signals | Busisi',
+  description: 'Inspect supported budget review signals and the evidence gaps that prevent stronger conclusions.',
+  canonicalPath: '/signals/',
+  body: signalsBody,
+  schema: SIGNALS_SCHEMA,
+}));
+
+const project = (record) => page(document({
+  title: `${record.title} | Busisi`,
+  description: `Evidence dossier comparing the FY ${record.fiscal_year} appropriation with DPWH contract ${record.contract_id}.`,
+  canonicalPath: `/projects/${record.slug}/`,
+  body: projectDossierBody(record),
+  noindex: record.is_quarantined,
+  schema: {
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    name: record.title,
+    description: record.match_limitations,
+    temporalCoverage: String(record.fiscal_year),
+    spatialCoverage: record.location,
+    isAccessibleForFree: true,
+  },
+}));
+
+const notFound = (path) => page(document({
+  title: 'Page not found | Busisi',
+  description: 'The requested Busisi page is not available.',
+  canonicalPath: path,
+  noindex: true,
+  schema: { '@context': 'https://schema.org', '@type': 'WebPage', name: 'Page not found' },
+  body: `<section class="not-found"><p class="kicker">404</p><h1>Page not found</h1><p>The public record register is still in verification. Return to the overview or read how records must qualify for publication.</p><div class="actions"><a class="primary" href="/">Return home</a><a class="secondary" href="/methodology/">Read the methodology</a></div></section>`,
+}), 404);
+
+const robots = () => response(`User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /watchlist/
+Sitemap: ${SITE.origin}/sitemap.xml
+`, { type: 'text/plain; charset=utf-8' });
+
+const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${SITE.origin}/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/explore/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/signals/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/projects/corazon-2022-combined/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/projects/agoncillo-2023/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/projects/corazon-2024-phase-1/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/projects/corazon-2024-phase-2/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/projects/corazon-2025-completion/</loc><lastmod>2026-11-03</lastmod></url>
+</urlset>
+`, { type: 'application/xml; charset=utf-8' });
+
+const llms = () => response(`# Busisi
+
+Busisi is an independent public-interest project examining Philippine public budget records.
+
+## Current status
+
+Official source records are public. Cross-source candidate links remain explicitly unreviewed unless a dossier says otherwise.
+
+## Canonical pages
+
+- Overview: ${SITE.origin}/
+- Explorer: ${SITE.origin}/explore/
+- Review signals: ${SITE.origin}/signals/
+- Methodology: ${SITE.origin}/methodology/
+
+## Evidence and publication rules
+
+- Preserve and identify the original source.
+- Reconcile derived data with published controls.
+- Show identity-link evidence and confidence.
+- Quarantine weak, conflicting, or failed records.
+- Treat anomaly signals as questions for review, not proof of wrongdoing.
+- Publish inferred links as reviewed only after the documented human-review gate passes.
+`, { type: 'text/plain; charset=utf-8' });
+
+const assets = (path) => {
+  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css') {
+    return response(siteCss, { type: 'text/css; charset=utf-8', cache: 'public, max-age=604800, immutable' });
+  }
+  if (path === '/assets/favicon.svg') {
+    return response(favicon, { type: 'image/svg+xml', cache: 'public, max-age=604800, immutable' });
+  }
+  return null;
+};
+
+const route = (path) => {
+  if (path === '/') return home();
+  if (path === '/explore' || path === '/explore/') return explore();
+  if (path === '/signals' || path === '/signals/') return signals();
+  if (path === '/methodology' || path === '/methodology/') return methodology();
+  if (path === '/watchlist' || path === '/watchlist/') {
+    return Response.redirect(`${SITE.origin}/explore/?view=reviewed`, 302);
+  }
+  if (path === '/robots.txt') return robots();
+  if (path === '/sitemap.xml') return sitemap();
+  if (path === '/llms.txt') return llms();
+  if (path === `/${INDEX_NOW_KEY}.txt`) {
+    return response(`${INDEX_NOW_KEY}\n`, { type: 'text/plain; charset=utf-8' });
+  }
+  return assets(path);
+};
+
+export default {
+  async fetch(request, env = {}) {
+    const url = new URL(request.url);
+    if (url.hostname === 'www.busisi.org') {
+      url.hostname = 'busisi.org';
+      return Response.redirect(url.toString(), 301);
+    }
+    if ((url.pathname === '/healthz' || url.pathname.startsWith('/api/')) && env.DB) {
+      return dataWorker.fetch(request, env);
+    }
+    if (!['GET', 'HEAD'].includes(request.method)) {
+      return response('Method not allowed\n', { status: 405, type: 'text/plain; charset=utf-8', cache: 'no-store' });
+    }
+    let result = null;
+    const projectMatch = url.pathname.match(/^\/projects\/([a-z0-9-]+)\/?$/);
+    if (projectMatch && env.DB) {
+      const record = await getProject(env.DB, projectMatch[1]);
+      if (record) result = project(record);
+    }
+    result ??= route(url.pathname);
+    if (!result && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/data/')) && env.ASSETS) {
+      result = await env.ASSETS.fetch(request);
+    }
+    result ??= notFound(url.pathname);
+    return request.method === 'HEAD' ? new Response(null, result) : result;
+  },
+};

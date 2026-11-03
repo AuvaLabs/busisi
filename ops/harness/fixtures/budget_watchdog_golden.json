@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-11-02",
+  "cases": [
+    {
+      "case_id": "agoncillo-2023",
+      "evidence_urls": [
+        "https://budget.bettergov.ph/api/v1/gaa/search?q=Agoncillo%20Sports&department_id=18&year=2023",
+        "https://api.dpwh.bettergov.ph/projects/23DB0126"
+      ],
+      "budget": {
+        "budget_line_id": "18-001|rehabilitation of multipurpose facilties doa corazon agoncillo sports and cultural center brgy tierra alta taal batangas",
+        "fiscal_year": 2023,
+        "description": "Rehabilitation of Multi-Purpose Facilties (Doña Corazon Agoncillo Sports and Cultural Center), Brgy. Tierra Alta, Taal, Batangas",
+        "amount_centavos": 1000000000,
+        "location": "Taal, Batangas"
+      },
+      "candidates": [
+        {
+          "contract_id": "23DB0126",
+          "fiscal_year": 2023,
+          "description": "CONVERGENCE AND SPECIAL SUPPORT PROGRAM - BASIC INFRASTRUCTURE PROGRAM - REHABILITATION OF MULTI-PURPOSE FACILITIES (DOÑA CORAZON AGONCILLO SPORTS AND CULTURAL CENTER), BRGY. TIERRA ALTA, TAAL",
+          "budget_centavos": 990000000,
+          "location": "Batangas 1st DEO, Region IV-A",
+          "source_of_funds": "Regular Infra - GAA 2023 CSSP"
+        }
+      ],
+      "expected_confidence": "high",
+      "expected_selected_contract_id": "23DB0126",
+      "expected_top_contract_id": "23DB0126"
+    },
+    {
+      "case_id": "corazon-2022-combined",
+      "evidence_urls": [
+        "https://budget.bettergov.ph/api/v1/gaa/search?q=Barangay%20Corazon&department_id=18&year=2022",
+        "https://api.dpwh.bettergov.ph/projects/22HI0028"
+      ],
+      "budget": {
+        "budget_line_id": "18-001|construction of multipurpose buildings in barangay corazon barangay san jose and barangay ginabukan catmon cebu",
+        "fiscal_year": 2022,
+        "description": "Construction of Multi-Purpose Buildings in Barangay Corazon, Barangay San Jose and Barangay Ginabukan, Catmon, Cebu",
+        "amount_centavos": 700000000,
+        "location": "Catmon, Cebu"
+      },
+      "candidates": [
+        {
+          "contract_id": "22HI0028",
+          "fiscal_year": 2022,
+          "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING BARANGAY CORAZON, BARANGAY SAN JOSE AND BARANGAY GINABUKAN, CATMON, CEBU",
+          "budget_centavos": 690000012,
+          "location": "Cebu 5th DEO, Region VII",
+          "source_of_funds": "Regular Infra - GAA 2022 CSSP"
+        }
+      ],
+      "expected_confidence": "high",
+      "expected_selected_contract_id": "22HI0028",
+      "expected_top_contract_id": "22HI0028"
+    },
+    {
+      "case_id": "corazon-2024-phase-1",
+      "evidence_urls": [
+        "https://budget.bettergov.ph/api/v1/gaa/search?q=Barangay%20Corazon&department_id=18&year=2024",
+        "https://api.dpwh.bettergov.ph/projects/24HI0148"
+      ],
+      "budget": {
+        "budget_line_id": "18-001|construction of multi purpose building phase 1 barangay corazon catmon cebu",
+        "fiscal_year": 2024,
+        "description": "Construction of Multi-Purpose Building, Phase 1, Barangay Corazon, Catmon, Cebu",
+        "amount_centavos": 500000000,
+        "location": "Catmon, Cebu"
+      },
+      "candidates": [
+        {
+          "contract_id": "24HI0148",
+          "fiscal_year": 2024,
+          "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, PHASE 1, BARANGAY CORAZON, CATMON, CEBU",
+          "budget_centavos": 494467510,
+          "location": "Cebu 5th DEO, Region VII",
+          "source_of_funds": "Regular Infra - GAA 2024 SSP"
+        }
+      ],
+      "expected_confidence": "high",
+      "expected_selected_contract_id": "24HI0148",
+      "expected_top_contract_id": "24HI0148"
+    },
+    {
+      "case_id": "corazon-2024-phase-2",
+      "evidence_urls": [
+        "https://budget.bettergov.ph/api/v1/gaa/search?q=Barangay%20Corazon&department_id=18&year=2024",
+        "https://api.dpwh.bettergov.ph/projects/24HI0131"
+      ],
+      "budget": {
+        "budget_line_id": "18-001|construction of multi purpose building phase 2 barangay corazon catmon cebu",
+        "fiscal_year": 2024,
+        "description": "Construction of Multi-Purpose Building, Phase 2, Barangay Corazon, Catmon, Cebu",
+        "amount_centavos": 500000000,
+        "location": "Catmon, Cebu"
+      },
+      "candidates": [
+        {
+          "contract_id": "24HI0131",
+          "fiscal_year": 2024,
+          "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, PHASE 2, BARANGAY CORAZON, CATMON, CEBU",
+          "budget_centavos": 493439352,
+          "location": "Cebu 5th DEO, Region VII",
+          "source_of_funds": "Regular Infra - GAA 2024 SSP"
+        }
+      ],
+      "expected_confidence": "high",
+      "expected_selected_contract_id": "24HI0131",
+      "expected_top_contract_id": "24HI0131"
+    },
+    {
+      "case_id": "corazon-2025-completion",
+      "evidence_urls": [
+        "https://budget.bettergov.ph/api/v1/gaa/search?q=Barangay%20Corazon&department_id=18&year=2025",
+        "https://api.dpwh.bettergov.ph/projects/25HI0028"
+      ],
+      "budget": {
+        "budget_line_id": "18-001|construction completion of multipurpose building barangay corazon catmon cebu",
+        "fiscal_year": 2025,
+        "description": "Construction (Completion) of Multi-Purpose Building, Barangay Corazon, Catmon, Cebu",
+        "amount_centavos": 200000000,
+        "location": "Catmon, Cebu"
+      },
+      "candidates": [
+        {
+          "contract_id": "25HI0028",
+          "fiscal_year": 2025,
+          "description": "CSSP: BASIC INFRASTRUCTURE PROGRAM (BIP) - MULTI-PURPOSE BUILDINGS/FACILITIES TO SUPPORT SOCIAL SERVICES - CONSTRUCTION (COMPLETION) OF MULTI-PURPOSE BUILDING, BARANGAY CORAZON, CATMON, CEBU",
+          "budget_centavos": 197899499,
+          "location": "Cebu 5th DEO, Region VII",
+          "source_of_funds": "Regular Infra - GAA 2025 SSP"
+        }
+      ],
+      "expected_confidence": "high",
+      "expected_selected_contract_id": "25HI0028",
+      "expected_top_contract_id": "25HI0028"
+    },
+    {
+      "case_id": "corazon-2026-completion",
+      "evidence_urls": [
+        "https://budget.bettergov.ph/api/v1/gaa/search?q=Barangay%20Corazon&department_id=18&year=2026",
+        "https://api.dpwh.bettergov.ph/projects/26HI0094"
+      ],
+      "budget": {
+        "budget_line_id": "18-001|construction completion of multipurpose building 3sty6cl barangay corazon catmon cebu 10721779 124011108",
+        "fiscal_year": 2026,
+        "description": "Construction (Completion) of Multi-Purpose Building (3STY-6CL), Barangay Corazon, Catmon, Cebu (10.721779, 124.011108)",
+        "amount_centavos": 2500000000,
+        "location": "Catmon, Cebu"
+      },
+      "candidates": [
+        {
+          "contract_id": "26HI0094",
+          "fiscal_year": 2026,
+          "description": "CONVERGENCE AND SPECIAL SUPPORT PROGRAM: BASIC INFRASTRUCTURE PROGRAM (BIP) - MULTI-PURPOSE BUILDINGS/FACILITIES TO SUPPORT SERVICES - CONSTRUCTION (COMPLETION) OF MULTI-PURPOSE BUILDING (3STY-6CL), BARANGAY CORAZON, CATMON, CEBU (10.721779, 124.011108)",
+          "budget_centavos": 0,
+          "location": "Cebu 5th DEO, Region VII",
+          "source_of_funds": ""
+        }
+      ],
+      "expected_confidence": "candidate",
+      "expected_selected_contract_id": null,
+      "expected_top_contract_id": "26HI0094"
+    }
+  ]
+}

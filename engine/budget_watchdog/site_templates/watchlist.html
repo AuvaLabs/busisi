@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Records | Busisi{% endblock %}
+{% block content %}
+<header class="page-header shell">
+  <p class="section-label">Reviewed public records</p>
+  <h1>Project register</h1>
+  <p>Search, sort, and export the reviewed evidence set. Every signal states its rule and limitation. Inclusion is not evidence of wrongdoing.</p>
+</header>
+
+<section class="shell watch-layout">
+  <aside class="filter-panel" aria-label="Filter evidence queue">
+    <label for="watch-search">Search projects</label>
+    <input id="watch-search" type="search" placeholder="Place, project, contract…" data-watch-search>
+    <label for="year-filter">Fiscal year</label>
+    <select id="year-filter" data-year-filter>
+      <option value="all">All years</option>
+      {% for year in publication.available_years %}<option value="{{ year }}">FY {{ year }}</option>{% endfor %}
+    </select>
+    <fieldset>
+      <legend>Review status</legend>
+      <label><input type="radio" name="status" value="all" checked> All records</label>
+      <label><input type="radio" name="status" value="reviewed"> Reviewed links</label>
+      <label><input type="radio" name="status" value="quarantine"> Quarantined</label>
+    </fieldset>
+    <button class="text-button" type="button" data-reset>Clear filters</button>
+    <p class="filter-note" aria-live="polite"><strong data-result-count>{{ publication.dossiers | length }}</strong> of <span data-total-count>{{ publication.dossiers | length }}</span> reviewed records shown.</p>
+  </aside>
+
+  <div class="watch-results">
+    <section class="signal-stack" aria-labelledby="signals-title">
+      <div class="subheading">
+        <h2 id="signals-title">Detected signals</h2>
+        <span>{{ publication.watchlist | length }} rule triggered</span>
+      </div>
+      {% for item in publication.watchlist %}
+      <article class="watch-signal">
+        <div class="signal-rail" aria-hidden="true"></div>
+        <div>
+          <span class="signal-code">{{ item.code | signal }}</span>
+          <h3>{{ item.summary }}</h3>
+          <p class="family-name">{{ item.family_label }}</p>
+          <div class="year-comparison small">
+            {% for year in item.years %}
+            <div><span>FY {{ year }}</span><strong>{{ item.amounts_centavos[loop.index0] | peso }}</strong></div>
+            {% endfor %}
+          </div>
+          <p class="caveat">{{ item.limitations }}</p>
+          <div class="related-links">
+            {% for slug in item.dossier_slugs %}<a href="/projects/{{ slug }}/">Evidence {{ loop.index }}</a>{% endfor %}
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+
+    <section aria-labelledby="queue-title">
+      <div class="subheading">
+        <h2 id="queue-title">Evidence queue</h2>
+        <span>Reviewed fixtures only</span>
+      </div>
+      <div class="data-toolbar">
+        <label for="sort-records">Sort</label>
+        <select id="sort-records" data-sort>
+          <option value="appropriation_desc">Largest appropriation</option>
+          <option value="difference_desc">Largest difference</option>
+          <option value="year_desc">Newest fiscal year</option>
+          <option value="title_asc">Project name A–Z</option>
+        </select>
+        <a class="export-button" href="#" download="busisi-project-records.csv" data-export>Export visible CSV</a>
+      </div>
+      <div class="evidence-list" data-evidence-list>
+        {% for dossier in publication.dossiers %}
+        <article class="evidence-row" data-status="{{ 'quarantine' if dossier.is_quarantined else 'reviewed' }}" data-search="{{ dossier.title }} {{ dossier.contract_id }} {{ dossier.location }}" data-title="{{ dossier.title }}" data-year="{{ dossier.fiscal_year }}" data-appropriation="{{ dossier.appropriation_centavos }}" data-contract-budget="{{ dossier.contract_budget_centavos }}" data-variance="{{ dossier.variance_centavos }}" data-contract="{{ dossier.contract_id }}" data-location="{{ dossier.location }}" data-url="/projects/{{ dossier.slug }}/">
+          <div class="evidence-main">
+            <span class="status {{ 'quarantine' if dossier.is_quarantined else 'reviewed' }}">{{ dossier.status_label }}</span>
+            <h3><a href="/projects/{{ dossier.slug }}/">{{ dossier.title }}</a></h3>
+            <p>FY {{ dossier.fiscal_year }} · {{ dossier.location }} · Contract {{ dossier.contract_id }}</p>
+          </div>
+          <div class="amount-pair">
+            <span>Appropriation<strong>{{ dossier.appropriation_centavos | peso }}</strong></span>
+            <span>Contract record<strong>{{ dossier.contract_budget_centavos | peso }}</strong></span>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      <p class="empty-state" data-empty-state hidden>No reviewed records match this filter.</p>
+      <button class="load-more" type="button" data-load-more hidden>Load more reviewed records</button>
+      <p class="data-source-status" data-source-status aria-live="polite">Showing the embedded reviewed snapshot.</p>
+    </section>
+  </div>
+</section>
+{% endblock %}

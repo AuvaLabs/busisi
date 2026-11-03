@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ dossier.title }} | Busisi dossier{% endblock %}
+{% block content %}
+<article class="shell dossier-page">
+  <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/watchlist/">Records</a><span>/</span><span>Project dossier</span></nav>
+  <header class="dossier-header">
+    <div>
+      <span class="status {{ 'quarantine' if dossier.is_quarantined else 'reviewed' }}">{{ dossier.status_label }}</span>
+      <p class="record-id">FY {{ dossier.fiscal_year }} · {{ dossier.contract_id }}</p>
+      <h1>{{ dossier.title }}</h1>
+      <p>{{ dossier.location }}</p>
+    </div>
+    <div class="confidence-block">
+      <span>Deterministic match</span>
+      <strong>{{ dossier.confidence | title }}</strong>
+      <small>Score {{ dossier.confidence_score }} · No opaque risk score</small>
+    </div>
+  </header>
+
+  {% if dossier.is_quarantined %}
+  <aside class="quarantine-notice">
+    <strong>This candidate is not published as a confirmed link.</strong>
+    <p>{{ dossier.match_limitations }} A zero downstream value can reflect publication lag or incomplete source coverage.</p>
+  </aside>
+  {% endif %}
+
+  <section class="money-comparison" aria-labelledby="money-title">
+    <div class="section-heading inline"><div><p class="section-label">Amounts as published</p><h2 id="money-title">Budget to contract record</h2></div></div>
+    <dl>
+      <div><dt>GAA appropriation</dt><dd>{{ dossier.appropriation_centavos | peso }}</dd><small>Authority to spend, not proof of disbursement</small></div>
+      <div><dt>DPWH project budget</dt><dd>{{ dossier.contract_budget_centavos | peso }}</dd><small>Downstream project record</small></div>
+      <div><dt>Difference</dt><dd>{{ dossier.variance_centavos | peso }}</dd><small>Comparison only, not a loss estimate</small></div>
+    </dl>
+  </section>
+
+  <div class="dossier-columns">
+    <section class="record-panel" aria-labelledby="identity-title">
+      <p class="section-label">Identity decision</p>
+      <h2 id="identity-title">Why these records were compared</h2>
+      <ul class="signal-list">
+        {% for signal in dossier.match_signals %}<li>{{ signal | signal }}</li>{% endfor %}
+      </ul>
+      <p>{{ dossier.match_limitations }}</p>
+      <dl class="record-details">
+        <div><dt>Contract ID</dt><dd>{{ dossier.contract_id }}</dd></div>
+        <div><dt>Implementing office</dt><dd>{{ dossier.implementing_office or "Not supplied" }}</dd></div>
+        <div><dt>Funding source</dt><dd>{{ dossier.source_of_funds or "Not supplied" }}</dd></div>
+        <div><dt>Family identity</dt><dd><code>{{ dossier.family_id }}</code></dd></div>
+      </dl>
+    </section>
+
+    <section class="record-panel evidence-panel" aria-labelledby="evidence-title">
+      <p class="section-label">Primary evidence</p>
+      <h2 id="evidence-title">Open the source records</h2>
+      <ol>
+        {% for url in dossier.evidence_urls %}
+        <li>
+          <span>{{ "Budget appropriation record" if loop.first else "DPWH delivery record" }}</span>
+          <a href="{{ url }}">Open source <span aria-hidden="true">↗</span></a>
+          <code>{{ url }}</code>
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+  </div>
+
+  <section class="source-comparison" aria-labelledby="source-title">
+    <p class="section-label">Source text, preserved</p>
+    <h2 id="source-title">Record comparison</h2>
+    <div>
+      <article><span>Budget description</span><p>{{ dossier.title }}</p></article>
+      <article><span>Delivery description</span><p>{{ dossier.delivery_title }}</p></article>
+    </div>
+  </section>
+</article>
+{% endblock %}

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Busisi traces Philippine public budget records from appropriation to implementation.">
+  <title>{% block title %}Busisi | Philippine public budget records{% endblock %}</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/site.css">
+  <script defer src="/assets/site.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="wordmark" href="/" aria-label="Busisi home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="brand-name">Busisi</span>
+        <small>Philippine public budget records</small>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="/watchlist/">Records</a>
+        <a href="/methodology/">How it works</a>
+      </nav>
+    </div>
+  </header>
+
+  {% if not publication.release_gate.release_ready %}
+  <aside class="release-gate" aria-label="Release status">
+    <div>
+      <strong>Internal accuracy preview</strong>
+      <span>{{ publication.release_gate.reviewed_cases }} of {{ publication.release_gate.required_cases }} reviewed cases. Not approved for public release.</span>
+    </div>
+    <a href="/methodology/#release-gate">Why this is gated</a>
+  </aside>
+  {% endif %}
+
+  <main id="content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div>
+      <p class="footer-title">Busisi</p>
+      <p>Signals identify records for review. They are not evidence of wrongdoing by any person, office, or contractor.</p>
+    </div>
+    <div class="footer-links">
+      <a href="/methodology/">Methodology</a>
+      <a href="https://budget.bettergov.ph/docs">BetterGov API</a>
+      <span>Independent public-interest data project</span>
+    </div>
+  </footer>
+</body>
+</html>

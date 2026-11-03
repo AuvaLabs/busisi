@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}How it works | Busisi{% endblock %}
+{% block content %}
+<header class="page-header shell narrow">
+  <p class="section-label">Rules before results</p>
+  <h1>Methodology</h1>
+  <p>The system is deterministic and evidence-first. It can operate without a language model, and every published conclusion must be reproducible from its inputs.</p>
+</header>
+
+<div class="shell methodology-layout">
+  <nav class="method-nav" aria-label="Methodology sections">
+    <a href="#pipeline">Evidence pipeline</a>
+    <a href="#identity">Identity matching</a>
+    <a href="#signals">Review signals</a>
+    <a href="#release-gate">Release gate</a>
+  </nav>
+  <div class="method-content">
+    <section id="pipeline">
+      <span class="method-number">01</span><h2>Evidence pipeline</h2>
+      <p>Sources are acquired, hashed, archived, schema-validated, normalized to exact pesos and centavos, and reconciled to source control totals before analysis.</p>
+      <ol class="pipeline-list">
+        <li>Acquire and archive original bytes</li><li>Validate schema and units</li><li>Reconcile control totals</li><li>Match identities</li><li>Classify confidence</li><li>Calculate signals</li><li>Quarantine ambiguity</li><li>Publish reviewed evidence</li>
+      </ol>
+    </section>
+    <section id="identity">
+      <span class="method-number">02</span><h2>Identity matching</h2>
+      <p>An exact link requires a shared official identifier. A derived link requires a unique combination of year, title, location, funding source, and compatible amount. Competing candidates are quarantined rather than resolved by picking the highest score.</p>
+    </section>
+    <section id="signals">
+      <span class="method-number">03</span><h2>Review signals</h2>
+      <p>Each signal exposes its rule, inputs, calculation, confidence, and limitations. An insertion candidate, repeated appropriation, amount difference, or delayed source update is a lead for review. It is not evidence of illegality or wrongdoing.</p>
+    </section>
+    <section id="release-gate">
+      <span class="method-number">04</span><h2>Release gate</h2>
+      <div class="gate-card">
+        <strong>{{ publication.release_gate.reviewed_cases }} of {{ publication.release_gate.required_cases }}</strong>
+        <span>reviewed cases completed</span>
+        <progress value="{{ publication.release_gate.reviewed_cases }}" max="{{ publication.release_gate.required_cases }}">{{ publication.release_gate.reviewed_cases }}%</progress>
+      </div>
+      <p>Automatic publication requires at least 100 reviewed linkage cases and at least 95 percent agreement on the high-confidence class. This preview has {{ publication.release_gate.agreement_percent }} agreement on its small reviewed set, but the sample-size gate remains closed.</p>
+    </section>
+  </div>
+</div>
+{% endblock %}

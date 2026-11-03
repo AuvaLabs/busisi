@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Busisi | Trace Philippine public projects{% endblock %}
+{% block content %}
+<section class="hero shell">
+  <div class="hero-grid">
+    <div>
+      <p class="eyebrow">Suriin ang pondo. Sundan ang proyekto.</p>
+      <h1>Public projects, examined record by record.</h1>
+      <p class="lede">Busisi connects appropriations to implementation records and keeps every conclusion close to its source.</p>
+      <form class="home-search" action="/watchlist/" method="get" role="search">
+        <label for="home-query">Find a project, place, or contract</label>
+        <div><input id="home-query" name="q" type="search" placeholder="Try Catmon, pumping station, or 25HI0028"><button type="submit">Search records</button></div>
+      </form>
+    </div>
+    <aside class="identity-note" aria-label="What Busisi publishes">
+      <span class="identity-index">01 / Purpose</span>
+      <p>Not a corruption score. Not an accusation board. A reproducible register of links, differences, and unanswered questions.</p>
+      <a href="/methodology/">Read the publication rules <span aria-hidden="true">→</span></a>
+    </aside>
+  </div>
+</section>
+
+<section class="snapshot-strip" aria-label="Current reviewed snapshot">
+  <div class="shell snapshot-grid">
+    <div><span>Reviewed records</span><strong>{{ publication.release_gate.reviewed_cases }}</strong></div>
+    <div><span>Appropriations represented</span><strong>{{ publication.total_appropriation_centavos | peso }}</strong></div>
+    <div><span>Fiscal years</span><strong>{{ publication.available_years[0] }}–{{ publication.available_years[-1] }}</strong></div>
+    <div><span>Quarantined candidates</span><strong>{{ publication.dossiers | selectattr("is_quarantined") | list | length }}</strong></div>
+  </div>
+</section>
+
+<section class="shell section-space signal-overview">
+  <div class="section-heading">
+    <div><p class="section-label">Review desk</p><h2>Signals with evidence attached</h2></div>
+    <a href="/watchlist/">Open all records <span aria-hidden="true">→</span></a>
+  </div>
+  {% for item in publication.watchlist %}
+  <article class="signal-feature">
+    <div class="signal-code">{{ item.code | signal }}</div>
+    <h3>{{ item.summary }}</h3>
+    <p>{{ item.family_label }}</p>
+    <div class="year-comparison">
+      {% for year in item.years %}
+      <div><span>FY {{ year }}</span><strong>{{ item.amounts_centavos[loop.index0] | peso }}</strong></div>
+      {% endfor %}
+    </div>
+    <p class="caveat">{{ item.limitations }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="shell section-space compact">
+  <div class="section-heading">
+    <div><p class="section-label">Source desk</p><h2>Recently reviewed dossiers</h2></div>
+  </div>
+  <div class="dossier-grid">
+    {% for dossier in publication.dossiers %}
+    <a class="dossier-card" href="/projects/{{ dossier.slug }}/">
+      <span class="status {{ 'quarantine' if dossier.is_quarantined else 'reviewed' }}">{{ dossier.status_label }}</span>
+      <h3>{{ dossier.title }}</h3>
+      <dl>
+        <div><dt>Fiscal year</dt><dd>{{ dossier.fiscal_year }}</dd></div>
+        <div><dt>Appropriation</dt><dd>{{ dossier.appropriation_centavos | peso }}</dd></div>
+        <div><dt>Contract record</dt><dd>{{ dossier.contract_id }}</dd></div>
+      </dl>
+      <span class="card-link">Inspect sources <span aria-hidden="true">→</span></span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

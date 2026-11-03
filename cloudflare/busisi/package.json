@@ -1,0 +1,20 @@
+{
+  "name": "busisi-cloudflare",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:data": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_cloudflare.py",
+    "build:public-data": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_public_data.py",
+    "test": "npm run build:data && node --disable-warning=ExperimentalWarning --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 --test-coverage-include='src/*.js' --test test/*.test.js",
+    "check": "npm test && wrangler deploy --dry-run --outdir ../../data/budget_watchdog/worker-dry-run",
+    "deploy:publication": "wrangler deploy --config wrangler.jsonc",
+    "submit:indexnow": "node scripts/submit-indexnow.mjs",
+    "verify:live": "node scripts/verify-live.mjs",
+    "dev": "npm run build:data && CI=1 wrangler d1 migrations apply busisi-publication --local && wrangler d1 execute busisi-publication --local --file=../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql && wrangler dev",
+    "dev:publication": "wrangler dev --config wrangler.jsonc"
+  },
+  "devDependencies": {
+    "wrangler": "^4.36.0"
+  }
+}
