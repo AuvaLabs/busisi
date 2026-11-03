@@ -1,0 +1,16 @@
+[Unit]
+Description=Busisi gated project-image coverage expansion
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/srv/data/auvalabs/busisi/data/budget_watchdog/archive/blobs/5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/data/auvalabs/busisi
+Environment=PYTHONPATH=/srv/data/auvalabs/busisi
+ExecStart=/usr/bin/python3 ops/harness/budget_watchdog_project_image_automation.py --limit 500 --publish
+TimeoutStartSec=6h
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/data/auvalabs/busisi/data/budget_watchdog

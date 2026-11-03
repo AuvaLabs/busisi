@@ -14,6 +14,7 @@ import { getProjectProcurementEvidence } from '../src/procurement-query.js';
 import { getProjectContractEvidence } from '../src/contract-evidence-query.js';
 import { getProjectImageEvidence } from '../src/project-image-query.js';
 import { getAcquisitionCoverage } from '../src/acquisition-coverage-query.js';
+import { getCoverageStatus } from '../src/coverage-status-query.js';
 import { parseContractIntelligenceQuery } from '../src/contract-intelligence-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseAllotmentReleaseQuery } from '../src/allotment-release-query.js';
@@ -90,6 +91,9 @@ const allotmentReleaseMigrationPath = fileURLToPath(
 const projectImageMigrationPath = fileURLToPath(
   new URL('../migrations/0021_project_images.sql', import.meta.url),
 );
+const coverageAutomationMigrationPath = fileURLToPath(
+  new URL('../migrations/0022_coverage_automation.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -148,6 +152,7 @@ class LocalD1 {
     this.database.exec(readFileSync(contractIntelligenceMigrationPath, 'utf8'));
     this.database.exec(readFileSync(allotmentReleaseMigrationPath, 'utf8'));
     this.database.exec(readFileSync(projectImageMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(coverageAutomationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -386,6 +391,9 @@ class LocalD1 {
          'https://s3.transparency.dpwh.gov.ph/cdn-cgi/image/width=400/https://s3.transparency.dpwh.gov.ph/dpwh-gallery/fy2025/pump/photo-1.jpg',
          '${'a'.repeat(64)}', 'image/jpeg', 128, 600, 400,
          'project-images/25O00113/${'a'.repeat(64)}.jpg', 'verified');
+      INSERT INTO coverage_releases VALUES
+        ('${'d'.repeat(64)}', '2026-11-04T01:00:00+00:00', '${'e'.repeat(64)}',
+         36748, 6, 4, 1, 1, 3, 2, 36737, 5, 13);
     `);
   }
 
@@ -2167,4 +2175,24 @@ test('renders enriched record relationships and tolerates malformed candidate me
     request('/projects/pump-reviewed/'), environment(database),
   );
   assert.match(await contextual.text(), /program audit available/);
+});
+
+test('serves gated coverage status through the API and public page', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+
+  const status = await getCoverageStatus(database);
+  assert.equal(status.universe_contracts, 36748);
+  assert.equal(status.verified_images, 5);
+
+  const api = await worker.fetch(request('/api/v1/coverage-status'), environment(database));
+  assert.equal(api.status, 200);
+  assert.equal((await api.json()).data.conflict_contracts, 1);
+
+  const pageResponse = await siteWorker.fetch(request('/coverage/'), environment(database));
+  assert.equal(pageResponse.status, 200);
+  const pageDocument = await pageResponse.text();
+  assert.match(pageDocument, /See what the evidence pipeline has verified/);
+  assert.match(pageDocument, /36,748/);
+  assert.match(pageDocument, /No model or generative system decides publication status/);
 });

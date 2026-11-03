@@ -68,6 +68,12 @@ const expectedAcquisitionCoverage = Object.freeze({
   award_source_rows: 5_481_161,
   award_sha256: '9bfa9e7cbf5041dc3b51a4c2742e60a43d1615f119955581d4b155bf3a6d4a8b',
 });
+const expectedImageCoverage = Object.freeze({
+  universe_contracts: 56_890,
+  source_sha256: expectedArtifacts.delivery_artifact_sha256,
+  minimum_verified_images: 5,
+  minimum_quarantined_images: 13,
+});
 const expectedContractStates = Object.freeze({
   conflict_review: 161,
   multiple_exact_rows: 2_077,
@@ -213,6 +219,13 @@ const verifyPages = async () => {
   const methodologyText = await methodology.text();
   expectIncludes(methodologyText, '100 reviewed linkage cases', 'methodology gate');
   expectIncludes(methodologyText, 'Congressional district context', 'methodology district boundary');
+  expectIncludes(methodologyText, 'Discovery can be automatic', 'methodology automation boundary');
+
+  const coverage = await request('/coverage/');
+  expectStatus(coverage, 200, '/coverage/');
+  const coverageText = await coverage.text();
+  expectIncludes(coverageText, 'See what the evidence pipeline has verified', 'coverage heading');
+  expectIncludes(coverageText, 'No model or generative system decides publication status', 'coverage boundary');
 
   const publicValue = await request('/sulit/');
   expectStatus(publicValue, 200, '/sulit/');
@@ -304,7 +317,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -317,7 +330,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -411,6 +424,27 @@ const verifyData = async () => {
   }
   for (const [key, value] of Object.entries(expectedArtifacts)) {
     if (stats[key] !== value) fail(`stats: ${key} does not match the release artifact`);
+  }
+
+  const imageCoverage = (await readJson('/api/v1/coverage-status')).data;
+  if (!imageCoverage
+    || imageCoverage.universe_contracts !== expectedImageCoverage.universe_contracts
+    || imageCoverage.source_sha256 !== expectedImageCoverage.source_sha256
+    || imageCoverage.release_id?.length !== 64
+    || imageCoverage.verified_images < expectedImageCoverage.minimum_verified_images
+    || imageCoverage.quarantined_images < expectedImageCoverage.minimum_quarantined_images
+    || imageCoverage.completed_contracts !== (
+      imageCoverage.verified_exact_contracts
+      + imageCoverage.no_image_contracts
+      + imageCoverage.conflict_contracts
+    )
+    || imageCoverage.universe_contracts !== (
+      imageCoverage.completed_contracts
+      + imageCoverage.retry_contracts
+      + imageCoverage.blocked_contracts
+      + imageCoverage.pending_contracts
+    )) {
+    fail('project-image coverage: release identity or control totals do not reconcile');
   }
 
   const budget = await readJson('/api/v1/budgets?q=pumping&year=2025&limit=1');
@@ -820,6 +854,7 @@ const verifyData = async () => {
     district_offices: integritySummary.district_offices,
     public_value_indicators: publicValueSummary.indicator_count,
     budget_cycle_documents: cycleDocuments.meta.total,
+    project_image_coverage: imageCoverage.completed_contracts,
     reviewed_public: reviewed.meta.total,
   };
 };

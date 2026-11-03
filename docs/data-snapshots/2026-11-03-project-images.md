@@ -32,7 +32,11 @@ location, physical completion, construction quality, payment, or public
 benefit. Source timestamps do not state a timezone. Coordinates pass only a
 broad Philippine-bounds validation and remain source-reported.
 
-The other 36,742 image-positive contracts in the current 56,887-contract
-delivery universe remain outside this bounded release. They require a resumable
-acquisition queue and the same archive, reconciliation, inspection, quarantine,
-and publication controls before public display.
+The current 56,887-contract FY2024-FY2026 delivery universe includes 36,747
+records where the source reports `hasSatelliteImage`. That field is a discovery
+hint, not proof that the separate project-image endpoint contains publishable
+evidence. Full coverage therefore requires checking every contract through a
+resumable queue and applying the same archive, reconciliation, inspection,
+quarantine, and publication controls before public display. Three reviewed
+contracts outside that source slice remain in the automation baseline so a new
+release cannot silently remove existing evidence.

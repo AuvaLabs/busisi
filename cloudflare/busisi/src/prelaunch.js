@@ -21,6 +21,8 @@ import { getCoaDesk, getCoaReport } from './coa-query.js';
 import { procurementDeskBody } from './procurement-content.js';
 import { getProcurementDesk } from './procurement-query.js';
 import { getContractAcquisition } from './contract-acquisition-query.js';
+import { coverageStatusBody } from './coverage-status-content.js';
+import { getCoverageStatus } from './coverage-status-query.js';
 import {
   budgetRecordBody,
   candidateRecordBody,
@@ -65,6 +67,17 @@ const METHODOLOGY_SCHEMA = Object.freeze({
   url: `${SITE.origin}/methodology/`,
   description: 'The Busisi evidence, review, quarantine, and publication method for Philippine public budget records.',
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
+const COVERAGE_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi project-image coverage status',
+  url: `${SITE.origin}/coverage/`,
+  description: 'Latest gated deterministic acquisition and verification coverage for DPWH project-image evidence.',
+  spatialCoverage: 'Philippines',
+  temporalCoverage: '2024/2026',
+  isAccessibleForFree: true,
 });
 
 const EXPLORE_SCHEMA = Object.freeze({
@@ -221,6 +234,14 @@ const methodology = () => page(document({
   canonicalPath: '/methodology/',
   body: methodologyBody,
   schema: METHODOLOGY_SCHEMA,
+}));
+
+const coverage = (record) => page(document({
+  title: 'Evidence coverage status | Busisi',
+  description: 'See deterministic project-image acquisition, exact reconciliation, quarantine, retry, and publication coverage.',
+  canonicalPath: '/coverage/',
+  body: coverageStatusBody(record),
+  schema: COVERAGE_SCHEMA,
 }));
 
 const explore = () => page(document({
@@ -440,6 +461,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/audit/reports/coa-cpa-capiz-fmr-2015-01/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/signals/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/integrity/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/coverage/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/corazon-2022-combined/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/agoncillo-2023/</loc><lastmod>2026-11-03</lastmod></url>
@@ -471,6 +493,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Procurement evidence: ${SITE.origin}/procurement/
 - Deterministic review desk: ${SITE.origin}/signals/
 - Project integrity desk: ${SITE.origin}/integrity/
+- Evidence coverage status: ${SITE.origin}/coverage/
 - Methodology: ${SITE.origin}/methodology/
 
 ## Evidence and publication rules
@@ -585,6 +608,9 @@ export default {
     }
     if (!result && (url.pathname === '/procurement' || url.pathname === '/procurement/') && env.DB) {
       result = procurement(await getProcurementDesk(env.DB));
+    }
+    if (!result && (url.pathname === '/coverage' || url.pathname === '/coverage/') && env.DB) {
+      result = coverage(await getCoverageStatus(env.DB));
     }
     const auditReportMatch = url.pathname.match(/^\/audit\/reports\/([a-z0-9-]+)\/?$/);
     if (!result && auditReportMatch && env.DB) {
