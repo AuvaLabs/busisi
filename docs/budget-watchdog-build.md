@@ -126,6 +126,12 @@ As of 2026-11-03:
 - The concentration view publishes 737 region, province or district-office,
   and category groups with at least 20 projects. Shares use contractor-party
   associations as the disclosed denominator and are screening measures only.
+- Congressional district context covers all 254 legislative districts in a
+  versioned 20th Congress roster and 199 mapped DPWH offices. It attributes
+  35,166 delivery records to a single-district office, retains all possible
+  districts for 14,027 records from shared offices, and leaves 7,694 records
+  unassigned. It never selects one representative for a shared office and does
+  not imply project sponsorship, authorship, control or responsibility.
 - Coordinate checks currently cover missing values, broad Philippine bounds,
   exact coordinate reuse and conflicting source location labels. They do not
   claim point-in-polygon validation against administrative boundaries.
@@ -175,6 +181,7 @@ Build and verify the Cloudflare asset and D1 seed bundle with:
 PYTHONPATH=. python3 ops/harness/budget_watchdog_cloudflare.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_public_data.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_pcab.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_districts.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 cd cloudflare/busisi
 npm test

@@ -86,6 +86,8 @@ test('publishes the project-integrity desk and contractor leaderboard', async ()
   assert.match(document, /data-concentration-desk/);
   assert.match(document, /contractor-party associations/);
   assert.match(document, /Current PCAB-table status/);
+  assert.match(document, /Congressional district context/);
+  assert.match(document, /does not establish political authorship/);
   assert.match(document, /Not a corruption score/);
   assert.match(document, /src="\/assets\/integrity-v1\.js"/);
   assert.doesNotMatch(document, /proves? (?:fraud|corruption)/i);
@@ -132,6 +134,8 @@ test('methodology is canonical and explains the publication gate', async () => {
   assert.match(document, /href="#pipeline"/);
   assert.match(document, /href="#source-policy"/);
   assert.match(document, /href="#corrections"/);
+  assert.match(document, /Congressional district context/);
+  assert.match(document, /not a coordinate or boundary-polygon determination/);
   assert.doesNotMatch(document, /Auva Labs|auvalabs/i);
 });
 

@@ -1,3 +1,5 @@
+import { renderDistrictContext } from './district-context-v1.js';
+
 (() => {
   const root = document.querySelector('[data-change-ledger]');
   if (!root) return;
@@ -65,6 +67,7 @@
     appendText(copy, 'h2', record.title);
     const context = [record.program, record.region, record.office].filter(Boolean).join(' · ');
     appendText(copy, 'p', context || 'Context not stated in source row', 'change-meta');
+    copy.append(renderDistrictContext(record.district_context));
     const links = appendText(copy, 'div', '', 'change-evidence');
     evidenceLink(links, 'Comparison record', record.source_url);
     evidenceLink(links, record.nep_page ? `NEP page ${record.nep_page}` : 'NEP document', record.nep_pdf_url);

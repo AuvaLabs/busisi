@@ -1,3 +1,5 @@
+import { renderDistrictContext } from './district-context-v1.js';
+
 const integrityRoot = document.querySelector('[data-integrity-desk]');
 const contractorRoot = document.querySelector('[data-contractor-desk]');
 const concentrationRoot = document.querySelector('[data-concentration-desk]');
@@ -112,6 +114,7 @@ const renderSummary = (payload) => {
     [number.format(payload.integrity_signals), 'rule-specific review signals', 'One contract can meet more than one rule'],
     [number.format(coordinateSignals), 'coordinate-related signals', 'Missing, broad-bound, reuse, or label checks'],
     [number.format(payload.contractors), 'contractor identities', 'Explicit slash-delimited joint ventures are split by party'],
+    [number.format(payload.district_count), 'legislative districts in roster', `${number.format(payload.district_offices)} mapped DPWH offices · snapshot ${payload.district_source_retrieved_on}`],
   ];
   integritySummary.replaceChildren(...cards.map(([value, label, note]) => {
     const card = document.createElement('article');
@@ -155,6 +158,7 @@ const renderIntegrityRecord = (record) => {
   }
   appendText(card, 'p', record.evidence, 'integrity-evidence');
   appendText(card, 'p', `Limit: ${record.limitations}`, 'integrity-limit');
+  card.append(renderDistrictContext(record.district_context));
   const links = appendText(card, 'div', '', 'integrity-links');
   appendLink(links, 'Open archived source record', record.source_url);
   if (record.pcab_id) appendLink(links, `Verify PCAB ID ${record.pcab_id}`, 'https://www.pcab.construction.gov.ph/verify/');

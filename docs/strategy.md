@@ -29,6 +29,13 @@ slash-delimited joint ventures. Current PCAB lookup status and transparent
 contractor-party concentration shares are published with their limitations.
 Neither view produces a composite risk score or infers wrongdoing.
 
+Project and change records also show congressional district context when the
+listed DPWH office can be matched exactly. A single-district office names that
+district and its representative as recorded in the dated roster snapshot. Shared offices show every served
+district and representative, while unmatched offices stay unassigned. This is
+office context, not coordinate-based boundary validation, political authorship
+or evidence that a representative requested or controls the project.
+
 ## Release gates
 
 | Area | Gate |
@@ -57,6 +64,8 @@ Neither view produces a composite risk score or infers wrongdoing.
    mergers instead of collapsing similar business names.
 7. Add alerts for source drift and publication mismatch without granting the
    monitor deployment or database mutation credentials.
+8. Reconcile district and representative changes against a newly archived
+   roster snapshot before updating public names, keeping prior snapshot hashes.
 
 ## Decision rules
 
@@ -66,6 +75,8 @@ Neither view produces a composite risk score or infers wrongdoing.
 - Do not merge separate phases into one physical asset without documentary
   evidence.
 - Do not use a model to bridge missing evidence.
+- Do not assign a project to one representative when its DPWH office serves
+  several districts.
 - Prefer a smaller verified publication over a larger uncertain one.
 
 Last updated: 2026-11-03.

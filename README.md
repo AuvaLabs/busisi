@@ -14,6 +14,11 @@ coordinate review signals and coverage gaps. Its contractor view separately
 ranks archived activity by project count and total project budget. Neither view
 uses a model or produces a corruption score.
 
+Where the listed DPWH office has an exact roster mapping, records also show the
+roster-snapshot congressional district and representative. Shared offices retain every
+possible district, and unmatched offices remain unassigned. This context does
+not imply project sponsorship, control or responsibility.
+
 Production: [busisi.org](https://busisi.org)
 
 ## Accuracy contract
@@ -51,6 +56,7 @@ python -m pip install -r requirements-dev.txt
 PYTHONPATH=. pytest engine/tests/budget_watchdog -q
 PYTHONPATH=. python3 ops/harness/budget_watchdog_golden.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_hgab.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_districts.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 cd cloudflare/busisi
 npm ci

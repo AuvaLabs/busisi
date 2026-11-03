@@ -1,4 +1,5 @@
 import { QueryError } from './query.js';
+import { DISTRICT_SELECT, districtContext, districtOfficeJoin } from './district-context.js';
 
 const MAX_LIMIT = 100;
 const MAX_EXPORT_ROWS = 10_000;
@@ -105,6 +106,10 @@ const rankingOrder = (signal) => {
 const mapReviewRecord = (row, signal) => Object.freeze({
   ...row,
   signal,
+  district_context: districtContext(row),
+  district_classification: undefined,
+  district_office_name: undefined,
+  districts_json: undefined,
   prior_year_count: Number(row.prior_year_count || 0),
   prior_years: row.prior_years
     ? row.prior_years.split(',').map(Number).sort((left, right) => left - right)
@@ -120,8 +125,10 @@ export const queryReviewRankings = async (database, query, exportLimit = null) =
     .bind(...bindings)
     .first();
   const limit = exportLimit || query.limit;
+  const districtJoin = districtOfficeJoin('c.office');
   const result = await database.prepare(
-    `SELECT c.*${enrichment(query.signal)} FROM stage_change_items c ${where}
+    `SELECT c.*, ${DISTRICT_SELECT}${enrichment(query.signal)}
+      FROM stage_change_items c ${districtJoin} ${where}
       ORDER BY ${rankingOrder(query.signal)}, c.record_id ASC LIMIT ?`,
   ).bind(...bindings, limit).all();
   const records = (result.results || []).map((row) => mapReviewRecord(row, query.signal));

@@ -1,4 +1,5 @@
 import { QueryError } from './query.js';
+import { DISTRICT_SELECT, districtContext, districtOfficeJoin } from './district-context.js';
 
 const MAX_QUERY_TEXT = 200;
 const MAX_LIMIT = 100;
@@ -22,9 +23,9 @@ const CLASSIFICATIONS = new Set([
   'all', 'source_conflict', 'amount_review', 'identity_review', 'coverage_gap',
 ]);
 const INTEGRITY_SORTS = Object.freeze({
-  budget_desc: ['budget_centavos', 'DESC'],
-  year_desc: ['fiscal_year', 'DESC'],
-  contract_asc: ['contract_id', 'ASC'],
+  budget_desc: ['i.budget_centavos', 'DESC'],
+  year_desc: ['i.fiscal_year', 'DESC'],
+  contract_asc: ['i.contract_id', 'ASC'],
 });
 const CONTRACTOR_SORTS = Object.freeze({
   count_desc: ['project_count', 'DESC', 'total_budget_centavos'],
@@ -108,20 +109,20 @@ const integrityWhere = (query) => {
   const clauses = [];
   const bindings = [];
   if (query.q) {
-    clauses.push('(contract_id LIKE ? OR description LIKE ? OR contractor_name LIKE ? OR province LIKE ? OR region LIKE ?)');
+    clauses.push('(i.contract_id LIKE ? OR i.description LIKE ? OR i.contractor_name LIKE ? OR i.province LIKE ? OR i.region LIKE ?)');
     const pattern = `%${query.q}%`;
     bindings.push(pattern, pattern, pattern, pattern, pattern);
   }
   if (query.signal !== 'all') {
-    clauses.push('code = ?');
+    clauses.push('i.code = ?');
     bindings.push(query.signal);
   }
   if (query.classification !== 'all') {
-    clauses.push('classification = ?');
+    clauses.push('i.classification = ?');
     bindings.push(query.classification);
   }
   if (query.year !== null) {
-    clauses.push('fiscal_year = ?');
+    clauses.push('i.fiscal_year = ?');
     bindings.push(query.year);
   }
   return { sql: clauses.length ? ` WHERE ${clauses.join(' AND ')}` : '', bindings };
@@ -131,21 +132,27 @@ const signalRecord = (row) => ({
   ...row,
   fiscal_year: Number(row.fiscal_year),
   budget_centavos: Number(row.budget_centavos),
+  district_context: districtContext(row),
+  district_classification: undefined,
+  district_office_name: undefined,
+  districts_json: undefined,
   source_url: `https://api.dpwh.bettergov.ph/projects/${encodeURIComponent(row.contract_id)}`,
 });
 
 export const queryIntegritySignals = async (database, query) => {
   const where = integrityWhere(query);
+  const districtJoin = districtOfficeJoin('i.province');
   const total = await database.prepare(
-    `SELECT COUNT(*) AS total FROM integrity_signal_items${where.sql}`,
+    `SELECT COUNT(*) AS total FROM integrity_signal_items i ${where.sql}`,
   ).bind(...where.bindings).first('total');
   const [column, direction] = INTEGRITY_SORTS[query.sort];
   const rows = await database.prepare(`
-    SELECT contract_id, fiscal_year, code, classification, label, description,
-      contractor_name, pcab_id, budget_centavos, status, progress, province, region,
-      latitude, longitude, evidence, limitations, source_artifact_sha256
-    FROM integrity_signal_items${where.sql}
-    ORDER BY ${column} ${direction}, signal_id ASC
+    SELECT i.contract_id, i.fiscal_year, i.code, i.classification, i.label, i.description,
+      i.contractor_name, i.pcab_id, i.budget_centavos, i.status, i.progress, i.province, i.region,
+      i.latitude, i.longitude, i.evidence, i.limitations, i.source_artifact_sha256,
+      ${DISTRICT_SELECT}
+    FROM integrity_signal_items i ${districtJoin}${where.sql}
+    ORDER BY ${column} ${direction}, i.signal_id ASC
     LIMIT ? OFFSET ?
   `).bind(...where.bindings, query.limit, query.offset).all();
   const records = rows.results.map(signalRecord);
@@ -160,7 +167,7 @@ export const queryIntegritySignals = async (database, query) => {
 
 export const getIntegritySummary = async (database) => {
   const rows = await database.prepare(
-    "SELECT key, value FROM integrity_metadata WHERE key IN ('source_records', 'integrity_signals', 'contractors', 'concentrations', 'source_artifact_sha256', 'source_as_of', 'pcab_records', 'pcab_retrieved_on', 'pcab_source_sha256') OR key LIKE 'signal:%' OR key LIKE 'pcab_status:%' ORDER BY key",
+    "SELECT key, value FROM integrity_metadata WHERE key IN ('source_records', 'integrity_signals', 'contractors', 'concentrations', 'source_artifact_sha256', 'source_as_of', 'pcab_records', 'pcab_retrieved_on', 'pcab_source_sha256', 'district_count', 'district_offices', 'district_source_commit', 'district_source_built_at', 'district_source_retrieved_on', 'district_snapshot_sha256') OR key LIKE 'signal:%' OR key LIKE 'pcab_status:%' OR key LIKE 'district_coverage:%' ORDER BY key",
   ).all();
   const metadata = Object.fromEntries(rows.results.map((row) => [row.key, row.value]));
   const signals = rows.results
@@ -176,6 +183,15 @@ export const getIntegritySummary = async (database) => {
     pcab_records: Number(metadata.pcab_records || 0),
     pcab_retrieved_on: metadata.pcab_retrieved_on,
     pcab_source_sha256: metadata.pcab_source_sha256,
+    district_count: Number(metadata.district_count || 0),
+    district_offices: Number(metadata.district_offices || 0),
+    district_source_commit: metadata.district_source_commit,
+    district_source_built_at: metadata.district_source_built_at,
+    district_source_retrieved_on: metadata.district_source_retrieved_on,
+    district_snapshot_sha256: metadata.district_snapshot_sha256,
+    district_coverage: rows.results
+      .filter((row) => row.key.startsWith('district_coverage:'))
+      .map((row) => ({ classification: row.key.slice(18), count: Number(row.value) })),
     signals,
     pcab_statuses: rows.results
       .filter((row) => row.key.startsWith('pcab_status:'))
@@ -257,18 +273,22 @@ const csvCell = (value) => {
 export const exportIntegrityCsv = async (database, query) => {
   const where = integrityWhere(query);
   const [column, direction] = INTEGRITY_SORTS[query.sort];
+  const districtJoin = districtOfficeJoin('i.province');
   const rows = await database.prepare(`
-    SELECT code, classification, contract_id, fiscal_year, description, contractor_name,
-      pcab_id, budget_centavos, status, progress, province, region, latitude, longitude,
-      evidence, limitations, source_artifact_sha256
-    FROM integrity_signal_items${where.sql}
-    ORDER BY ${column} ${direction}, signal_id ASC
+    SELECT i.code, i.classification, i.contract_id, i.fiscal_year, i.description, i.contractor_name,
+      i.pcab_id, i.budget_centavos, i.status, i.progress, i.province, i.region, i.latitude, i.longitude,
+      i.evidence, i.limitations, i.source_artifact_sha256,
+      district.classification AS district_classification, district.office_name AS district_office,
+      district.districts_json
+    FROM integrity_signal_items i ${districtJoin}${where.sql}
+    ORDER BY ${column} ${direction}, i.signal_id ASC
     LIMIT 10000
   `).bind(...where.bindings).all();
   const headers = [
     'code', 'classification', 'contract_id', 'fiscal_year', 'description', 'contractor_name',
     'pcab_id', 'budget_centavos', 'status', 'progress', 'province', 'region', 'latitude',
     'longitude', 'evidence', 'limitations', 'source_artifact_sha256',
+    'district_classification', 'district_office', 'districts_json',
   ];
   return [headers, ...rows.results.map((row) => headers.map((header) => row[header]))]
     .map((row) => row.map(csvCell).join(','))

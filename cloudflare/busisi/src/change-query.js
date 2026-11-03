@@ -1,4 +1,5 @@
 import { QueryError } from './query.js';
+import { DISTRICT_SELECT, districtContext, districtOfficeJoin } from './district-context.js';
 
 const MAX_QUERY_TEXT = 200;
 const MAX_LIMIT = 100;
@@ -109,10 +110,17 @@ export const queryChanges = async (database, query) => {
     .prepare(`SELECT COUNT(*) AS total FROM stage_change_items c ${where}`)
     .bind(...bindings)
     .first();
+  const districtJoin = districtOfficeJoin('c.office');
   const result = await database.prepare(
-    `SELECT c.* FROM stage_change_items c ${where} ORDER BY ${field} ${direction}, c.record_id ASC LIMIT ? OFFSET ?`,
+    `SELECT c.*, ${DISTRICT_SELECT} FROM stage_change_items c ${districtJoin} ${where} ORDER BY ${field} ${direction}, c.record_id ASC LIMIT ? OFFSET ?`,
   ).bind(...bindings, query.limit, query.offset).all();
-  const records = result.results || [];
+  const records = (result.results || []).map((row) => ({
+    ...row,
+    district_context: districtContext(row),
+    district_classification: undefined,
+    district_office_name: undefined,
+    districts_json: undefined,
+  }));
   const nextOffset = query.offset + records.length;
   const nextCursor = nextOffset < Number(count.total)
     ? encodeCursor({ v: 1, offset: nextOffset, fingerprint: fingerprint(query) })

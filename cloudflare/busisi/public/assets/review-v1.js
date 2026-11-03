@@ -1,3 +1,5 @@
+import { renderDistrictContext } from './district-context-v1.js';
+
 const root = document.querySelector('[data-review-desk]');
 
 const form = root.querySelector('[data-review-form]');
@@ -78,6 +80,7 @@ const renderRanking = (record) => {
     [record.program, record.region, record.office].filter(Boolean).join(' · ') || 'Context not stated',
     'review-record-context',
   );
+  card.append(renderDistrictContext(record.district_context));
   const values = appendText(card, 'dl', '', 'review-record-values');
   for (const [label, value] of [
     ['NEP', formatMoney(record.nep_centavos)],

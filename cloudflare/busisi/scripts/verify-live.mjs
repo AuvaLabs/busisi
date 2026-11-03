@@ -38,6 +38,17 @@ const expectedIntegrity = Object.freeze({
   pcab_retrieved_on: '2026-11-03',
   pcab_source_sha256: '016bc9e3427b55e7744558f7726eb773f02f496f88279987c473546d6edb97d2',
   source_artifact_sha256: '5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123',
+  district_count: 254,
+  district_offices: 199,
+  district_source_commit: 'a0caa778442cdae5583f5a006ea7401dab00e5ac',
+  district_source_built_at: '2026-10-26T08:46:14.383Z',
+  district_source_retrieved_on: '2026-11-03',
+  district_snapshot_sha256: 'dc78c26838c81da134e2ae7523a45f0bd7792d2a01e06f6694fc351a25650e46',
+});
+const expectedDistrictCoverage = Object.freeze({
+  shared_office: 14_027,
+  single_district: 35_166,
+  unassigned: 7_694,
 });
 const expectedIntegritySignals = Object.freeze({
   completed_progress_conflict: 7,
@@ -135,7 +146,9 @@ const verifyPages = async () => {
 
   const methodology = await request('/methodology/');
   expectStatus(methodology, 200, '/methodology/');
-  expectIncludes(await methodology.text(), '100 reviewed linkage cases', 'methodology gate');
+  const methodologyText = await methodology.text();
+  expectIncludes(methodologyText, '100 reviewed linkage cases', 'methodology gate');
+  expectIncludes(methodologyText, 'Congressional district context', 'methodology district boundary');
 
   const explore = await request('/explore/');
   expectStatus(explore, 200, '/explore/');
@@ -251,6 +264,10 @@ const verifyData = async () => {
   const delivery = await readJson('/api/v1/delivery?q=Manila&limit=1');
   if (delivery.meta.total < 1 || delivery.data.length !== 1) fail('delivery query: no matching records');
   expectIncludes(delivery.data[0].source_url, 'api.dpwh.bettergov.ph', 'delivery source URL');
+  if (delivery.data[0].district_context?.classification === 'unassigned'
+    || !delivery.data[0].district_context?.districts.length) {
+    fail('delivery query: district context missing');
+  }
 
   const candidates = await readJson('/api/v1/candidates?limit=1');
   if (candidates.meta.total !== expectedCounts.candidate_links) fail('candidate query: count mismatch');
@@ -305,6 +322,14 @@ const verifyData = async () => {
       fail(`integrity summary: ${key} expected ${value}, received ${integritySummary[key]}`);
     }
   }
+  const districtCoverage = Object.fromEntries(
+    integritySummary.district_coverage.map((item) => [item.classification, item.count]),
+  );
+  for (const [classification, expected] of Object.entries(expectedDistrictCoverage)) {
+    if (districtCoverage[classification] !== expected) {
+      fail(`integrity summary: district ${classification} expected ${expected}`);
+    }
+  }
   const integritySignalMap = Object.fromEntries(
     integritySummary.signals.map((item) => [item.code, item.count]),
   );
@@ -321,6 +346,17 @@ const verifyData = async () => {
   }
   if (!coordinateReview.data[0]?.source_url || !coordinateReview.data[0]?.limitations) {
     fail('integrity query: source evidence or limitation missing');
+  }
+  const districtReview = await readJson(
+    '/api/v1/integrity-signals?q=Metro%20Manila%201st%20DEO&limit=1',
+  );
+  const districtContext = districtReview.data[0]?.district_context;
+  if (districtContext?.classification !== 'shared_office' || districtContext.districts.length !== 7) {
+    fail('integrity query: shared district-office context missing');
+  }
+  if (!districtContext.districts.every((seat) => seat.representative_profile_url
+    ?.startsWith('https://www.congress.gov.ph/house-members/view/'))) {
+    fail('integrity query: official representative profiles missing');
   }
   const contractorsByCount = await readJson('/api/v1/contractors?sort=count_desc&limit=1');
   const contractorsByBudget = await readJson('/api/v1/contractors?sort=budget_desc&limit=1');
@@ -356,6 +392,7 @@ const verifyData = async () => {
     stage_changes: changeStats.record_count,
     integrity_signals: integritySummary.integrity_signals,
     contractors: integritySummary.contractors,
+    district_offices: integritySummary.district_offices,
     reviewed_public: reviewed.meta.total,
   };
 };

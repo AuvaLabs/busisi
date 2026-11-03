@@ -1,4 +1,5 @@
 import { QueryError } from './query.js';
+import { DISTRICT_SELECT, districtContext, districtOfficeJoin } from './district-context.js';
 
 const MAX_QUERY_TEXT = 200;
 const MAX_SOURCE_QUERY_TEXT = 40;
@@ -148,6 +149,10 @@ const mapBudget = (row) => ({
 const mapDelivery = (row) => ({
   ...row,
   record_type: 'delivery',
+  district_context: districtContext(row),
+  district_classification: undefined,
+  district_office_name: undefined,
+  districts_json: undefined,
   source_url: `https://api.dpwh.bettergov.ph/projects/${encodeURIComponent(row.contract_id)}`,
 });
 
@@ -169,8 +174,12 @@ export const queryExplorer = async (database, query) => {
     .prepare(`SELECT COUNT(*) AS total FROM ${config.table} ${config.alias} ${where}`)
     .bind(...bindings)
     .first();
+  const deliveryJoin = query.kind === 'delivery'
+    ? districtOfficeJoin("CASE WHEN INSTR(d.location, ',') > 0 THEN SUBSTR(d.location, 1, INSTR(d.location, ',') - 1) ELSE d.location END")
+    : '';
+  const districtSelect = query.kind === 'delivery' ? `, ${DISTRICT_SELECT}` : '';
   const result = await database.prepare(
-    `SELECT ${config.alias}.* FROM ${config.table} ${config.alias} ${where} ORDER BY ${field} ${direction}, ${config.alias}.${config.id} ASC LIMIT ? OFFSET ?`,
+    `SELECT ${config.alias}.*${districtSelect} FROM ${config.table} ${config.alias} ${deliveryJoin} ${where} ORDER BY ${field} ${direction}, ${config.alias}.${config.id} ASC LIMIT ? OFFSET ?`,
   ).bind(...bindings, query.limit, query.offset).all();
   const records = (result.results || []).map(MAPPERS[query.kind]);
   const nextOffset = query.offset + records.length;

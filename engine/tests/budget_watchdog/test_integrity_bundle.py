@@ -91,12 +91,87 @@ def _pcab_snapshot(path: Path) -> None:
     )
 
 
+def _district_snapshots(first: Path, second: Path) -> None:
+    def district(district_id: str, label: str, office: str, tier: str, rep: str) -> dict:
+        jurisdiction, district_label = label.split(",", maxsplit=1)
+        return {
+            "id": district_id,
+            "label": label,
+            "jurisdiction": jurisdiction,
+            "district_label": district_label.strip(),
+            "region": "NCR",
+            "representative": {
+                "name": rep,
+                "seat": label,
+                "status": "resolved",
+                "status_note": None,
+                "profile_url": "https://www.congress.gov.ph/house-members/view/A001",
+            },
+            "offices": [{"name": office, "tier": tier}],
+        }
+
+    pages = (
+        {
+            "meta": {
+                "source_commit": "c" * 40,
+                "built_at": "2026-10-26T08:46:14.383Z",
+                "offset": 0,
+                "returned": 2,
+                "total": 3,
+            },
+            "data": {
+                "districts": [
+                    district(
+                        "leg:manila:1st",
+                        "Manila, 1st District",
+                        "Manila 1st DEO",
+                        "A",
+                        "Rep One",
+                    ),
+                    district(
+                        "leg:quezon:1st",
+                        "Quezon, 1st District",
+                        "Quezon 1st DEO",
+                        "B",
+                        "Rep Two",
+                    ),
+                ]
+            },
+        },
+        {
+            "meta": {
+                "source_commit": "c" * 40,
+                "built_at": "2026-10-26T08:46:14.383Z",
+                "offset": 2,
+                "returned": 1,
+                "total": 3,
+            },
+            "data": {
+                "districts": [
+                    district(
+                        "leg:quezon:2nd",
+                        "Quezon, 2nd District",
+                        "Quezon 1st DEO",
+                        "B",
+                        "Rep Three",
+                    )
+                ]
+            },
+        },
+    )
+    first.write_text(json.dumps(pages[0]))
+    second.write_text(json.dumps(pages[1]))
+
+
 def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) -> None:
     snapshot = tmp_path / "dpwh.parquet"
     output = tmp_path / "bundle"
     pcab = tmp_path / "pcab.json"
+    districts_one = tmp_path / "districts-0.json"
+    districts_two = tmp_path / "districts-2.json"
     _snapshot(snapshot)
     _pcab_snapshot(pcab)
+    _district_snapshots(districts_one, districts_two)
 
     options = {
         "fiscal_years": (2024, 2025),
@@ -104,6 +179,8 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
         "pcab_snapshot_path": pcab,
         "pcab_retrieved_on": date(2026, 11, 3),
         "minimum_concentration_projects": 1,
+        "district_snapshot_paths": (districts_one, districts_two),
+        "district_retrieved_on": date(2026, 11, 3),
     }
     first = build_integrity_bundle(snapshot, output, **options)
     first_manifest = (output / "manifest.json").read_bytes()
@@ -113,6 +190,7 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
     assert first.integrity_signals == 4
     assert first.contractors == 1
     assert first.concentrations == 11
+    assert first.district_offices == 2
     assert first.manifest_sha256 == second.manifest_sha256
     assert first_manifest == (output / "manifest.json").read_bytes()
 
@@ -132,6 +210,8 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
         connection.executescript(migration.read_text())
         migration_0006 = migration.with_name("0006_contractor_verification.sql")
         connection.executescript(migration_0006.read_text())
+        migration_0007 = migration.with_name("0007_district_attribution.sql")
+        connection.executescript(migration_0007.read_text())
         for chunk in sorted((output / "chunks").glob("*.sql")):
             connection.executescript(chunk.read_text())
         assert connection.execute("SELECT COUNT(*) FROM integrity_signal_items").fetchone()[0] == 4
@@ -146,5 +226,13 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
         assert (
             connection.execute("SELECT COUNT(*) FROM contractor_concentrations").fetchone()[0] == 11
         )
+        district_rows = connection.execute(
+            "SELECT office_name, classification, district_count "
+            "FROM district_office_attributions ORDER BY office_name"
+        ).fetchall()
+        assert district_rows == [
+            ("Manila 1st DEO", "single_district", 1),
+            ("Quezon 1st DEO", "shared_office", 2),
+        ]
     finally:
         connection.close()

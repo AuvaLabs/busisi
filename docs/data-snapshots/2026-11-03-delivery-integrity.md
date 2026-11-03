@@ -9,13 +9,16 @@ This release examines 56,887 DPWH delivery records for fiscal years 2024 to
 last-modified date of 2026-01-22.
 
 - Source artifact SHA-256: `5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123`
-- Integrity bundle manifest SHA-256: `cea59e05113d0b2a4e432d7963540c3238a577d7c9eb339e4ccbd82014f9045c`
-- Generated SQL chunks: 14
+- Integrity bundle manifest SHA-256: `672b668f29fbfc30a0740c9299b0d9411b7a67fccf2cdf5bb988605bfe6f9ea6`
+- Generated SQL chunks: 15
 - Contractor identities: 4,297
 - Rule-specific review signals: 16,814
 - Contractor concentration groups: 737
 - PCAB regular-license rows: 18,868
 - PCAB snapshot SHA-256: `016bc9e3427b55e7744558f7726eb773f02f496f88279987c473546d6edb97d2`
+- Legislative districts in the roster snapshot: 254
+- Mapped DPWH offices: 199
+- District snapshot SHA-256: `dc78c26838c81da134e2ae7523a45f0bd7792d2a01e06f6694fc351a25650e46`
 
 The bundle loads into an isolated SQLite database and passes
 `PRAGMA integrity_check`. Every public signal retains the source artifact hash.
@@ -70,6 +73,34 @@ office labels, and project categories with at least 20 records. The share is
 the leading party's project associations divided by all contractor-party
 associations in the group. It is not a market-share or award-share estimate.
 
+## Congressional district context
+
+District context uses a versioned BetterGov 20th Congress district snapshot
+at source commit `a0caa778442cdae5583f5a006ea7401dab00e5ac`, retrieved
+on 2026-11-03. Representative records link to the corresponding official House
+member profile when one is available. The two acquired API pages retain their
+original bytes and SHA-256 digests:
+
+- `df266f4eb6ab1ecda56a6a30b48130d7597fa2d59a455a4abf36e925222fe808`
+- `95f660d853867c809a24eaf719820e7e0e14084817ebdd32f27e4973fb11672b`
+
+The mapping is deliberately office-based, not coordinate-based. An exact DPWH
+office that serves one district provides a single-district context. An office
+that serves several districts publishes every listed district and
+representative without selecting one. Offices with no exact mapping remain
+unassigned.
+
+| Attribution | Delivery records |
+|---|---:|
+| Single-district office | 35,166 |
+| Shared office, all districts retained | 14,027 |
+| Unassigned | 7,694 |
+
+This context does not identify who requested, sponsored, controlled, inserted,
+or is responsible for a project or budget amount. Two district seats have an
+ambiguous representative roster entry; both names and the ambiguity note are
+retained rather than choosing one.
+
 ## Limitations
 
 - The source is an archived snapshot, not a current DPWH operational feed.
@@ -82,6 +113,8 @@ associations in the group. It is not a market-share or award-share estimate.
   the correct administrative boundary.
 - Point-in-polygon checking is withheld until an authoritative, licensed and
   versioned administrative-boundary artifact is registered and archived.
+- District context follows the listed DPWH office and must not be read as a
+  project coordinate falling inside a legislative boundary.
 - PCAB verification reflects the current regular-license table and cannot prove
   license status at the time a contract was awarded.
 - PhilGEPS contract-level linkage is not published because a complete,

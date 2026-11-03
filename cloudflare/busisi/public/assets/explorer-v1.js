@@ -1,3 +1,5 @@
+import { renderDistrictContext } from './district-context-v1.js';
+
 (() => {
   const root = document.querySelector('[data-explorer]');
   if (!root) return;
@@ -96,6 +98,7 @@
     appendText(meta, 'span', `Contract ${record.contract_id}`);
     appendText(meta, 'span', record.location || 'Location not stated');
     appendText(main, 'p', record.source_of_funds || 'Funding source not stated');
+    main.append(renderDistrictContext(record.district_context));
     const links = appendText(main, 'div', '', 'record-links');
     link(links, 'Open DPWH source', record.source_url);
     amountBlock(card, 'Project budget', record.budget_centavos);

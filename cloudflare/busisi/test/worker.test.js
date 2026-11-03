@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { parseChangeQuery } from '../src/change-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
 import { parseReviewQuery } from '../src/review-query.js';
+import { districtContext } from '../src/district-context.js';
 import {
   parseConcentrationQuery,
   parseContractorQuery,
@@ -29,6 +30,9 @@ const integrityMigrationPath = fileURLToPath(
 );
 const verificationMigrationPath = fileURLToPath(
   new URL('../migrations/0006_contractor_verification.sql', import.meta.url),
+);
+const districtMigrationPath = fileURLToPath(
+  new URL('../migrations/0007_district_attribution.sql', import.meta.url),
 );
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
@@ -64,6 +68,7 @@ class LocalD1 {
     this.database.exec(readFileSync(reviewMigrationPath, 'utf8'));
     this.database.exec(readFileSync(integrityMigrationPath, 'utf8'));
     this.database.exec(readFileSync(verificationMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(districtMigrationPath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -72,7 +77,7 @@ class LocalD1 {
         ('2024:road', '18-001|road', 2024, 'Maintenance, Repair and Rehabilitation of Infrastructure Facilities and Other Related Activities - Routine Maintenance of National Roads', 1000000000, 'family:road', 'routine maintenance of national roads', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
         ('2026:bridge', '18-001|bridge', 2026, 'Sample public bridge project Phase I', 8000, 'family:bridge', 'sample public bridge project', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
       INSERT INTO delivery_items VALUES
-        ('25O00113', 2025, 'Construction of San Andres Pumping Station', 37679270658, 'Manila, NCR', 'GAA 2025', 'family:pump', 'san andres pumping station', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
+        ('25O00113', 2025, 'Construction of San Andres Pumping Station', 37679270658, 'Manila 1st DEO, NCR', 'GAA 2025', 'family:pump', 'san andres pumping station', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
         ('26ZERO01', 2026, 'Construction of Sample Health Center', 0, 'Cebu, Region VII', 'GAA 2026', 'family:health', 'sample health center', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
       INSERT INTO candidate_links VALUES
         ('2025:pump:25O00113', 2025, '18-001|pump', '25O00113', 'high', 90, '["year_match"]', 'Construction of San Andres Pumping Station', 'Construction of San Andres Pumping Station', 40000000000, 37679270658, 2320729342, 'https://budget.example/pump', 'https://dpwh.example/25O00113', 'candidate'),
@@ -80,10 +85,10 @@ class LocalD1 {
       INSERT INTO stage_change_metadata VALUES
         ('record_count', '4'), ('quarantine_count', '1'), ('source_commit', '${'a'.repeat(40)}');
       INSERT INTO stage_change_items VALUES
-        ('dpwh:1', 2027, 'dpwh', 'Sample bridge', 'Network Development', 'Bridge Program', 'Region III', 'Sample DEO', 'increased', 'Higher in the House bill', 'candidate', 0, 1, 10000, 15000, 5000, 'https://budget.example/1', 'https://budget.example/nep.pdf#page=1', 'https://budget.example/house.pdf#page=2', 1, 2, '${'a'.repeat(40)}', '${'b'.repeat(64)}', 'sample public bridge project'),
+        ('dpwh:1', 2027, 'dpwh', 'Sample bridge', 'Network Development', 'Bridge Program', 'Region III', 'Manila 1st DEO', 'increased', 'Higher in the House bill', 'candidate', 0, 1, 10000, 15000, 5000, 'https://budget.example/1', 'https://budget.example/nep.pdf#page=1', 'https://budget.example/house.pdf#page=2', 1, 2, '${'a'.repeat(40)}', '${'b'.repeat(64)}', 'sample public bridge project'),
         ('hfep:2', 2027, 'hfep', 'Sample health center', 'HFEP', '', 'Region VII', 'DOH', 'house_only', 'In the House bill only', 'candidate', 0, 0, 0, 20000, 20000, 'https://budget.example/2', '', 'https://budget.example/house.pdf#page=3', NULL, 3, '${'a'.repeat(40)}', '${'c'.repeat(64)}', 'sample health center'),
         ('dpwh:3', 2027, 'dpwh', 'Held road match', 'Road Program', '', 'NCR', 'Central Office', 'scope_review', 'Different scope', 'quarantine', 1, 0, 30000, 35000, 5000, 'https://budget.example/3', 'https://budget.example/nep.pdf#page=4', 'https://budget.example/house.pdf#page=5', 4, 5, '${'a'.repeat(40)}', '${'d'.repeat(64)}', 'held road match'),
-        ('dpwh:4', 2027, 'dpwh', 'Sample bridge Phase II', 'Network Development', 'Bridge Program', 'Region III', 'Sample DEO', 'house_only', 'In the House bill only', 'candidate', 0, 0, 0, 12000, 12000, 'https://budget.example/4', '', 'https://budget.example/house.pdf#page=6', NULL, 6, '${'a'.repeat(40)}', '${'e'.repeat(64)}', 'sample public bridge project');
+        ('dpwh:4', 2027, 'dpwh', 'Sample bridge Phase II', 'Network Development', 'Bridge Program', 'Region III', 'Quezon 1st DEO', 'house_only', 'In the House bill only', 'candidate', 0, 0, 0, 12000, 12000, 'https://budget.example/4', '', 'https://budget.example/house.pdf#page=6', NULL, 6, '${'a'.repeat(40)}', '${'e'.repeat(64)}', 'sample public bridge project');
       INSERT INTO integrity_metadata VALUES
         ('source_records', '3'), ('integrity_signals', '3'), ('contractors', '2'),
         ('concentrations', '2'), ('pcab_records', '1'),
@@ -92,6 +97,14 @@ class LocalD1 {
         ('pcab_status:current_regular', '1'),
         ('pcab_status:not_found_current_regular', '1'),
         ('source_artifact_sha256', '${'f'.repeat(64)}'),
+        ('district_count', '3'), ('district_offices', '2'),
+        ('district_source_commit', '${'d'.repeat(40)}'),
+        ('district_source_built_at', '2026-10-26T08:46:14.383Z'),
+        ('district_source_retrieved_on', '2026-11-03'),
+        ('district_snapshot_sha256', '${'9'.repeat(64)}'),
+        ('district_coverage:single_district', '1'),
+        ('district_coverage:shared_office', '1'),
+        ('district_coverage:unassigned', '1'),
         ('signal:status_progress_conflict', '1'),
         ('signal:missing_coordinate', '1'),
         ('signal:coordinate_location_conflict', '1');
@@ -105,6 +118,13 @@ class LocalD1 {
       INSERT INTO contractor_concentrations VALUES
         ('region', 'NCR', 0, 10, 9, 10, 4, 'pcab:12345', 'ACME BUILDERS', '12345', 4, 4000, 90000000),
         ('region', 'Region VII', 0, 12, 12, 12, 6, 'pcab:67890', 'SECOND BUILDERS', '67890', 3, 2500, 50000000);
+      INSERT INTO district_office_attributions VALUES
+        ('manila 1st deo', 'Manila 1st DEO', 'single_district', 1,
+          '[{"district_id":"leg:manila:1st","label":"City of Manila, 1st District","representative_name":"Representative One","representative_status":"resolved","representative_status_note":"","representative_profile_url":"https://www.congress.gov.ph/house-members/view/A001"}]',
+          '${'d'.repeat(40)}', '2026-10-26T08:46:14.383Z', '2026-11-03', '${'9'.repeat(64)}'),
+        ('quezon 1st deo', 'Quezon 1st DEO', 'shared_office', 2,
+          '[{"district_id":"leg:quezon:1st","label":"Quezon, 1st District","representative_name":"Representative Two","representative_status":"resolved","representative_status_note":"","representative_profile_url":"https://www.congress.gov.ph/house-members/view/A002"},{"district_id":"leg:quezon:2nd","label":"Quezon, 2nd District","representative_name":"Representative Three; Representative Four","representative_status":"ambiguous","representative_status_note":"Official roster lists multiple current names; no representative was selected.","representative_profile_url":""}]',
+          '${'d'.repeat(40)}', '2026-10-26T08:46:14.383Z', '2026-11-03', '${'9'.repeat(64)}');
     `);
   }
 
@@ -131,6 +151,19 @@ const reviewUrl = (query = '') => new URL(`https://busisi.test/api/v1/review-ran
 const integrityUrl = (query = '') => new URL(`https://busisi.test/api/v1/integrity-signals${query}`);
 const contractorUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractors${query}`);
 const concentrationUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractor-concentrations${query}`);
+
+test('keeps unavailable and malformed district evidence unassigned', () => {
+  assert.equal(districtContext({}).classification, 'unassigned');
+  assert.equal(districtContext({
+    district_classification: 'single_district',
+    districts_json: '{broken',
+  }).classification, 'unassigned');
+  assert.equal(districtContext({
+    district_classification: 'shared_office',
+    district_office_name: 'Shared DEO',
+    districts_json: '{}',
+  }).classification, 'unassigned');
+});
 
 test('validates every explorer query boundary and cursor contract', () => {
   const invalid = [
@@ -341,6 +374,8 @@ test('publishes source collection statistics and separate record APIs', async (c
   assert.match(budgetBody.data[0].source_url, /budget\.bettergov\.ph/);
   assert.equal(deliveryBody.meta.total, 1);
   assert.equal(deliveryBody.data[0].contract_id, '25O00113');
+  assert.equal(deliveryBody.data[0].district_context.classification, 'single_district');
+  assert.equal(deliveryBody.data[0].district_context.districts[0].representative_name, 'Representative One');
 });
 
 test('bounds BetterGov source searches and scopes them to the record agency', async (context) => {
@@ -399,6 +434,7 @@ test('publishes reconciled FY2027 stage-change statistics and filters', async (c
   assert.equal(changeBody.meta.total, 1);
   assert.equal(changeBody.meta.review_scope, 'provisional_stage_comparisons');
   assert.equal(changeBody.data[0].record_id, 'dpwh:1');
+  assert.equal(changeBody.data[0].district_context.classification, 'single_district');
   assert.equal((await quarantined.json()).data[0].record_id, 'dpwh:3');
 });
 
@@ -447,6 +483,9 @@ test('publishes ranked review candidates, concentrations and CSV evidence', asyn
   );
   assert.equal(repeatedBody.meta.total, 2);
   assert.deepEqual(repeatedBody.data[0].prior_years, [2026]);
+  assert.equal(repeatedBody.data[0].district_context.classification, 'shared_office');
+  assert.equal(repeatedBody.data[0].district_context.districts.length, 2);
+  assert.equal(repeatedBody.data[0].district_context.districts[1].representative_status, 'ambiguous');
   assert.equal(similarBody.meta.total, 2);
   assert.equal(similarBody.data[0].family_count, 2);
   assert.equal(concentrationBody.data[0].label, 'Region VII');
@@ -467,6 +506,9 @@ test('publishes delivery-integrity signals and contractor rankings', async (cont
   const conflicts = await worker.fetch(
     request('/api/v1/integrity-signals?classification=source_conflict&year=2025'),
     environment(database),
+  );
+  const sharedSignals = await worker.fetch(
+    request('/api/v1/integrity-signals?signal=missing_coordinate'), environment(database),
   );
   const contractorsByCount = await worker.fetch(
     request('/api/v1/contractors?sort=count_desc'), environment(database),
@@ -493,6 +535,17 @@ test('publishes delivery-integrity signals and contractor rankings', async (cont
     pcab_records: 1,
     pcab_retrieved_on: '2026-11-03',
     pcab_source_sha256: 'e'.repeat(64),
+    district_count: 3,
+    district_offices: 2,
+    district_source_commit: 'd'.repeat(40),
+    district_source_built_at: '2026-10-26T08:46:14.383Z',
+    district_source_retrieved_on: '2026-11-03',
+    district_snapshot_sha256: '9'.repeat(64),
+    district_coverage: [
+      { classification: 'shared_office', count: 1 },
+      { classification: 'single_district', count: 1 },
+      { classification: 'unassigned', count: 1 },
+    ],
     signals: [
       { code: 'coordinate_location_conflict', count: 1 },
       { code: 'missing_coordinate', count: 1 },
@@ -507,6 +560,11 @@ test('publishes delivery-integrity signals and contractor rankings', async (cont
   assert.equal(conflictBody.meta.total, 2);
   assert.equal(conflictBody.meta.review_scope, 'deterministic_source_review');
   assert.match(conflictBody.data[0].source_url, /api\.dpwh\.bettergov\.ph/);
+  const singleConflict = conflictBody.data.find((record) => record.contract_id === '25A');
+  assert.equal(singleConflict.district_context.classification, 'single_district');
+  const sharedConflict = (await sharedSignals.json()).data[0];
+  assert.equal(sharedConflict.district_context.classification, 'shared_office');
+  assert.equal(sharedConflict.district_context.districts.length, 2);
   assert.equal((await contractorsByCount.json()).data[0].contractor_name, 'ACME BUILDERS');
   assert.equal((await contractorsByBudget.json()).data[0].total_budget_centavos, 30000000);
   assert.equal((await contractorSearch.json()).data[0].contractor_name, 'SECOND BUILDERS');

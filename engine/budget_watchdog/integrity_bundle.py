@@ -16,6 +16,11 @@ from typing import Any
 
 import pyarrow.parquet as pq
 
+from engine.budget_watchdog.districts import (
+    DistrictSnapshot,
+    OfficeDistrictAttribution,
+    parse_district_pages,
+)
 from engine.budget_watchdog.integrity import (
     ContractorConcentration,
     ContractorSummary,
@@ -32,6 +37,7 @@ MIGRATION_DIRECTORY = Path(__file__).resolve().parents[2] / "cloudflare" / "busi
 MIGRATION_PATHS = (
     MIGRATION_DIRECTORY / "0005_integrity.sql",
     MIGRATION_DIRECTORY / "0006_contractor_verification.sql",
+    MIGRATION_DIRECTORY / "0007_district_attribution.sql",
 )
 SNAPSHOT_COLUMNS = (
     "contractId",
@@ -58,6 +64,7 @@ class IntegrityBundleResult:
     integrity_signals: int
     contractors: int
     concentrations: int
+    district_offices: int
     sql_chunks: int
     manifest_sha256: str
 
@@ -211,6 +218,36 @@ def _concentration_statement(item: ContractorConcentration) -> str:
     return f"INSERT INTO contractor_concentrations VALUES ({_sql_values(values)});"  # noqa: S608
 
 
+def _district_statement(
+    office_key: str,
+    item: OfficeDistrictAttribution,
+    snapshot: DistrictSnapshot,
+) -> str:
+    districts = [
+        {
+            "district_id": seat.district_id,
+            "label": seat.label,
+            "representative_name": seat.representative_name,
+            "representative_status": seat.representative_status,
+            "representative_status_note": seat.representative_status_note,
+            "representative_profile_url": seat.representative_profile_url,
+        }
+        for seat in item.seats
+    ]
+    values = (
+        office_key,
+        item.office_name,
+        item.classification,
+        len(item.seats),
+        json.dumps(districts, ensure_ascii=False, separators=(",", ":")),
+        snapshot.source_commit,
+        snapshot.source_built_at,
+        snapshot.retrieved_on.isoformat(),
+        snapshot.snapshot_sha256,
+    )
+    return f"INSERT INTO district_office_attributions VALUES ({_sql_values(values)});"  # noqa: S608
+
+
 def _batched(rows: Iterable[str], size: int) -> Iterator[tuple[str, ...]]:
     batch: list[str] = []
     for row in rows:
@@ -241,6 +278,7 @@ def _metadata_sql(metadata: dict[str, str]) -> str:
         "DELETE FROM integrity_signal_items;",
         "DELETE FROM contractor_rankings;",
         "DELETE FROM contractor_concentrations;",
+        "DELETE FROM district_office_attributions;",
         "DELETE FROM integrity_metadata;",
     ]
     lines.extend(
@@ -250,7 +288,7 @@ def _metadata_sql(metadata: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int]) -> None:
+def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int, int]) -> None:
     connection = sqlite3.connect(":memory:")
     try:
         for migration in MIGRATION_PATHS:
@@ -261,12 +299,50 @@ def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int]) -> No
             connection.execute("SELECT COUNT(*) FROM integrity_signal_items").fetchone()[0],
             connection.execute("SELECT COUNT(*) FROM contractor_rankings").fetchone()[0],
             connection.execute("SELECT COUNT(*) FROM contractor_concentrations").fetchone()[0],
+            connection.execute("SELECT COUNT(*) FROM district_office_attributions").fetchone()[0],
         )
         integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
     finally:
         connection.close()
     if actual != expected or integrity != "ok":
         raise ValueError("integrity bundle verification failed")
+
+
+def _load_district_snapshot(
+    paths: tuple[Path, ...],
+    retrieved_on: date | None,
+) -> DistrictSnapshot | None:
+    if bool(paths) != (retrieved_on is not None):
+        raise ValueError("district snapshot paths and retrieval date must be provided together")
+    if not paths or retrieved_on is None:
+        return None
+    if any(not path.is_file() for path in paths):
+        raise ValueError("every district snapshot path must exist")
+    return parse_district_pages(
+        tuple(path.read_bytes() for path in paths),
+        source_sha256=tuple(_digest(path) for path in paths),
+        retrieved_on=retrieved_on,
+    )
+
+
+def _district_metadata(
+    snapshot: DistrictSnapshot,
+    records: tuple[DeliveryIntegrityRecord, ...],
+) -> dict[str, str]:
+    coverage = Counter(snapshot.lookup(record.province).classification for record in records)
+    return {
+        "district_count": str(snapshot.district_count),
+        "district_offices": str(snapshot.office_count),
+        "district_source_built_at": snapshot.source_built_at,
+        "district_source_commit": snapshot.source_commit,
+        "district_source_retrieved_on": snapshot.retrieved_on.isoformat(),
+        "district_snapshot_sha256": snapshot.snapshot_sha256,
+        "district_source_sha256": json.dumps(snapshot.source_sha256),
+        **{
+            f"district_coverage:{classification}": str(count)
+            for classification, count in sorted(coverage.items())
+        },
+    }
 
 
 def build_integrity_bundle(
@@ -279,6 +355,8 @@ def build_integrity_bundle(
     pcab_retrieved_on: date | None = None,
     source_as_of: date | None = None,
     minimum_concentration_projects: int = 20,
+    district_snapshot_paths: tuple[Path, ...] = (),
+    district_retrieved_on: date | None = None,
 ) -> IntegrityBundleResult:
     """Create reproducible SQL chunks from an immutable DPWH Parquet snapshot."""
 
@@ -302,6 +380,10 @@ def build_integrity_bundle(
     concentrations = contractor_concentrations(
         records,
         minimum_projects=minimum_concentration_projects,
+    )
+    district_snapshot = _load_district_snapshot(
+        district_snapshot_paths,
+        district_retrieved_on,
     )
     signal_counts = Counter(signal.code for signal in snapshot.signals)
     pcab_status_counts = Counter(item.pcab_status for item in snapshot.contractors)
@@ -329,6 +411,8 @@ def build_integrity_bundle(
         )
     if source_as_of is not None:
         metadata["source_as_of"] = source_as_of.isoformat()
+    if district_snapshot is not None:
+        metadata.update(_district_metadata(district_snapshot, records))
     building = output_dir.with_name(f".{output_dir.name}.building")
     shutil.rmtree(building, ignore_errors=True)
     chunks_dir = building / "chunks"
@@ -360,9 +444,27 @@ def build_integrity_bundle(
             chunk_rows,
         )
     )
+    if district_snapshot is not None:
+        chunks.extend(
+            _write_chunks(
+                chunks_dir,
+                "400-district-offices",
+                (
+                    _district_statement(key, item, district_snapshot)
+                    for key, item in district_snapshot.offices.items()
+                ),
+                chunk_rows,
+            )
+        )
+    district_offices = district_snapshot.office_count if district_snapshot else 0
     _verify_bundle(
         chunks,
-        (len(snapshot.signals), len(snapshot.contractors), len(concentrations)),
+        (
+            len(snapshot.signals),
+            len(snapshot.contractors),
+            len(concentrations),
+            district_offices,
+        ),
     )
     manifest = {
         **metadata,
@@ -384,6 +486,7 @@ def build_integrity_bundle(
         integrity_signals=len(snapshot.signals),
         contractors=len(snapshot.contractors),
         concentrations=len(concentrations),
+        district_offices=district_offices,
         sql_chunks=len(chunks),
         manifest_sha256=manifest_sha256,
     )
