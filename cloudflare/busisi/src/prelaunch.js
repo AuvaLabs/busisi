@@ -484,13 +484,32 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 `, { type: 'text/plain; charset=utf-8' });
 
 const assets = (path) => {
-  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css' || path === '/assets/site-visual-v8.css' || path === '/assets/site-visual-v9.css' || path === '/assets/site-visual-v10.css' || path === '/assets/site-visual-v11.css' || path === '/assets/site-visual-v12.css' || path === '/assets/site-visual-v13.css' || path === '/assets/site-visual-v14.css' || path === '/assets/site-visual-v15.css') {
+  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css' || path === '/assets/site-visual-v8.css' || path === '/assets/site-visual-v9.css' || path === '/assets/site-visual-v10.css' || path === '/assets/site-visual-v11.css' || path === '/assets/site-visual-v12.css' || path === '/assets/site-visual-v13.css' || path === '/assets/site-visual-v14.css' || path === '/assets/site-visual-v15.css' || path === '/assets/site-visual-v16.css') {
     return response(siteCss, { type: 'text/css; charset=utf-8', cache: 'public, max-age=604800, immutable' });
   }
   if (path === '/assets/favicon.svg') {
     return response(favicon, { type: 'image/svg+xml', cache: 'public, max-age=604800, immutable' });
   }
   return null;
+};
+
+const projectImage = async (env, imageId) => {
+  if (!env.DB || !env.PROJECT_MEDIA || !/^[a-f0-9]{64}$/.test(imageId)) return null;
+  const record = await env.DB.prepare(`
+    SELECT archive_key, artifact_sha256, content_type
+    FROM project_images WHERE image_id = ? AND publication_status = 'verified'
+  `).bind(imageId).first();
+  if (!record) return null;
+  const object = await env.PROJECT_MEDIA.get(record.archive_key);
+  if (!object?.body) return null;
+  return new Response(object.body, {
+    headers: {
+      ...SECURITY_HEADERS,
+      'cache-control': 'public, max-age=31536000, immutable',
+      'content-type': record.content_type,
+      etag: `"${record.artifact_sha256}"`,
+    },
+  });
 };
 
 const decodeRecordId = (value) => {
@@ -554,6 +573,8 @@ export default {
       return response('Method not allowed\n', { status: 405, type: 'text/plain; charset=utf-8', cache: 'no-store' });
     }
     let result = null;
+    const imageMatch = url.pathname.match(/^\/media\/project-images\/([a-f0-9]{64})$/);
+    if (imageMatch) result = await projectImage(env, imageMatch[1]);
     const projectMatch = url.pathname.match(/^\/projects\/([a-z0-9-]+)\/?$/);
     if (projectMatch && env.DB) {
       const payload = await getEnhancedProject(env.DB, projectMatch[1]);

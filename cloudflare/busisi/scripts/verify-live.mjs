@@ -325,7 +325,7 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v15.css',
+    '/assets/site-visual-v16.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-social-v1.png',
     '/assets/busisi-evidence-banner-v1.webp',
@@ -337,7 +337,7 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v15.css');
+  const css = await request('/assets/site-visual-v16.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
@@ -372,6 +372,14 @@ const verifyDesign = async () => {
   expectBytes(bannerBytes.subarray(0, 4), 'RIFF', 'editorial banner');
   expectBytes(bannerBytes.subarray(8, 12), 'WEBP', 'editorial banner');
 
+  const budgetBanner = await request('/assets/busisi-budget-evidence-banner-v1.webp');
+  expectStatus(budgetBanner, 200, 'budget evidence banner');
+  expectContentType(budgetBanner, 'image/webp', 'budget evidence banner');
+  const budgetBannerBytes = Buffer.from(await budgetBanner.arrayBuffer());
+  if (budgetBannerBytes.length > 250_000) fail('budget evidence banner: exceeds the 250 KB performance budget');
+  expectBytes(budgetBannerBytes.subarray(0, 4), 'RIFF', 'budget evidence banner');
+  expectBytes(budgetBannerBytes.subarray(8, 12), 'WEBP', 'budget evidence banner');
+
   const icons = await request('/assets/busisi-icons-v1.svg');
   expectStatus(icons, 200, 'icon system');
   expectContentType(icons, 'image/svg+xml', 'icon system');
@@ -384,6 +392,7 @@ const verifyDesign = async () => {
     mark_bytes: Buffer.byteLength(markText),
     social_card_bytes: socialCardBytes.length,
     banner_bytes: bannerBytes.length,
+    budget_banner_bytes: budgetBannerBytes.length,
     icon_bytes: Buffer.byteLength(iconText),
     font_bytes: sourceSansBytes,
   };
@@ -586,6 +595,21 @@ const verifyData = async () => {
     fail('contract detail: exact acquisition evidence does not reconcile');
   }
   await verifyHtmlRecord('/contracts/24CM0078/', 'Contract acquisition evidence');
+
+  const projectImagesPage = await request('/projects/corazon-2024-phase-1/');
+  expectStatus(projectImagesPage, 200, 'reviewed project images page');
+  const projectImagesText = await projectImagesPage.text();
+  expectIncludes(projectImagesText, '2 archived source images', 'reviewed project image count');
+  expectIncludes(projectImagesText, 'source-reported, timezone unstated', 'project image time boundary');
+  const projectImage = await request('/media/project-images/2e8edcf80e5eadfc64804bcbb2dbfafc27f922906c3657525781fc6cfdaf9144');
+  expectStatus(projectImage, 200, 'verified project image');
+  expectContentType(projectImage, 'image/jpeg', 'verified project image');
+  expectIncludes(projectImage.headers.get('cache-control') ?? '', 'immutable', 'verified project image cache');
+  const projectImageBytes = Buffer.from(await projectImage.arrayBuffer());
+  expectBytes(projectImageBytes.subarray(0, 2), [0xff, 0xd8], 'verified project image');
+
+  const quarantinedImage = await request('/media/project-images/1d3456daf2211a56c905c6b73d925ace0176792122adbf1f5eeb4aa513f03fd9');
+  expectStatus(quarantinedImage, 404, 'quarantined project image');
 
   const conflictContract = await readJson('/api/v1/contracts/24CJ0309');
   if (conflictContract.data.acquisition.match_state !== 'conflict_review'

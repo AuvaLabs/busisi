@@ -20,7 +20,7 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<meta property="og:image:width" content="1200">/);
   assert.match(document, /<meta property="og:image:height" content="630">/);
   assert.match(document, /<meta name="twitter:card" content="summary_large_image">/);
-  assert.match(document, /href="\/assets\/site-visual-v15\.css"/);
+  assert.match(document, /href="\/assets\/site-visual-v16\.css"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
@@ -325,7 +325,7 @@ test('renders a reviewed evidence dossier when the publication database is bound
 });
 
 test('serves the monochrome editorial system and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v15.css');
+  const css = await fetchPath('/assets/site-visual-v16.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));
@@ -348,6 +348,8 @@ test('serves the monochrome editorial system and safe method boundaries', async 
   assert.match(cssText, /\.contractor-shell/);
   assert.match(cssText, /\.home-ledger/);
   assert.match(cssText, /\.editorial-banner/);
+  assert.match(cssText, /\.project-image-gallery/);
+  assert.doesNotMatch(cssText, /\.project-image-card img\{[^}]*grayscale/);
   assert.match(cssText, /\.section-icon/);
   assert.match(cssText, /\.budget-stage-line/);
   assert.match(cssText, /\.primary-nav/);
@@ -406,7 +408,7 @@ test('passes the editorial banner and icon system through the static asset bindi
     },
   };
   const banner = await worker.fetch(
-    new Request('https://busisi.org/assets/busisi-evidence-banner-v1.webp'),
+    new Request('https://busisi.org/assets/busisi-budget-evidence-banner-v1.webp'),
     env,
   );
   const icons = await worker.fetch(
@@ -418,6 +420,16 @@ test('passes the editorial banner and icon system through the static asset bindi
   assert.equal(banner.headers.get('content-type'), 'image/webp');
   assert.equal(icons.status, 200);
   assert.equal(icons.headers.get('content-type'), 'image/svg+xml');
+});
+
+test('places the decorative budget evidence banner on the release ledger', async () => {
+  const response = await fetchPath('/releases/');
+  const document = await response.text();
+
+  assert.match(document, /busisi-budget-evidence-banner-v1\.webp/);
+  assert.match(document, /class="release-editorial-banner" aria-hidden="true"/);
+  assert.match(document, /width="1600" height="534" alt=""/);
+  assert.match(document, /site-visual-v16\.css/);
 });
 
 test('reader actions use human-readable evidence instead of raw JSON endpoints', () => {

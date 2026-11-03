@@ -58,6 +58,19 @@ department, attached-agency, subunit and Special Purpose Fund records as of
 converting the workbook's thousand-peso values to integer centavos. Allotment
 release remains separate from obligation, disbursement and payment evidence.
 
+Reviewed project dossiers can include archived DPWH source images. The image
+builder archives both metadata views and original JPEG bytes, reconciles the
+source counts, validates origin and dimensions, and emits separate verified and
+quarantine publication states. Private R2 objects are returned only when D1
+marks the image verified. The initial release contains five public images and
+13 quarantined images across the six reviewed or quarantined dossiers.
+
+Run the networked image acquisition explicitly when refreshing that evidence:
+
+```bash
+npm run build:project-images
+```
+
 ## Production verification
 
 ```bash

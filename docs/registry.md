@@ -8,11 +8,14 @@
 | Worker | `busisi-publication` |
 | Publication database | D1 `busisi-publication` |
 | Static assets | Workers Assets bound to the publication Worker |
+| Project evidence media | Private R2 `busisi-project-evidence` |
 | Rate limit | 120 requests per 60 seconds |
 | Monitor | `.github/workflows/busisi-production-monitor.yml`, every six hours |
 
-The Worker has no model, KV or R2 binding. The monitor is read-only and holds
-no deployment credentials.
+The Worker has no model or KV binding. Its R2 binding is read-only application
+access to archived project-image objects. D1 publication state gates each media
+response, so quarantined objects cannot be served by a guessed object key. The
+monitor is read-only and holds no deployment credentials.
 
 ## Public API
 
@@ -67,5 +70,11 @@ SQLite queue. D1 receives only reconciled aggregate controls and provenance.
 The canonical ingestion database remains local and is never reachable through
 the Worker. D1 contains only publication records derived from reconciled source
 artifacts.
+
+Project-image coverage currently spans the six reviewed and quarantined
+dossiers. Eighteen source images were archived and inspected. Five images from
+three exactly reconciled contracts are public, 13 images from two count-conflict
+contracts remain quarantined, and one contract has an explicit zero-image
+state. Images are served from private R2 by immutable internal URLs.
 
 Last updated: 2026-11-03.

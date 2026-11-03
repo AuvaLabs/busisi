@@ -12,6 +12,7 @@ import { queryContractOutcomes } from '../src/outcome-query.js';
 import { procurementDeskBody } from '../src/procurement-content.js';
 import { getProjectProcurementEvidence } from '../src/procurement-query.js';
 import { getProjectContractEvidence } from '../src/contract-evidence-query.js';
+import { getProjectImageEvidence } from '../src/project-image-query.js';
 import { getAcquisitionCoverage } from '../src/acquisition-coverage-query.js';
 import { parseContractIntelligenceQuery } from '../src/contract-intelligence-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
@@ -86,6 +87,9 @@ const contractIntelligenceMigrationPath = fileURLToPath(
 const allotmentReleaseMigrationPath = fileURLToPath(
   new URL('../migrations/0020_allotment_releases.sql', import.meta.url),
 );
+const projectImageMigrationPath = fileURLToPath(
+  new URL('../migrations/0021_project_images.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -143,6 +147,7 @@ class LocalD1 {
     this.database.exec(readFileSync(contractAcquisitionDetailMigrationPath, 'utf8'));
     this.database.exec(readFileSync(contractIntelligenceMigrationPath, 'utf8'));
     this.database.exec(readFileSync(allotmentReleaseMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(projectImageMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -366,6 +371,21 @@ class LocalD1 {
          'Conflicting archived award mirror row');
       INSERT INTO contract_quarantine_candidates VALUES
         ('award-row-conflict', '25O00113'), ('award-row-conflict', '26ZERO01');
+      INSERT INTO project_image_coverage VALUES
+        ('25O00113', 1, 1, 1, 'verified_exact', '${'3'.repeat(64)}', '${'4'.repeat(64)}',
+         '2026-11-03T12:00:00+00:00', 'Project detail and image endpoint counts reconcile exactly.'),
+        ('26ZERO01', 1, 2, 1, 'count_conflict', '${'5'.repeat(64)}', '${'6'.repeat(64)}',
+         '2026-11-03T12:00:00+00:00', 'Source image summary and image endpoint do not reconcile.'),
+        ('24NO0001', 0, 0, 0, 'no_images', '${'7'.repeat(64)}', '${'8'.repeat(64)}',
+         '2026-11-03T12:00:00+00:00', 'Both source representations report no project images.');
+      INSERT INTO project_images VALUES
+        ('${'9'.repeat(64)}', '25O00113', 'PUMP-COMPONENT-1', 1, 'progress', 'On-Going',
+         '2026-10-31 09:15:00', 'FY2025', 14.5995, 120.9842,
+         'within_broad_philippine_bounds',
+         'https://s3.transparency.dpwh.gov.ph/dpwh-gallery/fy2025/pump/photo-1.jpg',
+         'https://s3.transparency.dpwh.gov.ph/cdn-cgi/image/width=400/https://s3.transparency.dpwh.gov.ph/dpwh-gallery/fy2025/pump/photo-1.jpg',
+         '${'a'.repeat(64)}', 'image/jpeg', 128, 600, 400,
+         'project-images/25O00113/${'a'.repeat(64)}.jpg', 'verified');
     `);
   }
 
@@ -381,6 +401,11 @@ class LocalD1 {
 const environment = (database, allowed = true) => ({
   DB: database,
   ASSETS: { fetch: async () => new Response('<h1>Busisi</h1>', { headers: { 'Content-Type': 'text/html' } }) },
+  PROJECT_MEDIA: {
+    get: async (key) => key === `project-images/25O00113/${'a'.repeat(64)}.jpg`
+      ? { body: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]) }
+      : null,
+  },
   PUBLIC_API_RATE_LIMITER: { limit: async () => ({ success: allowed }) },
 });
 
@@ -783,16 +808,110 @@ test('renders safe contract drill-downs and redirects the former delivery route'
   assert.match(exactDocument, /ACME BUILDERS/);
   assert.match(exactDocument, /not an official notice of award/i);
   assert.match(exactDocument, /aaaaaaaaaaaaaaaa/);
+  assert.match(exactDocument, /Project image evidence/);
+  assert.match(exactDocument, new RegExp(`/media/project-images/${'9'.repeat(64)}`));
+  assert.match(exactDocument, /source-reported, timezone unstated/);
   assert.equal(conflict.status, 200);
   assert.match(conflictDocument, /Conflicting exact identifiers/);
   assert.match(conflictDocument, /26ZERO01/);
   assert.match(conflictDocument, /25O00113/);
   assert.match(conflictDocument, /not a finding of wrongdoing/i);
+  assert.match(conflictDocument, /Source image counts conflict/);
   assert.equal(absent.status, 200);
   assert.match(absentDocument, /No exact secondary row located/);
   assert.match(absentDocument, /No exact row for this contract was accepted/);
+  assert.match(absentDocument, /No images reported by either acquired source view/);
   assert.equal(former.status, 301);
   assert.equal(former.headers.get('location'), 'https://busisi.org/contracts/25O00113/');
+});
+
+test('serves only verified project images from private object storage', async () => {
+  const database = new LocalD1();
+  const imageId = '9'.repeat(64);
+  const published = await siteWorker.fetch(
+    request(`/media/project-images/${imageId}`),
+    environment(database),
+  );
+  const absent = await siteWorker.fetch(
+    request(`/media/project-images/${'8'.repeat(64)}`),
+    environment(database),
+  );
+  const objectMissingEnv = environment(database);
+  objectMissingEnv.PROJECT_MEDIA = { get: async () => null };
+  const objectMissing = await siteWorker.fetch(
+    request(`/media/project-images/${imageId}`),
+    objectMissingEnv,
+  );
+  const bindingMissingEnv = environment(database);
+  delete bindingMissingEnv.PROJECT_MEDIA;
+  const bindingMissing = await siteWorker.fetch(
+    request(`/media/project-images/${imageId}`),
+    bindingMissingEnv,
+  );
+
+  assert.equal(published.status, 200);
+  assert.equal(published.headers.get('content-type'), 'image/jpeg');
+  assert.match(published.headers.get('cache-control'), /immutable/);
+  assert.equal(published.headers.get('etag'), `"${'a'.repeat(64)}"`);
+  assert.deepEqual(new Uint8Array(await published.arrayBuffer()), new Uint8Array([0xff, 0xd8, 0xff, 0xd9]));
+  assert.equal(absent.status, 404);
+  assert.equal(objectMissing.status, 404);
+  assert.equal(bindingMissing.status, 404);
+  database.close();
+});
+
+test('defaults a missing project-image result collection to an empty gallery', async () => {
+  const evidence = await getProjectImageEvidence({
+    prepare: () => ({
+      bind: () => ({
+        first: async () => ({ contract_id: '24EMPTY1', state: 'no_images' }),
+        all: async () => ({}),
+      }),
+    }),
+  }, '24EMPTY1');
+
+  assert.equal(evidence.coverage.contract_id, '24EMPTY1');
+  assert.deepEqual(evidence.images, []);
+});
+
+test('renders original-color source image metadata without inventing missing fields', () => {
+  const baseImage = {
+    contract_id: '24SP0001',
+    component_id: 'COMPONENT-1',
+    purpose: '',
+    source_status: '',
+    captured_at: '2026-11-03 10:00:00',
+    fiscal_year: 'FY2024',
+    latitude: null,
+    longitude: null,
+    coordinate_status: 'not_reported',
+    source_url: 'https://s3.transparency.dpwh.gov.ph/dpwh-gallery/fy2024/test/photo.jpg',
+    artifact_sha256: 'a'.repeat(64),
+    width: 1280,
+    height: 960,
+  };
+  const document = deliveryRecordBody({
+    record: {
+      contract_id: '24SP0001', fiscal_year: 2024, description: 'Sparse source record',
+      location: '', budget_centavos: 0, district_context: null,
+    },
+    related: [], budgets: [], candidates: [], projects: [], signals: [], contractors: [],
+    imageEvidence: {
+      coverage: {
+        state: 'verified_exact', summary_count: 2, endpoint_count: 2,
+        note: 'Counts reconcile.', retrieved_at: '2026-11-03T10:00:00Z',
+      },
+      images: [
+        { ...baseImage, image_id: 'b'.repeat(64), photo_number: 1 },
+        { ...baseImage, image_id: 'c'.repeat(64), photo_number: 2 },
+      ],
+    },
+  });
+
+  assert.match(document, /2 archived source images/);
+  assert.match(document, /Purpose not stated/);
+  assert.match(document, /Status not stated/);
+  assert.match(document, /Coordinates<\/dt><dd>Not reported/);
 });
 
 test('renders sparse contract acquisition fields without inventing evidence', () => {

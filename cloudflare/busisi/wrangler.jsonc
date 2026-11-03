@@ -17,6 +17,12 @@
       "migrations_dir": "migrations"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "PROJECT_MEDIA",
+      "bucket_name": "busisi-project-evidence"
+    }
+  ],
   "ratelimits": [
     {
       "name": "PUBLIC_API_RATE_LIMITER",

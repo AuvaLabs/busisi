@@ -63,7 +63,7 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${safeTitle}</title><meta name="description" content="${safeDescription}"><meta name="robots" content="${robots}">
-  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v15.css">
+  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v16.css">
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${safeTitle}"><meta property="og:description" content="${safeDescription}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow public money from proposal to project">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta name="twitter:image:alt" content="Busisi: Follow public money from proposal to project">
@@ -255,6 +255,7 @@ export const agenciesBody = `
 
 export const releasesBody = `
   <section class="data-intro release-intro"><div><p class="kicker">FY2026 allotment-release ledger</p><h1>See what DBM had released by September.</h1><p class="lede">Search department, attached-agency, subunit, and Special Purpose Fund allotment totals from DBM's official status report as of 30 September 2026.</p></div><aside class="snapshot-card"><span>Official evidence snapshot</span><strong>96 records</strong><p>36 departments<br>47 attached agencies and subunits<br>13 Special Purpose Funds</p><a href="/methodology/#allotment-releases">Read the release controls</a></aside></section>
+  <div class="release-editorial-banner" aria-hidden="true"><img src="/assets/busisi-budget-evidence-banner-v1.webp" width="1600" height="534" alt="" loading="lazy" decoding="async"></div>
   <section class="release-boundary"><strong>Allotment release is not payment.</strong><p>This report shows budget authority released by DBM. It does not establish agency obligations, cash disbursements, contractor payments, completed work, or public benefit. The published rows are agency-level and Special Purpose Fund totals, not project-level records.</p></section>
   <section class="release-summary" aria-label="Allotment-release controls"><article><strong data-release-current>₱4.072T</strong><span>current GAA allotments released</span></article><article><strong data-release-balance>₱318.817B</strong><span>current GAA balance</span></article><article><strong data-release-all>₱6.533T</strong><span>all-source allotments released</span></article><article><strong data-release-rows>96</strong><span>searchable records</span></article></section>
   <section class="release-shell" data-release-ledger>

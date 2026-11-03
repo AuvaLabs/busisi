@@ -38,10 +38,10 @@ evidence path and a verification point. The wider visual language resembles a
 civic records desk: structured lines, archival paper, source paths and explicit
 review states. The visual system uses:
 
-- deep ledger green for navigation, actions and evidence structure;
-- white reading surfaces with restrained gray-green dividers;
-- vermilion for review signals and editorial section labels;
-- amber only for quarantined or unresolved records;
+- black for navigation, actions and evidence structure;
+- white reading surfaces with restrained neutral-gray dividers;
+- muted red only for review signals;
+- borders and explicit labels, not color alone, for quarantined records;
 - one sans-serif family for headings, navigation, controls and explanations;
 - monospace figures for identifiers and money.
 
@@ -87,11 +87,20 @@ the interface does not imply that an automated similarity is a reviewed fact.
 
 - `public/assets/busisi-mark-v2.svg` is the transparent compact navigation and
   favicon mark. The production SVG removes raster edge noise at every size.
-- `public/assets/busisi-masthead.webp` is the wide Philippine public-record
-  illustration used in the masthead and social sharing metadata.
-- Both files are local, immutable static assets with descriptive alternative
-  text where the image contributes meaning.
-- The masthead is 59 KB after WebP optimization and the SVG mark is under 1 KB.
+- `public/assets/busisi-evidence-banner-v1.webp` is the monochrome home-page
+  editorial illustration.
+- `public/assets/busisi-budget-evidence-banner-v1.webp` is the monochrome
+  allotment-release ledger illustration.
+- `public/assets/busisi-social-v1.png` is the social-sharing image.
+- These local, immutable static assets use empty alternative text where they
+  are purely decorative.
+
+Decorative editorial artwork follows the monochrome white, black and neutral
+gray system. Documentary project photographs retain their original source
+color. Do not apply grayscale, color grading or stylized effects to evidence
+images, because those treatments can conceal or alter visual information.
+Generated artwork and source evidence must remain visibly and semantically
+separate.
 
 ## Data interaction contract
 

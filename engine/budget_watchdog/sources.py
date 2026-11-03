@@ -89,6 +89,12 @@ def default_source_registry() -> SourceRegistry:
                 SourceAuthority.PRIMARY,
             ),
             SourceDefinition(
+                "dpwh-transparency-media",
+                "DPWH Transparency project media",
+                "https://s3.transparency.dpwh.gov.ph",
+                SourceAuthority.PRIMARY,
+            ),
+            SourceDefinition(
                 "dpwh-documents",
                 "DPWH public documents",
                 "https://www.dpwh.gov.ph",
