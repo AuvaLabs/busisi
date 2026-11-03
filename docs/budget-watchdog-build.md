@@ -107,6 +107,12 @@ As of 2026-11-03:
   Congress institution children. The 38 House-comparable heads reconcile to
   the bill's printed ₱4.606066495 trillion control. Automatic Appropriations
   remain not applicable to the House bill comparison, not zero.
+- The FY2026 allotment-release ledger publishes 96 official DBM rows as of
+  30 September 2026: 36 departments, 47 attached agencies or subunits, and 13
+  Special Purpose Funds. The retained workbook is SHA-256 pinned, its
+  thousand-peso values are normalized to integer centavos, and both current
+  GAA and all-source program, release and balance controls reconcile exactly.
+  These are not project-level, obligation, disbursement or payment records.
 - The deterministic review desk exposes 6,954 House-only rows, 1,784 NEP-only
   rows, 243 increases and 265 decreases. Conservative family normalization
   yields 953 prior-year family candidates and 395 similar-family candidates
@@ -210,6 +216,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_pcab.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_districts.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_agencies.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_allotment_releases.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_public_value.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_coa.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_procurement.py
@@ -229,7 +236,11 @@ in-memory database and split into manifest-hashed import chunks. The stage
 comparison bundle is built under `data/budget_watchdog/hgab-d1-bundle/` and
 uses the same verification contract. The appropriation-head bundle is built
 under `data/budget_watchdog/agency-d1-bundle/`, with its source snapshot under
-`data/budget_watchdog/agency-2027-snapshot/`. The delivery-integrity bundle is built
+`data/budget_watchdog/agency-2027-snapshot/`. The allotment-release bundle is
+built under `data/budget_watchdog/allotment-release-d1-bundle/` from the retained
+snapshot under `data/budget_watchdog/allotment-release-2026-snapshot/`. Its parser
+checks the XLSX container, source origin, digest, fiscal date, hierarchy and
+exact monetary controls before emitting SQL. The delivery-integrity bundle is built
 under `data/budget_watchdog/integrity-d1-bundle/`, hashes every import chunk and
 verifies the generated SQL in an isolated SQLite database. The public-value
 bundle is built under `data/budget_watchdog/public-value-d1-bundle/` from the

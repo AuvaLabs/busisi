@@ -17,6 +17,11 @@ import {
   queryAgencyBudgets,
 } from './agency-budget-query.js';
 import {
+  getAllotmentReleaseSummary,
+  parseAllotmentReleaseQuery,
+  queryAllotmentReleases,
+} from './allotment-release-query.js';
+import {
   getPublicValueSummary,
   queryPublicValueIndicators,
 } from './public-value-query.js';
@@ -120,6 +125,23 @@ const apiResponse = async (request, environment, url) => {
         limit: query.limit,
         next_cursor: page.nextCursor,
         review_scope: 'reconciled_appropriation_head_totals',
+      },
+      data: page.records,
+    });
+  }
+  if (url.pathname === '/api/v1/allotment-release-summary') {
+    return jsonResponse({ data: await getAllotmentReleaseSummary(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/allotment-releases') {
+    const query = parseAllotmentReleaseQuery(url);
+    const page = await queryAllotmentReleases(environment.DB, query);
+    return jsonResponse({
+      meta: {
+        total: page.total,
+        count: page.records.length,
+        limit: query.limit,
+        next_cursor: page.nextCursor,
+        review_scope: 'official_dbm_allotment_releases',
       },
       data: page.records,
     });

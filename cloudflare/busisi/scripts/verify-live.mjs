@@ -21,6 +21,21 @@ const expectedChanges = Object.freeze({
   fiscal_year: 2027,
   source_commit: 'a0caa778442cdae5583f5a006ea7401dab00e5ac',
 });
+const expectedReleases = Object.freeze({
+  fiscal_year: 2026,
+  as_of_date: '2026-09-30',
+  record_count: 96,
+  department_count: 36,
+  attached_agency_count: 47,
+  special_purpose_fund_count: 13,
+  current_gaa_adjusted_centavos: 439_104_496_900_000,
+  current_gaa_releases_centavos: 407_222_774_000_000,
+  current_gaa_balance_centavos: 31_881_722_900_000,
+  total_program_centavos: 679_316_200_000_000,
+  total_releases_centavos: 653_295_146_600_000,
+  total_balance_centavos: 26_021_053_400_000,
+  source_sha256: '05a902418e0a78339b82d71def04447eab44897b752d001343121bcbe6226aae',
+});
 const expectedBudgetCycle = Object.freeze({
   fiscal_year: '2027',
   document_count: '5',
@@ -244,6 +259,14 @@ const verifyPages = async () => {
   expectIncludes(changesText, '/assets/changes-v1.js?v=2', 'changes client');
   expectIncludes(changesText, 'How to read a change', 'changes warning');
 
+  const releases = await request('/releases/');
+  expectStatus(releases, 200, '/releases/');
+  const releasesText = await releases.text();
+  expectIncludes(releasesText, 'See what DBM had released by September', 'releases heading');
+  expectIncludes(releasesText, '/assets/releases-v1.js', 'releases client');
+  expectIncludes(releasesText, 'Allotment release is not payment', 'releases boundary');
+  expectIncludes(releasesText, expectedReleases.source_sha256, 'releases fingerprint');
+
   const budgetTrail = await request('/budget-trail/');
   expectStatus(budgetTrail, 200, '/budget-trail/');
   const budgetTrailText = await budgetTrail.text();
@@ -281,7 +304,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -294,7 +317,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -302,7 +325,7 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v14.css',
+    '/assets/site-visual-v15.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-social-v1.png',
     '/assets/busisi-evidence-banner-v1.webp',
@@ -314,7 +337,7 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v14.css');
+  const css = await request('/assets/site-visual-v15.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
@@ -322,6 +345,7 @@ const verifyDesign = async () => {
     'Source Sans 3', '--paper:#fff', '--ink:#111', '--accent:#111', '.home-ledger',
     '.explorer-shell', '.review-shell', '.integrity-shell', '.contractor-shell',
     '.lifecycle-grid', '.lifecycle-item', '.contract-explorer', '.contract-card',
+    '.release-shell', '.release-card',
   ]) {
     expectIncludes(cssText, value, 'design CSS');
   }
@@ -410,6 +434,23 @@ const verifyData = async () => {
     `/records/change/${encodeURIComponent(changes.data[0].record_id)}/`,
     'Provisional stage comparison',
   );
+
+  const releaseSummary = (await readJson('/api/v1/allotment-release-summary')).data;
+  for (const [key, expected] of Object.entries(expectedReleases)) {
+    if (releaseSummary[key] !== expected) {
+      fail(`allotment releases: ${key} expected ${expected}, received ${releaseSummary[key]}`);
+    }
+  }
+  const releaseRows = await readJson('/api/v1/allotment-releases?q=DPWH&level=departments');
+  if (releaseRows.meta.total !== 1
+    || releaseRows.meta.review_scope !== 'official_dbm_allotment_releases'
+    || releaseRows.data[0]?.record_id !== 'release:dpwh'
+    || releaseRows.data[0]?.release_centavos !== 52_784_559_400_000
+    || releaseRows.data[0]?.adjusted_program_centavos !== 53_011_519_500_000
+    || releaseRows.data[0]?.balance_centavos !== 226_960_100_000
+    || releaseRows.data[0]?.source_reader_url !== '/releases/#source') {
+    fail('allotment releases: DPWH row or evidence boundary does not reconcile');
+  }
 
   const budgetCycle = (await readJson('/api/v1/budget-cycle')).data;
   for (const [key, expected] of Object.entries(expectedBudgetCycle)) {
@@ -743,6 +784,7 @@ const verifyData = async () => {
   return {
     ...expectedCounts,
     stage_changes: changeStats.record_count,
+    allotment_release_records: releaseSummary.record_count,
     integrity_signals: integritySummary.integrity_signals,
     contractors: integritySummary.contractors,
     district_offices: integritySummary.district_offices,

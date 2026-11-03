@@ -52,6 +52,12 @@ compare up to three records and export the same filtered evidence as CSV. Exact
 secondary rows remain labelled as discovery evidence, conflicts remain
 quarantined, and missing evidence is never presented as clearance.
 
+The allotment-release ledger at `/releases/` publishes 96 official FY2026 DBM
+department, attached-agency, subunit and Special Purpose Fund records as of
+30 September 2026. Current GAA and all-source controls reconcile exactly after
+converting the workbook's thousand-peso values to integer centavos. Allotment
+release remains separate from obligation, disbursement and payment evidence.
+
 ## Production verification
 
 ```bash
@@ -67,6 +73,8 @@ It also checks the full-universe acquisition counts, queue controls and source
 SHA-256 published at `/api/v1/acquisition-coverage`. Contract explorer checks
 cover the full state reconciliation, representative exact and conflict filters,
 CSV export and the interactive page assets.
+The verifier also checks the release snapshot fingerprint, six monetary control
+totals, hierarchy counts and a representative DPWH row.
 
 Deployment and D1 mutation require operator credentials. The scheduled GitHub
 monitor is credential-free and read-only.

@@ -20,7 +20,7 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<meta property="og:image:width" content="1200">/);
   assert.match(document, /<meta property="og:image:height" content="630">/);
   assert.match(document, /<meta name="twitter:card" content="summary_large_image">/);
-  assert.match(document, /href="\/assets\/site-visual-v14\.css"/);
+  assert.match(document, /href="\/assets\/site-visual-v15\.css"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
@@ -134,6 +134,22 @@ test('publishes a reconciled FY2027 appropriation-head ledger', async () => {
   assert.match(document, /Automatic Appropriations/);
   assert.match(document, /How to read this comparison/);
   assert.match(document, /src="\/assets\/agencies-v1\.js"/);
+});
+
+test('publishes the official FY2026 allotment-release ledger with spending boundaries', async () => {
+  const response = await fetchPath('/releases/');
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /See what DBM had released by September/);
+  assert.match(document, /30 September 2026/);
+  assert.match(document, /data-release-ledger/);
+  assert.match(document, /src="\/assets\/releases-v1\.js"/);
+  assert.match(document, /Allotment release is not payment/);
+  assert.match(document, /not project-level/i);
+  assert.match(document, /href="https:\/\/www\.dbm\.gov\.ph\/index\.php\?/);
+  assert.match(document, /05a902418e0a78339b82d71def04447eab44897b752d001343121bcbe6226aae/);
+  assert.doesNotMatch(document, /release proves? (?:a )?payment/i);
 });
 
 test('publishes a budget trail without claiming missing Senate or GAA stages', async () => {
@@ -301,7 +317,7 @@ test('renders a reviewed evidence dossier when the publication database is bound
 });
 
 test('serves the monochrome editorial system and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v14.css');
+  const css = await fetchPath('/assets/site-visual-v15.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));

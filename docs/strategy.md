@@ -37,6 +37,13 @@ their recorded SHA-256 checks. Senate committee, Senate amendment, bicameral,
 and enacted GAA stages remain explicitly unavailable rather than being inferred
 from the portal's fiscal-year label.
 
+The FY2026 allotment-release ledger adds the next verified fiscal stage without
+pretending it is payment evidence. It publishes 96 official DBM department,
+attached-agency, subunit and Special Purpose Fund records as of 30 September
+2026. Every amount is normalized to integer centavos and the current GAA and
+all-source controls reconcile exactly. The ledger remains separate from the
+FY2027 proposal and legislative comparisons.
+
 The contract outcome pack cross-checks exact procurement evidence against the
 DPWH delivery snapshot. It compares contract amounts, procurement and delivery
 states, planned and actual events, implementation dates, inspection coverage
@@ -94,9 +101,11 @@ or evidence that a representative requested or controls the project.
    signed contracts, completion certificates, inspection and acceptance
    records, payment records and COA findings only when reproducible official
    artifacts can be retained and their identifier limitations modeled.
-5. Register an authoritative, reusable administrative-boundary artifact before
+5. Acquire an authoritative, reusable administrative-boundary artifact before
    adding point-in-polygon coordinate validation. Until then, keep exact source
-   coordinate checks visibly separate from geographic verification.
+   coordinate checks visibly separate from geographic verification. Geoportal
+   boundary services are discoverable, but broad downloadable feature access
+   remains conditional and no unofficial polygon substitute is published.
 6. Review high-volume name-only contractor identities and quarantine ambiguous
    mergers instead of collapsing similar business names.
 7. Add alerts for source drift and publication mismatch without granting the

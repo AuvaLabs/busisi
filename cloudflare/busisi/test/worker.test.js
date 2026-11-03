@@ -15,6 +15,7 @@ import { getProjectContractEvidence } from '../src/contract-evidence-query.js';
 import { getAcquisitionCoverage } from '../src/acquisition-coverage-query.js';
 import { parseContractIntelligenceQuery } from '../src/contract-intelligence-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
+import { parseAllotmentReleaseQuery } from '../src/allotment-release-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
 import { parseReviewQuery } from '../src/review-query.js';
 import { deliveryRecordBody } from '../src/record-content.js';
@@ -82,6 +83,9 @@ const contractAcquisitionDetailMigrationPath = fileURLToPath(
 const contractIntelligenceMigrationPath = fileURLToPath(
   new URL('../migrations/0019_contract_intelligence.sql', import.meta.url),
 );
+const allotmentReleaseMigrationPath = fileURLToPath(
+  new URL('../migrations/0020_allotment_releases.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -138,6 +142,7 @@ class LocalD1 {
     this.database.exec(readFileSync(archivedAwardMirrorMigrationPath, 'utf8'));
     this.database.exec(readFileSync(contractAcquisitionDetailMigrationPath, 'utf8'));
     this.database.exec(readFileSync(contractIntelligenceMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(allotmentReleaseMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -289,6 +294,31 @@ class LocalD1 {
         ('head:18', 2027, 2026, 'appropriation_head', NULL, '18', 'Department of Public Works and Highways', 90000, 100000, 130000, 30000, 3000, 'compared', 'house-ib', '[113]', 'https://example.test/ib.pdf', 'https://budget.example/nep', '${'1'.repeat(64)}', '${'2'.repeat(64)}', 'Compared source total.'),
         ('head:AUTO', 2027, 2026, 'appropriation_head', NULL, 'AUTO', 'Automatic Appropriations', 190000, 200000, NULL, NULL, NULL, 'not_applicable', NULL, '[]', NULL, 'https://budget.example/nep', '${'1'.repeat(64)}', NULL, 'Outside House bill comparison.'),
         ('congress:004', 2027, 2026, 'congress_institution', 'head:01', '004', 'House of Representatives', 80000, 100000, 210000, 110000, 11000, 'compared', 'house-ia', '[19]', 'https://example.test/ia.pdf', 'https://budget.example/congress', '${'3'.repeat(64)}', '${'4'.repeat(64)}', 'Compared source total.');
+      INSERT INTO allotment_release_metadata VALUES
+        ('fiscal_year', '2026'), ('as_of_date', '2026-09-30'), ('record_count', '3'),
+        ('department_count', '1'), ('attached_agency_count', '1'),
+        ('special_purpose_fund_count', '1'),
+        ('current_gaa_adjusted_centavos', '439104496900000'),
+        ('current_gaa_releases_centavos', '407222774000000'),
+        ('current_gaa_balance_centavos', '31881722900000'),
+        ('total_program_centavos', '679316200000000'),
+        ('total_releases_centavos', '653295146600000'),
+        ('total_balance_centavos', '26021053400000'),
+        ('source_sha256', '${'a'.repeat(64)}'),
+        ('source_url', 'https://www.dbm.gov.ph/releases.xlsx');
+      INSERT INTO allotment_release_items VALUES
+        ('release:dpwh', 2026, '2026-09-30', 35, 'department', NULL, 'DPWH',
+         'Department of Public Works and Highways', 100000, 1000, 101000, 99000, 2000,
+         9802, 'https://www.dbm.gov.ph/releases.xlsx', '${'a'.repeat(64)}',
+         'Official DBM workbook value.'),
+        ('release:oeos:amlc', 2026, '2026-09-30', 56, 'attached_agency',
+         'release:oeos', 'AMLC', 'AMLC', 5000, 0, 5000, 2500, 2500, 5000,
+         'https://www.dbm.gov.ph/releases.xlsx', '${'a'.repeat(64)}',
+         'Official DBM workbook value.'),
+        ('release:spf:test', 2026, '2026-09-30', 102, 'special_purpose_fund', NULL,
+         'Test Fund', 'Test Fund', 10000, 0, 10000, 11000, -1000, 11000,
+         'https://www.dbm.gov.ph/releases.xlsx', '${'a'.repeat(64)}',
+         'Official DBM workbook value.');
       INSERT INTO public_value_metadata VALUES
         ('reading', 'mixed'), ('indicator_count', '2'), ('improving_count', '1'),
         ('pressure_count', '1'), ('context_count', '0'), ('fiscal_year', '2027'),
@@ -363,6 +393,29 @@ const integrityUrl = (query = '') => new URL(`https://busisi.test/api/v1/integri
 const contractorUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractors${query}`);
 const concentrationUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractor-concentrations${query}`);
 const agencyUrl = (query = '') => new URL(`https://busisi.test/api/v1/agency-budgets${query}`);
+const releaseUrl = (query = '') => new URL(`https://busisi.test/api/v1/allotment-releases${query}`);
+
+test('validates allotment-release filters and cursor scope', () => {
+  const query = parseAllotmentReleaseQuery(releaseUrl(
+    '?q=DPWH&level=departments&band=below_90&sort=balance_desc&limit=10',
+  ));
+  assert.deepEqual(query, {
+    q: 'DPWH', level: 'departments', band: 'below_90', sort: 'balance_desc',
+    limit: 10, offset: 0,
+  });
+  for (const [value, message] of [
+    ['?level=agency', 'level is invalid'],
+    ['?band=corruption', 'band is invalid'],
+    ['?sort=unknown', 'sort is invalid'],
+    ['?limit=0', 'limit is outside the supported range'],
+    [`?q=${'x'.repeat(201)}`, 'q is too long'],
+    ['?cursor=broken', 'cursor is invalid for this query'],
+  ]) {
+    assert.throws(() => parseAllotmentReleaseQuery(releaseUrl(value)), {
+      name: 'QueryError', message,
+    });
+  }
+});
 
 test('validates appropriation-head query filters and cursor contract', () => {
   for (const [query, message] of [
@@ -1064,6 +1117,45 @@ test('publishes reconciled appropriation heads and Congress institutions', async
   const firstPageBody = await firstPage.json();
   const secondPage = await worker.fetch(
     request(`/api/v1/agency-budgets?level=all&limit=1&cursor=${firstPageBody.meta.next_cursor}`),
+    environment(database),
+  );
+  assert.equal((await secondPage.json()).data.length, 1);
+});
+
+test('publishes official FY2026 allotment releases with attached-agency filters', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const summary = await worker.fetch(
+    request('/api/v1/allotment-release-summary'), environment(database),
+  );
+  const attached = await worker.fetch(
+    request('/api/v1/allotment-releases?level=attached&band=below_90&sort=rate_asc'),
+    environment(database),
+  );
+  const overReleased = await worker.fetch(
+    request('/api/v1/allotment-releases?level=special&band=over_100'),
+    environment(database),
+  );
+
+  const summaryBody = await summary.json();
+  assert.equal(summaryBody.data.record_count, 3);
+  assert.equal(summaryBody.data.as_of_date, '2026-09-30');
+  assert.equal(summaryBody.data.total_releases_centavos, 653295146600000);
+  const attachedBody = await attached.json();
+  assert.equal(attachedBody.meta.total, 1);
+  assert.equal(attachedBody.meta.review_scope, 'official_dbm_allotment_releases');
+  assert.equal(attachedBody.data[0].record_id, 'release:oeos:amlc');
+  assert.equal(attachedBody.data[0].parent_name, null);
+  assert.equal(attachedBody.data[0].source_reader_url, '/releases/#source');
+  const overBody = await overReleased.json();
+  assert.equal(overBody.data[0].record_id, 'release:spf:test');
+
+  const firstPage = await worker.fetch(
+    request('/api/v1/allotment-releases?level=all&limit=1'), environment(database),
+  );
+  const firstBody = await firstPage.json();
+  const secondPage = await worker.fetch(
+    request(`/api/v1/allotment-releases?level=all&limit=1&cursor=${firstBody.meta.next_cursor}`),
     environment(database),
   );
   assert.equal((await secondPage.json()).data.length, 1);

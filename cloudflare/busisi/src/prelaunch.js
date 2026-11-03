@@ -9,6 +9,7 @@ import {
   homeBody,
   integrityBody,
   methodologyBody,
+  releasesBody,
   signalsBody,
   siteCss,
   sulitBody,
@@ -135,6 +136,18 @@ const AGENCIES_SCHEMA = Object.freeze({
   isAccessibleForFree: true,
 });
 
+const RELEASES_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'FY2026 Philippine allotment releases as of 30 September 2026',
+  url: `${SITE.origin}/releases/`,
+  description: 'Reconciled DBM allotment-release totals for departments, attached agencies, subunits, and Special Purpose Funds.',
+  temporalCoverage: '2026-01-01/2026-09-30',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
 const PUBLIC_VALUE_SCHEMA = Object.freeze({
   '@context': 'https://schema.org',
   '@type': 'AnalysisNewsArticle',
@@ -256,6 +269,14 @@ const agencies = () => page(document({
   canonicalPath: '/agencies/',
   body: agenciesBody,
   schema: AGENCIES_SCHEMA,
+}));
+
+const releases = () => page(document({
+  title: 'FY2026 Philippine allotment releases | Busisi',
+  description: 'Search reconciled official DBM allotment releases by department, attached agency, subunit, and Special Purpose Fund as of 30 September 2026.',
+  canonicalPath: '/releases/',
+  body: releasesBody,
+  schema: RELEASES_SCHEMA,
 }));
 
 const sulit = () => page(document({
@@ -409,6 +430,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/contracts/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/changes/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/agencies/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/releases/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/budget-trail/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/audit/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/procurement/</loc><lastmod>2026-11-03</lastmod></url>
@@ -443,6 +465,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Contract intelligence: ${SITE.origin}/contracts/
 - FY2027 change ledger: ${SITE.origin}/changes/
 - Appropriation heads: ${SITE.origin}/agencies/
+- FY2026 allotment releases: ${SITE.origin}/releases/
 - FY2027 budget publication trail: ${SITE.origin}/budget-trail/
 - COA audit evidence: ${SITE.origin}/audit/
 - Procurement evidence: ${SITE.origin}/procurement/
@@ -461,7 +484,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 `, { type: 'text/plain; charset=utf-8' });
 
 const assets = (path) => {
-  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css' || path === '/assets/site-visual-v8.css' || path === '/assets/site-visual-v9.css' || path === '/assets/site-visual-v10.css' || path === '/assets/site-visual-v11.css' || path === '/assets/site-visual-v12.css' || path === '/assets/site-visual-v13.css' || path === '/assets/site-visual-v14.css') {
+  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css' || path === '/assets/site-visual-v8.css' || path === '/assets/site-visual-v9.css' || path === '/assets/site-visual-v10.css' || path === '/assets/site-visual-v11.css' || path === '/assets/site-visual-v12.css' || path === '/assets/site-visual-v13.css' || path === '/assets/site-visual-v14.css' || path === '/assets/site-visual-v15.css') {
     return response(siteCss, { type: 'text/css; charset=utf-8', cache: 'public, max-age=604800, immutable' });
   }
   if (path === '/assets/favicon.svg') {
@@ -500,6 +523,7 @@ const route = (path) => {
   if (path === '/contracts' || path === '/contracts/') return contracts();
   if (path === '/changes' || path === '/changes/') return changes();
   if (path === '/agencies' || path === '/agencies/') return agencies();
+  if (path === '/releases' || path === '/releases/') return releases();
   if (path === '/budget-trail' || path === '/budget-trail/') return budgetCycle();
   if (path === '/signals' || path === '/signals/') return signals();
   if (path === '/integrity' || path === '/integrity/') return integrity();
