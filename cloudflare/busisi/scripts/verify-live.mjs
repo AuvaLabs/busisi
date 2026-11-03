@@ -223,7 +223,7 @@ const verifyPages = async () => {
   expectStatus(signals, 200, '/signals/');
   const signalsText = await signals.text();
   expectIncludes(signalsText, 'Start with the records that moved', 'review desk heading');
-  expectIncludes(signalsText, '/assets/review-v1.js', 'review desk client');
+  expectIncludes(signalsText, '/assets/review-v1.js?v=2', 'review desk client');
   expectIncludes(signalsText, 'Full insertion analysis', 'signals evidence gaps');
   expectIncludes(signalsText, 'Physical existence verification', 'signals evidence gaps');
 
@@ -297,7 +297,7 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v12.css',
+    '/assets/site-visual-v13.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-social-v1.png',
     '/assets/busisi-evidence-banner-v1.webp',
@@ -309,7 +309,7 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v12.css');
+  const css = await request('/assets/site-visual-v13.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
@@ -633,6 +633,14 @@ const verifyData = async () => {
   );
   if (concentration.data[0]?.label !== 'Region IV-A') {
     fail('review concentrations: leading region mismatch');
+  }
+  const groupedReview = await readJson(
+    '/api/v1/review-rankings?signal=house_only&dimension=region&group=Region%20IV-A&limit=2',
+  );
+  if (groupedReview.meta.total !== 782
+    || groupedReview.data.length !== 2
+    || !groupedReview.data.every((record) => record.region === 'Region IV-A')) {
+    fail('review rankings: concentration drill-down does not preserve the selected group');
   }
 
   const reviewCsv = await request('/api/v1/review.csv?signal=increased&dataset=hfep');

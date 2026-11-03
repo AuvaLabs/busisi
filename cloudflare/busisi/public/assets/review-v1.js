@@ -8,10 +8,13 @@ const concentrations = root.querySelector('[data-review-concentrations]');
 const status = root.querySelector('[data-review-status]');
 const total = root.querySelector('[data-review-total]');
 const exportLink = root.querySelector('[data-review-export]');
+const groupFilter = root.querySelector('[data-review-group]');
 const summary = document.querySelector('[data-review-summary]');
 const peso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
 const number = new Intl.NumberFormat('en-PH');
 let controller = null;
+const initial = new URLSearchParams(location.search);
+let activeGroup = (initial.get('group') || '').trim();
 
 const signalLabels = Object.freeze({
   house_only: 'House-only row',
@@ -42,12 +45,31 @@ const formatMoney = (centavos) => peso.format(Number(centavos || 0) / 100);
 
 const query = () => {
   const values = new FormData(form);
-  return new URLSearchParams({
+  const params = new URLSearchParams({
     signal: String(values.get('signal')),
     dataset: String(values.get('dataset')),
     dimension: String(values.get('dimension')),
     limit: '20',
   });
+  if (activeGroup) params.set('group', activeGroup);
+  return params;
+};
+
+const groupUrl = (label) => {
+  const params = query();
+  params.set('group', label);
+  return `${location.pathname}?${params}`;
+};
+
+const renderGroupFilter = () => {
+  groupFilter.hidden = !activeGroup;
+  groupFilter.replaceChildren();
+  if (!activeGroup) return;
+  appendText(groupFilter, 'span', `Filtered group: ${activeGroup}`);
+  const params = query();
+  params.delete('group');
+  const clear = appendText(groupFilter, 'a', 'Clear group filter');
+  clear.href = `${location.pathname}?${params}`;
 };
 
 const renderSummary = (payload) => {
@@ -73,7 +95,10 @@ const renderRanking = (record) => {
     appendText(heading, 'span', 'Quarantine', 'review-badge quarantine');
   }
   card.append(heading);
-  appendText(card, 'h3', record.title);
+  const title = appendText(card, 'h3', '');
+  const detailUrl = `/records/change/${encodeURIComponent(record.record_id)}/`;
+  const titleLink = appendText(title, 'a', record.title, 'review-record-title');
+  titleLink.href = detailUrl;
   appendText(
     card,
     'p',
@@ -99,8 +124,8 @@ const renderRanking = (record) => {
     appendText(card, 'p', `${record.family_count} FY2027 rows share this normalized family label.`, 'review-record-note');
   }
   const links = appendText(card, 'div', '', 'review-record-links');
-  const detail = appendText(links, 'a', 'Open full review record');
-  detail.href = `/records/change/${encodeURIComponent(record.record_id)}/`;
+  const detail = appendText(links, 'a', 'Inspect project evidence');
+  detail.href = detailUrl;
   evidenceLink(links, 'View NEP PDF', record.nep_pdf_url);
   evidenceLink(links, 'View House bill PDF', record.house_pdf_url);
   return card;
@@ -111,7 +136,8 @@ const renderConcentrations = (items) => {
   concentrations.replaceChildren(...items.map((item) => {
     const row = document.createElement('article');
     const copy = document.createElement('div');
-    appendText(copy, 'strong', item.label);
+    const label = appendText(copy, 'a', item.label, 'review-concentration-link');
+    label.href = groupUrl(item.label);
     appendText(copy, 'span', `${number.format(item.record_count)} rows`);
     row.append(copy);
     const bar = document.createElement('progress');
@@ -149,8 +175,9 @@ const loadReview = async () => {
     renderConcentrations(grouped.data);
     total.textContent = number.format(ranked.meta.total);
     status.textContent = ranked.meta.total
-      ? 'Candidates are ordered for documentary review, not accusation.'
+      ? `${activeGroup ? `Filtered to ${activeGroup}. ` : ''}Candidates are ordered for documentary review, not accusation.`
       : 'No records match this deterministic rule and dataset.';
+    renderGroupFilter();
     history.replaceState(null, '', `${location.pathname}?${params}`);
   } catch (error) {
     if (error.name === 'AbortError') return;
@@ -162,9 +189,9 @@ const loadReview = async () => {
 
 form.addEventListener('submit', (event) => {
   event.preventDefault();
+  activeGroup = '';
   loadReview();
 });
-const initial = new URLSearchParams(location.search);
 for (const name of ['signal', 'dataset', 'dimension']) {
   if (initial.has(name) && form.elements[name]) form.elements[name].value = initial.get(name);
 }

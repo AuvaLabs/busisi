@@ -500,15 +500,16 @@ test('validates deterministic review filters', () => {
     ['?limit=none', 'limit is invalid'],
     ['?limit=0', 'limit is outside the supported range'],
     ['?limit=101', 'limit is outside the supported range'],
+    [`?group=${'x'.repeat(201)}`, 'group is too long'],
   ];
   for (const [query, message] of invalid) {
     assert.throws(() => parseReviewQuery(reviewUrl(query)), { name: 'QueryError', message });
   }
   assert.deepEqual(parseReviewQuery(reviewUrl()), {
-    signal: 'house_only', dataset: 'all', dimension: 'region', limit: 25,
+    signal: 'house_only', dataset: 'all', dimension: 'region', group: '', limit: 25,
   });
-  assert.deepEqual(parseReviewQuery(reviewUrl('?dataset=dpwh&dimension=office&limit=1')), {
-    signal: 'house_only', dataset: 'dpwh', dimension: 'office', limit: 1,
+  assert.deepEqual(parseReviewQuery(reviewUrl('?dataset=dpwh&dimension=office&group=Central%20Office&limit=1')), {
+    signal: 'house_only', dataset: 'dpwh', dimension: 'office', group: 'Central Office', limit: 1,
   });
 });
 
@@ -1103,6 +1104,10 @@ test('publishes ranked review candidates, concentrations and CSV evidence', asyn
     request('/api/v1/review-concentrations?signal=house_only&dimension=region'),
     environment(database),
   );
+  const grouped = await worker.fetch(
+    request('/api/v1/review-rankings?signal=house_only&dimension=region&group=Region%20VII'),
+    environment(database),
+  );
   const largest = await worker.fetch(
     request('/api/v1/review-rankings?signal=house_only&dataset=hfep'),
     environment(database),
@@ -1117,6 +1122,10 @@ test('publishes ranked review candidates, concentrations and CSV evidence', asyn
   );
   const csv = await worker.fetch(
     request('/api/v1/review.csv?signal=increased&dataset=dpwh'),
+    environment(database),
+  );
+  const groupedCsv = await worker.fetch(
+    request('/api/v1/review.csv?signal=house_only&dimension=region&group=Region%20VII'),
     environment(database),
   );
 
@@ -1139,11 +1148,17 @@ test('publishes ranked review candidates, concentrations and CSV evidence', asyn
   assert.equal(similarBody.data[0].family_count, 2);
   assert.equal(concentrationBody.data[0].label, 'Region VII');
   assert.equal(concentrationBody.data[0].record_count, 1);
+  const groupedBody = await grouped.json();
+  assert.equal(groupedBody.meta.total, 1);
+  assert.equal(groupedBody.data[0].region, 'Region VII');
   assert.equal((await largest.json()).meta.total, 1);
   assert.equal((await removed.json()).meta.total, 0);
   assert.equal((await decreased.json()).meta.total, 0);
   assert.equal(csv.headers.get('content-type'), 'text/csv; charset=utf-8');
   assert.match(await csv.text(), /"increased","dpwh","Sample bridge"/);
+  const groupedCsvText = await groupedCsv.text();
+  assert.match(groupedCsvText, /"Region VII"/);
+  assert.doesNotMatch(groupedCsvText, /"Region III"/);
 });
 
 test('publishes delivery-integrity signals and contractor rankings', async (context) => {

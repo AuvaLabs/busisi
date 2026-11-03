@@ -3,6 +3,7 @@ import { DISTRICT_SELECT, districtContext, districtOfficeJoin } from './district
 
 const MAX_LIMIT = 100;
 const MAX_EXPORT_ROWS = 10_000;
+const MAX_GROUP_LENGTH = 200;
 const DATASETS = Object.freeze(['all', 'dpwh', 'fmr', 'hfep', 'nia']);
 const SIGNALS = Object.freeze([
   'house_only', 'increased', 'decreased', 'nep_only', 'repeat_family', 'similar_family',
@@ -31,11 +32,13 @@ export const parseReviewQuery = (url) => {
   const signal = url.searchParams.get('signal') || 'house_only';
   const dataset = url.searchParams.get('dataset') || 'all';
   const dimension = url.searchParams.get('dimension') || 'region';
+  const group = (url.searchParams.get('group') || '').trim();
   const limit = parseInteger(url.searchParams.get('limit'), 25, 1, MAX_LIMIT, 'limit');
   if (!SIGNALS.includes(signal)) throw new QueryError('signal is invalid');
   if (!DATASETS.includes(dataset)) throw new QueryError('dataset is invalid');
   if (!Object.hasOwn(DIMENSIONS, dimension)) throw new QueryError('dimension is invalid');
-  return Object.freeze({ signal, dataset, dimension, limit });
+  if (group.length > MAX_GROUP_LENGTH) throw new QueryError('group is too long');
+  return Object.freeze({ signal, dataset, dimension, group, limit });
 };
 
 const signalFilter = (signal) => {
@@ -67,6 +70,11 @@ const reviewWhere = (query) => {
   if (query.dataset !== 'all') {
     clauses.push('c.dataset = ?');
     bindings.push(query.dataset);
+  }
+  if (query.group) {
+    const field = DIMENSIONS[query.dimension];
+    clauses.push(`COALESCE(NULLIF(TRIM(${field}), ''), 'Not stated') = ?`);
+    bindings.push(query.group);
   }
   return { where: `WHERE ${clauses.join(' AND ')}`, bindings };
 };

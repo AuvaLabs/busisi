@@ -20,7 +20,7 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<meta property="og:image:width" content="1200">/);
   assert.match(document, /<meta property="og:image:height" content="630">/);
   assert.match(document, /<meta name="twitter:card" content="summary_large_image">/);
-  assert.match(document, /href="\/assets\/site-visual-v12\.css"/);
+  assert.match(document, /href="\/assets\/site-visual-v13\.css"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
@@ -83,7 +83,7 @@ test('publishes the deterministic review desk and names unavailable analyses', a
   assert.match(document, /Similar FY2027 family candidates/);
   assert.match(document, /Download evidence CSV/);
   assert.match(document, /How to read a review signal/);
-  assert.match(document, /src="\/assets\/review-v1\.js"/);
+  assert.match(document, /src="\/assets\/review-v1\.js\?v=2"/);
   assert.match(document, /Physical existence verification/);
 });
 
@@ -300,7 +300,7 @@ test('renders a reviewed evidence dossier when the publication database is bound
 });
 
 test('serves the monochrome editorial system and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v12.css');
+  const css = await fetchPath('/assets/site-visual-v13.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));
@@ -410,5 +410,9 @@ test('reader actions use human-readable evidence instead of raw JSON endpoints',
   assert.doesNotMatch(assets.agencies, /NEP dataset.*record\.nep_source_url/);
   assert.doesNotMatch(assets.changes, /Comparison record.*record\.source_url/);
   assert.doesNotMatch(assets.review, /Comparison.*record\.source_url/);
+  assert.match(assets.review, /review-record-title/);
+  assert.match(assets.review, /Inspect project evidence/);
+  assert.match(assets.review, /Clear group filter/);
+  assert.match(assets.review, /params\.set\('group', label\)/);
   assert.doesNotMatch(assets.integrity, /Open archived source record.*record\.source_url/);
 });
