@@ -12,6 +12,11 @@ import {
 } from './explorer-query.js';
 import { getChangeStats, parseChangeQuery, queryChanges } from './change-query.js';
 import {
+  getAgencyBudgetSummary,
+  parseAgencyQuery,
+  queryAgencyBudgets,
+} from './agency-budget-query.js';
+import {
   exportReviewCsv,
   getReviewSummary,
   parseReviewQuery,
@@ -78,6 +83,23 @@ const apiResponse = async (request, environment, url) => {
   }
   if (url.pathname === '/api/v1/change-stats') {
     return jsonResponse({ data: await getChangeStats(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/agency-budget-summary') {
+    return jsonResponse({ data: await getAgencyBudgetSummary(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/agency-budgets') {
+    const query = parseAgencyQuery(url);
+    const page = await queryAgencyBudgets(environment.DB, query);
+    return jsonResponse({
+      meta: {
+        total: page.total,
+        count: page.records.length,
+        limit: query.limit,
+        next_cursor: page.nextCursor,
+        review_scope: 'reconciled_appropriation_head_totals',
+      },
+      data: page.records,
+    });
   }
   if (url.pathname === '/api/v1/changes') {
     const query = parseChangeQuery(url);

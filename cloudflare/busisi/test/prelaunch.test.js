@@ -107,6 +107,20 @@ test('publishes an interactive FY2027 budget change ledger with careful labels',
   assert.doesNotMatch(document, /proves? (?:an )?insertion/i);
 });
 
+test('publishes a reconciled FY2027 appropriation-head ledger', async () => {
+  const response = await fetchPath('/agencies/');
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /See how agency budgets changed in the House bill/);
+  assert.match(document, /39 appropriation heads/);
+  assert.match(document, /Senate and House are shown separately/);
+  assert.match(document, /data-agency-ledger/);
+  assert.match(document, /Automatic Appropriations/);
+  assert.match(document, /Not spending or a finding of wrongdoing/);
+  assert.match(document, /src="\/assets\/agencies-v1\.js"/);
+});
+
 test('home uses the original Busisi identity and professional exploration panels', async () => {
   const response = await fetchPath('/');
   const document = await response.text();
@@ -152,12 +166,14 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/explore\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/signals\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/changes\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/agencies\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/integrity\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/projects\/corazon-2024-phase-1\/<\/loc>/);
   assert.doesNotMatch(sitemapText, /corazon-2026-completion/);
   const llmsText = await llms.text();
   assert.match(llmsText, /Evidence and publication rules/);
   assert.match(llmsText, /Project integrity desk/);
+  assert.match(llmsText, /Appropriation heads/);
   assert.match(llms.headers.get('content-type'), /^text\/plain/);
 });
 

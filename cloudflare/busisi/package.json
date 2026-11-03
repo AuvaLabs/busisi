@@ -6,6 +6,7 @@
   "scripts": {
     "build:data": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_cloudflare.py",
     "build:public-data": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_public_data.py",
+    "build:agencies": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_agencies.py",
     "test": "npm run build:data && node --disable-warning=ExperimentalWarning --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=95 --test-coverage-include='src/*.js' --test test/*.test.js",
     "check": "npm test && wrangler deploy --dry-run --outdir ../../data/budget_watchdog/worker-dry-run",
     "deploy:publication": "wrangler deploy --config wrangler.jsonc",

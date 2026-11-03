@@ -1,6 +1,7 @@
 import { SITE } from './prelaunch-config.js';
 import { dataCss } from './prelaunch-data-styles.js';
 import { changeCss } from './prelaunch-change-styles.js';
+import { agencyCss } from './prelaunch-agency-styles.js';
 import { integrityCss } from './prelaunch-integrity-styles.js';
 import { reviewCss } from './prelaunch-review-styles.js';
 import { siteCss as baseSiteCss } from './prelaunch-styles.js';
@@ -15,7 +16,7 @@ import {
 
 const navigation = (canonicalPath) => {
   const methodology = canonicalPath === '/methodology/';
-  const links = `<a href="/explore/"${canonicalPath === '/explore/' ? ' aria-current="page"' : ''}>Explore</a><a href="/changes/"${canonicalPath === '/changes/' ? ' aria-current="page"' : ''}>Changes</a><a href="/signals/"${canonicalPath === '/signals/' ? ' aria-current="page"' : ''}>Review</a><a href="/integrity/"${canonicalPath === '/integrity/' ? ' aria-current="page"' : ''}>Integrity</a>`;
+  const links = `<a href="/explore/"${canonicalPath === '/explore/' ? ' aria-current="page"' : ''}>Explore</a><a href="/agencies/"${canonicalPath === '/agencies/' ? ' aria-current="page"' : ''}>Agencies</a><a href="/changes/"${canonicalPath === '/changes/' ? ' aria-current="page"' : ''}>Projects</a><a href="/signals/"${canonicalPath === '/signals/' ? ' aria-current="page"' : ''}>Review</a><a href="/integrity/"${canonicalPath === '/integrity/' ? ' aria-current="page"' : ''}>Integrity</a>`;
   return `<div class="header-inner">
     <a class="wordmark" href="/" aria-label="Busisi home"><img class="brand-mark" src="/assets/busisi-mark-v2.svg" width="44" height="44" alt=""><span>Busisi</span></a>
     <nav class="primary-nav" aria-label="Primary navigation">${links}<a class="method-link" href="/methodology/"${methodology ? ' aria-current="page"' : ''}>Methodology</a></nav>
@@ -29,7 +30,7 @@ const utilityStrip = `<div class="utility-strip"><div class="utility-inner">
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent civic data initiative for traceable Philippine public budget records.</p></div>
-  <nav class="footer-nav" aria-label="Footer navigation"><a href="/explore/">Explore</a><a href="/changes/">Changes</a><a href="/signals/">Review</a><a href="/integrity/">Integrity</a><a href="/methodology/">Methodology</a></nav>
+  <nav class="footer-nav" aria-label="Footer navigation"><a href="/explore/">Explore</a><a href="/agencies/">Agencies</a><a href="/changes/">Projects</a><a href="/signals/">Review</a><a href="/integrity/">Integrity</a><a href="/methodology/">Methodology</a></nav>
   <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.</p>
 </div></footer>`;
 
@@ -57,7 +58,7 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-masthead.webp"><meta property="og:image:width" content="1600"><meta property="og:image:height" content="666">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${description}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-masthead.webp">
-  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js"></script>' : ''}
+  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js"></script>' : ''}
 </head><body>
   <a class="skip-link" href="#main-content">Skip to content</a>${utilityStrip}<header class="site-header">${navigation(canonicalPath)}</header>
   <main id="main-content">${body}</main>${footer}
@@ -169,6 +170,17 @@ export const changesBody = `
   </section>
   <section class="change-scope"><div><p class="kicker">What this ledger covers</p><h2>Four programs, not the entire national budget.</h2></div><div><p>Rows are provisional comparisons derived from published NEP and House documents and independently reconciled to their program controls.</p><ul><li>DPWH national infrastructure</li><li>Department of Agriculture farm-to-market roads</li><li>DOH Health Facilities Enhancement Program</li><li>National Irrigation Administration projects</li></ul></div></section>`;
 
+export const agenciesBody = `
+  <section class="data-intro agency-intro"><div><p class="kicker">FY2027 agency budget ledger</p><h1>See how agency budgets changed in the House bill.</h1><p class="lede">Compare every national appropriation head from the Executive's NEP with page-specific totals in HB 10858. Senate and House are shown separately under Congress.</p></div><aside class="snapshot-card"><span>Reconciled scope</span><strong>39 appropriation heads</strong><p>37 departments and constitutional bodies<br>Special Purpose Funds<br>Automatic Appropriations shown separately</p><a href="/methodology/#agency-ledger">Read the comparison method</a></aside></section>
+  <section class="agency-stage-map" aria-label="FY2027 budget stages"><article><span>01 · Baseline</span><strong>FY2026 base</strong><p>Prior-year comparison values in the NEP dataset.</p></article><article><span>02 · Executive</span><strong>FY2027 NEP</strong><p>The President's proposed national budget.</p></article><article><span>03 · Legislature</span><strong>House Bill 10858</strong><p>Third-reading appropriation totals by source page.</p></article><article class="pending"><span>04 · Pending</span><strong>Senate, bicam, GAA</strong><p>Not published as comparable totals yet. Never treated as zero.</p></article></section>
+  <section class="agency-disclaimer"><strong>Not spending or a finding of wrongdoing.</strong><p>These are proposed appropriations and recorded movements between documents. A large increase, decrease, or congressional change is a lead for document review, not proof of an insertion, release, payment, loss, or unlawful act.</p></section>
+  <section class="agency-summary" aria-label="Ledger summary"><article><strong>₱4.619T</strong><span>NEP bill-scope total</span></article><article><strong>₱4.606T</strong><span>House bill control</span></article><article><strong>−₱12.637B</strong><span>Net bill-scope movement</span></article><article><strong>43 of 44</strong><span>Rows compared; Automatic Appropriations not applicable</span></article></section>
+  <section class="agency-shell" data-agency-ledger>
+    <form class="agency-controls" data-agency-form><label>Search appropriation heads<input type="search" name="q" maxlength="200" placeholder="DPWH, education, Senate…"></label><label>Level<select name="level"><option value="heads">Appropriation heads</option><option value="congress">Congress institutions</option><option value="all">All rows</option></select></label><label>Movement<select name="direction"><option value="all">All movements</option><option value="increase">House increases</option><option value="decrease">House decreases</option><option value="unchanged">No change</option><option value="unavailable">House stage unavailable</option></select></label><label>Sort<select name="sort"><option value="difference_desc">Largest increase</option><option value="difference_asc">Largest decrease</option><option value="house_desc">Largest House amount</option><option value="nep_desc">Largest NEP amount</option><option value="name_asc">Name A–Z</option></select></label><button type="submit">Apply</button><button class="secondary-control" type="button" data-agency-reset>Reset</button></form>
+    <div class="agency-result-summary"><p><strong data-agency-count>0</strong> of <strong data-agency-total>0</strong> rows shown</p><p data-agency-status aria-live="polite">Loading reconciled appropriation totals…</p></div><div class="agency-list" data-agency-results></div><div class="agency-actions"><button type="button" data-agency-more hidden>Load more</button></div>
+  </section>
+  <section class="agency-method"><div><p class="kicker">How to read this ledger</p><h2>Totals are comparable only inside their declared scope.</h2></div><div><ul><li>The 39 appropriation heads reconcile to the ₱7.200186 trillion NEP, including Automatic Appropriations.</li><li>The 38 House-comparable heads reconcile to the bill's printed ₱4.606066495 trillion new-appropriations control.</li><li>Automatic Appropriations are outside the House bill control and therefore remain not applicable, not zero.</li><li>Congress institution rows are children of the Congress head and must not be added again to the national total.</li></ul></div></section>`;
+
 export const projectDossierBody = (record) => {
   const signals = record.match_signals
     .map((signal) => `<li>${escapeHtml(signal.replaceAll('_', ' '))}</li>`)
@@ -198,7 +210,7 @@ const pipeline = `
 
 export const methodologyBody = `
   <section class="page-intro"><div><p class="kicker">Methodology</p><h1>Every public link needs a source trail.</h1></div><div><p class="lede">Collection, normalization, matching, review, and publication are separated so that a plausible relationship cannot quietly become a public claim.</p>${methodDiagram}</div></section>
-  <nav class="local-nav" aria-label="Methodology sections"><span>Jump to</span><a href="#pipeline">Pipeline</a><a href="#source-policy">Source policy</a><a href="#release-standard">Release standard</a><a href="#corrections">Corrections</a></nav>
+  <nav class="local-nav" aria-label="Methodology sections"><span>Jump to</span><a href="#pipeline">Pipeline</a><a href="#source-policy">Source policy</a><a href="#agency-ledger">Agency ledger</a><a href="#release-standard">Release standard</a><a href="#corrections">Corrections</a></nav>
 
   <section class="narrative-section" id="pipeline" aria-labelledby="pipeline-heading">
     <div class="section-heading"><p class="section-number">01 / Pipeline</p><div><h2 id="pipeline-heading">Ten controls. Four evidence stages.</h2><p class="section-intro">A failure at any stage prevents publication. Quarantine is an intended outcome, not an exception.</p></div></div>${pipeline}
@@ -214,15 +226,20 @@ export const methodologyBody = `
     <div class="standards-grid"><article class="standard-panel"><h3>Congressional district context</h3><p>District and representative names come from a hashed, dated 20th Congress roster snapshot linked to official House member profiles. Project context is assigned only through an exact listed DPWH office mapping. Shared offices show every served district, and unmatched offices remain unavailable.</p></article><article class="standard-panel"><h3>Boundary of the attribution</h3><p>This is not a coordinate or boundary-polygon determination. It does not show who requested, sponsored, controlled, inserted, or is responsible for a project or amount.</p></article></div>
   </section>
 
+  <section class="narrative-section" id="agency-ledger" aria-labelledby="agency-ledger-heading">
+    <div class="section-heading"><p class="section-number">03 / Agency ledger</p><div><h2 id="agency-ledger-heading">Compare only totals with the same appropriation scope.</h2><p class="section-intro">The FY2027 ledger joins 39 exact NEP appropriation-head identities to the third-reading House bill. Each House value is extracted from a declared PDF page and the complete set reconciles to the bill's printed control.</p></div></div>
+    <div class="standards-grid"><article class="standard-panel"><h3>Source and arithmetic controls</h3><p>Original PDF and API bytes are archived by SHA-256. Money is stored as integer centavos. The NEP heads reconcile to ₱7.200186 trillion; the House-comparable heads reconcile to the printed ₱4.606066495 trillion new-appropriations control.</p></article><article class="standard-panel"><h3>Stage and hierarchy controls</h3><p>Automatic Appropriations are outside the House bill control and remain not applicable. The five Congress institutions are child rows, so they are never added again to the national total. Senate, bicameral, GAA, release, obligation, and payment stages remain unavailable until comparable evidence is acquired.</p></article></div>
+  </section>
+
   <section class="narrative-section" id="release-standard" aria-labelledby="release-heading">
-    <div class="section-heading"><p class="section-number">03 / Release standard</p><div><h2 id="release-heading">The register opens only after measured review.</h2></div></div>
+    <div class="section-heading"><p class="section-number">04 / Release standard</p><div><h2 id="release-heading">The register opens only after measured review.</h2></div></div>
     <div class="standards-grid"><article class="standard-panel"><h3>Required before release</h3><p>At least <strong>100 reviewed linkage cases</strong>, at least 95% measured precision, at least 95% reviewer agreement, and no unresolved critical reconciliation failure.</p></article><article class="standard-panel"><h3>How to read a signal</h3><p>A signal identifies a record pattern for examination. It is <strong>not evidence of wrongdoing</strong>, waste, or unlawful conduct.</p><p>Every published signal must show its rule, inputs, confidence, source references, and known limitations.</p></article></div>
   </section>
 
   <section class="narrative-section" id="corrections" aria-labelledby="corrections-heading">
-    <div class="section-heading"><p class="section-number">04 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
+    <div class="section-heading"><p class="section-number">05 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${reviewCss}\n${integrityCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${reviewCss}\n${integrityCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#102f2a" stroke-width="2.5" stroke-linejoin="round"><path fill="#a7ddc3" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#fbf8ef" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fbf8ef" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#b83b27" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#102f2a"/><path fill="none" stroke="#f3efe4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/></svg>`;

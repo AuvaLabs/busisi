@@ -125,6 +125,12 @@ def default_source_registry() -> SourceRegistry:
                 SourceAuthority.SECONDARY,
             ),
             SourceDefinition(
+                "bettergov-analysis-github",
+                "BetterGov Budget Analysis GitHub Mirror",
+                "https://raw.githubusercontent.com",
+                SourceAuthority.SECONDARY,
+            ),
+            SourceDefinition(
                 "bettergov-gaa-snapshot",
                 "BetterGov GAA Parquet Snapshot",
                 "https://huggingface.co",

@@ -103,6 +103,10 @@ As of 2026-11-03:
 - The FY2027 change ledger publishes 20,431 source comparisons across four
   program datasets. All rows reconcile to dataset record and monetary control
   totals. 426 held or scope-review DPWH rows remain visibly quarantined.
+- The FY2027 appropriation-head ledger publishes 39 national heads and five
+  Congress institution children. The 38 House-comparable heads reconcile to
+  the bill's printed ₱4.606066495 trillion control. Automatic Appropriations
+  remain not applicable to the House bill comparison, not zero.
 - The deterministic review desk exposes 6,954 House-only rows, 1,784 NEP-only
   rows, 243 increases and 265 decreases. Conservative family normalization
   yields 953 prior-year family candidates and 395 similar-family candidates
@@ -141,7 +145,7 @@ As of 2026-11-03:
 - The public surface includes canonical URLs, page descriptions, Open Graph
   metadata, JSON-LD, `robots.txt`, `sitemap.xml` and `llms.txt`. It uses no
   model inference, model API, cookies or application analytics.
-- IndexNow submission includes the six canonical pages and five reviewed
+- IndexNow submission includes the seven canonical pages and five reviewed
   dossiers. The quarantined dossier and public APIs are excluded from indexing.
 
 Run the reviewed-case harness with:
@@ -183,6 +187,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_public_data.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_pcab.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_districts.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_agencies.py
 cd cloudflare/busisi
 npm test
 npm run check
@@ -193,7 +198,9 @@ The reviewed seed and static assets are generated under the gitignored
 is generated under `data/budget_watchdog/public-d1-bundle/`, verified in an
 in-memory database and split into manifest-hashed import chunks. The stage
 comparison bundle is built under `data/budget_watchdog/hgab-d1-bundle/` and
-uses the same verification contract. The delivery-integrity bundle is built
+uses the same verification contract. The appropriation-head bundle is built
+under `data/budget_watchdog/agency-d1-bundle/`, with its source snapshot under
+`data/budget_watchdog/agency-2027-snapshot/`. The delivery-integrity bundle is built
 under `data/budget_watchdog/integrity-d1-bundle/`, hashes every import chunk and
 verifies the generated SQL in an isolated SQLite database. `npm run check`
 enforces at least 95

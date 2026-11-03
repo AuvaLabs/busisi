@@ -1,5 +1,6 @@
 import {
   changesBody,
+  agenciesBody,
   document,
   exploreBody,
   favicon,
@@ -87,6 +88,17 @@ const CHANGES_SCHEMA = Object.freeze({
   isAccessibleForFree: true,
 });
 
+const AGENCIES_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi FY2027 Philippine appropriation-head comparison',
+  url: `${SITE.origin}/agencies/`,
+  description: 'Reconciled FY2027 NEP and House bill totals for 39 national appropriation heads and five Congress institutions.',
+  temporalCoverage: '2026/2027',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+});
+
 const page = (html, status = 200) => response(html, {
   status,
   type: 'text/html; charset=utf-8',
@@ -150,6 +162,14 @@ const changes = () => page(document({
   schema: CHANGES_SCHEMA,
 }));
 
+const agencies = () => page(document({
+  title: 'FY2027 agency budget changes | Busisi',
+  description: 'Compare reconciled FY2027 NEP and House bill totals across Philippine national appropriation heads, including separate Senate and House institutions.',
+  canonicalPath: '/agencies/',
+  body: agenciesBody,
+  schema: AGENCIES_SCHEMA,
+}));
+
 const project = (record) => page(document({
   title: `${record.title} | Busisi`,
   description: `Evidence dossier comparing the FY ${record.fiscal_year} appropriation with DPWH contract ${record.contract_id}.`,
@@ -188,6 +208,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/explore/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/changes/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/agencies/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/signals/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/integrity/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
@@ -212,6 +233,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Overview: ${SITE.origin}/
 - Explorer: ${SITE.origin}/explore/
 - FY2027 change ledger: ${SITE.origin}/changes/
+- Appropriation heads: ${SITE.origin}/agencies/
 - Deterministic review desk: ${SITE.origin}/signals/
 - Project integrity desk: ${SITE.origin}/integrity/
 - Methodology: ${SITE.origin}/methodology/
@@ -240,6 +262,7 @@ const route = (path) => {
   if (path === '/') return home();
   if (path === '/explore' || path === '/explore/') return explore();
   if (path === '/changes' || path === '/changes/') return changes();
+  if (path === '/agencies' || path === '/agencies/') return agencies();
   if (path === '/signals' || path === '/signals/') return signals();
   if (path === '/integrity' || path === '/integrity/') return integrity();
   if (path === '/methodology' || path === '/methodology/') return methodology();

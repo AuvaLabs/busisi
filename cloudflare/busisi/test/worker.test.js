@@ -5,6 +5,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { parseChangeQuery } from '../src/change-query.js';
+import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
 import { parseReviewQuery } from '../src/review-query.js';
 import { districtContext } from '../src/district-context.js';
@@ -33,6 +34,9 @@ const verificationMigrationPath = fileURLToPath(
 );
 const districtMigrationPath = fileURLToPath(
   new URL('../migrations/0007_district_attribution.sql', import.meta.url),
+);
+const agencyMigrationPath = fileURLToPath(
+  new URL('../migrations/0008_agency_budgets.sql', import.meta.url),
 );
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
@@ -69,6 +73,7 @@ class LocalD1 {
     this.database.exec(readFileSync(integrityMigrationPath, 'utf8'));
     this.database.exec(readFileSync(verificationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(districtMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(agencyMigrationPath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -125,6 +130,16 @@ class LocalD1 {
         ('quezon 1st deo', 'Quezon 1st DEO', 'shared_office', 2,
           '[{"district_id":"leg:quezon:1st","label":"Quezon, 1st District","representative_name":"Representative Two","representative_status":"resolved","representative_status_note":"","representative_profile_url":"https://www.congress.gov.ph/house-members/view/A002"},{"district_id":"leg:quezon:2nd","label":"Quezon, 2nd District","representative_name":"Representative Three; Representative Four","representative_status":"ambiguous","representative_status_note":"Official roster lists multiple current names; no representative was selected.","representative_profile_url":""}]',
           '${'d'.repeat(40)}', '2026-10-26T08:46:14.383Z', '2026-11-03', '${'9'.repeat(64)}');
+      INSERT INTO agency_budget_metadata VALUES
+        ('record_count', '3'), ('appropriation_heads', '2'), ('congress_institutions', '1'),
+        ('compared_records', '2'), ('unavailable_records', '1'),
+        ('fiscal_year', '2027'), ('baseline_year', '2026'),
+        ('nep_bill_scope_centavos', '300000'), ('house_bill_scope_centavos', '340000'),
+        ('house_control_centavos', '340000');
+      INSERT INTO agency_budget_items VALUES
+        ('head:18', 2027, 2026, 'appropriation_head', NULL, '18', 'Department of Public Works and Highways', 90000, 100000, 130000, 30000, 3000, 'compared', 'house-ib', '[113]', 'https://example.test/ib.pdf', 'https://budget.example/nep', '${'1'.repeat(64)}', '${'2'.repeat(64)}', 'Compared source total.'),
+        ('head:AUTO', 2027, 2026, 'appropriation_head', NULL, 'AUTO', 'Automatic Appropriations', 190000, 200000, NULL, NULL, NULL, 'not_applicable', NULL, '[]', NULL, 'https://budget.example/nep', '${'1'.repeat(64)}', NULL, 'Outside House bill comparison.'),
+        ('congress:004', 2027, 2026, 'congress_institution', 'head:01', '004', 'House of Representatives', 80000, 100000, 210000, 110000, 11000, 'compared', 'house-ia', '[19]', 'https://example.test/ia.pdf', 'https://budget.example/congress', '${'3'.repeat(64)}', '${'4'.repeat(64)}', 'Compared source total.');
     `);
   }
 
@@ -151,6 +166,36 @@ const reviewUrl = (query = '') => new URL(`https://busisi.test/api/v1/review-ran
 const integrityUrl = (query = '') => new URL(`https://busisi.test/api/v1/integrity-signals${query}`);
 const contractorUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractors${query}`);
 const concentrationUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractor-concentrations${query}`);
+const agencyUrl = (query = '') => new URL(`https://busisi.test/api/v1/agency-budgets${query}`);
+
+test('validates appropriation-head query filters and cursor contract', () => {
+  for (const [query, message] of [
+    ['?level=department', 'level is invalid'],
+    ['?direction=corruption', 'direction is invalid'],
+    ['?sort=unknown', 'sort is invalid'],
+    ['?limit=0', 'limit is outside the supported range'],
+    [`?q=${'x'.repeat(201)}`, 'q is too long'],
+    ['?cursor=broken', 'cursor is invalid for this query'],
+  ]) {
+    assert.throws(() => parseAgencyQuery(agencyUrl(query)), { name: 'QueryError', message });
+  }
+  const fingerprint = ['House', 'congress', 'decrease', 'name_asc'].join('|');
+  const cursor = Buffer.from(JSON.stringify({ v: 1, offset: 1, fingerprint })).toString('base64url');
+  assert.equal(parseAgencyQuery(agencyUrl(
+    `?q=House&level=congress&direction=decrease&sort=name_asc&limit=1&cursor=${cursor}`,
+  )).offset, 1);
+  for (const payload of [
+    { v: 2, offset: 1, fingerprint },
+    { v: 1, offset: -1, fingerprint },
+    { v: 1, offset: 1, fingerprint: 'wrong' },
+  ]) {
+    const invalid = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    assert.throws(
+      () => parseAgencyQuery(agencyUrl(`?q=House&level=congress&direction=decrease&sort=name_asc&limit=1&cursor=${invalid}`)),
+      { name: 'QueryError', message: 'cursor is invalid for this query' },
+    );
+  }
+});
 
 test('keeps unavailable and malformed district evidence unassigned', () => {
   assert.equal(districtContext({}).classification, 'unassigned');
@@ -436,6 +481,62 @@ test('publishes reconciled FY2027 stage-change statistics and filters', async (c
   assert.equal(changeBody.data[0].record_id, 'dpwh:1');
   assert.equal(changeBody.data[0].district_context.classification, 'single_district');
   assert.equal((await quarantined.json()).data[0].record_id, 'dpwh:3');
+});
+
+test('publishes reconciled appropriation heads and Congress institutions', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const summary = await worker.fetch(
+    request('/api/v1/agency-budget-summary'), environment(database),
+  );
+  const increases = await worker.fetch(
+    request('/api/v1/agency-budgets?level=all&direction=increase&sort=difference_desc'),
+    environment(database),
+  );
+  const unavailable = await worker.fetch(
+    request('/api/v1/agency-budgets?direction=unavailable'), environment(database),
+  );
+
+  const summaryBody = await summary.json();
+  assert.equal(summaryBody.data.record_count, 3);
+  assert.equal(summaryBody.data.house_bill_scope_centavos, 340000);
+  const increaseBody = await increases.json();
+  assert.equal(increaseBody.meta.total, 2);
+  assert.equal(increaseBody.meta.review_scope, 'reconciled_appropriation_head_totals');
+  assert.equal(increaseBody.data[0].record_id, 'congress:004');
+  assert.deepEqual(increaseBody.data[0].house_pages, [19]);
+  const unavailableBody = await unavailable.json();
+  assert.equal(unavailableBody.data[0].record_id, 'head:AUTO');
+  assert.equal(unavailableBody.data[0].house_centavos, null);
+
+  database.database.exec("UPDATE agency_budget_items SET house_pages_json = 'broken' WHERE record_id = 'head:AUTO'");
+  const malformedPages = await worker.fetch(
+    request('/api/v1/agency-budgets?q=AUTO&level=all&direction=unavailable&sort=nep_desc'),
+    environment(database),
+  );
+  assert.deepEqual((await malformedPages.json()).data[0].house_pages, []);
+
+  for (const query of [
+    '?level=heads&direction=decrease&sort=difference_asc',
+    '?level=heads&direction=unchanged&sort=house_desc',
+    '?level=all&sort=nep_desc',
+    '?level=all&sort=name_asc',
+  ]) {
+    const response = await worker.fetch(
+      request(`/api/v1/agency-budgets${query}`), environment(database),
+    );
+    assert.equal(response.status, 200, query);
+  }
+
+  const firstPage = await worker.fetch(
+    request('/api/v1/agency-budgets?level=all&limit=1'), environment(database),
+  );
+  const firstPageBody = await firstPage.json();
+  const secondPage = await worker.fetch(
+    request(`/api/v1/agency-budgets?level=all&limit=1&cursor=${firstPageBody.meta.next_cursor}`),
+    environment(database),
+  );
+  assert.equal((await secondPage.json()).data.length, 1);
 });
 
 test('publishes ranked review candidates, concentrations and CSV evidence', async (context) => {
