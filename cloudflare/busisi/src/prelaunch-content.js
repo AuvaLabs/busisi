@@ -50,7 +50,7 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${title}</title><meta name="description" content="${description}"><meta name="robots" content="${robots}">
-  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="/assets/busisi-masthead.webp" as="image" type="image/webp" fetchpriority="high"><link rel="stylesheet" href="/assets/site-visual-v4.css">
+  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="/assets/busisi-masthead.webp" as="image" type="image/webp" fetchpriority="high"><link rel="stylesheet" href="/assets/site-visual-v5.css">
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-masthead.webp"><meta property="og:image:width" content="1600"><meta property="og:image:height" content="666">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${description}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-masthead.webp">

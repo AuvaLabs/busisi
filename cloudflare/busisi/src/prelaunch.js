@@ -179,7 +179,7 @@ Official source records are public. Cross-source candidate links remain explicit
 `, { type: 'text/plain; charset=utf-8' });
 
 const assets = (path) => {
-  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css') {
+  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css') {
     return response(siteCss, { type: 'text/css; charset=utf-8', cache: 'public, max-age=604800, immutable' });
   }
   if (path === '/assets/favicon.svg') {

@@ -142,14 +142,14 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v4.css',
+    '/assets/site-visual-v5.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-masthead.webp',
     'Illustrative view · not a project record',
   ]) expectIncludes(html, value, 'home design');
   if (/busisi-mark\.webp|auva\s*labs?/i.test(html)) fail('home design: retired branding is public');
 
-  const css = await request('/assets/site-visual-v4.css');
+  const css = await request('/assets/site-visual-v5.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
