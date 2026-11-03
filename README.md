@@ -61,6 +61,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_agencies.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_districts.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_senate.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_senate_monitor.py
 cd cloudflare/busisi
 npm ci
 npm run check
@@ -75,6 +76,10 @@ Generated data and local publication bundles are written under
 The public service is a read-only Cloudflare Worker backed by an isolated D1
 publication database. The canonical acquisition database is never bound to a
 public request. Production monitoring is credential-free and read-only.
+The Senate catalogue monitor runs every six hours, preserves its bounded source
+responses as workflow evidence, and fails closed when records change or source
+acquisition becomes unreliable. It never updates the reviewed baseline
+automatically.
 
 ## License
 
