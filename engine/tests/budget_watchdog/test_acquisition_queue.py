@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -117,3 +118,42 @@ def test_reviewed_blocked_source_becomes_a_retryable_acquisition_task(tmp_path) 
         "25BB0002:procurement_monitoring_report"
     ]
     assert batch[0].source_url == "https://www.dpwh.gov.ph/report.pdf"
+
+
+def test_queue_rejects_invalid_boundaries_and_foreign_results(tmp_path) -> None:
+    with pytest.raises(ValueError, match="does not exist"):
+        AcquisitionQueue(tmp_path / "missing.sqlite3")
+    database = tmp_path / "queue.sqlite3"
+    create_acquisition_queue(database, _snapshot(tmp_path))
+    queue = AcquisitionQueue(database)
+    now = datetime(2026, 11, 3, 14, 0, tzinfo=UTC)
+
+    with pytest.raises(ValueError, match="positive"):
+        queue.claim_batch(limit=0, now=now, lease_seconds=60)
+    with pytest.raises(ValueError, match="timezone-aware"):
+        queue.claim_batch(limit=1, now=datetime(2026, 11, 3), lease_seconds=60)
+    with pytest.raises(ValueError, match="active lease"):
+        queue.record_result("unknown", QueueResult(status="blocked"), now=now)
+    task = queue.claim_batch(limit=1, now=now, lease_seconds=60)[0]
+    with pytest.raises(ValueError, match="unsupported"):
+        queue.record_result(task.task_id, QueueResult(status="invalid"), now=now)
+    with pytest.raises(ValueError, match="retry result"):
+        queue.record_result(task.task_id, QueueResult(status="retry"), now=now)
+
+
+def test_existing_queue_must_match_source_snapshot(tmp_path) -> None:
+    database = tmp_path / "queue.sqlite3"
+    snapshot = _snapshot(tmp_path)
+    create_acquisition_queue(database, snapshot)
+    create_acquisition_queue(database, snapshot)
+    connection = sqlite3.connect(database)
+    try:
+        connection.execute(
+            "UPDATE queue_metadata SET value = 'wrong' WHERE key = 'award_sha256'"
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    with pytest.raises(ValueError, match="different source snapshot"):
+        create_acquisition_queue(database, snapshot)

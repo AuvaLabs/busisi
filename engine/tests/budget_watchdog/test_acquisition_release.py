@@ -1,6 +1,8 @@
 import json
+from copy import deepcopy
 from datetime import UTC, date, datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -65,3 +67,48 @@ def test_release_rejects_unfinished_leases_from_published_queue_counts(tmp_path)
 
     assert release["queue_status_counts"]["in_progress"] == 1
     assert sum(release["queue_status_counts"].values()) == 27
+
+
+def _set_year_control_total(raw: dict) -> None:
+    item = raw["year_breakdowns"][0]
+    item["total_contracts"] += 1
+    item["state_counts"]["structured_exact"] += 1
+
+
+@pytest.mark.parametrize(("mutate", "message"), [
+    (lambda raw: raw.update(schema_version=2), "unsupported acquisition release schema"),
+    (lambda raw: raw.update(source=[]), "source and summary must be objects"),
+    (lambda raw: raw["source"].update(delivery_sha256="bad"), "fingerprints"),
+    (lambda raw: raw["summary"].update(contract_count=True), "non-negative integer"),
+    (lambda raw: raw["summary"].update(match_state_counts=[]), "must be an object"),
+    (lambda raw: raw["summary"].update(lifecycle_task_count=1), "lifecycle task"),
+    (lambda raw: raw.update(queue_status_counts={"pending": 0}), "queue control"),
+    (lambda raw: raw.update(year_breakdowns=[]), "non-empty array"),
+    (lambda raw: raw["year_breakdowns"].__setitem__(0, {}), "entries must have a value"),
+    (
+        lambda raw: raw["year_breakdowns"][0]["state_counts"].pop("structured_exact"),
+        "state totals",
+    ),
+    (
+        lambda raw: raw["year_breakdowns"][0].update(total_contracts=-1),
+        "non-negative integer",
+    ),
+    (_set_year_control_total, "control total does not reconcile"),
+])
+def test_release_rejects_invalid_boundaries(tmp_path, mutate, message) -> None:
+    release, _ = _release(tmp_path)
+    invalid = deepcopy(release)
+    mutate(invalid)
+
+    with pytest.raises(AcquisitionReleaseError, match=message):
+        load_acquisition_release(json.dumps(invalid).encode())
+
+
+def test_release_rejects_invalid_json_and_nonpositive_archive_size(tmp_path) -> None:
+    _release(tmp_path)
+    with pytest.raises(AcquisitionReleaseError, match="JSON is invalid"):
+        load_acquisition_release(b"{broken")
+    with pytest.raises(ValueError, match="award_byte_size"):
+        build_acquisition_release(
+            SimpleNamespace(), SimpleNamespace(), award_byte_size=0
+        )
