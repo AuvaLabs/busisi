@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { parseChangeQuery } from '../src/change-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
+import { parseReviewQuery } from '../src/review-query.js';
 import worker from '../src/index.js';
 
 const migrationPath = fileURLToPath(new URL('../migrations/0001_publication.sql', import.meta.url));
@@ -14,6 +15,9 @@ const explorerMigrationPath = fileURLToPath(
 );
 const changeMigrationPath = fileURLToPath(
   new URL('../migrations/0003_stage_changes.sql', import.meta.url),
+);
+const reviewMigrationPath = fileURLToPath(
+  new URL('../migrations/0004_review_signals.sql', import.meta.url),
 );
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
@@ -46,12 +50,14 @@ class LocalD1 {
     this.database.exec(readFileSync(migrationPath, 'utf8'));
     this.database.exec(readFileSync(explorerMigrationPath, 'utf8'));
     this.database.exec(readFileSync(changeMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(reviewMigrationPath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
       INSERT INTO budget_items VALUES
         ('2025:pump', '18-001|pump', 2025, 'Construction of San Andres Pumping Station', 40000000000, 'family:pump', 'san andres pumping station', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
-        ('2024:road', '18-001|road', 2024, 'Maintenance, Repair and Rehabilitation of Infrastructure Facilities and Other Related Activities - Routine Maintenance of National Roads', 1000000000, 'family:road', 'routine maintenance of national roads', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+        ('2024:road', '18-001|road', 2024, 'Maintenance, Repair and Rehabilitation of Infrastructure Facilities and Other Related Activities - Routine Maintenance of National Roads', 1000000000, 'family:road', 'routine maintenance of national roads', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
+        ('2026:bridge', '18-001|bridge', 2026, 'Sample public bridge project Phase I', 8000, 'family:bridge', 'sample public bridge project', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
       INSERT INTO delivery_items VALUES
         ('25O00113', 2025, 'Construction of San Andres Pumping Station', 37679270658, 'Manila, NCR', 'GAA 2025', 'family:pump', 'san andres pumping station', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
         ('26ZERO01', 2026, 'Construction of Sample Health Center', 0, 'Cebu, Region VII', 'GAA 2026', 'family:health', 'sample health center', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
@@ -59,11 +65,12 @@ class LocalD1 {
         ('2025:pump:25O00113', 2025, '18-001|pump', '25O00113', 'high', 90, '["year_match"]', 'Construction of San Andres Pumping Station', 'Construction of San Andres Pumping Station', 40000000000, 37679270658, 2320729342, 'https://budget.example/pump', 'https://dpwh.example/25O00113', 'candidate'),
         ('2026:health:26ZERO01', 2026, '18-001|health', '26ZERO01', 'candidate', 70, '["year_match"]', 'Construction of Sample Health Center', 'Construction of Sample Health Center', 2500000000, 0, 2500000000, 'https://budget.example/health', 'https://dpwh.example/26ZERO01', 'candidate');
       INSERT INTO stage_change_metadata VALUES
-        ('record_count', '3'), ('quarantine_count', '1'), ('source_commit', '${'a'.repeat(40)}');
+        ('record_count', '4'), ('quarantine_count', '1'), ('source_commit', '${'a'.repeat(40)}');
       INSERT INTO stage_change_items VALUES
-        ('dpwh:1', 2027, 'dpwh', 'Sample bridge', 'Network Development', 'Bridge Program', 'Region III', 'Sample DEO', 'increased', 'Higher in the House bill', 'candidate', 0, 1, 10000, 15000, 5000, 'https://budget.example/1', 'https://budget.example/nep.pdf#page=1', 'https://budget.example/house.pdf#page=2', 1, 2, '${'a'.repeat(40)}', '${'b'.repeat(64)}'),
-        ('hfep:2', 2027, 'hfep', 'Sample health center', 'HFEP', '', 'Region VII', 'DOH', 'house_only', 'In the House bill only', 'candidate', 0, 0, 0, 20000, 20000, 'https://budget.example/2', '', 'https://budget.example/house.pdf#page=3', NULL, 3, '${'a'.repeat(40)}', '${'c'.repeat(64)}'),
-        ('dpwh:3', 2027, 'dpwh', 'Held road match', 'Road Program', '', 'NCR', 'Central Office', 'scope_review', 'Different scope', 'quarantine', 1, 0, 30000, 35000, 5000, 'https://budget.example/3', 'https://budget.example/nep.pdf#page=4', 'https://budget.example/house.pdf#page=5', 4, 5, '${'a'.repeat(40)}', '${'d'.repeat(64)}');
+        ('dpwh:1', 2027, 'dpwh', 'Sample bridge', 'Network Development', 'Bridge Program', 'Region III', 'Sample DEO', 'increased', 'Higher in the House bill', 'candidate', 0, 1, 10000, 15000, 5000, 'https://budget.example/1', 'https://budget.example/nep.pdf#page=1', 'https://budget.example/house.pdf#page=2', 1, 2, '${'a'.repeat(40)}', '${'b'.repeat(64)}', 'sample public bridge project'),
+        ('hfep:2', 2027, 'hfep', 'Sample health center', 'HFEP', '', 'Region VII', 'DOH', 'house_only', 'In the House bill only', 'candidate', 0, 0, 0, 20000, 20000, 'https://budget.example/2', '', 'https://budget.example/house.pdf#page=3', NULL, 3, '${'a'.repeat(40)}', '${'c'.repeat(64)}', 'sample health center'),
+        ('dpwh:3', 2027, 'dpwh', 'Held road match', 'Road Program', '', 'NCR', 'Central Office', 'scope_review', 'Different scope', 'quarantine', 1, 0, 30000, 35000, 5000, 'https://budget.example/3', 'https://budget.example/nep.pdf#page=4', 'https://budget.example/house.pdf#page=5', 4, 5, '${'a'.repeat(40)}', '${'d'.repeat(64)}', 'held road match'),
+        ('dpwh:4', 2027, 'dpwh', 'Sample bridge Phase II', 'Network Development', 'Bridge Program', 'Region III', 'Sample DEO', 'house_only', 'In the House bill only', 'candidate', 0, 0, 0, 12000, 12000, 'https://budget.example/4', '', 'https://budget.example/house.pdf#page=6', NULL, 6, '${'a'.repeat(40)}', '${'e'.repeat(64)}', 'sample public bridge project');
     `);
   }
 
@@ -86,6 +93,7 @@ const request = (path, init) => new Request(`https://busisi.test${path}`, init);
 
 const explorerUrl = (query = '') => new URL(`https://busisi.test/api/v1/budgets${query}`);
 const changeUrl = (query = '') => new URL(`https://busisi.test/api/v1/changes${query}`);
+const reviewUrl = (query = '') => new URL(`https://busisi.test/api/v1/review-rankings${query}`);
 
 test('validates every explorer query boundary and cursor contract', () => {
   const invalid = [
@@ -149,6 +157,26 @@ test('validates every stage-change query boundary and cursor contract', () => {
       { name: 'QueryError', message: 'cursor is invalid for this query' },
     );
   }
+});
+
+test('validates deterministic review filters', () => {
+  const invalid = [
+    ['?signal=corruption', 'signal is invalid'],
+    ['?dataset=unknown', 'dataset is invalid'],
+    ['?dimension=contractor', 'dimension is invalid'],
+    ['?limit=none', 'limit is invalid'],
+    ['?limit=0', 'limit is outside the supported range'],
+    ['?limit=101', 'limit is outside the supported range'],
+  ];
+  for (const [query, message] of invalid) {
+    assert.throws(() => parseReviewQuery(reviewUrl(query)), { name: 'QueryError', message });
+  }
+  assert.deepEqual(parseReviewQuery(reviewUrl()), {
+    signal: 'house_only', dataset: 'all', dimension: 'region', limit: 25,
+  });
+  assert.deepEqual(parseReviewQuery(reviewUrl('?dataset=dpwh&dimension=office&limit=1')), {
+    signal: 'house_only', dataset: 'dpwh', dimension: 'office', limit: 1,
+  });
 });
 
 test('lists reviewed records with stable cursor pagination', async (context) => {
@@ -262,7 +290,7 @@ test('publishes reconciled FY2027 stage-change statistics and filters', async (c
   );
 
   assert.deepEqual((await stats.json()).data, {
-    record_count: 3,
+    record_count: 4,
     quarantine_count: 1,
     source_commit: 'a'.repeat(40),
   });
@@ -271,6 +299,62 @@ test('publishes reconciled FY2027 stage-change statistics and filters', async (c
   assert.equal(changeBody.meta.review_scope, 'provisional_stage_comparisons');
   assert.equal(changeBody.data[0].record_id, 'dpwh:1');
   assert.equal((await quarantined.json()).data[0].record_id, 'dpwh:3');
+});
+
+test('publishes ranked review candidates, concentrations and CSV evidence', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const summary = await worker.fetch(request('/api/v1/review-summary'), environment(database));
+  const repeated = await worker.fetch(
+    request('/api/v1/review-rankings?signal=repeat_family'),
+    environment(database),
+  );
+  const similar = await worker.fetch(
+    request('/api/v1/review-rankings?signal=similar_family'),
+    environment(database),
+  );
+  const concentrations = await worker.fetch(
+    request('/api/v1/review-concentrations?signal=house_only&dimension=region'),
+    environment(database),
+  );
+  const largest = await worker.fetch(
+    request('/api/v1/review-rankings?signal=house_only&dataset=hfep'),
+    environment(database),
+  );
+  const removed = await worker.fetch(
+    request('/api/v1/review-rankings?signal=nep_only'),
+    environment(database),
+  );
+  const decreased = await worker.fetch(
+    request('/api/v1/review-rankings?signal=decreased'),
+    environment(database),
+  );
+  const csv = await worker.fetch(
+    request('/api/v1/review.csv?signal=increased&dataset=dpwh'),
+    environment(database),
+  );
+
+  const summaryBody = await summary.json();
+  const repeatedBody = await repeated.json();
+  const similarBody = await similar.json();
+  const concentrationBody = await concentrations.json();
+  assert.equal(summary.status, 200);
+  assert.equal(summaryBody.data.quarantine_count, 1);
+  assert.equal(
+    summaryBody.data.changes.find((item) => item.change_type === 'house_only').record_count,
+    2,
+  );
+  assert.equal(repeatedBody.meta.total, 2);
+  assert.deepEqual(repeatedBody.data[0].prior_years, [2026]);
+  assert.equal(similarBody.meta.total, 2);
+  assert.equal(similarBody.data[0].family_count, 2);
+  assert.equal(concentrationBody.data[0].label, 'Region VII');
+  assert.equal(concentrationBody.data[0].record_count, 1);
+  assert.equal((await largest.json()).meta.total, 1);
+  assert.equal((await removed.json()).meta.total, 0);
+  assert.equal((await decreased.json()).meta.total, 0);
+  assert.equal(csv.headers.get('content-type'), 'text/csv; charset=utf-8');
+  assert.match(await csv.text(), /"increased","dpwh","Sample bridge"/);
 });
 
 test('rejects unsupported stage-change filters', async (context) => {

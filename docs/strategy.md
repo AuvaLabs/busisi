@@ -15,6 +15,10 @@ It also publishes 20,431 provisional FY2027 comparisons between NEP and House
 bill project lists across DPWH, farm-to-market roads, health facilities and
 irrigation. The service has no model dependency. Deterministic rules generate
 review signals, and every public signal includes its inputs and limitations.
+The review desk turns those comparisons into source-linked queues for House-only
+rows, increases, decreases, removals, prior-year project families and similar
+FY2027 family labels. It also publishes regional, office, program and dataset
+concentrations and CSV evidence exports.
 
 ## Release gates
 
@@ -30,14 +34,16 @@ review signals, and every public signal includes its inputs and limitations.
 
 ## Next practical work
 
-1. Expand the reviewed golden set from 6 to 100 cases.
-2. Extend the FY2027 ledger to Senate, bicameral and final GAA stages when
+1. Review and label representative candidates from each deterministic FY2027
+   queue without treating queue position as a risk score.
+2. Expand the cross-source reviewed golden set from 6 to 100 cases.
+3. Extend the FY2027 ledger to Senate, bicameral and final GAA stages when
    stable source artifacts can be acquired and reconciled.
-3. Add PhilGEPS, PCAB and COA evidence only after their identifiers and source
+4. Add PhilGEPS, PCAB and COA evidence only after their identifiers and source
    limitations are modeled explicitly.
-4. Publish agency and contractor views after normalization quality supports
+5. Publish contractor views after normalization quality supports
    reliable aggregation.
-5. Add alerts for source drift and publication mismatch without granting the
+6. Add alerts for source drift and publication mismatch without granting the
    monitor deployment or database mutation credentials.
 
 ## Decision rules

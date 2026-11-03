@@ -11,6 +11,13 @@ import {
   queryExplorer,
 } from './explorer-query.js';
 import { getChangeStats, parseChangeQuery, queryChanges } from './change-query.js';
+import {
+  exportReviewCsv,
+  getReviewSummary,
+  parseReviewQuery,
+  queryReviewConcentrations,
+  queryReviewRankings,
+} from './review-query.js';
 
 const API_PREFIX = '/api/v1/projects';
 const MAX_SLUG_LENGTH = 160;
@@ -74,6 +81,38 @@ const apiResponse = async (request, environment, url) => {
         review_scope: 'provisional_stage_comparisons',
       },
       data: page.records,
+    });
+  }
+  if (url.pathname === '/api/v1/review-summary') {
+    return jsonResponse({ data: await getReviewSummary(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/review-rankings') {
+    const query = parseReviewQuery(url);
+    const page = await queryReviewRankings(environment.DB, query);
+    return jsonResponse({
+      meta: {
+        total: page.total,
+        count: page.records.length,
+        review_scope: 'deterministic_review_candidates',
+      },
+      data: page.records,
+    });
+  }
+  if (url.pathname === '/api/v1/review-concentrations') {
+    const query = parseReviewQuery(url);
+    return jsonResponse({
+      meta: { review_scope: 'deterministic_aggregate' },
+      data: await queryReviewConcentrations(environment.DB, query),
+    });
+  }
+  if (url.pathname === '/api/v1/review.csv') {
+    const query = parseReviewQuery(url);
+    const document = await exportReviewCsv(environment.DB, query);
+    return new Response(document, {
+      headers: {
+        'Content-Disposition': 'attachment; filename=busisi-review-candidates.csv',
+        'Content-Type': 'text/csv; charset=utf-8',
+      },
     });
   }
   const collection = EXPLORER_PATHS[url.pathname];

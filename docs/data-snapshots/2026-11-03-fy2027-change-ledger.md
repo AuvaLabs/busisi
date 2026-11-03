@@ -31,10 +31,12 @@ The release gate requires all of the following:
 4. Record counts and NEP and House totals reconcile exactly for every dataset.
 5. Held and scope-review records publish as quarantined.
 6. The generated SQL bundle loads into SQLite and passes `integrity_check`.
+7. Project-family labels use the same deterministic normalization as the
+   historical appropriation explorer.
 
 The generated bundle contains one metadata file and 21 data chunks. Its
 manifest SHA-256 is
-`2cbeb9a0607d80302e28836ecdc5b18c44134ec234bfbd8df28f7074bb069ab0`.
+`520444826ff3ff7d688d3f2aa3141a1e9c08af9716867ecb57b7e7a337b31f3e`.
 
 ## Limitations
 
@@ -50,3 +52,22 @@ manifest SHA-256 is
   not hidden.
 - The ledger does not yet trace Senate, bicameral, final GAA, release,
   procurement or physical implementation stages.
+
+## Deterministic review queues
+
+The verified release derives the following review queues from the reconciled
+rows:
+
+| Rule | Candidate rows |
+|---|---:|
+| House-only row | 6,954 |
+| NEP-only row | 1,784 |
+| Amount increased | 243 |
+| Amount decreased | 265 |
+| Prior-year normalized family | 953 |
+| Similar normalized FY2027 family | 395 |
+
+Family queues exclude canonical labels with fewer than four tokens, labels
+shorter than 16 characters and labels longer than 240 characters. This reduces
+generic region labels and broad multi-project aggregates. It does not prove
+that remaining family candidates describe the same physical asset.

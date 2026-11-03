@@ -1,6 +1,7 @@
 import { SITE } from './prelaunch-config.js';
 import { dataCss } from './prelaunch-data-styles.js';
 import { changeCss } from './prelaunch-change-styles.js';
+import { reviewCss } from './prelaunch-review-styles.js';
 import { siteCss as baseSiteCss } from './prelaunch-styles.js';
 import { typeCss } from './prelaunch-type-styles.js';
 import {
@@ -13,7 +14,7 @@ import {
 
 const navigation = (canonicalPath) => {
   const methodology = canonicalPath === '/methodology/';
-  const links = `<a href="/explore/"${canonicalPath === '/explore/' ? ' aria-current="page"' : ''}>Explore</a><a href="/changes/"${canonicalPath === '/changes/' ? ' aria-current="page"' : ''}>Changes</a><a href="/signals/"${canonicalPath === '/signals/' ? ' aria-current="page"' : ''}>Signals</a>`;
+  const links = `<a href="/explore/"${canonicalPath === '/explore/' ? ' aria-current="page"' : ''}>Explore</a><a href="/changes/"${canonicalPath === '/changes/' ? ' aria-current="page"' : ''}>Changes</a><a href="/signals/"${canonicalPath === '/signals/' ? ' aria-current="page"' : ''}>Review</a>`;
   return `<div class="header-inner">
     <a class="wordmark" href="/" aria-label="Busisi home"><img class="brand-mark" src="/assets/busisi-mark-v2.svg" width="44" height="44" alt=""><span>Busisi</span></a>
     <nav class="primary-nav" aria-label="Primary navigation">${links}<a class="method-link" href="/methodology/"${methodology ? ' aria-current="page"' : ''}>Methodology</a></nav>
@@ -27,7 +28,7 @@ const utilityStrip = `<div class="utility-strip"><div class="utility-inner">
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent civic data initiative for traceable Philippine public budget records.</p></div>
-  <nav class="footer-nav" aria-label="Footer navigation"><a href="/explore/">Explore</a><a href="/changes/">Changes</a><a href="/signals/">Signals</a><a href="/methodology/">Methodology</a></nav>
+  <nav class="footer-nav" aria-label="Footer navigation"><a href="/explore/">Explore</a><a href="/changes/">Changes</a><a href="/signals/">Review</a><a href="/methodology/">Methodology</a></nav>
   <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.</p>
 </div></footer>`;
 
@@ -51,11 +52,11 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${title}</title><meta name="description" content="${description}"><meta name="robots" content="${robots}">
-  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="/assets/busisi-masthead.webp" as="image" type="image/webp" fetchpriority="high"><link rel="stylesheet" href="/assets/site-visual-v6.css">
+  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="/assets/busisi-masthead.webp" as="image" type="image/webp" fetchpriority="high"><link rel="stylesheet" href="/assets/site-visual-v7.css">
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-masthead.webp"><meta property="og:image:width" content="1600"><meta property="og:image:height" content="666">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${description}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-masthead.webp">
-  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/explore/' ? '<script src="/assets/explorer-v1.js" defer></script>' : ''}${canonicalPath === '/changes/' ? '<script src="/assets/changes-v1.js" defer></script>' : ''}
+  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/explore/' ? '<script src="/assets/explorer-v1.js" defer></script>' : ''}${canonicalPath === '/changes/' ? '<script src="/assets/changes-v1.js" defer></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js"></script>' : ''}
 </head><body>
   <a class="skip-link" href="#main-content">Skip to content</a>${utilityStrip}<header class="site-header">${navigation(canonicalPath)}</header>
   <main id="main-content">${body}</main>${footer}
@@ -126,8 +127,16 @@ export const exploreBody = `
   <section class="candidate-warning"><h2>Unreviewed candidates are not public findings.</h2><p>Candidate links are generated from year, description, amount, funding, and location signals. They may connect separate phases or unrelated records. Only records marked reviewed have passed the current human evidence check.</p></section>`;
 
 export const signalsBody = `
-  <section class="data-intro signal-intro"><div><p class="kicker">Evidence-led review</p><h1>Review signals, not accusations.</h1><p class="lede">Every signal states what triggered it, what evidence it used, and what it cannot establish.</p></div><aside class="snapshot-card"><span>Current coverage</span><strong>3 supported signal families</strong><p>Other analyses remain visibly unavailable instead of being approximated.</p></aside></section>
-  <section class="signal-catalog" aria-label="Available review signals"><article class="available"><span>Available</span><h2>FY2027 stage changes</h2><p>Compares named project rows between the NEP and House bill for four programs.</p><dl><div><dt>Can show</dt><dd>New-line candidates, removals, amount changes, source documents and pages</dd></div><div><dt>Cannot show</dt><dd>Political authorship, legality, corruption, or final enacted funding</dd></div></dl><a href="/changes/">Inspect the change ledger</a></article><article class="available"><span>Available</span><h2>Repeated funding</h2><p>Finds related project families with positive appropriations in at least two fiscal years.</p><dl><div><dt>Can show</dt><dd>Years, amounts, family identity, source records</dd></div><div><dt>Cannot show</dt><dd>Whether phases describe the same physical asset</dd></div></dl><a href="/explore/?view=reviewed">Inspect reviewed evidence</a></article><article class="available"><span>Available</span><h2>Zero downstream budget</h2><p>Finds a positive appropriation candidate linked to a DPWH record reporting a zero project budget.</p><dl><div><dt>Can show</dt><dd>The two source amounts and match evidence</dd></div><div><dt>Cannot show</dt><dd>Missing money or a nonexistent project</dd></div></dl><a href="/projects/corazon-2026-completion/">Inspect the quarantined example</a></article></section>
+  <section class="data-intro review-intro"><div><p class="kicker">Deterministic review desk</p><h1>Start with the records that moved.</h1><p class="lede">Rank FY2027 project changes, inspect geographic concentrations, trace repeated project-family candidates, and export the evidence for independent review.</p></div><aside class="snapshot-card"><span>Evidence boundary</span><strong>Questions, not verdicts</strong><p>Every result comes from a disclosed rule. No model assigns risk or intent.</p><a href="/methodology/">Read the method</a></aside></section>
+  <section class="review-warning"><strong>Not a corruption score.</strong><p>Rankings identify records that meet a deterministic review rule. Similar wording, a large increase, or a House-only row does not establish duplication, authorship, illegality, or wrongdoing.</p></section>
+  <section class="review-summary" data-review-summary aria-label="FY2027 change summary"><p>Loading reconciled totals…</p></section>
+  <section class="review-shell" data-review-desk>
+    <form class="review-controls" data-review-form><label>Review rule<select name="signal"><option value="house_only">Largest House-only rows</option><option value="increased">Largest increases</option><option value="decreased">Largest decreases</option><option value="nep_only">Largest NEP-only rows</option><option value="repeat_family">Prior-year family candidates</option><option value="similar_family">Similar FY2027 family candidates</option></select></label><label>Program<select name="dataset"><option value="all">All four</option><option value="dpwh">DPWH</option><option value="fmr">Farm-to-market roads</option><option value="hfep">Health facilities</option><option value="nia">Irrigation</option></select></label><label>Group by<select name="dimension"><option value="region">Region</option><option value="office">Office</option><option value="program">Program</option><option value="dataset">Dataset</option></select></label><button type="submit">Apply rule</button></form>
+    <div class="review-toolbar" aria-live="polite"><p><strong data-review-total>0</strong> candidates meet this rule. <span data-review-status>Loading review candidates…</span></p><a data-review-export href="/api/v1/review.csv">Download evidence CSV</a></div>
+    <div class="review-grid"><section class="review-ranking-panel"><div class="review-panel-heading"><p class="kicker">Priority queue</p><h2>Records to inspect first</h2></div><div data-review-rankings></div></section><section><div class="review-panel-heading"><p class="kicker">Concentration</p><h2>Where movement is grouped</h2></div><div class="review-concentrations" data-review-concentrations></div></section></div>
+    <noscript><p class="explorer-error">JavaScript is required for interactive rankings. The read-only JSON and CSV APIs remain available.</p></noscript>
+  </section>
+  <section class="review-method"><div><p class="kicker">Rule boundaries</p><h2>What these queues can and cannot establish.</h2></div><div><p>The repeated-family rule uses the same conservative normalized project-family identity as the historical appropriation explorer. Similar-family candidates share that label inside the same FY2027 dataset.</p><ul><li>Large movement is ordered by exact integer-centavo arithmetic.</li><li>Concentration is an aggregate observation, not evidence against an office or region.</li><li>Family matches may join separate phases and always require documentary review.</li><li>Physical existence, procurement conduct and political authorship require additional evidence.</li></ul></div></section>
   <section class="coverage-matrix" aria-labelledby="coverage-heading"><div><p class="kicker">Evidence gaps</p><h2 id="coverage-heading">Unavailable means unavailable.</h2><p>Busisi does not generate a label when the evidence required for that label has not been acquired.</p></div><div class="coverage-list"><article><span>Partial</span><h3>Full insertion analysis</h3><p>The FY2027 ledger covers four project-level programs from NEP to House. Senate, bicameral and enacted GAA stages remain unavailable.</p></article><article><span>Not available</span><h3>Physical existence verification</h3><p>Requires implementation evidence such as geotagged progress, inspections, audit findings, or field verification. Budget data alone cannot establish physical existence.</p></article><article><span>Partial</span><h3>Procurement consistency</h3><p>ABC, award, status, and physical-progress checks require current DPWH detail and PhilGEPS records beyond the archived bulk snapshot.</p></article></div></section>`;
 
 export const changesBody = `
@@ -195,6 +204,6 @@ export const methodologyBody = `
     <div class="section-heading"><p class="section-number">04 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${reviewCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#102f2a" stroke-width="2.5" stroke-linejoin="round"><path fill="#a7ddc3" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#fbf8ef" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fbf8ef" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#b83b27" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#102f2a"/><path fill="none" stroke="#f3efe4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/></svg>`;

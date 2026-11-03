@@ -103,6 +103,14 @@ As of 2026-11-03:
 - The FY2027 change ledger publishes 20,431 source comparisons across four
   program datasets. All rows reconcile to dataset record and monetary control
   totals. 426 held or scope-review DPWH rows remain visibly quarantined.
+- The deterministic review desk exposes 6,954 House-only rows, 1,784 NEP-only
+  rows, 243 increases and 265 decreases. Conservative family normalization
+  yields 953 prior-year family candidates and 395 similar-family candidates
+  after short generic labels and unusually long aggregate descriptions are
+  excluded. These remain review candidates, not findings.
+- Review queues provide source links, document links, exact centavo values,
+  concentration aggregates and formula-safe CSV exports. No model produces a
+  ranking, identity link or label.
 - Source artifact hashes, row counts and monetary control totals reconcile
   exactly between the canonical SQLite store, the generated D1 bundle and the
   remote D1 database.

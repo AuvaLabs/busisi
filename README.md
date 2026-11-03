@@ -5,6 +5,10 @@ records. It publishes official source records, deterministic review signals,
 an FY2027 NEP-to-House comparison ledger, and a small reviewed dossier set
 without using a language model.
 
+The public review desk ranks stage changes, groups monetary movement by region,
+office, program or dataset, identifies conservative cross-year project-family
+candidates, and exports source-linked CSV evidence.
+
 Production: [busisi.org](https://busisi.org)
 
 ## Accuracy contract

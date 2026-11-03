@@ -15,7 +15,7 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<link rel="canonical" href="https:\/\/busisi\.org\/">/);
   assert.match(document, /<meta name="robots" content="index, follow, max-image-preview:large">/);
   assert.match(document, /<meta property="og:url" content="https:\/\/busisi\.org\/">/);
-  assert.match(document, /href="\/assets\/site-visual-v6\.css"/);
+  assert.match(document, /href="\/assets\/site-visual-v7\.css"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
@@ -57,17 +57,18 @@ test('publishes the source-record explorer without implying reviewed links', asy
   assert.doesNotMatch(document, /ghost project/i);
 });
 
-test('publishes supported signals and names unavailable analyses', async () => {
+test('publishes the deterministic review desk and names unavailable analyses', async () => {
   const response = await fetchPath('/signals/');
   const document = await response.text();
 
   assert.equal(response.status, 200);
-  assert.match(document, /Review signals/);
-  assert.match(document, /Repeated funding/);
-  assert.match(document, /Zero downstream budget/);
-  assert.match(document, /FY2027 stage changes/);
-  assert.match(document, /new-line candidates/i);
-  assert.match(document, /href="\/changes\/"/);
+  assert.match(document, /Start with the records that moved/);
+  assert.match(document, /data-review-desk/);
+  assert.match(document, /Prior-year family candidates/);
+  assert.match(document, /Similar FY2027 family candidates/);
+  assert.match(document, /Download evidence CSV/);
+  assert.match(document, /Not a corruption score/);
+  assert.match(document, /src="\/assets\/review-v1\.js"/);
   assert.match(document, /Physical existence verification/);
 });
 
@@ -198,7 +199,7 @@ test('renders a reviewed evidence dossier when the publication database is bound
 });
 
 test('serves immutable assets and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v6.css');
+  const css = await fetchPath('/assets/site-visual-v7.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));

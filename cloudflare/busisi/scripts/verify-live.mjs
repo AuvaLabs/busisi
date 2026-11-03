@@ -21,6 +21,14 @@ const expectedChanges = Object.freeze({
   fiscal_year: 2027,
   source_commit: 'a0caa778442cdae5583f5a006ea7401dab00e5ac',
 });
+const expectedReviewCounts = Object.freeze({
+  decreased: 265,
+  house_only: 6_954,
+  increased: 243,
+  nep_only: 1_784,
+  scope_review: 37,
+  unchanged: 11_148,
+});
 const resolver = new Resolver();
 resolver.setServers((process.env.BUSISI_DNS_SERVERS ?? '1.1.1.1,8.8.8.8').split(','));
 
@@ -117,7 +125,9 @@ const verifyPages = async () => {
   const signals = await request('/signals/');
   expectStatus(signals, 200, '/signals/');
   const signalsText = await signals.text();
-  expectIncludes(signalsText, 'Insertion analysis', 'signals evidence gaps');
+  expectIncludes(signalsText, 'Start with the records that moved', 'review desk heading');
+  expectIncludes(signalsText, '/assets/review-v1.js', 'review desk client');
+  expectIncludes(signalsText, 'Full insertion analysis', 'signals evidence gaps');
   expectIncludes(signalsText, 'Physical existence verification', 'signals evidence gaps');
 
   const changes = await request('/changes/');
@@ -154,18 +164,21 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v6.css',
+    '/assets/site-visual-v7.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-masthead.webp',
     'Illustrative view · not a project record',
   ]) expectIncludes(html, value, 'home design');
   if (/busisi-mark\.webp|auva\s*labs?/i.test(html)) fail('home design: retired branding is public');
 
-  const css = await request('/assets/site-visual-v6.css');
+  const css = await request('/assets/site-visual-v7.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
-  for (const value of ['Source Sans 3', '--paper:#fff', '--text-xs:.8125rem', '.hero-art-note', '.explorer-shell']) {
+  for (const value of [
+    'Source Sans 3', '--paper:#fff', '--text-xs:.8125rem', '.hero-art-note',
+    '.explorer-shell', '.review-shell',
+  ]) {
     expectIncludes(cssText, value, 'design CSS');
   }
   if (/Merriweather|Georgia|Times New Roman/i.test(cssText)) fail('design CSS: decorative serif font remains');
@@ -227,6 +240,35 @@ const verifyData = async () => {
   }
   expectIncludes(changes.data[0].source_url, 'budget.bettergov.ph', 'change source URL');
   if (!changes.data[0].house_pdf_url) fail('change query: House evidence link missing');
+
+  const reviewSummary = (await readJson('/api/v1/review-summary')).data;
+  if (reviewSummary.quarantine_count !== expectedChanges.quarantine_count) {
+    fail('review summary: quarantine count mismatch');
+  }
+  for (const [changeType, expected] of Object.entries(expectedReviewCounts)) {
+    const item = reviewSummary.changes.find((row) => row.change_type === changeType);
+    if (!item || item.record_count !== expected) {
+      fail(`review summary: ${changeType} expected ${expected}`);
+    }
+  }
+  const repeated = await readJson('/api/v1/review-rankings?signal=repeat_family&limit=1');
+  if (repeated.meta.total !== 953 || repeated.data.length !== 1) {
+    fail('review rankings: repeated-family count mismatch');
+  }
+  if (!repeated.data[0].prior_years.length || !repeated.data[0].source_url) {
+    fail('review rankings: repeated-family evidence missing');
+  }
+  const concentration = await readJson(
+    '/api/v1/review-concentrations?signal=house_only&dimension=region&limit=1',
+  );
+  if (concentration.data[0]?.label !== 'Region IV-A') {
+    fail('review concentrations: leading region mismatch');
+  }
+
+  const reviewCsv = await request('/api/v1/review.csv?signal=increased&dataset=hfep');
+  expectStatus(reviewCsv, 200, 'review CSV');
+  expectContentType(reviewCsv, 'text/csv', 'review CSV');
+  expectIncludes(await reviewCsv.text(), 'comparison_record', 'review CSV');
 
   const reviewed = await readJson('/api/v1/projects?status=reviewed&limit=1');
   if (reviewed.meta.total !== 5 || reviewed.data.length !== 1) fail('reviewed query: count mismatch');

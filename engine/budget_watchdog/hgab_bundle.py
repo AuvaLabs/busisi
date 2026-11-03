@@ -11,18 +11,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from engine.budget_watchdog.family import build_family_identity
 from engine.budget_watchdog.stage_changes import (
     StageChange,
     parse_hgab_page,
     reconcile_hgab_dataset,
 )
 
-MIGRATION_PATH = (
-    Path(__file__).resolve().parents[2]
-    / "cloudflare"
-    / "busisi"
-    / "migrations"
-    / "0003_stage_changes.sql"
+MIGRATION_PATHS = tuple(
+    Path(__file__).resolve().parents[2] / "cloudflare" / "busisi" / "migrations" / name
+    for name in ("0002_public_explorer.sql", "0003_stage_changes.sql", "0004_review_signals.sql")
 )
 
 
@@ -97,6 +95,7 @@ def _statement(record: StageChange) -> str:
         record.house_page,
         record.source_commit,
         record.artifact_sha256,
+        build_family_identity(record.title).canonical_text,
     )
     return f"INSERT OR REPLACE INTO stage_change_items VALUES ({_sql_values(values)});"  # noqa: S608
 
@@ -143,7 +142,8 @@ def _load_records(snapshot_dir: Path) -> tuple[tuple[StageChange, ...], str, dic
 def _verify_bundle(chunks: Sequence[Path], expected_count: int) -> None:
     connection = sqlite3.connect(":memory:")
     try:
-        connection.executescript(MIGRATION_PATH.read_text(encoding="utf-8"))
+        for migration_path in MIGRATION_PATHS:
+            connection.executescript(migration_path.read_text(encoding="utf-8"))
         for chunk in chunks:
             connection.executescript(chunk.read_text(encoding="utf-8"))
         count = connection.execute("SELECT COUNT(*) FROM stage_change_items").fetchone()[0]
