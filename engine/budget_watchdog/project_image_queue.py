@@ -209,6 +209,15 @@ def _task(row: sqlite3.Row) -> ImageCoverageTask:
     )
 
 
+def _selection_key(row: sqlite3.Row) -> tuple[int, int, bytes]:
+    identity = f"{row['fiscal_year']}:{row['source_image_hint']}:{row['contract_id']}".encode()
+    return (
+        0 if row["priority"] == 0 else 1,
+        0 if row["status"] == "retry" else 1,
+        hashlib.sha256(identity).digest(),
+    )
+
+
 class ImageCoverageQueue:
     """Lease tasks and persist evidence without exposing the queue publicly."""
 
@@ -228,14 +237,15 @@ class ImageCoverageQueue:
         connection.row_factory = sqlite3.Row
         try:
             connection.execute("BEGIN IMMEDIATE")
-            rows = connection.execute(
-                "SELECT contract_id, fiscal_year, source_image_hint, status, attempts "
+            eligible = connection.execute(
+                "SELECT contract_id, fiscal_year, source_image_hint, status, attempts, priority "
                 "FROM image_tasks WHERE status = 'pending' "
                 "OR (status = 'retry' AND next_attempt_at <= ?) "
                 "OR (status = 'in_progress' AND lease_until <= ?) "
-                "ORDER BY priority, contract_id LIMIT ?",
-                (timestamp, timestamp, limit),
+                "ORDER BY contract_id",
+                (timestamp, timestamp),
             ).fetchall()
+            rows = sorted(eligible, key=_selection_key)[:limit]
             connection.executemany(
                 "UPDATE image_tasks SET status = 'in_progress', lease_until = ?, "
                 "updated_at = ? WHERE contract_id = ?",

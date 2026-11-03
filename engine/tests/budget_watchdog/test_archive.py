@@ -38,7 +38,35 @@ def test_archive_preserves_bytes_and_reproducible_manifest(tmp_path) -> None:
     assert manifest["source_last_modified"] == "2026-10-31T08:00:00+00:00"
 
 
-def test_archive_refuses_manifest_reuse_with_different_evidence(tmp_path) -> None:
+def test_archive_preserves_same_bytes_acquired_from_different_urls(tmp_path) -> None:
+    archive = ArtifactArchive(tmp_path)
+    base = Acquisition(
+        source_id="dbm-gaa",
+        source_url="https://www.dbm.gov.ph/example.xlsx",
+        retrieved_at=datetime(2026, 11, 2, 12, 30, tzinfo=UTC),
+        media_type="application/octet-stream",
+        payload=b"same bytes",
+    )
+    first = archive.store(base)
+
+    conflicting = Acquisition(
+        source_id=base.source_id,
+        source_url="https://www.dbm.gov.ph/changed.xlsx",
+        retrieved_at=base.retrieved_at,
+        media_type=base.media_type,
+        payload=base.payload,
+    )
+
+    second = archive.store(conflicting)
+
+    assert first.sha256 == second.sha256
+    assert first.blob_path == second.blob_path
+    assert first.manifest_path != second.manifest_path
+    assert json.loads(first.manifest_path.read_text())["source_url"] == base.source_url
+    assert json.loads(second.manifest_path.read_text())["source_url"] == conflicting.source_url
+
+
+def test_archive_rejects_conflicting_metadata_for_one_acquisition_identity(tmp_path) -> None:
     archive = ArtifactArchive(tmp_path)
     base = Acquisition(
         source_id="dbm-gaa",
@@ -49,16 +77,16 @@ def test_archive_refuses_manifest_reuse_with_different_evidence(tmp_path) -> Non
     )
     archive.store(base)
 
-    conflicting = Acquisition(
-        source_id=base.source_id,
-        source_url="https://www.dbm.gov.ph/changed.xlsx",
-        retrieved_at=base.retrieved_at,
-        media_type=base.media_type,
-        payload=base.payload,
-    )
-
     with pytest.raises(ArtifactConflictError):
-        archive.store(conflicting)
+        archive.store(
+            Acquisition(
+                source_id=base.source_id,
+                source_url=base.source_url,
+                retrieved_at=base.retrieved_at,
+                media_type="application/json",
+                payload=base.payload,
+            )
+        )
 
 
 def test_archive_rejects_naive_retrieval_time(tmp_path) -> None:

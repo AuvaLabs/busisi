@@ -8,7 +8,7 @@ ConditionPathExists=/srv/data/auvalabs/busisi/data/budget_watchdog/archive/blobs
 Type=oneshot
 WorkingDirectory=/srv/data/auvalabs/busisi
 Environment=PYTHONPATH=/srv/data/auvalabs/busisi
-ExecStart=/usr/bin/python3 ops/harness/budget_watchdog_project_image_automation.py --limit 500 --publish
+ExecStart=/usr/bin/python3 ops/harness/budget_watchdog_project_image_automation.py --publish
 TimeoutStartSec=6h
 NoNewPrivileges=true
 PrivateTmp=true

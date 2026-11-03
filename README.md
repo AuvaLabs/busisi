@@ -123,6 +123,17 @@ publication markers, timer health and the complete live production contract.
 COA catalogue discovery remains an explicit manual coverage limit because the
 official catalogue blocks unattended acquisition.
 
+The project-image evidence queue runs every six hours. Each cycle starts with a
+25-contract canary, continues in 100-contract chunks and processes at most
+1,000 contracts with four workers paced to two requests per second per source
+host. Eight healthy cycles raise the limit to 2,000. Repeated rate limits or a
+retryable failure ratio above 10 percent stop the cycle and reduce its next
+workload.
+Every successful record still requires archived source bytes, detail-to-list
+count reconciliation, JPEG inspection and a gated D1 release. The bulk project
+feed is used only for discovery because it does not provide the exact image-list
+count needed for this evidence contract.
+
 The local acquisition retry timer runs one bounded batch daily. It accepts only
 registered official DPWH HTTPS origins, archives successful source bytes, uses
 exponential backoff for retryable HTTP failures, and blocks a task after the

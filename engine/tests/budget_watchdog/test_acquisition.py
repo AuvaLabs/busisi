@@ -102,6 +102,38 @@ def test_fetcher_wraps_http_errors_without_leaking_response_details() -> None:
     assert "sensitive upstream response" not in str(error.value)
 
 
+@responses.activate
+def test_fetcher_preserves_bounded_retry_after_for_rate_limits() -> None:
+    responses.add(
+        responses.GET,
+        "https://budget.bettergov.ph/limited",
+        status=429,
+        headers={"Retry-After": "120"},
+    )
+    fetcher = SourceFetcher(default_source_registry())
+
+    with pytest.raises(AcquisitionError) as error:
+        fetcher.fetch("bettergov-budget", "/limited", retrieved_at=RETRIEVED_AT)
+
+    assert error.value.http_status == 429
+    assert error.value.retry_after_seconds == 120
+
+
+@responses.activate
+def test_fetcher_applies_request_gate_before_network_access() -> None:
+    url = "https://budget.bettergov.ph/gated"
+    responses.add(responses.GET, url, body=b"ok", status=200)
+    observed: list[str] = []
+    fetcher = SourceFetcher(
+        default_source_registry(),
+        request_gate=observed.append,
+    )
+
+    fetcher.fetch("bettergov-budget", "/gated", retrieved_at=RETRIEVED_AT)
+
+    assert observed == [url]
+
+
 def test_fetcher_rejects_cross_origin_and_insecure_final_urls() -> None:
     for url in ("https://example.com/data", "http://budget.bettergov.ph/data"):
         with pytest.raises(AcquisitionError, match="escaped"):

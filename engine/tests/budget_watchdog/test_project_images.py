@@ -5,6 +5,7 @@ import pytest
 from engine.budget_watchdog.project_images import (
     inspect_jpeg,
     parse_project_image_evidence,
+    project_image_acquisition_target,
 )
 
 
@@ -103,6 +104,47 @@ def test_rejects_untrusted_image_origins_and_contract_drift() -> None:
     drifted["data"]["contractId"] = "24HI0131"
     with pytest.raises(ValueError, match="contract identifier"):
         parse_project_image_evidence("24HI0148", _payload(drifted), _images([_image()]))
+
+
+def test_accepts_strict_official_infratrack_proxy_attachments() -> None:
+    source = (
+        "https://apps2.dpwh.gov.ph/proxy_infratrack/proxy.ashx?"
+        "https://services1.arcgis.com/IwZZTMxZCmAmFYvF/arcgis/rest/services/"
+        "service_6639703e129e41e5952f88f0b8de8bd7/FeatureServer/0/148958/"
+        "attachments/321001"
+    )
+    image = _image(source)
+    image["thumbnailUrl"] = source + "?f=image&imagesr=96&w=400&h=400"
+
+    coverage, records = parse_project_image_evidence("24HI0148", _detail(), _images([image]))
+
+    assert coverage.state == "verified_exact"
+    assert records[0].source_url == source
+    assert project_image_acquisition_target(source) == (
+        "dpwh-infratrack-media",
+        source.removeprefix("https://apps2.dpwh.gov.ph"),
+    )
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        ("https://apps2.dpwh.gov.ph/proxy_infratrack/proxy.ashx?https://example.test/attachment/1"),
+        (
+            "https://apps2.dpwh.gov.ph/proxy_infratrack/proxy.ashx?"
+            "http://services1.arcgis.com/a/arcgis/rest/services/b/FeatureServer/0/1/"
+            "attachments/2"
+        ),
+        (
+            "https://apps2.dpwh.gov.ph/proxy_infratrack/proxy.ashx?"
+            "https://services1.arcgis.com/a/arcgis/rest/services/b/FeatureServer/0/1/"
+            "attachments/2?download=https://example.test"
+        ),
+    ],
+)
+def test_rejects_untrusted_infratrack_proxy_targets(source: str) -> None:
+    with pytest.raises(ValueError, match="registered DPWH media origin"):
+        parse_project_image_evidence("24HI0148", _detail(), _images([_image(source)]))
 
 
 def test_reads_jpeg_dimensions_and_rejects_non_images() -> None:

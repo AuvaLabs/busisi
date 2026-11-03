@@ -137,3 +137,29 @@ def test_existing_queue_must_match_source_identity(tmp_path: Path) -> None:
     create_image_coverage_queue(path, seeds, source_sha256="a" * 64)
     with pytest.raises(ValueError, match="different source snapshot"):
         create_image_coverage_queue(path, seeds, source_sha256="b" * 64)
+
+
+def test_queue_selection_is_deterministic_and_mixes_year_and_image_strata(
+    tmp_path: Path,
+) -> None:
+    seeds = tuple(
+        ImageCoverageSeed(f"{year % 100:02d}TEST{index:03d}", year, bool(index % 2), 50)
+        for year in (2024, 2025, 2026)
+        for index in range(40)
+    )
+    selected: list[tuple[str, int, bool]] = []
+    for name in ("one.sqlite3", "two.sqlite3"):
+        path = tmp_path / name
+        create_image_coverage_queue(path, seeds, source_sha256="f" * 64)
+        selected.append(
+            tuple(
+                (task.contract_id, task.fiscal_year, task.source_image_hint)
+                for task in ImageCoverageQueue(path).claim_batch(
+                    limit=30, now=NOW, lease_seconds=60
+                )
+            )
+        )
+
+    assert selected[0] == selected[1]
+    assert {year for _, year, _ in selected[0]} == {2024, 2025, 2026}
+    assert {hint for _, _, hint in selected[0]} == {False, True}

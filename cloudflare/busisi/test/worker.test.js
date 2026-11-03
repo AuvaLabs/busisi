@@ -834,7 +834,7 @@ test('renders safe contract drill-downs and redirects the former delivery route'
   assert.match(conflictDocument, /26ZERO01/);
   assert.match(conflictDocument, /25O00113/);
   assert.match(conflictDocument, /not a finding of wrongdoing/i);
-  assert.match(conflictDocument, /Source image counts conflict/);
+  assert.match(conflictDocument, /Source image evidence quarantined/);
   assert.equal(absent.status, 200);
   assert.match(absentDocument, /No exact secondary row located/);
   assert.match(absentDocument, /No exact row for this contract was accepted/);

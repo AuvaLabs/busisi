@@ -12,7 +12,14 @@ from urllib.parse import unquote, urlparse
 
 _CONTRACT_ID = re.compile(r"^[A-Z0-9-]{4,40}$")
 _MEDIA_HOST = "s3.transparency.dpwh.gov.ph"
+_INFRATRACK_HOST = "apps2.dpwh.gov.ph"
 _IMAGE_PATH = re.compile(r"^/dpwh-gallery/[A-Za-z0-9_./-]+\.(?:jpe?g)$", re.IGNORECASE)
+_INFRATRACK_PATH = "/proxy_infratrack/proxy.ashx"
+_INFRATRACK_TARGET = re.compile(
+    r"^https://services1\.arcgis\.com/[A-Za-z0-9_-]+/arcgis/rest/services/"
+    r"[A-Za-z0-9_-]+/FeatureServer/[0-9]+/[0-9]+/attachments/[0-9]+$"
+)
+_INFRATRACK_THUMBNAIL_SUFFIX = "?f=image&imagesr=96&w=400&h=400"
 _SOF_MARKERS = frozenset(
     {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
 )
@@ -106,22 +113,35 @@ def _number_or_none(value: Any, label: str) -> float | None:
 def _validate_source_url(value: Any) -> str:
     url = _text(value, "project image URL")
     parsed = urlparse(url)
-    if (
+    common_invalid = (
         parsed.scheme != "https"
-        or parsed.hostname != _MEDIA_HOST
         or parsed.port not in (None, 443)
         or parsed.username
         or parsed.password
-        or parsed.query
         or parsed.fragment
-        or not _IMAGE_PATH.fullmatch(unquote(parsed.path))
-    ):
+    )
+    direct_media = (
+        parsed.hostname == _MEDIA_HOST
+        and not parsed.query
+        and _IMAGE_PATH.fullmatch(unquote(parsed.path)) is not None
+    )
+    infratrack_media = (
+        parsed.hostname == _INFRATRACK_HOST
+        and parsed.path == _INFRATRACK_PATH
+        and _INFRATRACK_TARGET.fullmatch(parsed.query) is not None
+    )
+    if common_invalid or not (direct_media or infratrack_media):
         raise ValueError("project image URL must use the registered DPWH media origin")
     return url
 
 
 def _validate_thumbnail(value: Any, source_url: str) -> str:
     url = _text(value, "project image thumbnail URL")
+    source = urlparse(source_url)
+    if source.hostname == _INFRATRACK_HOST:
+        if url != source_url + _INFRATRACK_THUMBNAIL_SUFFIX:
+            raise ValueError("thumbnail URL must use the registered DPWH media origin")
+        return url
     parsed = urlparse(url)
     if (
         parsed.scheme != "https"
@@ -136,6 +156,15 @@ def _validate_thumbnail(value: Any, source_url: str) -> str:
     ):
         raise ValueError("thumbnail URL must use the registered DPWH media origin")
     return url
+
+
+def project_image_acquisition_target(source_url: str) -> tuple[str, str]:
+    """Return the registered source and root-relative path for validated media."""
+    validated = _validate_source_url(source_url)
+    parsed = urlparse(validated)
+    if parsed.hostname == _MEDIA_HOST:
+        return "dpwh-transparency-media", parsed.path
+    return "dpwh-infratrack-media", f"{parsed.path}?{parsed.query}"
 
 
 def _coordinate_status(latitude: float | None, longitude: float | None) -> str:

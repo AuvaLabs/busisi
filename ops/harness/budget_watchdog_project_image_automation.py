@@ -7,12 +7,21 @@ import fcntl
 import hashlib
 import json
 import shutil
+from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pyarrow.parquet as pq
 from engine.budget_watchdog.acquisition import SourceFetcher
 from engine.budget_watchdog.archive import ArtifactArchive
+from engine.budget_watchdog.coverage_controller import (
+    MAX_WORKERS,
+    CoverageCycleMetrics,
+    advance_controller,
+    load_controller,
+    save_controller,
+    should_halt_cycle,
+)
 from engine.budget_watchdog.project_image_bundle import build_project_image_bundle
 from engine.budget_watchdog.project_image_queue import (
     ImageCoverageQueue,
@@ -20,7 +29,12 @@ from engine.budget_watchdog.project_image_queue import (
     create_image_coverage_queue,
 )
 from engine.budget_watchdog.project_image_release import finalize_coverage_release
-from engine.budget_watchdog.project_image_runner import ProjectImageRunner
+from engine.budget_watchdog.project_image_runner import (
+    ProjectImageBatchResult,
+    ProjectImageRunner,
+    merge_batch_results,
+)
+from engine.budget_watchdog.rate_limit import HostRateLimiter
 from engine.budget_watchdog.sources import default_source_registry
 from ops.harness.budget_watchdog_project_image_publish import publish_bundle
 
@@ -34,6 +48,7 @@ OUTPUT = DATA / "project-image-d1-bundle"
 CANDIDATE = DATA / ".project-image-automation-candidate"
 HISTORY = DATA / "project-image-releases"
 LOCK = DATA / "project-image-automation" / "cycle.lock"
+CONTROLLER = DATA / "project-image-automation" / "controller.json"
 REVIEWED_CONTRACTS = frozenset(
     {
         "22HI0028",
@@ -53,9 +68,10 @@ REVIEWED_YEARS = {
     "26HI0094": 2026,
 }
 EXPECTED_SEEDS = 56_890
-MAX_BATCH_SIZE = 500
-SYSTEMIC_FAILURE_RATIO = 0.5
-SYSTEMIC_FAILURE_MINIMUM = 10
+MAX_BATCH_SIZE = 2000
+CANARY_BATCH_SIZE = 25
+ACQUISITION_CHUNK_SIZE = 100
+REQUESTS_PER_SECOND_PER_HOST = 2.0
 MAX_METADATA_BYTES = 4 * 1024 * 1024
 MAX_IMAGE_BYTES = 20 * 1024 * 1024
 
@@ -133,29 +149,102 @@ def _promote_candidate(release_id: str, previous: dict[str, object] | None) -> N
     shutil.rmtree(replaced, ignore_errors=True)
 
 
-def run_cycle(*, limit: int, publish: bool) -> dict[str, object]:
-    if limit <= 0 or limit > MAX_BATCH_SIZE:
-        raise ValueError("coverage batch limit must be between 1 and 500")
+def _metrics(batch: ProjectImageBatchResult) -> CoverageCycleMetrics:
+    return CoverageCycleMetrics(
+        claimed=batch.claimed,
+        failures=batch.retry,
+        rate_limited=batch.rate_limited,
+    )
+
+
+def _runner(queue: ImageCoverageQueue) -> ProjectImageRunner:
+    registry = default_source_registry()
+    limiter = HostRateLimiter(requests_per_second=REQUESTS_PER_SECOND_PER_HOST)
+
+    def fetchers() -> tuple[SourceFetcher, SourceFetcher]:
+        return (
+            SourceFetcher(
+                registry,
+                max_response_bytes=MAX_METADATA_BYTES,
+                request_gate=limiter.wait_for_url,
+            ),
+            SourceFetcher(
+                registry,
+                max_response_bytes=MAX_IMAGE_BYTES,
+                request_gate=limiter.wait_for_url,
+            ),
+        )
+
+    metadata_fetcher, image_fetcher = fetchers()
+    return ProjectImageRunner(
+        queue=queue,
+        archive=ArtifactArchive(ARCHIVE),
+        metadata_fetcher=metadata_fetcher,
+        image_fetcher=image_fetcher,
+        fetcher_factory=fetchers,
+    )
+
+
+def run_cycle(*, limit: int | None, publish: bool, workers: int | None = None) -> dict[str, object]:
+    controller = load_controller(CONTROLLER)
+    selected_limit = limit if limit is not None else controller.batch_limit
+    selected_workers = workers if workers is not None else controller.workers
+    if selected_limit <= 0 or selected_limit > MAX_BATCH_SIZE:
+        raise ValueError("coverage batch limit must be between 1 and 2000")
+    if selected_workers <= 0 or selected_workers > MAX_WORKERS:
+        raise ValueError("coverage worker count must be between 1 and 4")
     LOCK.parent.mkdir(parents=True, exist_ok=True)
     with LOCK.open("a+", encoding="utf-8") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         now = datetime.now(UTC)
         create_image_coverage_queue(QUEUE, _seeds(), source_sha256=SOURCE_SHA256)
         queue = ImageCoverageQueue(QUEUE)
-        registry = default_source_registry()
-        batch = ProjectImageRunner(
-            queue=queue,
-            archive=ArtifactArchive(ARCHIVE),
-            metadata_fetcher=SourceFetcher(registry, max_response_bytes=MAX_METADATA_BYTES),
-            image_fetcher=SourceFetcher(registry, max_response_bytes=MAX_IMAGE_BYTES),
-        ).run_batch(limit=limit, now=now)
-        if (
-            batch.claimed >= SYSTEMIC_FAILURE_MINIMUM
-            and (batch.retry / batch.claimed) > SYSTEMIC_FAILURE_RATIO
-        ):
-            raise RuntimeError(
-                "project-image cycle halted because source or validation failures are systemic"
+        runner = _runner(queue)
+        batches: list[ProjectImageBatchResult] = []
+        remaining = selected_limit
+        first_batch = True
+        while remaining > 0:
+            chunk_limit = min(
+                CANARY_BATCH_SIZE if first_batch else ACQUISITION_CHUNK_SIZE,
+                remaining,
             )
+            first_batch = False
+            batch = runner.run_batch(
+                limit=chunk_limit,
+                now=now,
+                workers=selected_workers,
+            )
+            if batch.claimed == 0:
+                break
+            batches.append(batch)
+            remaining -= batch.claimed
+            total = merge_batch_results(tuple(batches))
+            if should_halt_cycle(_metrics(batch)) or should_halt_cycle(_metrics(total)):
+                degraded = advance_controller(controller, _metrics(total))
+                save_controller(CONTROLLER, degraded)
+                raise RuntimeError(
+                    "project-image cycle halted by the source-failure circuit breaker"
+                )
+            if batch.claimed < chunk_limit:
+                break
+
+        total = (
+            merge_batch_results(tuple(batches))
+            if batches
+            else ProjectImageBatchResult(
+                claimed=0,
+                verified_exact=0,
+                no_images=0,
+                count_conflict=0,
+                retry=0,
+                blocked=0,
+                images_archived=0,
+                rate_limited=0,
+                source_failure=0,
+                server_failure=0,
+                validation_failure=0,
+            )
+        )
         coverage, images = queue.publication_records()
         previous = _load_manifest(OUTPUT)
         build_project_image_bundle(coverage, images, now.isoformat(), CANDIDATE)
@@ -168,16 +257,17 @@ def run_cycle(*, limit: int, publish: bool) -> dict[str, object]:
         )
         _promote_candidate(release.release_id, previous)
         published = publish_bundle(OUTPUT) if publish else None
+        next_controller = advance_controller(controller, _metrics(total))
+        save_controller(CONTROLLER, next_controller)
         return {
             "passed": True,
-            "batch": {
-                "claimed": batch.claimed,
-                "verified_exact": batch.verified_exact,
-                "no_images": batch.no_images,
-                "count_conflict": batch.count_conflict,
-                "retry": batch.retry,
-                "blocked": batch.blocked,
-                "images_archived": batch.images_archived,
+            "batch": asdict(total),
+            "controller": {
+                "workers": selected_workers,
+                "batch_limit": selected_limit,
+                "healthy_streak": next_controller.healthy_streak,
+                "next_workers": next_controller.workers,
+                "next_batch_limit": next_controller.batch_limit,
             },
             "queue": queue.summary().status_counts,
             "release_id": release.release_id,
@@ -187,14 +277,24 @@ def run_cycle(*, limit: int, publish: bool) -> dict[str, object]:
 
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--limit", type=int, default=500)
+    parser.add_argument("--limit", type=int)
+    parser.add_argument("--workers", type=int)
     parser.add_argument("--publish", action="store_true")
     return parser.parse_args()
 
 
 def main() -> int:
     options = arguments()
-    print(json.dumps(run_cycle(limit=options.limit, publish=options.publish), indent=2))
+    print(
+        json.dumps(
+            run_cycle(
+                limit=options.limit,
+                workers=options.workers,
+                publish=options.publish,
+            ),
+            indent=2,
+        )
+    )
     return 0
 
 

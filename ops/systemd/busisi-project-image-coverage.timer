@@ -1,8 +1,8 @@
 [Unit]
-Description=Expand Busisi project-image evidence coverage daily
+Description=Expand Busisi project-image evidence coverage every six hours
 
 [Timer]
-OnCalendar=*-*-* 02:17:00 Asia/Dubai
+OnCalendar=*-*-* 00,06,12,18:17:00 Asia/Dubai
 Persistent=true
 RandomizedDelaySec=20m
 Unit=busisi-project-image-coverage.service

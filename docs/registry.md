@@ -71,10 +71,12 @@ The canonical ingestion database remains local and is never reachable through
 the Worker. D1 contains only publication records derived from reconciled source
 artifacts.
 
-Project-image coverage currently spans the six reviewed and quarantined
-dossiers. Eighteen source images were archived and inspected. Five images from
-three exactly reconciled contracts are public, 13 images from two count-conflict
-contracts remain quarantined, and one contract has an explicit zero-image
-state. Images are served from private R2 by immutable internal URLs.
+Project-image coverage begins with the reviewed dossier baseline and expands
+through a resumable evidence queue. Each contract is checked against the
+project-detail and image-list endpoints, with original source responses and
+JPEGs archived before publication. Exact count matches may be published,
+conflicts remain quarantined, and explicit zero-image responses stay visible as
+coverage results. Images are served from private R2 by immutable internal URLs.
+The live coverage page is the current source for release counts.
 
 Last updated: 2026-11-03.

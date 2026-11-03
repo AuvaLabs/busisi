@@ -1,6 +1,6 @@
 """Bounded, allowlisted acquisition for registered public sources."""
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from urllib.parse import urljoin, urlparse
 
@@ -18,9 +18,16 @@ DOWNLOAD_CHUNK_BYTES = 64 * 1024
 class AcquisitionError(RuntimeError):
     """Raised when a source response violates the acquisition contract."""
 
-    def __init__(self, message: str, *, http_status: int | None = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        http_status: int | None = None,
+        retry_after_seconds: int | None = None,
+    ) -> None:
         super().__init__(message)
         self.http_status = http_status
+        self.retry_after_seconds = retry_after_seconds
 
 
 class SourceFetcher:
@@ -30,6 +37,7 @@ class SourceFetcher:
         *,
         max_response_bytes: int = DEFAULT_MAX_RESPONSE_BYTES,
         session: requests.Session | None = None,
+        request_gate: Callable[[str], None] | None = None,
     ) -> None:
         if max_response_bytes <= 0:
             raise ValueError("max_response_bytes must be positive")
@@ -37,6 +45,7 @@ class SourceFetcher:
         self._registry = registry
         self._max_response_bytes = max_response_bytes
         self._session = session or requests.Session()
+        self._request_gate = request_gate
         self._session.headers.update(
             {
                 "Accept": "application/json, application/octet-stream, */*",
@@ -59,6 +68,8 @@ class SourceFetcher:
             raise AcquisitionError("retrieved_at must be timezone-aware")
 
         try:
+            if self._request_gate is not None:
+                self._request_gate(url)
             with self._session.get(
                 url,
                 params=params,
@@ -82,9 +93,25 @@ class SourceFetcher:
         except requests.RequestException as exc:
             response = getattr(exc, "response", None)
             status = getattr(response, "status_code", None)
+            retry_after = self._retry_after(response)
             raise AcquisitionError(
-                f"source request failed for {source_id}", http_status=status
+                f"source request failed for {source_id}",
+                http_status=status,
+                retry_after_seconds=retry_after,
             ) from exc
+
+    @staticmethod
+    def _retry_after(response: requests.Response | None) -> int | None:
+        if response is None:
+            return None
+        value = response.headers.get("Retry-After")
+        if value is None:
+            return None
+        try:
+            seconds = int(value)
+        except ValueError:
+            return None
+        return min(seconds, 86_400) if seconds > 0 else None
 
     @staticmethod
     def _build_url(base_url: str, path: str) -> str:

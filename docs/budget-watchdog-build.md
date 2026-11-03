@@ -260,6 +260,17 @@ fiscal years, category groups and both source fingerprints. The full 5,481,161
 row mirror, per-contract scan and mutable acquisition queue remain local and
 are never bound to the Worker. `ops/systemd/busisi-acquisition-retry.timer`
 runs the bounded official-source retry harness daily on the data host.
+`ops/systemd/busisi-project-image-coverage.timer` runs the gated image-evidence
+queue every six hours. It uses a 25-contract canary, 100-contract chunks, four
+worker-local HTTP sessions and a shared two-request-per-second host limiter.
+The adaptive controller begins at 1,000 contracts per cycle, ramps to 2,000
+after eight healthy cycles, and reduces work after retryable source failures.
+Two rate limits or a retryable failure ratio above 10 percent halt the cycle
+before publication. Permanent HTTP access failures are recorded as blocked
+coverage gaps rather than repeatedly requested.
+The queue selection is deterministic and mixes fiscal years and source image
+hints. Publication remains limited to reconciled metadata and inspected JPEG
+artifacts; conflicts remain quarantined.
 `npm run check`
 enforces at least 95
 percent Worker line and function coverage and at least 90 percent branch

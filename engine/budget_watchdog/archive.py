@@ -2,8 +2,10 @@
 
 import hashlib
 import json
+import os
 import re
 import shutil
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -80,14 +82,13 @@ class ArtifactArchive:
 
     def _manifest_path(self, acquisition: Acquisition | FileAcquisition, digest: str) -> Path:
         timestamp = acquisition.retrieved_at.isoformat().replace(":", "-")
-        filename = f"{timestamp}-{digest}.json"
+        source_url_digest = hashlib.sha256(acquisition.source_url.encode()).hexdigest()[:16]
+        filename = f"{timestamp}-{source_url_digest}-{digest}.json"
         return self._root / "manifests" / acquisition.source_id / filename
 
     @staticmethod
     def _manifest_bytes(acquisition: Acquisition, digest: str) -> bytes:
-        return ArtifactArchive._manifest_bytes_for(
-            acquisition, digest, len(acquisition.payload)
-        )
+        return ArtifactArchive._manifest_bytes_for(acquisition, digest, len(acquisition.payload))
 
     @staticmethod
     def _manifest_bytes_for(
@@ -122,24 +123,69 @@ class ArtifactArchive:
     @classmethod
     def _write_file_immutable(cls, destination: Path, source: Path, digest: str) -> None:
         destination.parent.mkdir(parents=True, exist_ok=True)
+        temporary: Path | None = None
         try:
-            with destination.open("xb") as output, source.open("rb") as input_stream:
+            with (
+                tempfile.NamedTemporaryFile(
+                    mode="wb",
+                    dir=destination.parent,
+                    prefix=f".{destination.name}.",
+                    delete=False,
+                ) as output,
+                source.open("rb") as input_stream,
+            ):
+                temporary = Path(output.name)
                 shutil.copyfileobj(input_stream, output, length=1024 * 1024)
+                output.flush()
+                os.fsync(output.fileno())
+            if cls._file_digest(temporary) != digest:
+                raise ArtifactConflictError("source file changed while it was archived")
+            cls._link_immutable(temporary, destination, digest=digest)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+
+    @classmethod
+    def _write_immutable(cls, path: Path, payload: bytes) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                dir=path.parent,
+                prefix=f".{path.name}.",
+                delete=False,
+            ) as output:
+                temporary = Path(output.name)
+                output.write(payload)
+                output.flush()
+                os.fsync(output.fileno())
+            cls._link_immutable(temporary, path, payload=payload)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+
+    @classmethod
+    def _link_immutable(
+        cls,
+        temporary: Path,
+        destination: Path,
+        *,
+        payload: bytes | None = None,
+        digest: str | None = None,
+    ) -> None:
+        try:
+            os.link(temporary, destination)
         except FileExistsError:
-            if cls._file_digest(destination) != digest:
+            matches = (
+                destination.read_bytes() == payload
+                if payload is not None
+                else digest is not None and cls._file_digest(destination) == digest
+            )
+            if not matches:
                 raise ArtifactConflictError(
                     f"immutable artifact conflicts at {destination}"
                 ) from None
-
-    @staticmethod
-    def _write_immutable(path: Path, payload: bytes) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            with path.open("xb") as output:
-                output.write(payload)
-        except FileExistsError:
-            if path.read_bytes() != payload:
-                raise ArtifactConflictError(f"immutable artifact conflicts at {path}") from None
 
     @staticmethod
     def _validate(acquisition: Acquisition) -> None:

@@ -95,6 +95,12 @@ def default_source_registry() -> SourceRegistry:
                 SourceAuthority.PRIMARY,
             ),
             SourceDefinition(
+                "dpwh-infratrack-media",
+                "DPWH Infratrack project media proxy",
+                "https://apps2.dpwh.gov.ph",
+                SourceAuthority.PRIMARY,
+            ),
+            SourceDefinition(
                 "dpwh-documents",
                 "DPWH public documents",
                 "https://www.dpwh.gov.ph",
