@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 import responses
@@ -64,3 +65,68 @@ def test_fetcher_rejects_oversized_payloads() -> None:
             "/large",
             retrieved_at=RETRIEVED_AT,
         )
+
+
+def test_fetcher_rejects_invalid_configuration_and_paths() -> None:
+    with pytest.raises(ValueError, match="positive"):
+        SourceFetcher(default_source_registry(), max_response_bytes=0)
+
+    fetcher = SourceFetcher(default_source_registry())
+    for path in ("relative", "//example.com/path"):
+        with pytest.raises(AcquisitionError, match="root-relative"):
+            fetcher.fetch("bettergov-budget", path, retrieved_at=RETRIEVED_AT)
+
+
+def test_fetcher_rejects_naive_timestamp() -> None:
+    fetcher = SourceFetcher(default_source_registry())
+
+    with pytest.raises(AcquisitionError, match="timezone-aware"):
+        fetcher.fetch("bettergov-budget", "/data", retrieved_at=datetime(2026, 11, 2))
+
+
+@responses.activate
+def test_fetcher_wraps_http_errors_without_leaking_response_details() -> None:
+    responses.add(
+        responses.GET,
+        "https://budget.bettergov.ph/failure",
+        body="sensitive upstream response",
+        status=503,
+    )
+    fetcher = SourceFetcher(default_source_registry())
+
+    with pytest.raises(
+        AcquisitionError, match="source request failed for bettergov-budget"
+    ) as error:
+        fetcher.fetch("bettergov-budget", "/failure", retrieved_at=RETRIEVED_AT)
+
+    assert "sensitive upstream response" not in str(error.value)
+
+
+def test_fetcher_rejects_cross_origin_and_insecure_final_urls() -> None:
+    for url in ("https://example.com/data", "http://budget.bettergov.ph/data"):
+        with pytest.raises(AcquisitionError, match="escaped"):
+            SourceFetcher._validate_final_url("https://budget.bettergov.ph", url)
+
+
+@pytest.mark.parametrize(
+    ("headers", "chunks", "message"),
+    [
+        ({"Content-Length": "invalid"}, [b"ok"], "invalid Content-Length"),
+        ({"Content-Length": "11"}, [b"ok"], "maximum size"),
+        ({}, [b"123456", b"123456"], "maximum size"),
+        ({}, [b"", b""], "empty response"),
+    ],
+)
+def test_bounded_reader_rejects_invalid_response_bodies(headers, chunks, message: str) -> None:
+    response = SimpleNamespace(headers=headers, iter_content=lambda chunk_size: iter(chunks))
+    fetcher = SourceFetcher(default_source_registry(), max_response_bytes=10)
+
+    with pytest.raises(AcquisitionError, match=message):
+        fetcher._read_bounded(response)
+
+
+def test_bounded_reader_joins_non_empty_chunks() -> None:
+    response = SimpleNamespace(headers={}, iter_content=lambda chunk_size: iter([b"a", b"", b"b"]))
+    fetcher = SourceFetcher(default_source_registry(), max_response_bytes=10)
+
+    assert fetcher._read_bounded(response) == b"ab"

@@ -4,6 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { parseExplorerQuery } from '../src/explorer-query.js';
 import worker from '../src/index.js';
 
 const migrationPath = fileURLToPath(new URL('../migrations/0001_publication.sql', import.meta.url));
@@ -71,6 +72,38 @@ const environment = (database, allowed = true) => ({
 });
 
 const request = (path, init) => new Request(`https://busisi.test${path}`, init);
+
+const explorerUrl = (query = '') => new URL(`https://busisi.test/api/v1/budgets${query}`);
+
+test('validates every explorer query boundary and cursor contract', () => {
+  const invalid = [
+    ['unknown', '', 'collection is not available'],
+    ['budgets', '?year=not-a-year', 'year is invalid'],
+    ['budgets', '?year=1999', 'year is outside the supported range'],
+    ['budgets', '?limit=0', 'limit is outside the supported range'],
+    ['budgets', '?limit=101', 'limit is outside the supported range'],
+    ['budgets', `?q=${'x'.repeat(201)}`, 'q is too long'],
+    ['budgets', '?sort=unknown', 'sort is invalid'],
+    ['budgets', '?signal=zero_budget', 'signal is invalid'],
+    ['candidates', '?signal=unknown', 'signal is invalid'],
+    ['budgets', '?cursor=not-base64', 'cursor is invalid for this query'],
+  ];
+  for (const [kind, query, message] of invalid) {
+    assert.throws(() => parseExplorerQuery(explorerUrl(query), kind), { name: 'QueryError', message });
+  }
+
+  const fingerprint = ['budgets', '', null, 'amount_desc', 'all'].join('|');
+  const cursor = Buffer.from(JSON.stringify({ v: 1, offset: 2, fingerprint })).toString('base64url');
+  const parsed = parseExplorerQuery(explorerUrl(`?cursor=${cursor}`), 'budgets');
+  assert.equal(parsed.offset, 2);
+
+  const mismatched = Buffer.from(JSON.stringify({ v: 1, offset: 2, fingerprint: 'wrong' }))
+    .toString('base64url');
+  assert.throws(
+    () => parseExplorerQuery(explorerUrl(`?cursor=${mismatched}`), 'budgets'),
+    { name: 'QueryError', message: 'cursor is invalid for this query' },
+  );
+});
 
 test('lists reviewed records with stable cursor pagination', async (context) => {
   const database = new LocalD1();
