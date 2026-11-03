@@ -95,7 +95,7 @@ def main() -> int:
     )
     release_path = OUTPUT / "release.json"
     release_path.write_text(json.dumps(release, indent=2, sort_keys=True) + "\n")
-    detail = build_acquisition_detail_bundle(snapshot, DETAIL_OUTPUT)
+    detail = build_acquisition_detail_bundle(snapshot, DETAIL_OUTPUT, chunk_rows=5_000)
     quarantine = build_quarantine_review(snapshot, QUARANTINE_OUTPUT)
     result = {
         "passed": True,
