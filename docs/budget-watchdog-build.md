@@ -111,14 +111,21 @@ As of 2026-11-03:
 - Review queues provide source links, document links, exact centavo values,
   concentration aggregates and formula-safe CSV exports. No model produces a
   ranking, identity link or label.
-- The project-integrity desk publishes 16,810 rule-specific signals derived
+- The project-integrity desk publishes 16,814 rule-specific signals derived
   from 56,887 archived DPWH delivery records. These include source-field
   contradictions, amount questions, coordinate reuse and coverage gaps. They
   are review leads, not findings of wrongdoing.
-- Contractor activity covers 4,274 source identities and provides separate
-  rankings by project count and total project budget. PCAB identifiers are
-  preferred for grouping when present; name-only identities are not silently
-  merged.
+- Contractor activity covers 4,297 identities after explicit slash-delimited
+  joint ventures are split into their recorded parties. It provides separate
+  rankings by project count and associated project budget. Joint-project
+  amounts repeat for each party because the source does not state award shares.
+  Name-only identities are not silently merged.
+- The current PCAB regular-license snapshot contains 18,868 rows and 15,065
+  unique normalized license numbers. A current lookup is not presented as
+  evidence of license status on the award date.
+- The concentration view publishes 737 region, province or district-office,
+  and category groups with at least 20 projects. Shares use contractor-party
+  associations as the disclosed denominator and are screening measures only.
 - Coordinate checks currently cover missing values, broad Philippine bounds,
   exact coordinate reuse and conflicting source location labels. They do not
   claim point-in-polygon validation against administrative boundaries.
@@ -167,6 +174,7 @@ Build and verify the Cloudflare asset and D1 seed bundle with:
 ```bash
 PYTHONPATH=. python3 ops/harness/budget_watchdog_cloudflare.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_public_data.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_pcab.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 cd cloudflare/busisi
 npm test

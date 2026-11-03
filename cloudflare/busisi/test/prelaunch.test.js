@@ -82,7 +82,10 @@ test('publishes the project-integrity desk and contractor leaderboard', async ()
   assert.match(document, /data-integrity-desk/);
   assert.match(document, /Contractors with the most projects/);
   assert.match(document, /Rank by project count/);
-  assert.match(document, /Rank by total project budget/);
+  assert.match(document, /Rank by associated project budget/);
+  assert.match(document, /data-concentration-desk/);
+  assert.match(document, /contractor-party associations/);
+  assert.match(document, /Current PCAB-table status/);
   assert.match(document, /Not a corruption score/);
   assert.match(document, /src="\/assets\/integrity-v1\.js"/);
   assert.doesNotMatch(document, /proves? (?:fraud|corruption)/i);

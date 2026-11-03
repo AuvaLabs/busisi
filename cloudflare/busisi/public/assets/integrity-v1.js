@@ -1,5 +1,6 @@
 const integrityRoot = document.querySelector('[data-integrity-desk]');
 const contractorRoot = document.querySelector('[data-contractor-desk]');
+const concentrationRoot = document.querySelector('[data-concentration-desk]');
 
 const integrityForm = integrityRoot.querySelector('[data-integrity-form]');
 const integrityResults = integrityRoot.querySelector('[data-integrity-results]');
@@ -16,6 +17,9 @@ const contractorStatus = contractorRoot.querySelector('[data-contractor-status]'
 const contractorCount = contractorRoot.querySelector('[data-contractor-count]');
 const contractorTotal = contractorRoot.querySelector('[data-contractor-total]');
 const contractorMore = contractorRoot.querySelector('[data-contractor-more]');
+const concentrationForm = concentrationRoot.querySelector('[data-concentration-form]');
+const concentrationResults = concentrationRoot.querySelector('[data-concentration-results]');
+const concentrationStatus = concentrationRoot.querySelector('[data-concentration-status]');
 
 const number = new Intl.NumberFormat('en-PH');
 const peso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
@@ -34,6 +38,8 @@ const signalLabels = Object.freeze({
   completed_without_satellite_image: 'Completed without satellite image',
   reused_coordinate: 'Coordinate reused across projects',
   coordinate_location_conflict: 'Coordinate and location conflict',
+  past_completion_not_complete: 'Completion date passed without completed status',
+  same_site_repeat_family: 'Same site and project family across fiscal years',
 });
 
 const classificationLabels = Object.freeze({
@@ -61,6 +67,15 @@ const appendLink = (parent, label, href) => {
 
 const formatMoney = (centavos) => peso.format(Number(centavos || 0) / 100);
 const displayValue = (value, fallback = 'Not stated') => value ? String(value) : fallback;
+const percent = (basisPoints) => `${(Number(basisPoints || 0) / 100).toFixed(1)}%`;
+
+const pcabStatusLabels = Object.freeze({
+  current_regular: 'In current PCAB regular-license table',
+  current_not_government_infra: 'Current regular license, not marked for government infrastructure',
+  expired_regular: 'Expired in current regular-license table',
+  not_found_current_regular: 'Not found in current regular-license table',
+  not_checked: 'No PCAB number available to check',
+});
 
 const integrityParams = () => {
   const values = new FormData(integrityForm);
@@ -96,7 +111,7 @@ const renderSummary = (payload) => {
     [number.format(payload.source_records), 'source records examined', 'Archived FY2024 to FY2026 DPWH snapshot'],
     [number.format(payload.integrity_signals), 'rule-specific review signals', 'One contract can meet more than one rule'],
     [number.format(coordinateSignals), 'coordinate-related signals', 'Missing, broad-bound, reuse, or label checks'],
-    [number.format(payload.contractors), 'contractor identities', 'Grouped by recorded PCAB ID when available'],
+    [number.format(payload.contractors), 'contractor identities', 'Explicit slash-delimited joint ventures are split by party'],
   ];
   integritySummary.replaceChildren(...cards.map(([value, label, note]) => {
     const card = document.createElement('article');
@@ -156,10 +171,19 @@ const renderContractor = (record) => {
     'p',
     record.pcab_id ? `Recorded PCAB ID ${record.pcab_id}` : 'No PCAB ID in the source identity',
   );
+  appendText(
+    identity,
+    'span',
+    pcabStatusLabels[record.pcab_status] || 'PCAB status unavailable',
+    'pcab-status',
+  );
+  if (record.pcab_name && record.pcab_name !== record.contractor_name) {
+    appendText(identity, 'p', `Current PCAB listing: ${record.pcab_name}`);
+  }
   row.append(identity);
   for (const [label, value] of [
     ['Projects', number.format(record.project_count)],
-    ['Total project budget', formatMoney(record.total_budget_centavos)],
+    ['Associated project budget', formatMoney(record.total_budget_centavos)],
   ]) {
     const metric = appendText(row, 'div', '', 'contractor-metric');
     appendText(metric, 'span', label);
@@ -170,8 +194,53 @@ const renderContractor = (record) => {
   appendText(detail, 'span', `${number.format(record.ongoing_count)} ongoing`);
   appendText(detail, 'span', `${number.format(record.terminated_count)} terminated`);
   appendText(detail, 'span', `FY ${record.first_year} to ${record.last_year}`);
+  if (record.joint_project_count) {
+    appendText(detail, 'span', `${number.format(record.joint_project_count)} joint projects`);
+  }
+  if (record.pcab_valid_to) appendText(detail, 'span', `Current listing valid to ${record.pcab_valid_to}`);
   if (record.pcab_id) appendLink(detail, 'Verify contractor registration', record.pcab_url);
   return row;
+};
+
+const renderConcentration = (record) => {
+  const row = document.createElement('article');
+  row.className = 'concentration-record';
+  appendText(row, 'h3', record.group_label);
+  appendText(row, 'strong', `${percent(record.top_share_basis_points)} of party associations`);
+  appendText(
+    row,
+    'p',
+    `${record.top_contractor_name} appears on ${number.format(record.top_project_count)} of ${number.format(record.party_association_count)} contractor-party associations.`,
+  );
+  appendText(
+    row,
+    'small',
+    `${number.format(record.project_count)} projects · ${number.format(record.named_project_count)} with a contractor · ${number.format(record.contractor_count)} contractor identities · ${formatMoney(record.top_associated_budget_centavos)} associated with the leading party`,
+  );
+  return row;
+};
+
+const loadConcentrations = async () => {
+  concentrationStatus.textContent = 'Calculating disclosed concentration shares...';
+  const values = new FormData(concentrationForm);
+  const params = new URLSearchParams({
+    dimension: String(values.get('dimension')),
+    year: String(values.get('year')),
+  });
+  try {
+    const response = await fetch(`/api/v1/contractor-concentrations?${params}`, {
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) throw new Error(`Concentration service returned ${response.status}`);
+    const payload = await response.json();
+    concentrationResults.replaceChildren(...payload.data.map(renderConcentration));
+    concentrationStatus.textContent = payload.data.length
+      ? 'Share uses contractor-party associations, including each explicitly listed joint-venture party.'
+      : 'No group meets the publication threshold for this selection.';
+  } catch {
+    concentrationResults.replaceChildren();
+    concentrationStatus.textContent = 'Concentration analysis is temporarily unavailable.';
+  }
 };
 
 const loadSummary = async () => {
@@ -258,6 +327,10 @@ contractorForm.addEventListener('submit', (event) => {
   loadContractors();
 });
 contractorMore.addEventListener('click', () => loadContractors({ append: true }));
+concentrationForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  loadConcentrations();
+});
 
 const initial = new URLSearchParams(location.search);
 for (const name of ['q', 'signal', 'classification', 'year', 'sort']) {
@@ -271,3 +344,4 @@ loadSummary().catch(() => {
 });
 loadIntegrity();
 loadContractors();
+loadConcentrations();

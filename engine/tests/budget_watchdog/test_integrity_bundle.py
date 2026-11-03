@@ -65,18 +65,54 @@ def _snapshot(path: Path) -> None:
     pq.write_table(table, path)
 
 
+def _pcab_snapshot(path: Path) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "page": "1",
+                "total": 1,
+                "records": 1,
+                "rows": [
+                    {
+                        "id": "1",
+                        "cell": [
+                            "1",
+                            "ACME BUILDERS",
+                            "12345",
+                            "A Person",
+                            "AAA",
+                            "2027-12-31",
+                            "1",
+                        ],
+                    }
+                ],
+            }
+        )
+    )
+
+
 def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) -> None:
     snapshot = tmp_path / "dpwh.parquet"
     output = tmp_path / "bundle"
+    pcab = tmp_path / "pcab.json"
     _snapshot(snapshot)
+    _pcab_snapshot(pcab)
 
-    first = build_integrity_bundle(snapshot, output, fiscal_years=(2024, 2025), chunk_rows=2)
+    options = {
+        "fiscal_years": (2024, 2025),
+        "chunk_rows": 2,
+        "pcab_snapshot_path": pcab,
+        "pcab_retrieved_on": date(2026, 11, 3),
+        "minimum_concentration_projects": 1,
+    }
+    first = build_integrity_bundle(snapshot, output, **options)
     first_manifest = (output / "manifest.json").read_bytes()
-    second = build_integrity_bundle(snapshot, output, fiscal_years=(2024, 2025), chunk_rows=2)
+    second = build_integrity_bundle(snapshot, output, **options)
 
     assert first.source_records == 2
     assert first.integrity_signals == 4
     assert first.contractors == 1
+    assert first.concentrations == 11
     assert first.manifest_sha256 == second.manifest_sha256
     assert first_manifest == (output / "manifest.json").read_bytes()
 
@@ -94,6 +130,8 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
             / "0005_integrity.sql"
         )
         connection.executescript(migration.read_text())
+        migration_0006 = migration.with_name("0006_contractor_verification.sql")
+        connection.executescript(migration_0006.read_text())
         for chunk in sorted((output / "chunks").glob("*.sql")):
             connection.executescript(chunk.read_text())
         assert connection.execute("SELECT COUNT(*) FROM integrity_signal_items").fetchone()[0] == 4
@@ -101,5 +139,12 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
             "SELECT project_count, total_budget_centavos FROM contractor_rankings"
         ).fetchone()
         assert contractor == (2, 30_000_075)
+        verification = connection.execute(
+            "SELECT pcab_status, pcab_name, pcab_gov_infra FROM contractor_rankings"
+        ).fetchone()
+        assert verification == ("current_regular", "ACME BUILDERS", 1)
+        assert (
+            connection.execute("SELECT COUNT(*) FROM contractor_concentrations").fetchone()[0] == 11
+        )
     finally:
         connection.close()

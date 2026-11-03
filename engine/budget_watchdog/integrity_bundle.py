@@ -17,20 +17,21 @@ from typing import Any
 import pyarrow.parquet as pq
 
 from engine.budget_watchdog.integrity import (
+    ContractorConcentration,
     ContractorSummary,
     DeliveryIntegrityRecord,
     IntegritySignal,
     build_integrity_snapshot,
+    contractor_concentrations,
 )
 from engine.budget_watchdog.models import validate_fiscal_year
 from engine.budget_watchdog.money import parse_centavos
+from engine.budget_watchdog.pcab import parse_pcab_regular_licenses
 
-MIGRATION_PATH = (
-    Path(__file__).resolve().parents[2]
-    / "cloudflare"
-    / "busisi"
-    / "migrations"
-    / "0005_integrity.sql"
+MIGRATION_DIRECTORY = Path(__file__).resolve().parents[2] / "cloudflare" / "busisi" / "migrations"
+MIGRATION_PATHS = (
+    MIGRATION_DIRECTORY / "0005_integrity.sql",
+    MIGRATION_DIRECTORY / "0006_contractor_verification.sql",
 )
 SNAPSHOT_COLUMNS = (
     "contractId",
@@ -56,6 +57,7 @@ class IntegrityBundleResult:
     source_records: int
     integrity_signals: int
     contractors: int
+    concentrations: int
     sql_chunks: int
     manifest_sha256: str
 
@@ -179,8 +181,34 @@ def _contractor_statement(contractor: ContractorSummary) -> str:
         contractor.terminated_count,
         contractor.first_year,
         contractor.last_year,
+        contractor.joint_project_count,
+        contractor.pcab_status,
+        contractor.pcab_name,
+        contractor.pcab_category,
+        contractor.pcab_valid_to,
+        contractor.pcab_gov_infra,
+        contractor.pcab_snapshot_sha256,
     )
     return f"INSERT INTO contractor_rankings VALUES ({_sql_values(values)});"  # noqa: S608
+
+
+def _concentration_statement(item: ContractorConcentration) -> str:
+    values = (
+        item.dimension,
+        item.group_label,
+        item.fiscal_year,
+        item.project_count,
+        item.named_project_count,
+        item.party_association_count,
+        item.contractor_count,
+        item.top_contractor_key,
+        item.top_contractor_name,
+        item.top_pcab_id,
+        item.top_project_count,
+        item.top_share_basis_points,
+        item.top_associated_budget_centavos,
+    )
+    return f"INSERT INTO contractor_concentrations VALUES ({_sql_values(values)});"  # noqa: S608
 
 
 def _batched(rows: Iterable[str], size: int) -> Iterator[tuple[str, ...]]:
@@ -212,6 +240,7 @@ def _metadata_sql(metadata: dict[str, str]) -> str:
     lines = [
         "DELETE FROM integrity_signal_items;",
         "DELETE FROM contractor_rankings;",
+        "DELETE FROM contractor_concentrations;",
         "DELETE FROM integrity_metadata;",
     ]
     lines.extend(
@@ -221,15 +250,17 @@ def _metadata_sql(metadata: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int]) -> None:
+def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int]) -> None:
     connection = sqlite3.connect(":memory:")
     try:
-        connection.executescript(MIGRATION_PATH.read_text(encoding="utf-8"))
+        for migration in MIGRATION_PATHS:
+            connection.executescript(migration.read_text(encoding="utf-8"))
         for chunk in chunks:
             connection.executescript(chunk.read_text(encoding="utf-8"))
         actual = (
             connection.execute("SELECT COUNT(*) FROM integrity_signal_items").fetchone()[0],
             connection.execute("SELECT COUNT(*) FROM contractor_rankings").fetchone()[0],
+            connection.execute("SELECT COUNT(*) FROM contractor_concentrations").fetchone()[0],
         )
         integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
     finally:
@@ -244,6 +275,10 @@ def build_integrity_bundle(
     *,
     fiscal_years: tuple[int, ...] = (2024, 2025, 2026),
     chunk_rows: int = 2_000,
+    pcab_snapshot_path: Path | None = None,
+    pcab_retrieved_on: date | None = None,
+    source_as_of: date | None = None,
+    minimum_concentration_projects: int = 20,
 ) -> IntegrityBundleResult:
     """Create reproducible SQL chunks from an immutable DPWH Parquet snapshot."""
 
@@ -253,17 +288,47 @@ def build_integrity_bundle(
         raise ValueError("chunk_rows must be positive")
     source_digest = _digest(snapshot_path)
     records = _load_records(snapshot_path, fiscal_years, source_digest)
-    snapshot = build_integrity_snapshot(records)
+    if (pcab_snapshot_path is None) != (pcab_retrieved_on is None):
+        raise ValueError("PCAB snapshot path and retrieval date must be provided together")
+    pcab = None
+    if pcab_snapshot_path is not None and pcab_retrieved_on is not None:
+        pcab_digest = _digest(pcab_snapshot_path)
+        pcab = parse_pcab_regular_licenses(
+            pcab_snapshot_path.read_bytes(),
+            retrieved_on=pcab_retrieved_on,
+            source_sha256=pcab_digest,
+        )
+    snapshot = build_integrity_snapshot(records, pcab=pcab, as_of=source_as_of)
+    concentrations = contractor_concentrations(
+        records,
+        minimum_projects=minimum_concentration_projects,
+    )
     signal_counts = Counter(signal.code for signal in snapshot.signals)
+    pcab_status_counts = Counter(item.pcab_status for item in snapshot.contractors)
     metadata = {
         "contractors": str(len(snapshot.contractors)),
         "fiscal_years": ",".join(str(year) for year in fiscal_years),
         "integrity_signals": str(len(snapshot.signals)),
-        "schema_version": "1",
+        "concentrations": str(len(concentrations)),
+        "schema_version": "2",
         "source_artifact_sha256": source_digest,
         "source_records": str(len(records)),
         **{f"signal:{code}": str(count) for code, count in sorted(signal_counts.items())},
+        **{
+            f"pcab_status:{status}": str(count)
+            for status, count in sorted(pcab_status_counts.items())
+        },
     }
+    if pcab is not None:
+        metadata.update(
+            {
+                "pcab_records": str(pcab.record_count),
+                "pcab_retrieved_on": pcab.retrieved_on.isoformat(),
+                "pcab_source_sha256": pcab.source_sha256,
+            }
+        )
+    if source_as_of is not None:
+        metadata["source_as_of"] = source_as_of.isoformat()
     building = output_dir.with_name(f".{output_dir.name}.building")
     shutil.rmtree(building, ignore_errors=True)
     chunks_dir = building / "chunks"
@@ -287,7 +352,18 @@ def build_integrity_bundle(
             chunk_rows,
         )
     )
-    _verify_bundle(chunks, (len(snapshot.signals), len(snapshot.contractors)))
+    chunks.extend(
+        _write_chunks(
+            chunks_dir,
+            "300-concentrations",
+            (_concentration_statement(item) for item in concentrations),
+            chunk_rows,
+        )
+    )
+    _verify_bundle(
+        chunks,
+        (len(snapshot.signals), len(snapshot.contractors), len(concentrations)),
+    )
     manifest = {
         **metadata,
         "fiscal_years": list(fiscal_years),
@@ -307,6 +383,7 @@ def build_integrity_bundle(
         source_records=len(records),
         integrity_signals=len(snapshot.signals),
         contractors=len(snapshot.contractors),
+        concentrations=len(concentrations),
         sql_chunks=len(chunks),
         manifest_sha256=manifest_sha256,
     )

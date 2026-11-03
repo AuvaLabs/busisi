@@ -9,8 +9,12 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
+from engine.budget_watchdog.family import build_family_identity
+from engine.budget_watchdog.pcab import PcabSnapshot
+
 PCAB_SUFFIX = re.compile(r"\s*\((\d{3,})\)\s*$")
 SPACE = re.compile(r"\s+")
+JOINT_DELIMITER = re.compile(r"\s+/\s+")
 PHILIPPINES_LATITUDE = (Decimal("4"), Decimal("22"))
 PHILIPPINES_LONGITUDE = (Decimal("116"), Decimal("127"))
 COMPLETE_PROGRESS = Decimal("100")
@@ -86,14 +90,38 @@ class ContractorSummary:
     completed_count: int
     ongoing_count: int
     terminated_count: int
+    joint_project_count: int
     first_year: int
     last_year: int
+    pcab_status: str
+    pcab_name: str
+    pcab_category: str
+    pcab_valid_to: str
+    pcab_gov_infra: int
+    pcab_snapshot_sha256: str
 
 
 @dataclass(frozen=True, slots=True)
 class IntegritySnapshot:
     signals: tuple[IntegritySignal, ...]
     contractors: tuple[ContractorSummary, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ContractorConcentration:
+    dimension: str
+    group_label: str
+    fiscal_year: int
+    project_count: int
+    named_project_count: int
+    party_association_count: int
+    contractor_count: int
+    top_contractor_key: str
+    top_contractor_name: str
+    top_pcab_id: str
+    top_project_count: int
+    top_share_basis_points: int
+    top_associated_budget_centavos: int
 
 
 @dataclass(slots=True)
@@ -104,8 +132,21 @@ class _ContractorAccumulator:
     completed_count: int = 0
     ongoing_count: int = 0
     terminated_count: int = 0
+    joint_project_count: int = 0
     first_year: int = 9999
     last_year: int = 0
+
+
+@dataclass(slots=True)
+class _ConcentrationAccumulator:
+    project_count: int = 0
+    named_project_count: int = 0
+    party_association_count: int = 0
+    parties: dict[str, _ContractorAccumulator] | None = None
+
+    def __post_init__(self) -> None:
+        if self.parties is None:
+            self.parties = {}
 
 
 def _decimal(value: str | None, field: str) -> Decimal:
@@ -140,6 +181,19 @@ def contractor_identity(value: str) -> ContractorIdentity:
     return ContractorIdentity(f"name:{digest}", display, "")
 
 
+def contractor_identities(value: str) -> tuple[ContractorIdentity, ...]:
+    """Split explicit slash-delimited source parties without guessing other delimiters."""
+
+    parts = tuple(part for part in JOINT_DELIMITER.split(value.strip()) if part.strip())
+    if not parts:
+        return ()
+    identities = tuple(contractor_identity(part) for part in parts)
+    unique: dict[str, ContractorIdentity] = {}
+    for identity in identities:
+        unique.setdefault(identity.key, identity)
+    return tuple(unique.values())
+
+
 def _coordinate(record: DeliveryIntegrityRecord) -> tuple[Decimal, Decimal] | None:
     if record.latitude is None or record.longitude is None:
         return None
@@ -155,7 +209,7 @@ def _signal(
     evidence: str,
     limitations: str,
 ) -> IntegritySignal:
-    contractor = contractor_identity(record.contractor)
+    contractors = contractor_identities(record.contractor)
     return IntegritySignal(
         contract_id=record.contract_id,
         fiscal_year=record.fiscal_year,
@@ -163,8 +217,8 @@ def _signal(
         classification=classification,
         label=label,
         description=record.description,
-        contractor_name=contractor.display_name,
-        pcab_id=contractor.pcab_id,
+        contractor_name=SPACE.sub(" ", record.contractor.strip()) or "Contractor not stated",
+        pcab_id=",".join(item.pcab_id for item in contractors if item.pcab_id),
         budget_centavos=record.budget_centavos,
         status=record.status,
         progress=record.progress,
@@ -178,7 +232,11 @@ def _signal(
     )
 
 
-def _record_signals(record: DeliveryIntegrityRecord) -> list[IntegritySignal]:
+def _record_signals(
+    record: DeliveryIntegrityRecord,
+    *,
+    as_of: date | None,
+) -> list[IntegritySignal]:
     signals: list[IntegritySignal] = []
     status = _status(record.status)
     progress = _decimal(record.progress, "progress")
@@ -263,6 +321,26 @@ def _record_signals(record: DeliveryIntegrityRecord) -> list[IntegritySignal]:
                 limitations="Absence from this field is not proof that implementation evidence does not exist.",
             )
         )
+    if (
+        as_of is not None
+        and record.completion_date is not None
+        and record.completion_date < as_of
+        and status not in {"completed", "terminated"}
+        and progress < COMPLETE_PROGRESS
+    ):
+        signals.append(
+            _signal(
+                record,
+                code="past_completion_not_complete",
+                classification="source_conflict",
+                label="Completion date passed without completed status",
+                evidence=(
+                    f"Recorded completion date is {record.completion_date.isoformat()}; "
+                    f"status is {record.status}; reported progress is {progress}%."
+                ),
+                limitations="The archived status or completion date may be stale or revised later.",
+            )
+        )
     return signals
 
 
@@ -287,56 +365,100 @@ def _coordinate_signals(
                 )
             )
         locations = {(record.province.casefold(), record.region.casefold()) for record in records}
-        if len(locations) < MINIMUM_DISTINCT_VALUES:
-            continue
-        for record in records:
-            signals.append(
-                _signal(
-                    record,
-                    code="coordinate_location_conflict",
-                    classification="source_conflict",
-                    label="Shared coordinate has conflicting location labels",
-                    evidence=f"Coordinate {coordinate[0]}, {coordinate[1]} appears under multiple DPWH location labels.",
-                    limitations="District-office labels can differ from physical administrative boundaries.",
+        if len(locations) >= MINIMUM_DISTINCT_VALUES:
+            for record in records:
+                signals.append(
+                    _signal(
+                        record,
+                        code="coordinate_location_conflict",
+                        classification="source_conflict",
+                        label="Shared coordinate has conflicting location labels",
+                        evidence=f"Coordinate {coordinate[0]}, {coordinate[1]} appears under multiple DPWH location labels.",
+                        limitations="District-office labels can differ from physical administrative boundaries.",
+                    )
                 )
-            )
+        families: dict[str, list[DeliveryIntegrityRecord]] = defaultdict(list)
+        for record in records:
+            family = build_family_identity(record.description)
+            families[family.family_id].append(record)
+        for family_records in families.values():
+            years = {record.fiscal_year for record in family_records}
+            if (
+                len(family_records) < MINIMUM_DISTINCT_VALUES
+                or len(years) < MINIMUM_DISTINCT_VALUES
+            ):
+                continue
+            contracts = ", ".join(sorted(record.contract_id for record in family_records))
+            for record in family_records:
+                signals.append(
+                    _signal(
+                        record,
+                        code="same_site_repeat_family",
+                        classification="identity_review",
+                        label="Same site and project family across fiscal years",
+                        evidence=(
+                            f"Coordinate {coordinate[0]}, {coordinate[1]} and the normalized "
+                            f"project family recur in fiscal years {', '.join(map(str, sorted(years)))} "
+                            f"under contracts: {contracts}."
+                        ),
+                        limitations="The records can describe legitimate phases or continuing works at one site.",
+                    )
+                )
     return signals
 
 
 def _contractor_summaries(
     records: tuple[DeliveryIntegrityRecord, ...],
+    pcab: PcabSnapshot | None,
 ) -> tuple[ContractorSummary, ...]:
     accumulators: dict[str, _ContractorAccumulator] = {}
     for record in records:
         if not record.contractor.strip():
             continue
-        identity = contractor_identity(record.contractor)
-        accumulator = accumulators.setdefault(identity.key, _ContractorAccumulator(identity))
-        accumulator.project_count += 1
-        accumulator.total_budget_centavos += max(record.budget_centavos, 0)
-        accumulator.first_year = min(accumulator.first_year, record.fiscal_year)
-        accumulator.last_year = max(accumulator.last_year, record.fiscal_year)
-        status = _status(record.status)
-        accumulator.completed_count += status == "completed"
-        accumulator.ongoing_count += status in {"ongoing", "on going"}
-        accumulator.terminated_count += status == "terminated"
+        identities = contractor_identities(record.contractor)
+        for identity in identities:
+            accumulator = accumulators.setdefault(identity.key, _ContractorAccumulator(identity))
+            accumulator.project_count += 1
+            accumulator.total_budget_centavos += max(record.budget_centavos, 0)
+            accumulator.first_year = min(accumulator.first_year, record.fiscal_year)
+            accumulator.last_year = max(accumulator.last_year, record.fiscal_year)
+            accumulator.joint_project_count += len(identities) > 1
+            status = _status(record.status)
+            accumulator.completed_count += status == "completed"
+            accumulator.ongoing_count += status in {"ongoing", "on going"}
+            accumulator.terminated_count += status == "terminated"
+
+    def summary(item: _ContractorAccumulator) -> ContractorSummary:
+        verification = (
+            pcab.verify(item.identity.pcab_id) if pcab and item.identity.pcab_id else None
+        )
+        return ContractorSummary(
+            contractor_key=item.identity.key,
+            contractor_name=item.identity.display_name,
+            pcab_id=item.identity.pcab_id,
+            project_count=item.project_count,
+            total_budget_centavos=item.total_budget_centavos,
+            completed_count=item.completed_count,
+            ongoing_count=item.ongoing_count,
+            terminated_count=item.terminated_count,
+            joint_project_count=item.joint_project_count,
+            first_year=item.first_year,
+            last_year=item.last_year,
+            pcab_status=verification.status if verification else "not_checked",
+            pcab_name=verification.firm_name if verification else "",
+            pcab_category=verification.category if verification else "",
+            pcab_valid_to=verification.valid_to if verification else "",
+            pcab_gov_infra=(
+                int(verification.gov_infra)
+                if verification and verification.gov_infra is not None
+                else -1
+            ),
+            pcab_snapshot_sha256=verification.source_sha256 if verification else "",
+        )
+
     return tuple(
         sorted(
-            (
-                ContractorSummary(
-                    contractor_key=item.identity.key,
-                    contractor_name=item.identity.display_name,
-                    pcab_id=item.identity.pcab_id,
-                    project_count=item.project_count,
-                    total_budget_centavos=item.total_budget_centavos,
-                    completed_count=item.completed_count,
-                    ongoing_count=item.ongoing_count,
-                    terminated_count=item.terminated_count,
-                    first_year=item.first_year,
-                    last_year=item.last_year,
-                )
-                for item in accumulators.values()
-            ),
+            (summary(item) for item in accumulators.values()),
             key=lambda item: (
                 -item.project_count,
                 -item.total_budget_centavos,
@@ -346,8 +468,81 @@ def _contractor_summaries(
     )
 
 
+def contractor_concentrations(
+    records: tuple[DeliveryIntegrityRecord, ...],
+    *,
+    minimum_projects: int = 20,
+) -> tuple[ContractorConcentration, ...]:
+    """Summarize top contractor shares without assigning a joint-venture award split."""
+
+    if minimum_projects < 1:
+        raise ValueError("minimum_projects must be positive")
+    groups: dict[tuple[str, str, int], _ConcentrationAccumulator] = {}
+    for record in sorted(records, key=lambda item: item.contract_id):
+        identities = contractor_identities(record.contractor)
+        dimensions = (
+            ("region", record.region.strip() or "Not stated"),
+            ("province", record.province.strip() or "Not stated"),
+            ("category", record.category.strip() or "Not stated"),
+        )
+        for dimension, label in dimensions:
+            for year in (0, record.fiscal_year):
+                group = groups.setdefault((dimension, label, year), _ConcentrationAccumulator())
+                group.project_count += 1
+                if identities:
+                    group.named_project_count += 1
+                for identity in identities:
+                    group.party_association_count += 1
+                    assert group.parties is not None
+                    party = group.parties.setdefault(identity.key, _ContractorAccumulator(identity))
+                    party.project_count += 1
+                    party.total_budget_centavos += max(record.budget_centavos, 0)
+
+    concentrations: list[ContractorConcentration] = []
+    for (dimension, label, year), group in groups.items():
+        if group.project_count < minimum_projects or not group.party_association_count:
+            continue
+        assert group.parties is not None
+        top = min(
+            group.parties.values(),
+            key=lambda item: (-item.project_count, -item.total_budget_centavos, item.identity.key),
+        )
+        concentrations.append(
+            ContractorConcentration(
+                dimension=dimension,
+                group_label=label,
+                fiscal_year=year,
+                project_count=group.project_count,
+                named_project_count=group.named_project_count,
+                party_association_count=group.party_association_count,
+                contractor_count=len(group.parties),
+                top_contractor_key=top.identity.key,
+                top_contractor_name=top.identity.display_name,
+                top_pcab_id=top.identity.pcab_id,
+                top_project_count=top.project_count,
+                top_share_basis_points=(
+                    top.project_count * 10_000 // group.party_association_count
+                ),
+                top_associated_budget_centavos=top.total_budget_centavos,
+            )
+        )
+    return tuple(
+        sorted(
+            concentrations,
+            key=lambda item: (
+                item.dimension,
+                item.group_label.casefold(),
+                item.fiscal_year,
+            ),
+        )
+    )
+
+
 def build_integrity_snapshot(
     records: tuple[DeliveryIntegrityRecord, ...],
+    *,
+    pcab: PcabSnapshot | None = None,
+    as_of: date | None = None,
 ) -> IntegritySnapshot:
     """Return stable rule outputs without an opaque combined risk score."""
 
@@ -357,12 +552,12 @@ def build_integrity_snapshot(
     )
     signals: list[IntegritySignal] = []
     for record in ordered:
-        signals.extend(_record_signals(record))
+        signals.extend(_record_signals(record, as_of=as_of))
         coordinate = _coordinate(record)
         if coordinate is not None:
             coordinate_groups[coordinate].append(record)
     signals.extend(_coordinate_signals(coordinate_groups))
     return IntegritySnapshot(
         signals=tuple(sorted(signals, key=lambda item: (item.code, item.contract_id))),
-        contractors=_contractor_summaries(ordered),
+        contractors=_contractor_summaries(ordered, pcab),
     )

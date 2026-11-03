@@ -15,6 +15,8 @@ const SIGNALS = new Set([
   'completed_without_satellite_image',
   'reused_coordinate',
   'coordinate_location_conflict',
+  'past_completion_not_complete',
+  'same_site_repeat_family',
 ]);
 const CLASSIFICATIONS = new Set([
   'all', 'source_conflict', 'amount_review', 'identity_review', 'coverage_gap',
@@ -29,6 +31,7 @@ const CONTRACTOR_SORTS = Object.freeze({
   budget_desc: ['total_budget_centavos', 'DESC', 'project_count'],
   name_asc: ['LOWER(contractor_name)', 'ASC', 'contractor_key'],
 });
+const CONCENTRATION_DIMENSIONS = new Set(['region', 'province', 'category']);
 
 const integer = (value, field, fallback = null) => {
   if (value === null || value === '') return fallback;
@@ -91,6 +94,16 @@ export const parseContractorQuery = (url) => {
   return { ...parsed, offset: decodeCursor(url.searchParams.get('cursor'), fingerprint) };
 };
 
+export const parseConcentrationQuery = (url) => {
+  const dimension = url.searchParams.get('dimension') || 'region';
+  const year = integer(url.searchParams.get('year'), 'year', 0);
+  if (!CONCENTRATION_DIMENSIONS.has(dimension)) throw new QueryError('dimension is invalid');
+  if (year !== 0 && (year < MIN_YEAR || year > MAX_YEAR)) {
+    throw new QueryError('year is outside the supported range');
+  }
+  return { dimension, year };
+};
+
 const integrityWhere = (query) => {
   const clauses = [];
   const bindings = [];
@@ -147,7 +160,7 @@ export const queryIntegritySignals = async (database, query) => {
 
 export const getIntegritySummary = async (database) => {
   const rows = await database.prepare(
-    "SELECT key, value FROM integrity_metadata WHERE key IN ('source_records', 'integrity_signals', 'contractors', 'source_artifact_sha256') OR key LIKE 'signal:%' ORDER BY key",
+    "SELECT key, value FROM integrity_metadata WHERE key IN ('source_records', 'integrity_signals', 'contractors', 'concentrations', 'source_artifact_sha256', 'source_as_of', 'pcab_records', 'pcab_retrieved_on', 'pcab_source_sha256') OR key LIKE 'signal:%' OR key LIKE 'pcab_status:%' ORDER BY key",
   ).all();
   const metadata = Object.fromEntries(rows.results.map((row) => [row.key, row.value]));
   const signals = rows.results
@@ -158,7 +171,15 @@ export const getIntegritySummary = async (database) => {
     integrity_signals: Number(metadata.integrity_signals),
     contractors: Number(metadata.contractors),
     source_artifact_sha256: metadata.source_artifact_sha256,
+    source_as_of: metadata.source_as_of,
+    concentrations: Number(metadata.concentrations || 0),
+    pcab_records: Number(metadata.pcab_records || 0),
+    pcab_retrieved_on: metadata.pcab_retrieved_on,
+    pcab_source_sha256: metadata.pcab_source_sha256,
     signals,
+    pcab_statuses: rows.results
+      .filter((row) => row.key.startsWith('pcab_status:'))
+      .map((row) => ({ status: row.key.slice(12), count: Number(row.value) })),
   };
 };
 
@@ -166,8 +187,8 @@ const contractorWhere = (query) => {
   if (!query.q) return { sql: '', bindings: [] };
   const pattern = `%${query.q}%`;
   return {
-    sql: ' WHERE contractor_name LIKE ? OR pcab_id LIKE ?',
-    bindings: [pattern, pattern],
+    sql: ' WHERE contractor_name LIKE ? OR pcab_name LIKE ? OR pcab_id LIKE ?',
+    bindings: [pattern, pattern, pattern],
   };
 };
 
@@ -178,8 +199,10 @@ const contractorRecord = (row) => ({
   completed_count: Number(row.completed_count),
   ongoing_count: Number(row.ongoing_count),
   terminated_count: Number(row.terminated_count),
+  joint_project_count: Number(row.joint_project_count),
   first_year: Number(row.first_year),
   last_year: Number(row.last_year),
+  pcab_gov_infra: Number(row.pcab_gov_infra),
   pcab_url: 'https://www.pcab.construction.gov.ph/verify/',
 });
 
@@ -203,6 +226,26 @@ export const queryContractors = async (database, query) => {
     records,
     nextCursor: nextOffset < Number(total) ? encodeCursor(nextOffset, fingerprint) : null,
   };
+};
+
+export const queryContractorConcentrations = async (database, query) => {
+  const rows = await database.prepare(`
+    SELECT * FROM contractor_concentrations
+    WHERE dimension = ? AND fiscal_year = ?
+    ORDER BY top_share_basis_points DESC, party_association_count DESC, group_label ASC
+    LIMIT 100
+  `).bind(query.dimension, query.year).all();
+  return rows.results.map((row) => ({
+    ...row,
+    fiscal_year: Number(row.fiscal_year),
+    project_count: Number(row.project_count),
+    named_project_count: Number(row.named_project_count),
+    party_association_count: Number(row.party_association_count),
+    contractor_count: Number(row.contractor_count),
+    top_project_count: Number(row.top_project_count),
+    top_share_basis_points: Number(row.top_share_basis_points),
+    top_associated_budget_centavos: Number(row.top_associated_budget_centavos),
+  }));
 };
 
 const csvCell = (value) => {

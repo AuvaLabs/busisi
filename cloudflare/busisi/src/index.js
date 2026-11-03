@@ -21,9 +21,11 @@ import {
 import {
   exportIntegrityCsv,
   getIntegritySummary,
+  parseConcentrationQuery,
   parseContractorQuery,
   parseIntegrityQuery,
   queryContractors,
+  queryContractorConcentrations,
   queryIntegritySignals,
 } from './integrity-query.js';
 
@@ -162,6 +164,16 @@ const apiResponse = async (request, environment, url) => {
         review_scope: 'archived_dpwh_contract_aggregation',
       },
       data: page.records,
+    });
+  }
+  if (url.pathname === '/api/v1/contractor-concentrations') {
+    const query = parseConcentrationQuery(url);
+    return jsonResponse({
+      meta: {
+        review_scope: 'archived_dpwh_party_association_concentration',
+        denominator: 'contractor_party_associations',
+      },
+      data: await queryContractorConcentrations(environment.DB, query),
     });
   }
   const collection = EXPLORER_PATHS[url.pathname];

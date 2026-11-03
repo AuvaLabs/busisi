@@ -31,8 +31,12 @@ const expectedReviewCounts = Object.freeze({
 });
 const expectedIntegrity = Object.freeze({
   source_records: 56_887,
-  integrity_signals: 16_810,
-  contractors: 4_274,
+  integrity_signals: 16_814,
+  contractors: 4_297,
+  concentrations: 737,
+  pcab_records: 18_868,
+  pcab_retrieved_on: '2026-11-03',
+  pcab_source_sha256: '016bc9e3427b55e7744558f7726eb773f02f496f88279987c473546d6edb97d2',
   source_artifact_sha256: '5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123',
 });
 const expectedIntegritySignals = Object.freeze({
@@ -43,6 +47,7 @@ const expectedIntegritySignals = Object.freeze({
   missing_coordinate: 7_771,
   nonpositive_active_budget: 23,
   reused_coordinate: 1_230,
+  same_site_repeat_family: 4,
   status_progress_conflict: 5_744,
 });
 const resolver = new Resolver();
@@ -326,9 +331,17 @@ const verifyData = async () => {
     if (payload.meta.total !== expectedIntegrity.contractors || payload.data.length !== 1) {
       fail(`contractor query: ${label} ranking count mismatch`);
     }
-    if (!payload.data[0].contractor_name || !payload.data[0].pcab_url) {
+    if (!payload.data[0].contractor_name || !payload.data[0].pcab_url
+      || !payload.data[0].pcab_status) {
       fail(`contractor query: ${label} ranking evidence missing`);
     }
+  }
+  const concentrations = await readJson(
+    '/api/v1/contractor-concentrations?dimension=region&year=0',
+  );
+  if (!concentrations.data.length
+    || concentrations.meta.denominator !== 'contractor_party_associations') {
+    fail('contractor concentration: denominator or records missing');
   }
   const integrityCsv = await request('/api/v1/integrity.csv?signal=date_order_conflict');
   expectStatus(integrityCsv, 200, 'integrity CSV');

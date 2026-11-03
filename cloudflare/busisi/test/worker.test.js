@@ -7,7 +7,11 @@ import { fileURLToPath } from 'node:url';
 import { parseChangeQuery } from '../src/change-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
 import { parseReviewQuery } from '../src/review-query.js';
-import { parseContractorQuery, parseIntegrityQuery } from '../src/integrity-query.js';
+import {
+  parseConcentrationQuery,
+  parseContractorQuery,
+  parseIntegrityQuery,
+} from '../src/integrity-query.js';
 import worker from '../src/index.js';
 
 const migrationPath = fileURLToPath(new URL('../migrations/0001_publication.sql', import.meta.url));
@@ -22,6 +26,9 @@ const reviewMigrationPath = fileURLToPath(
 );
 const integrityMigrationPath = fileURLToPath(
   new URL('../migrations/0005_integrity.sql', import.meta.url),
+);
+const verificationMigrationPath = fileURLToPath(
+  new URL('../migrations/0006_contractor_verification.sql', import.meta.url),
 );
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
@@ -56,6 +63,7 @@ class LocalD1 {
     this.database.exec(readFileSync(changeMigrationPath, 'utf8'));
     this.database.exec(readFileSync(reviewMigrationPath, 'utf8'));
     this.database.exec(readFileSync(integrityMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(verificationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -78,6 +86,11 @@ class LocalD1 {
         ('dpwh:4', 2027, 'dpwh', 'Sample bridge Phase II', 'Network Development', 'Bridge Program', 'Region III', 'Sample DEO', 'house_only', 'In the House bill only', 'candidate', 0, 0, 0, 12000, 12000, 'https://budget.example/4', '', 'https://budget.example/house.pdf#page=6', NULL, 6, '${'a'.repeat(40)}', '${'e'.repeat(64)}', 'sample public bridge project');
       INSERT INTO integrity_metadata VALUES
         ('source_records', '3'), ('integrity_signals', '3'), ('contractors', '2'),
+        ('concentrations', '2'), ('pcab_records', '1'),
+        ('pcab_retrieved_on', '2026-11-03'),
+        ('pcab_source_sha256', '${'e'.repeat(64)}'),
+        ('pcab_status:current_regular', '1'),
+        ('pcab_status:not_found_current_regular', '1'),
         ('source_artifact_sha256', '${'f'.repeat(64)}'),
         ('signal:status_progress_conflict', '1'),
         ('signal:missing_coordinate', '1'),
@@ -87,8 +100,11 @@ class LocalD1 {
         ('24B:missing_coordinate', '24B', 2024, 'missing_coordinate', 'coverage_gap', 'Coordinate not available', 'Repair of public hospital', 'ACME BUILDERS', '12345', 20000000, 'Completed', '100', 'Quezon 1st DEO', 'Region IV-A', '', '', 'No usable coordinate.', 'Missing coordinates do not indicate a missing project.', '${'f'.repeat(64)}'),
         ('25C:coordinate_location_conflict', '25C', 2025, 'coordinate_location_conflict', 'source_conflict', 'Shared coordinate has conflicting location labels', 'Construction of road', 'SECOND BUILDERS', '67890', 30000000, 'Completed', '100', 'Cebu 1st DEO', 'Region VII', '10.3157', '123.8854', 'Coordinate appears under multiple labels.', 'Office labels can differ from boundaries.', '${'f'.repeat(64)}');
       INSERT INTO contractor_rankings VALUES
-        ('pcab:12345', 'ACME BUILDERS', '12345', 2, 30000000, 1, 1, 0, 2024, 2025),
-        ('pcab:67890', 'SECOND BUILDERS', '67890', 1, 30000000, 1, 0, 0, 2025, 2025);
+        ('pcab:12345', 'ACME BUILDERS', '12345', 2, 30000000, 1, 1, 0, 2024, 2025, 1, 'current_regular', 'ACME BUILDERS, INC.', 'AAA', '2027-12-31', 1, '${'e'.repeat(64)}'),
+        ('pcab:67890', 'SECOND BUILDERS', '67890', 1, 30000000, 1, 0, 0, 2025, 2025, 0, 'not_found_current_regular', '', '', '', -1, '${'e'.repeat(64)}');
+      INSERT INTO contractor_concentrations VALUES
+        ('region', 'NCR', 0, 10, 9, 10, 4, 'pcab:12345', 'ACME BUILDERS', '12345', 4, 4000, 90000000),
+        ('region', 'Region VII', 0, 12, 12, 12, 6, 'pcab:67890', 'SECOND BUILDERS', '67890', 3, 2500, 50000000);
     `);
   }
 
@@ -114,6 +130,7 @@ const changeUrl = (query = '') => new URL(`https://busisi.test/api/v1/changes${q
 const reviewUrl = (query = '') => new URL(`https://busisi.test/api/v1/review-rankings${query}`);
 const integrityUrl = (query = '') => new URL(`https://busisi.test/api/v1/integrity-signals${query}`);
 const contractorUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractors${query}`);
+const concentrationUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractor-concentrations${query}`);
 
 test('validates every explorer query boundary and cursor contract', () => {
   const invalid = [
@@ -220,6 +237,18 @@ test('validates project-integrity and contractor filters', () => {
   });
   assert.deepEqual(parseContractorQuery(contractorUrl('?sort=budget_desc&limit=10')), {
     q: '', sort: 'budget_desc', limit: 10, offset: 0,
+  });
+  assert.deepEqual(parseConcentrationQuery(concentrationUrl('?dimension=region&year=0')), {
+    dimension: 'region', year: 0,
+  });
+  assert.deepEqual(parseConcentrationQuery(concentrationUrl()), {
+    dimension: 'region', year: 0,
+  });
+  assert.throws(() => parseConcentrationQuery(concentrationUrl('?dimension=office')), {
+    message: 'dimension is invalid',
+  });
+  assert.throws(() => parseConcentrationQuery(concentrationUrl('?year=1999')), {
+    message: 'year is outside the supported range',
   });
 
   const integrityFingerprint = ['market', 'status_progress_conflict', 'source_conflict', 2025, 'year_desc'].join('|');
@@ -448,6 +477,9 @@ test('publishes delivery-integrity signals and contractor rankings', async (cont
   const contractorSearch = await worker.fetch(
     request('/api/v1/contractors?q=67890&sort=name_asc'), environment(database),
   );
+  const concentrations = await worker.fetch(
+    request('/api/v1/contractor-concentrations?dimension=region&year=0'), environment(database),
+  );
   const csv = await worker.fetch(
     request('/api/v1/integrity.csv?signal=missing_coordinate'), environment(database),
   );
@@ -457,10 +489,18 @@ test('publishes delivery-integrity signals and contractor rankings', async (cont
     integrity_signals: 3,
     contractors: 2,
     source_artifact_sha256: 'f'.repeat(64),
+    concentrations: 2,
+    pcab_records: 1,
+    pcab_retrieved_on: '2026-11-03',
+    pcab_source_sha256: 'e'.repeat(64),
     signals: [
       { code: 'coordinate_location_conflict', count: 1 },
       { code: 'missing_coordinate', count: 1 },
       { code: 'status_progress_conflict', count: 1 },
+    ],
+    pcab_statuses: [
+      { status: 'current_regular', count: 1 },
+      { status: 'not_found_current_regular', count: 1 },
     ],
   });
   const conflictBody = await conflicts.json();
@@ -470,6 +510,9 @@ test('publishes delivery-integrity signals and contractor rankings', async (cont
   assert.equal((await contractorsByCount.json()).data[0].contractor_name, 'ACME BUILDERS');
   assert.equal((await contractorsByBudget.json()).data[0].total_budget_centavos, 30000000);
   assert.equal((await contractorSearch.json()).data[0].contractor_name, 'SECOND BUILDERS');
+  const concentrationPayload = await concentrations.json();
+  assert.equal(concentrationPayload.data[0].top_contractor_name, 'ACME BUILDERS');
+  assert.equal(concentrationPayload.data[0].top_share_basis_points, 4000);
   assert.equal(csv.headers.get('content-type'), 'text/csv; charset=utf-8');
   assert.match(await csv.text(), /"missing_coordinate","coverage_gap","24B"/);
 });
