@@ -13,7 +13,11 @@ def test_loads_versioned_exact_award_rows() -> None:
     catalog = load_award_mirror(FIXTURE.read_bytes())
 
     assert catalog.source.revision == "b98de579579e8c7e79bac2a22ac7491549db6d0d"
-    assert catalog.source.acquisition_status == "row_extract_source_file_unarchived"
+    assert catalog.source.acquisition_status == "source_file_archived_secondary"
+    assert catalog.source.source_file_sha256 == (
+        "9bfa9e7cbf5041dc3b51a4c2742e60a43d1615f119955581d4b155bf3a6d4a8b"
+    )
+    assert catalog.source.source_file_byte_size == 492869009
     assert [item.contract_id for item in catalog.records] == ["25HI0028", "24HI0148", "24HI0131"]
     assert [item.contract_amount_centavos for item in catalog.records] == [
         197899499, 494467510, 493416373,
@@ -71,7 +75,9 @@ def test_rejects_invalid_source_row_uuid() -> None:
     (lambda raw: raw["source"].update(dataset_url="http://example.test"), "HTTPS"),
     (lambda raw: raw["source"].update(retrieved_at="2026-01-01"), "timezone-aware"),
     (lambda raw: raw["source"].update(last_modified="not-a-date"), "ISO formatted"),
-    (lambda raw: raw["source"].update(acquisition_status="archived"), "archived source file"),
+    (lambda raw: raw["source"].update(acquisition_status="unarchived"), "acquisition status"),
+    (lambda raw: raw["source"].update(source_file_sha256="bad"), "source file SHA-256"),
+    (lambda raw: raw["source"].update(source_file_byte_size=0), "source file byte size"),
 ])
 def test_rejects_invalid_catalog_boundaries(mutate, message: str) -> None:
     raw = json.loads(FIXTURE.read_text(encoding="utf-8"))
@@ -118,4 +124,4 @@ def test_rejects_duplicate_source_row_identity() -> None:
 
 def test_fixture_fingerprint_is_stable() -> None:
     payload = FIXTURE.read_bytes()
-    assert hashlib.sha256(payload).hexdigest() == "17fa35b8473b4595be7e3d1daae6da78b00a6c8d507afedd87d5f540a566c882"
+    assert hashlib.sha256(payload).hexdigest() == "f00bbdc81519ae3193238a175a78201f314689b9d6d6d22346684837fce207ae"

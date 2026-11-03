@@ -26,6 +26,7 @@ import {
 } from './budget-cycle-query.js';
 import { getCoaSummary, queryCoaReports } from './coa-query.js';
 import { getProcurementSummary, queryProcurementRecords } from './procurement-query.js';
+import { getAcquisitionCoverage } from './acquisition-coverage-query.js';
 import { queryContractOutcomes } from './outcome-query.js';
 import {
   getContractEvidenceSummary,
@@ -156,6 +157,12 @@ const apiResponse = async (request, environment, url) => {
     return jsonResponse({
       meta: { total: records.length, review_scope: 'exact_official_procurement_evidence' },
       data: records,
+    });
+  }
+  if (url.pathname === '/api/v1/acquisition-coverage') {
+    return jsonResponse({
+      meta: { review_scope: 'full_contract_universe_acquisition' },
+      data: await getAcquisitionCoverage(environment.DB),
     });
   }
   if (url.pathname === '/api/v1/contract-outcomes') {

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "checked_at": "2026-11-03T16:20:00+04:00",
+  "checked_at": "2026-11-03T17:30:00+04:00",
   "source": {
     "title": "BetterGov.PH PhilGEPS award notices mirror",
     "publisher": "BetterGov.PH",
@@ -9,10 +9,12 @@
     "dataset_file": "philgeps.parquet",
     "revision": "b98de579579e8c7e79bac2a22ac7491549db6d0d",
     "last_modified": "2026-01-06T08:31:06+00:00",
-    "retrieved_at": "2026-11-03T16:20:00+04:00",
+    "retrieved_at": "2026-11-03T13:24:25+00:00",
     "license": "CC0-1.0",
-    "acquisition_status": "row_extract_source_file_unarchived",
-    "evidence_note": "Three exact contract rows were extracted from the version-pinned public Parquet file. The complete source file and original PhilGEPS award pages were not archived, so these rows are secondary mirror evidence rather than verified official award artifacts."
+    "acquisition_status": "source_file_archived_secondary",
+    "source_file_sha256": "9bfa9e7cbf5041dc3b51a4c2742e60a43d1615f119955581d4b155bf3a6d4a8b",
+    "source_file_byte_size": 492869009,
+    "evidence_note": "Three exact contract rows were selected from the archived version-pinned Parquet snapshot. Original PhilGEPS award pages are not archived, so these rows remain secondary mirror evidence rather than verified official award artifacts."
   },
   "records": [
     {

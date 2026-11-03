@@ -89,6 +89,18 @@ def default_source_registry() -> SourceRegistry:
                 SourceAuthority.PRIMARY,
             ),
             SourceDefinition(
+                "dpwh-documents",
+                "DPWH public documents",
+                "https://www.dpwh.gov.ph",
+                SourceAuthority.PRIMARY,
+            ),
+            SourceDefinition(
+                "dpwh-documents-apex",
+                "DPWH public documents apex host",
+                "https://dpwh.gov.ph",
+                SourceAuthority.PRIMARY,
+            ),
+            SourceDefinition(
                 "philgeps",
                 "PhilGEPS Open Data",
                 "https://open.philgeps.gov.ph",

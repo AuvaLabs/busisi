@@ -18,6 +18,10 @@ DOWNLOAD_CHUNK_BYTES = 64 * 1024
 class AcquisitionError(RuntimeError):
     """Raised when a source response violates the acquisition contract."""
 
+    def __init__(self, message: str, *, http_status: int | None = None) -> None:
+        super().__init__(message)
+        self.http_status = http_status
+
 
 class SourceFetcher:
     def __init__(
@@ -76,7 +80,11 @@ class SourceFetcher:
                     payload=payload,
                 )
         except requests.RequestException as exc:
-            raise AcquisitionError(f"source request failed for {source_id}") from exc
+            response = getattr(exc, "response", None)
+            status = getattr(response, "status_code", None)
+            raise AcquisitionError(
+                f"source request failed for {source_id}", http_status=status
+            ) from exc
 
     @staticmethod
     def _build_url(base_url: str, path: str) -> str:

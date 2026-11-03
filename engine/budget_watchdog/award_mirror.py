@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 REVISION = re.compile(r"[0-9a-f]{40}")
 SHA256 = re.compile(r"[0-9a-f]{64}")
-ACQUISITION_STATUS = "row_extract_source_file_unarchived"
+ACQUISITION_STATUS = "source_file_archived_secondary"
 MINIMUM_FISCAL_YEAR = 2000
 MAXIMUM_FISCAL_YEAR = 2100
 
@@ -33,6 +33,8 @@ class AwardMirrorSource:
     retrieved_at: str
     license: str
     acquisition_status: str
+    source_file_sha256: str
+    source_file_byte_size: int
     evidence_note: str
 
 
@@ -94,7 +96,13 @@ def _source(raw: object) -> AwardMirrorSource:
         raise AwardMirrorError("revision must be a lowercase 40-character commit")
     status = _text(raw.get("acquisition_status"), "acquisition_status")
     if status != ACQUISITION_STATUS:
-        raise AwardMirrorError("acquisition_status cannot claim an archived source file")
+        raise AwardMirrorError("unsupported acquisition status")
+    source_digest = _text(raw.get("source_file_sha256"), "source_file_sha256")
+    if SHA256.fullmatch(source_digest) is None:
+        raise AwardMirrorError("source file SHA-256 is invalid")
+    source_size = raw.get("source_file_byte_size")
+    if isinstance(source_size, bool) or not isinstance(source_size, int) or source_size <= 0:
+        raise AwardMirrorError("source file byte size must be a positive integer")
     return AwardMirrorSource(
         title=_text(raw.get("title"), "title"),
         publisher=_text(raw.get("publisher"), "publisher"),
@@ -106,6 +114,8 @@ def _source(raw: object) -> AwardMirrorSource:
         retrieved_at=_timestamp(raw.get("retrieved_at"), "retrieved_at"),
         license=_text(raw.get("license"), "license"),
         acquisition_status=status,
+        source_file_sha256=source_digest,
+        source_file_byte_size=source_size,
         evidence_note=_text(raw.get("evidence_note"), "evidence_note"),
     )
 

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Busisi source acquisition retries daily
+
+[Timer]
+OnCalendar=*-*-* 03:17:00 Asia/Dubai
+Persistent=true
+RandomizedDelaySec=20m
+Unit=busisi-acquisition-retry.service
+
+[Install]
+WantedBy=timers.target

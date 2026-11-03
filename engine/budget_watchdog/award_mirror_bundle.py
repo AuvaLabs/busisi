@@ -11,12 +11,17 @@ from pathlib import Path
 
 from engine.budget_watchdog.award_mirror import AwardMirrorCatalog, load_award_mirror
 
-MIGRATION_PATH = (
+MIGRATION_PATHS = (
     Path(__file__).resolve().parents[2]
     / "cloudflare"
     / "busisi"
     / "migrations"
-    / "0014_contract_award_mirror.sql"
+    / "0014_contract_award_mirror.sql",
+    Path(__file__).resolve().parents[2]
+    / "cloudflare"
+    / "busisi"
+    / "migrations"
+    / "0017_archived_award_mirror.sql",
 )
 
 
@@ -55,7 +60,9 @@ def _render(catalog: AwardMirrorCatalog, catalog_sha256: str) -> str:
         "catalog_sha256": catalog_sha256,
         "record_count": str(len(catalog.records)),
         "source_revision": catalog.source.revision,
-        "source_file_archived": "0",
+        "source_file_archived": "1",
+        "source_file_sha256": catalog.source.source_file_sha256,
+        "source_file_byte_size": str(catalog.source.source_file_byte_size),
     }
     lines = [
         "DELETE FROM contract_award_mirror_records;",
@@ -72,7 +79,8 @@ def _render(catalog: AwardMirrorCatalog, catalog_sha256: str) -> str:
 def _verify(sql: str, expected: int) -> None:
     connection = sqlite3.connect(":memory:")
     try:
-        connection.executescript(MIGRATION_PATH.read_text(encoding="utf-8"))
+        for migration_path in MIGRATION_PATHS:
+            connection.executescript(migration_path.read_text(encoding="utf-8"))
         connection.executescript(sql)
         count = connection.execute("SELECT COUNT(*) FROM contract_award_mirror_records").fetchone()[0]
         integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
@@ -101,7 +109,9 @@ def build_award_mirror_bundle(catalog_path: Path, output_dir: Path) -> AwardMirr
                 "bundle_sha256": bundle_sha256,
                 "catalog_sha256": catalog_sha256,
                 "record_count": len(catalog.records),
-                "source_file_archived": False,
+                "source_file_archived": True,
+                "source_file_sha256": catalog.source.source_file_sha256,
+                "source_file_byte_size": catalog.source.source_file_byte_size,
                 "source_revision": catalog.source.revision,
             },
             indent=2,

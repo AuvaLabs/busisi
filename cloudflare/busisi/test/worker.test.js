@@ -12,6 +12,7 @@ import { queryContractOutcomes } from '../src/outcome-query.js';
 import { procurementDeskBody } from '../src/procurement-content.js';
 import { getProjectProcurementEvidence } from '../src/procurement-query.js';
 import { getProjectContractEvidence } from '../src/contract-evidence-query.js';
+import { getAcquisitionCoverage } from '../src/acquisition-coverage-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
 import { parseReviewQuery } from '../src/review-query.js';
@@ -67,11 +68,20 @@ const awardMirrorMigrationPath = fileURLToPath(
 const contractEvidenceMigrationPath = fileURLToPath(
   new URL('../migrations/0015_contract_evidence.sql', import.meta.url),
 );
+const acquisitionUniverseMigrationPath = fileURLToPath(
+  new URL('../migrations/0016_acquisition_universe.sql', import.meta.url),
+);
+const archivedAwardMirrorMigrationPath = fileURLToPath(
+  new URL('../migrations/0017_archived_award_mirror.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
 const contractEvidenceBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/contract-evidence-d1-bundle/contract-evidence.sql', import.meta.url),
+);
+const acquisitionUniverseBundlePath = fileURLToPath(
+  new URL('../../../data/budget_watchdog/acquisition-universe-d1-bundle/acquisition-universe.sql', import.meta.url),
 );
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
@@ -116,8 +126,11 @@ class LocalD1 {
     this.database.exec(readFileSync(procurementMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorMigrationPath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(acquisitionUniverseMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(archivedAwardMirrorMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
+    this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -1209,6 +1222,44 @@ test('publishes complete contract evidence checklists and a bounded retry queue'
   assert.match(dossierDocument, /Try official source \(last returned HTTP 403\)/);
   assert.match(dossierDocument, /Open date-reporting source/);
   assert.match(dossierDocument, /Open secondary source/);
+});
+
+test('publishes reconciled full-universe acquisition coverage', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+
+  const coverage = await getAcquisitionCoverage(database);
+  assert.equal(coverage.summary.contract_count, 56887);
+  assert.equal(coverage.summary.examined_contracts, 56887);
+  assert.equal(coverage.summary.accepted_match_rows, 62129);
+  assert.equal(coverage.summary.quarantined_source_rows, 83);
+  assert.equal(coverage.summary.lifecycle_task_count, 511983);
+  assert.deepEqual(coverage.states, {
+    conflict_review: 161,
+    multiple_exact_rows: 2077,
+    no_exact_row: 9655,
+    structured_exact: 38110,
+    title_exact: 6884,
+  });
+  assert.equal(coverage.queue.retry, 3);
+  assert.equal(coverage.queue.pending, 464727);
+  assert.equal(coverage.years.reduce((total, item) => total + item.total_contracts, 0), 56887);
+
+  const response = await worker.fetch(
+    request('/api/v1/acquisition-coverage'), environment(database),
+  );
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.meta.review_scope, 'full_contract_universe_acquisition');
+  assert.equal(payload.data.summary.contract_count, 56887);
+
+  const page = await siteWorker.fetch(request('/procurement/'), environment(database));
+  const document = await page.text();
+  assert.match(document, /Full-universe acquisition coverage/);
+  assert.match(document, /56,887 of 56,887 contracts examined/);
+  assert.match(document, /47,071 contracts with usable exact secondary rows/);
+  assert.match(document, /83 conflicting source rows quarantined/);
+  assert.match(document, /Coverage is not official proof/);
 });
 
 test('classifies contract amount, sequence, schedule and completion questions deterministically', () => {

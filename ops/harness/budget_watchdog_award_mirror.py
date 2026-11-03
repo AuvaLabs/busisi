@@ -20,7 +20,7 @@ def main() -> int:
         "record_count": result.record_count,
         "catalog_sha256": result.catalog_sha256,
         "bundle_sha256": result.bundle_sha256,
-        "source_file_archived": False,
+        "source_file_archived": True,
     }, indent=2))
     return 0
 

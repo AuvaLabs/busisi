@@ -145,8 +145,9 @@ As of 2026-11-03:
   project-specific payment coverage without inferring missing values.
 - Three contract rows extracted from a version-pinned BetterGov PhilGEPS mirror
   add secondary awardee and award-amount comparisons. Each row has a canonical
-  SHA-256 and source revision. The complete mirror file and original PhilGEPS
-  award pages are not archived and are not represented as official evidence.
+  SHA-256 and source revision. The complete mirror snapshot is archived and
+  hashed. Original PhilGEPS award pages are not archived, and mirror rows are
+  not represented as official evidence.
 - The contract evidence ledger tracks nine lifecycle targets for each of the
   three contracts, or 27 checks in total. One official source artifact is
   archived and verified, three official-source acquisitions are blocked and
@@ -206,6 +207,8 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_public_value.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_coa.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_procurement.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_contract_evidence.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_release.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_retry.py --limit 10
 cd cloudflare/busisi
 npm test
 npm run check
@@ -229,6 +232,13 @@ discovery, archived copies and project-level observation matches as separate
 states. The contract evidence bundle is built under
 `data/budget_watchdog/contract-evidence-d1-bundle/`; it validates complete
 nine-stage checklists and verifies the generated SQL in an isolated database.
+The acquisition-universe release is built under
+`data/budget_watchdog/acquisition-universe-d1-bundle/`. Its frozen catalogue
+reconciles 56,887 contracts, 511,983 lifecycle tasks, match states, queue states,
+fiscal years, category groups and both source fingerprints. The full 5,481,161
+row mirror, per-contract scan and mutable acquisition queue remain local and
+are never bound to the Worker. `ops/systemd/busisi-acquisition-retry.timer`
+runs the bounded official-source retry harness daily on the data host.
 `npm run check`
 enforces at least 95
 percent Worker line and function coverage and at least 90 percent branch

@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+import shutil
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -20,6 +21,17 @@ class Acquisition:
     retrieved_at: datetime
     media_type: str
     payload: bytes
+    source_version: str | None = None
+    source_last_modified: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class FileAcquisition:
+    source_id: str
+    source_url: str
+    retrieved_at: datetime
+    media_type: str
+    path: Path
     source_version: str | None = None
     source_last_modified: datetime | None = None
 
@@ -52,15 +64,39 @@ class ArtifactArchive:
             manifest_path=manifest_path,
         )
 
-    def _manifest_path(self, acquisition: Acquisition, digest: str) -> Path:
+    def store_file(self, acquisition: FileAcquisition) -> ArchivedArtifact:
+        self._validate_metadata(acquisition)
+        if not acquisition.path.is_file() or acquisition.path.stat().st_size <= 0:
+            raise ValueError("path must identify a non-empty file")
+        digest = self._file_digest(acquisition.path)
+        byte_size = acquisition.path.stat().st_size
+        blob_path = self._root / "blobs" / digest
+        manifest_path = self._manifest_path(acquisition, digest)
+        manifest_bytes = self._manifest_bytes_for(acquisition, digest, byte_size)
+
+        self._write_file_immutable(blob_path, acquisition.path, digest)
+        self._write_immutable(manifest_path, manifest_bytes)
+        return ArchivedArtifact(digest, byte_size, blob_path, manifest_path)
+
+    def _manifest_path(self, acquisition: Acquisition | FileAcquisition, digest: str) -> Path:
         timestamp = acquisition.retrieved_at.isoformat().replace(":", "-")
         filename = f"{timestamp}-{digest}.json"
         return self._root / "manifests" / acquisition.source_id / filename
 
     @staticmethod
     def _manifest_bytes(acquisition: Acquisition, digest: str) -> bytes:
+        return ArtifactArchive._manifest_bytes_for(
+            acquisition, digest, len(acquisition.payload)
+        )
+
+    @staticmethod
+    def _manifest_bytes_for(
+        acquisition: Acquisition | FileAcquisition,
+        digest: str,
+        byte_size: int,
+    ) -> bytes:
         manifest = {
-            "byte_size": len(acquisition.payload),
+            "byte_size": byte_size,
             "media_type": acquisition.media_type,
             "retrieved_at": acquisition.retrieved_at.isoformat(),
             "sha256": digest,
@@ -76,6 +112,26 @@ class ArtifactArchive:
         return (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
 
     @staticmethod
+    def _file_digest(path: Path) -> str:
+        hasher = hashlib.sha256()
+        with path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                hasher.update(chunk)
+        return hasher.hexdigest()
+
+    @classmethod
+    def _write_file_immutable(cls, destination: Path, source: Path, digest: str) -> None:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with destination.open("xb") as output, source.open("rb") as input_stream:
+                shutil.copyfileobj(input_stream, output, length=1024 * 1024)
+        except FileExistsError:
+            if cls._file_digest(destination) != digest:
+                raise ArtifactConflictError(
+                    f"immutable artifact conflicts at {destination}"
+                ) from None
+
+    @staticmethod
     def _write_immutable(path: Path, payload: bytes) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         try:
@@ -87,6 +143,12 @@ class ArtifactArchive:
 
     @staticmethod
     def _validate(acquisition: Acquisition) -> None:
+        ArtifactArchive._validate_metadata(acquisition)
+        if not isinstance(acquisition.payload, bytes) or not acquisition.payload:
+            raise ValueError("payload must contain bytes")
+
+    @staticmethod
+    def _validate_metadata(acquisition: Acquisition | FileAcquisition) -> None:
         if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", acquisition.source_id):
             raise ValueError("source_id must be a lowercase slug")
         parsed = urlparse(acquisition.source_url)
@@ -103,5 +165,3 @@ class ArtifactArchive:
             raise ValueError("source_version must not be empty")
         if not acquisition.media_type.strip():
             raise ValueError("media_type must not be empty")
-        if not isinstance(acquisition.payload, bytes) or not acquisition.payload:
-            raise ValueError("payload must contain bytes")

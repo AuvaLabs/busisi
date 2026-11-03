@@ -8,15 +8,22 @@ without using a language model. A separate COA evidence layer records which offi
 audit catalogues were checked, whether source bytes were acquired, and whether a
 project-level observation was actually matched. Contract outcome cross-checks
 compare exact procurement records with the DPWH delivery snapshot while keeping
-award, awardee, inspection and payment evidence states explicit. Three exact
-award rows from a version-pinned BetterGov PhilGEPS mirror add secondary
-awardee and amount context. The complete mirror file and original official
-award pages are not archived, so the rows are never labelled official proof.
+award, awardee, inspection and payment evidence states explicit. A complete
+version-pinned BetterGov PhilGEPS mirror snapshot is archived with its original
+bytes and SHA-256. It remains secondary evidence and is never labelled an
+official award notice.
 For three reviewed contracts, a separate acquisition ledger tracks nine target
 documents from procurement planning through payment. Each target is classified
 as archived official evidence, an indexed but unarchived source, a blocked
 acquisition, secondary mirror evidence or a document not located. A date
 reported in a monitoring row never substitutes for the underlying document.
+
+The acquisition universe covers all 56,887 FY2024 to FY2026 DPWH delivery
+contracts. The deterministic scan found usable exact secondary rows for 47,071
+contracts, no exact mirror row for 9,655, and conflicting exact identifiers for
+161. It retained 62,129 exact rows, quarantined 83 conflicting source rows, and
+created 511,983 lifecycle tasks. The canonical queue stays local. Only
+reconciled counts, source identity and limitations are published to D1.
 
 The public review desk ranks stage changes, groups monetary movement by region,
 office, program or dataset, identifies conservative cross-year project-family
@@ -76,6 +83,8 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_senate.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_senate_monitor.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_coa.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_contract_evidence.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_release.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_retry.py --limit 10
 cd cloudflare/busisi
 npm ci
 npm run check
@@ -94,6 +103,11 @@ The Senate catalogue monitor runs every six hours, preserves its bounded source
 responses as workflow evidence, and fails closed when records change or source
 acquisition becomes unreliable. It never updates the reviewed baseline
 automatically.
+
+The local acquisition retry timer runs one bounded batch daily. It accepts only
+registered official DPWH HTTPS origins, archives successful source bytes, uses
+exponential backoff for retryable HTTP failures, and blocks a task after the
+configured attempt limit for review.
 
 ## License
 

@@ -44,6 +44,15 @@ const expectedProcurement = Object.freeze({
   projects_with_evidence: '3',
   catalog_sha256: '4f9d9d76fe00fa4f31bf274a5834964978c6f4a137bf8b7aeed3e8983e0b8d91',
 });
+const expectedAcquisitionCoverage = Object.freeze({
+  contract_count: 56_887,
+  examined_contracts: 56_887,
+  accepted_match_rows: 62_129,
+  quarantined_source_rows: 83,
+  lifecycle_task_count: 511_983,
+  award_source_rows: 5_481_161,
+  award_sha256: '9bfa9e7cbf5041dc3b51a4c2742e60a43d1615f119955581d4b155bf3a6d4a8b',
+});
 const expectedReviewCounts = Object.freeze({
   decreased: 265,
   house_only: 6_954,
@@ -238,6 +247,9 @@ const verifyPages = async () => {
   expectIncludes(procurementText, 'Procurement evidence desk', 'procurement desk heading');
   expectIncludes(procurementText, '3 of 6 reviewed dossiers', 'procurement desk coverage');
   expectIncludes(procurementText, 'Evidence gap, not a clean bill', 'procurement boundary');
+  expectIncludes(procurementText, 'Full-universe acquisition coverage', 'acquisition coverage');
+  expectIncludes(procurementText, '56,887 of 56,887 contracts examined', 'acquisition coverage');
+  expectIncludes(procurementText, 'Coverage is not official proof', 'acquisition boundary');
   expectIncludes(procurementText, 'Contract evidence acquisition ledger', 'acquisition ledger');
   expectIncludes(procurementText, '3 acquisition checks queued', 'acquisition retry queue');
   expectIncludes(procurementText, 'Contract outcome cross-checks', 'contract outcome heading');
@@ -271,7 +283,7 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v10.css',
+    '/assets/site-visual-v11.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-social-v1.png',
     '/assets/busisi-evidence-banner-v1.webp',
@@ -283,7 +295,7 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v10.css');
+  const css = await request('/assets/site-visual-v11.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
@@ -435,6 +447,28 @@ const verifyData = async () => {
       acquisition_status === 'verified_archived'
     )).length !== 1) {
     fail('procurement records: count, scope or acquisition boundary mismatch');
+  }
+  const acquisitionCoverage = await readJson('/api/v1/acquisition-coverage');
+  if (acquisitionCoverage.meta.review_scope !== 'full_contract_universe_acquisition') {
+    fail('acquisition coverage: review scope mismatch');
+  }
+  for (const [key, expected] of Object.entries(expectedAcquisitionCoverage)) {
+    const actual = key.startsWith('award_')
+      ? acquisitionCoverage.data.source[key]
+      : acquisitionCoverage.data.summary[key];
+    if (actual !== expected) {
+      fail(`acquisition coverage: ${key} expected ${expected}, received ${actual}`);
+    }
+  }
+  if (acquisitionCoverage.data.states.structured_exact !== 38_110
+    || acquisitionCoverage.data.states.title_exact !== 6_884
+    || acquisitionCoverage.data.states.multiple_exact_rows !== 2_077
+    || acquisitionCoverage.data.states.conflict_review !== 161
+    || acquisitionCoverage.data.states.no_exact_row !== 9_655
+    || acquisitionCoverage.data.queue.pending !== 464_727
+    || acquisitionCoverage.data.queue.secondary_exact !== 47_071
+    || acquisitionCoverage.data.queue.quarantined !== 161) {
+    fail('acquisition coverage: state or queue controls mismatch');
   }
   const contractOutcomes = await readJson('/api/v1/contract-outcomes');
   if (contractOutcomes.meta.total !== 3
@@ -645,7 +679,7 @@ const verifyBoundaries = async () => {
     'Contract outcome pack', 'Payment evidence',
     'Contract evidence checklist', 'Reported date, document missing', 'HTTP 403',
     'Awardee reported by the PhilGEPS mirror', 'LA PRUEBA CONSTRUCTION',
-    'complete source file and official award page not archived',
+    'Complete mirror snapshot archived; original official award page not archived',
   ]) expectIncludes(reviewedText, value, 'reviewed dossier detail');
   if (/api\.dpwh\.bettergov\.ph|budget\.bettergov\.ph\/api/.test(reviewedText)) {
     fail('reviewed dossier: raw API reader link is public');

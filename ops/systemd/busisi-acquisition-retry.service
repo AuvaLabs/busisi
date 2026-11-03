@@ -1,0 +1,14 @@
+[Unit]
+Description=Busisi bounded official-source acquisition retry
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/data/auvalabs/busisi
+Environment=PYTHONPATH=/srv/data/auvalabs/busisi
+ExecStart=/usr/bin/python3 ops/harness/budget_watchdog_acquisition_retry.py --limit 10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/data/auvalabs/busisi/data/budget_watchdog

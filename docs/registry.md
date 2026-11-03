@@ -32,6 +32,7 @@ no deployment credentials.
 | `/api/v1/procurement-records` | Exact official procurement evidence records |
 | `/api/v1/contract-outcomes` | Deterministic procurement-to-delivery cross-checks |
 | `/api/v1/contract-evidence` | Contract lifecycle document-acquisition status |
+| `/api/v1/acquisition-coverage` | Reconciled full-contract-universe acquisition controls |
 
 ## Published dataset contract
 
@@ -47,8 +48,8 @@ procurement evidence against their DPWH delivery records. It also retains three
 exact rows extracted from BetterGov's version-pinned PhilGEPS mirror, including
 the source revision and a canonical SHA-256 for each extracted row. Those rows
 support secondary awardee-name and amount comparisons only. The complete
-Parquet file and original PhilGEPS award pages are not archived, so a delivery
-contractor is not presented as an officially verified awardee. Missing
+Parquet snapshot is now archived, but original PhilGEPS award pages are not, so
+a delivery contractor is not presented as an officially verified awardee. Missing
 inspection and payment evidence remains unavailable.
 The contract evidence ledger adds 27 explicit lifecycle checks across the three
 contracts. Its current status distribution is one verified and archived
@@ -56,6 +57,12 @@ official artifact, three blocked official-source acquisitions queued for
 retry, three version-pinned secondary mirror rows and 20 target documents not
 located. A PMR-reported signed-contract or Notice-to-Proceed date is retained as
 a reported event only and is not counted as acquisition of that document.
+
+The full acquisition universe scans all 56,887 current DPWH delivery contracts.
+It classifies 38,110 as structured exact matches, 6,884 as exact IDs found in
+titles, 2,077 as multiple exact rows, 161 as conflicting identifiers, and 9,655
+as having no exact mirror row. All 511,983 lifecycle tasks are held in a local
+SQLite queue. D1 receives only reconciled aggregate controls and provenance.
 
 The canonical ingestion database remains local and is never reachable through
 the Worker. D1 contains only publication records derived from reconciled source

@@ -23,9 +23,9 @@ context, and reviewed project-observation matches as separate states. A missing
 match is never presented as audit clearance.
 
 The contract outcome endpoint derives read-only cross-checks from exact
-procurement evidence, three version-pinned secondary PhilGEPS mirror rows, and
-the DPWH delivery snapshot. Mirror awardees and amounts stay visibly secondary
-because the complete mirror file and original award pages are not archived. It
+procurement evidence, version-pinned secondary PhilGEPS mirror rows, and the
+DPWH delivery snapshot. Mirror awardees and amounts stay visibly secondary
+because the mirror is not an official award notice. It
 does not infer inspection, payment, or audit results from a contractor name or
 status.
 
@@ -38,6 +38,13 @@ official-source acquisitions are blocked and retryable, three extracted rows
 are secondary evidence, and 20 target documents have not been located. Reported
 dates remain separate from document acquisition.
 
+The acquisition coverage endpoint publishes reconciled summary controls for
+all 56,887 FY2024 to FY2026 DPWH contracts. It exposes match-state, fiscal-year,
+category and queue totals, plus the archived mirror fingerprint. It does not
+expose the local queue database or individual secondary rows. Current controls
+are 47,071 contracts with usable exact secondary rows, 9,655 with no exact row,
+161 quarantined identifier conflicts, and 83 conflicting source rows.
+
 ## Production verification
 
 ```bash
@@ -49,6 +56,8 @@ The live verifier checks DNS, HTTPS, canonical metadata, discovery files,
 security headers, exact dataset counts, artifact hashes, representative source
 queries, stage-change controls, deterministic review-queue counts, evidence CSV,
 reviewed and quarantined dossier boundaries, redirects and assets.
+It also checks the full-universe acquisition counts, queue controls and source
+SHA-256 published at `/api/v1/acquisition-coverage`.
 
 Deployment and D1 mutation require operator credentials. The scheduled GitHub
 monitor is credential-free and read-only.

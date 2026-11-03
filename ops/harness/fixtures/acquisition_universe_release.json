@@ -1,0 +1,49 @@
+{
+  "category_breakdowns": [
+    {"state_counts": {"conflict_review": 3, "invalid_identifier": 0, "multiple_exact_rows": 79, "no_exact_row": 350, "structured_exact": 1741, "title_exact": 297}, "total_contracts": 2470, "value": "Bridges"},
+    {"state_counts": {"conflict_review": 53, "invalid_identifier": 0, "multiple_exact_rows": 491, "no_exact_row": 3041, "structured_exact": 11462, "title_exact": 1486}, "total_contracts": 16533, "value": "Buildings and facilities"},
+    {"state_counts": {"conflict_review": 21, "invalid_identifier": 0, "multiple_exact_rows": 307, "no_exact_row": 1097, "structured_exact": 6858, "title_exact": 748}, "total_contracts": 9031, "value": "Flood control and drainage"},
+    {"state_counts": {"conflict_review": 13, "invalid_identifier": 0, "multiple_exact_rows": 512, "no_exact_row": 1916, "structured_exact": 3084, "title_exact": 1885}, "total_contracts": 7410, "value": "GAA itemized programs"},
+    {"state_counts": {"conflict_review": 0, "invalid_identifier": 0, "multiple_exact_rows": 0, "no_exact_row": 1, "structured_exact": 6, "title_exact": 5}, "total_contracts": 12, "value": "PAMANA"},
+    {"state_counts": {"conflict_review": 0, "invalid_identifier": 0, "multiple_exact_rows": 0, "no_exact_row": 1, "structured_exact": 0, "title_exact": 0}, "total_contracts": 1, "value": "Ports and harbors"},
+    {"state_counts": {"conflict_review": 70, "invalid_identifier": 0, "multiple_exact_rows": 632, "no_exact_row": 2986, "structured_exact": 14293, "title_exact": 2215}, "total_contracts": 20196, "value": "Roads"},
+    {"state_counts": {"conflict_review": 0, "invalid_identifier": 0, "multiple_exact_rows": 3, "no_exact_row": 8, "structured_exact": 14, "title_exact": 7}, "total_contracts": 32, "value": "Trust funds"},
+    {"state_counts": {"conflict_review": 0, "invalid_identifier": 0, "multiple_exact_rows": 27, "no_exact_row": 40, "structured_exact": 100, "title_exact": 31}, "total_contracts": 198, "value": "Unprogrammed appropriations"},
+    {"state_counts": {"conflict_review": 1, "invalid_identifier": 0, "multiple_exact_rows": 26, "no_exact_row": 215, "structured_exact": 552, "title_exact": 210}, "total_contracts": 1004, "value": "Water infrastructure"}
+  ],
+  "checked_on": "2026-11-03",
+  "fiscal_years": [2024, 2025, 2026],
+  "limitations": [
+    "An exact mirror row is archived secondary evidence, not an official award notice.",
+    "Multiple rows are preserved and no single award is selected automatically.",
+    "Conflicting exact identifiers are quarantined from automatic publication.",
+    "A pending lifecycle task is not evidence that a document does or does not exist.",
+    "Category groups are deterministic labels derived from the source category text."
+  ],
+  "queue_status_counts": {"not_located": 20, "pending": 464727, "quarantined": 161, "retry": 3, "secondary_exact": 47071, "verified_archived": 1},
+  "schema_version": 1,
+  "source": {
+    "award_byte_size": 492869009,
+    "award_revision": "b98de579579e8c7e79bac2a22ac7491549db6d0d",
+    "award_sha256": "9bfa9e7cbf5041dc3b51a4c2742e60a43d1615f119955581d4b155bf3a6d4a8b",
+    "award_source_archived": true,
+    "award_source_rows": 5481161,
+    "delivery_sha256": "5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123",
+    "evidence_class": "archived_secondary_source"
+  },
+  "summary": {
+    "accepted_match_rows": 62129,
+    "contract_count": 56887,
+    "examined_contracts": 56887,
+    "lifecycle_task_count": 511983,
+    "match_state_counts": {"conflict_review": 161, "multiple_exact_rows": 2077, "no_exact_row": 9655, "structured_exact": 38110, "title_exact": 6884},
+    "quarantined_source_rows": 83,
+    "valid_identifiers": 56887,
+    "year_alignment_conflicts": 97
+  },
+  "year_breakdowns": [
+    {"state_counts": {"conflict_review": 112, "invalid_identifier": 0, "multiple_exact_rows": 324, "no_exact_row": 1544, "structured_exact": 27905, "title_exact": 684}, "total_contracts": 30569, "value": "2024"},
+    {"state_counts": {"conflict_review": 49, "invalid_identifier": 0, "multiple_exact_rows": 1753, "no_exact_row": 7844, "structured_exact": 10205, "title_exact": 6200}, "total_contracts": 26051, "value": "2025"},
+    {"state_counts": {"conflict_review": 0, "invalid_identifier": 0, "multiple_exact_rows": 0, "no_exact_row": 267, "structured_exact": 0, "title_exact": 0}, "total_contracts": 267, "value": "2026"}
+  ]
+}

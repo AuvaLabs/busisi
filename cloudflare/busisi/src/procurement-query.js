@@ -3,6 +3,7 @@ import {
   getContractEvidenceSummary,
   queryContractEvidenceItems,
 } from './contract-evidence-query.js';
+import { getAcquisitionCoverage } from './acquisition-coverage-query.js';
 
 const resultRows = (result) => result.results || [];
 
@@ -94,13 +95,18 @@ export const getProjectProcurementEvidence = async (database, contractId) => {
 };
 
 export const getProcurementDesk = async (database) => {
-  const [summary, sources, coverage, outcomes, evidenceSummary, evidenceItems] = await Promise.all([
+  const [
+    summary, sources, coverage, outcomes, evidenceSummary, evidenceItems, acquisitionCoverage,
+  ] = await Promise.all([
     getProcurementSummary(database),
     queryProcurementSources(database),
     queryCoverage(database),
     queryContractOutcomes(database),
     getContractEvidenceSummary(database),
     queryContractEvidenceItems(database),
+    getAcquisitionCoverage(database),
   ]);
-  return { summary, sources, coverage, outcomes, evidenceSummary, evidenceItems };
+  return {
+    summary, sources, coverage, outcomes, evidenceSummary, evidenceItems, acquisitionCoverage,
+  };
 };

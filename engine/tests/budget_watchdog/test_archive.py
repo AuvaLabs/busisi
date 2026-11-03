@@ -7,6 +7,7 @@ from engine.budget_watchdog.archive import (
     Acquisition,
     ArtifactArchive,
     ArtifactConflictError,
+    FileAcquisition,
 )
 
 
@@ -72,3 +73,45 @@ def test_archive_rejects_naive_retrieval_time(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="timezone-aware"):
         archive.store(acquisition)
+
+
+def test_archive_streams_large_source_file_without_changing_bytes(tmp_path) -> None:
+    source = tmp_path / "source.parquet"
+    source.write_bytes((b"parquet-source-block" * 8192) + b"tail")
+    archive = ArtifactArchive(tmp_path / "archive")
+    acquisition = FileAcquisition(
+        source_id="bettergov-philgeps-snapshot",
+        source_url="https://huggingface.co/example/philgeps.parquet",
+        retrieved_at=datetime(2026, 11, 3, 13, 30, tzinfo=UTC),
+        media_type="application/vnd.apache.parquet",
+        path=source,
+        source_version="a" * 40,
+    )
+
+    first = archive.store_file(acquisition)
+    second = archive.store_file(acquisition)
+
+    assert first == second
+    assert first.blob_path.read_bytes() == source.read_bytes()
+    manifest = json.loads(first.manifest_path.read_text(encoding="utf-8"))
+    assert manifest["byte_size"] == source.stat().st_size
+    assert manifest["sha256"] == first.sha256
+    assert manifest["source_version"] == "a" * 40
+
+
+def test_archive_rejects_missing_or_empty_source_file(tmp_path) -> None:
+    archive = ArtifactArchive(tmp_path / "archive")
+    base = {
+        "source_id": "bettergov-philgeps-snapshot",
+        "source_url": "https://huggingface.co/example/philgeps.parquet",
+        "retrieved_at": datetime(2026, 11, 3, 13, 30, tzinfo=UTC),
+        "media_type": "application/vnd.apache.parquet",
+    }
+
+    with pytest.raises(ValueError, match="non-empty file"):
+        archive.store_file(FileAcquisition(path=tmp_path / "missing", **base))
+
+    empty = tmp_path / "empty"
+    empty.touch()
+    with pytest.raises(ValueError, match="non-empty file"):
+        archive.store_file(FileAcquisition(path=empty, **base))

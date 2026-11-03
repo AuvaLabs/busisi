@@ -1,4 +1,5 @@
 import { contractEvidenceLedger } from './contract-evidence-content.js';
+import { fullUniverseCoverage } from './acquisition-coverage-content.js';
 
 const html = (value) => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -49,10 +50,12 @@ const outcomeCard = (outcome) => {
 
 export const procurementDeskBody = ({
   summary, sources, coverage, outcomes = [], evidenceSummary, evidenceItems = [],
+  acquisitionCoverage,
 }) => {
   const metadata = summary.metadata || {};
   return `<section class="data-intro audit-intro"><div><p class="kicker">Contract trail</p><h1>Procurement evidence desk.</h1><p class="lede">Follow exact contract IDs through official procurement plans, bid notices, and monitoring reports without treating a posting as proof of payment or completed work.</p></div><aside class="snapshot-card"><span>Reviewed pilot</span><strong>${html(metadata.projects_with_evidence || '0')} of ${html(metadata.checked_projects || '0')} reviewed dossiers</strong><p>${html(metadata.record_count || '0')} exact evidence records<br>${html(metadata.archived_sources || '0')} source copy archived</p></aside></section>
   <section class="evidence-boundary"><strong>Evidence gap, not a clean bill</strong><p>A missing procurement artifact does not show that no procurement occurred. An APP is a plan, a bid notice is a posting, and an agency PMR is not proof of payment, inspection quality, or COA clearance.</p></section>
+  ${acquisitionCoverage ? fullUniverseCoverage(acquisitionCoverage) : ''}
   ${contractEvidenceLedger(evidenceSummary, evidenceItems)}
   <section class="evidence-section"><p class="kicker">Cross-source review</p><h2>Contract outcome cross-checks</h2><p>Compare procurement amounts and events with the DPWH delivery snapshot. Mirror-reported awardees are versioned secondary evidence and are not presented as verified official award artifacts.</p><div class="outcome-grid">${outcomes.map(outcomeCard).join('')}</div><aside class="evidence-boundary"><strong>Questions, not findings</strong><p>A discrepancy or missing artifact is a lead for documentary review. It does not establish fraud, corruption, non-delivery, or improper payment.</p></aside></section>
   <section class="evidence-section"><p class="kicker">Official evidence</p><h2>Sources behind the pilot records</h2><div class="audit-report-grid">${sources.map(sourceCard).join('')}</div></section>
