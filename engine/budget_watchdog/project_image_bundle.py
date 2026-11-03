@@ -127,8 +127,15 @@ def build_project_image_bundle(
         raise ValueError("project-image coverage contains duplicate contracts")
     if any(item.metadata.contract_id not in coverage_by_contract for item in images):
         raise ValueError("project image has no coverage record")
-    if any(item.source_path.read_bytes() == b"" for item in images):
-        raise ValueError("project image payload is empty")
+    for item in images:
+        payload = item.source_path.read_bytes()
+        if not payload:
+            raise ValueError("project image payload is empty")
+        if (
+            sha256(payload).hexdigest() != item.inspection.sha256
+            or len(payload) != item.inspection.byte_size
+        ):
+            raise ValueError("project image payload does not match its inspection")
 
     lines = ["DELETE FROM project_images;", "DELETE FROM project_image_coverage;"]
     lines.extend(
@@ -173,15 +180,16 @@ def build_project_image_bundle(
             for item in sorted(coverage, key=lambda value: value.contract_id)
         },
         "image_count": len(images),
-        "media": {
-            item.inspection.sha256: {
+        "media": [
+            {
                 "archive_key": item.archive_key,
                 "byte_size": item.inspection.byte_size,
                 "height": item.inspection.height,
+                "sha256": item.inspection.sha256,
                 "width": item.inspection.width,
             }
-            for item in sorted(images, key=lambda value: value.inspection.sha256)
-        },
+            for item in sorted(images, key=lambda value: value.archive_key)
+        ],
         "quarantined_image_count": quarantined,
         "retrieved_at": retrieved_at,
         "sql_sha256": sha256(sql_path.read_bytes()).hexdigest(),

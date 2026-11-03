@@ -121,3 +121,77 @@ def test_reads_jpeg_dimensions_and_rejects_non_images() -> None:
         inspect_jpeg(b"not an image", "image/jpeg")
     with pytest.raises(ValueError, match="media type"):
         inspect_jpeg(jpeg, "text/html")
+
+
+def test_rejects_malformed_metadata_boundaries() -> None:
+    with pytest.raises(ValueError, match="invalid contract identifier"):
+        parse_project_image_evidence("../bad", _detail(), _images([]))
+    with pytest.raises(ValueError, match="valid JSON"):
+        parse_project_image_evidence("24HI0148", b"{", _images([]))
+    with pytest.raises(ValueError, match="JSON object"):
+        parse_project_image_evidence("24HI0148", b"[]", _images([]))
+
+    missing_data = _payload({"status": 200, "data": []})
+    with pytest.raises(ValueError, match="project detail data"):
+        parse_project_image_evidence("24HI0148", missing_data, _images([]))
+
+    invalid_summary = json.loads(_detail())
+    invalid_summary["data"]["imageSummary"]["hasImages"] = "yes"
+    with pytest.raises(ValueError, match="hasImages"):
+        parse_project_image_evidence("24HI0148", _payload(invalid_summary), _images([_image()]))
+
+    invalid_list = _payload({"status": 200, "data": {"images": {}}})
+    with pytest.raises(ValueError, match="must be a list"):
+        parse_project_image_evidence("24HI0148", _detail(), invalid_list)
+
+    with pytest.raises(ValueError, match="duplicate source URL"):
+        parse_project_image_evidence("24HI0148", _detail(count=2), _images([_image(), _image()]))
+
+    invalid_thumbnail = _image()
+    invalid_thumbnail["thumbnailUrl"] = "https://example.test/thumb.jpg"
+    with pytest.raises(ValueError, match="thumbnail URL"):
+        parse_project_image_evidence("24HI0148", _detail(), _images([invalid_thumbnail]))
+
+    invalid_coordinate = _image()
+    invalid_coordinate["coordinates"] = {"latitude": "north", "longitude": 124.0}
+    with pytest.raises(ValueError, match="must be numeric"):
+        parse_project_image_evidence("24HI0148", _detail(), _images([invalid_coordinate]))
+
+
+def test_classifies_incomplete_and_outside_coordinates_without_filling_values() -> None:
+    incomplete = _image()
+    incomplete["purpose"] = None
+    incomplete["status"] = None
+    incomplete["coordinates"] = {"latitude": None, "longitude": 124.0}
+    outside = _image(
+        "https://s3.transparency.dpwh.gov.ph/dpwh-gallery/fy2024/P00833283VS-CW1/outside.jpg"
+    )
+    outside["coordinates"] = {"latitude": 40.0, "longitude": 124.0}
+
+    coverage, records = parse_project_image_evidence(
+        "24HI0148", _detail(count=2), _images([incomplete, outside])
+    )
+
+    assert coverage.state == "verified_exact"
+    assert records[0].purpose == ""
+    assert records[0].status == ""
+    assert records[0].coordinate_status == "incomplete"
+    assert records[1].coordinate_status == "outside_broad_philippine_bounds"
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        (b"\xff\xd8\x00\x00\x00\x00", "invalid JPEG marker"),
+        (b"\xff\xd8\xff\xe0\x00\x01", "invalid JPEG segment"),
+        (b"\xff\xd8\xff\xda\x00\x02", "dimensions could not be read"),
+        (b"\xff\xd8\xff\xc0\x00\x06\x08\x00\x01\x00", "invalid JPEG frame"),
+        (
+            b"\xff\xd8\xff\xc0\x00\x11\x08\x00\x00\x02\x58\x03\x01\x11\x00\x02\x11\x00\x03\x11\x00",
+            "outside safe bounds",
+        ),
+    ],
+)
+def test_rejects_malformed_jpeg_structures(payload: bytes, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        inspect_jpeg(payload, "image/jpeg")
