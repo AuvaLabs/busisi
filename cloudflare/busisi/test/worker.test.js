@@ -13,6 +13,7 @@ import { procurementDeskBody } from '../src/procurement-content.js';
 import { getProjectProcurementEvidence } from '../src/procurement-query.js';
 import { getProjectContractEvidence } from '../src/contract-evidence-query.js';
 import { getAcquisitionCoverage } from '../src/acquisition-coverage-query.js';
+import { parseContractIntelligenceQuery } from '../src/contract-intelligence-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
 import { parseReviewQuery } from '../src/review-query.js';
@@ -78,6 +79,9 @@ const archivedAwardMirrorMigrationPath = fileURLToPath(
 const contractAcquisitionDetailMigrationPath = fileURLToPath(
   new URL('../migrations/0018_contract_acquisition_detail.sql', import.meta.url),
 );
+const contractIntelligenceMigrationPath = fileURLToPath(
+  new URL('../migrations/0019_contract_intelligence.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -133,6 +137,7 @@ class LocalD1 {
     this.database.exec(readFileSync(acquisitionUniverseMigrationPath, 'utf8'));
     this.database.exec(readFileSync(archivedAwardMirrorMigrationPath, 'utf8'));
     this.database.exec(readFileSync(contractAcquisitionDetailMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(contractIntelligenceMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -786,6 +791,157 @@ test('renders sparse contract acquisition fields without inventing evidence', ()
   assert.match(document, /Delivery record unavailable/);
   assert.match(document, /Not available/);
   assert.match(document, /not a finding of wrongdoing/i);
+});
+
+test('validates contract intelligence filters and cursor scope', () => {
+  const url = new URL('https://busisi.test/api/v1/contracts?q=pump&year=2025&state=structured_exact&category=Flood%20Control&region=NCR&status=On-Going&contractor=ACME&signal=without_signals&budget=100m_500m&sort=contract_asc&limit=10');
+  assert.deepEqual(parseContractIntelligenceQuery(url), {
+    q: 'pump',
+    year: 2025,
+    state: 'structured_exact',
+    category: 'Flood Control',
+    region: 'NCR',
+    status: 'On-Going',
+    contractor: 'ACME',
+    signal: 'without_signals',
+    budget: '100m_500m',
+    sort: 'contract_asc',
+    limit: 10,
+    offset: 0,
+  });
+  for (const search of [
+    '?state=accused',
+    '?signal=corruption',
+    '?budget=unlimited',
+    '?sort=random',
+    '?year=abc',
+    '?year=1999',
+    '?limit=0',
+    '?limit=1000',
+    `?q=${'x'.repeat(201)}`,
+    `?category=${'x'.repeat(121)}`,
+    `?region=${'x'.repeat(121)}`,
+    `?status=${'x'.repeat(121)}`,
+    `?contractor=${'x'.repeat(201)}`,
+    '?cursor=not-a-cursor',
+  ]) {
+    assert.throws(
+      () => parseContractIntelligenceQuery(new URL(`https://busisi.test/api/v1/contracts${search}`)),
+      { name: 'QueryError' },
+    );
+  }
+});
+
+test('publishes searchable contract intelligence, facets and CSV evidence', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+
+  const summary = await worker.fetch(
+    request('/api/v1/contract-intelligence-summary'),
+    environment(database),
+  );
+  const records = await worker.fetch(
+    request('/api/v1/contracts?year=2025&state=structured_exact&category=Flood%20Control&region=NCR&status=On-Going&contractor=ACME&signal=without_signals&budget=100m_500m'),
+    environment(database),
+  );
+  const conflicts = await worker.fetch(
+    request('/api/v1/contracts?state=conflict_review'),
+    environment(database),
+  );
+  const csv = await worker.fetch(
+    request('/api/v1/contracts.csv?state=conflict_review'),
+    environment(database),
+  );
+  const summaryBody = await summary.json();
+  const recordsBody = await records.json();
+  const conflictBody = await conflicts.json();
+
+  assert.equal(summary.status, 200);
+  assert.equal(summaryBody.data.total_contracts, 3);
+  assert.deepEqual(summaryBody.data.states, {
+    conflict_review: 1,
+    no_exact_row: 1,
+    structured_exact: 1,
+  });
+  assert.ok(summaryBody.data.facets.categories.some((item) => item.value === 'Flood Control'));
+  assert.equal(recordsBody.meta.total, 1);
+  assert.equal(recordsBody.meta.review_scope, 'contract_intelligence_evidence');
+  assert.equal(recordsBody.data[0].contract_id, '25O00113');
+  assert.equal(recordsBody.data[0].awardee_names, 'ACME BUILDERS');
+  assert.equal(recordsBody.data[0].reader_url, '/contracts/25O00113/');
+  assert.equal(conflictBody.meta.total, 1);
+  assert.equal(conflictBody.data[0].contract_id, '26ZERO01');
+  assert.equal(csv.status, 200);
+  assert.match(csv.headers.get('content-disposition'), /busisi-contract-evidence\.csv/);
+  assert.equal(csv.headers.get('x-export-row-limit'), '10000');
+  assert.match(await csv.text(), /"26ZERO01","conflict_review"/);
+
+  const firstPage = await worker.fetch(
+    request('/api/v1/contracts?sort=contract_asc&limit=1'),
+    environment(database),
+  );
+  const firstPageBody = await firstPage.json();
+  assert.equal(firstPageBody.data[0].contract_id, '24NO0001');
+  assert.ok(firstPageBody.meta.next_cursor);
+  const secondPage = await worker.fetch(
+    request(`/api/v1/contracts?sort=contract_asc&limit=1&cursor=${encodeURIComponent(firstPageBody.meta.next_cursor)}`),
+    environment(database),
+  );
+  const secondPageBody = await secondPage.json();
+  assert.equal(secondPageBody.data[0].contract_id, '25O00113');
+  const mismatchedCursor = await worker.fetch(
+    request(`/api/v1/contracts?sort=budget_desc&limit=1&cursor=${encodeURIComponent(firstPageBody.meta.next_cursor)}`),
+    environment(database),
+  );
+  assert.equal(mismatchedCursor.status, 400);
+
+  database.database.exec(`
+    INSERT INTO integrity_signal_items VALUES
+      ('25O00113:test', '25O00113', 2025, 'missing_coordinate', 'coverage_gap',
+       'Coordinate not available', 'Construction of San Andres Pumping Station',
+       'ACME BUILDERS', '12345', 37679270658, 'On-Going', '62.5',
+       'Manila 1st DEO', 'NCR', '', '', 'No usable coordinate.',
+       'Missing coordinates do not indicate a missing project.', '${'f'.repeat(64)}');
+    UPDATE delivery_project_details SET contractor_parties_json = '{}'
+      WHERE contract_id = '24NO0001';
+  `);
+  const signalled = await worker.fetch(
+    request('/api/v1/contracts?signal=with_signals&budget=100m_500m&sort=signals_desc'),
+    environment(database),
+  );
+  const signalledBody = await signalled.json();
+  assert.equal(signalledBody.meta.total, 1);
+  assert.deepEqual(signalledBody.data[0].signal_codes, ['missing_coordinate']);
+  const underBudget = await worker.fetch(
+    request('/api/v1/contracts?budget=under_10m&signal=without_signals'),
+    environment(database),
+  );
+  assert.equal((await underBudget.json()).meta.total, 2);
+  const sparse = await worker.fetch(
+    request('/api/v1/contracts?budget=500m_plus&sort=awards_desc'),
+    environment(database),
+  );
+  assert.equal((await sparse.json()).meta.total, 0);
+  const nonArrayParties = await worker.fetch(
+    request('/api/v1/contracts?q=24NO0001&sort=year_desc'),
+    environment(database),
+  );
+  assert.deepEqual((await nonArrayParties.json()).data[0].contractor_parties, []);
+});
+
+test('publishes the contract intelligence explorer and client', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const response = await siteWorker.fetch(request('/contracts/'), environment(database));
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /Contract intelligence explorer/);
+  assert.match(document, /56,887 archived DPWH contract records/);
+  assert.match(document, /Compare selected contracts/);
+  assert.match(document, /Download filtered CSV, up to 10,000 rows/);
+  assert.match(document, /\/assets\/contracts-v1\.js/);
+  assert.match(document, /Source patterns are review leads, not findings/);
 });
 
 test('bounds BetterGov source searches and scopes them to the record agency', async (context) => {

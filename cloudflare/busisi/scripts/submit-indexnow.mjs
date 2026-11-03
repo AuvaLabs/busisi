@@ -6,6 +6,7 @@ const keyLocation = `${origin}/${key}.txt`;
 const paths = [
   '/',
   '/sulit/',
+  '/contracts/',
   '/explore/',
   '/agencies/',
   '/changes/',

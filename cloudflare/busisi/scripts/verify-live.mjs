@@ -53,6 +53,13 @@ const expectedAcquisitionCoverage = Object.freeze({
   award_source_rows: 5_481_161,
   award_sha256: '9bfa9e7cbf5041dc3b51a4c2742e60a43d1615f119955581d4b155bf3a6d4a8b',
 });
+const expectedContractStates = Object.freeze({
+  conflict_review: 161,
+  multiple_exact_rows: 2_077,
+  no_exact_row: 9_655,
+  structured_exact: 38_110,
+  title_exact: 6_884,
+});
 const expectedReviewCounts = Object.freeze({
   decreased: 265,
   house_only: 6_954,
@@ -205,6 +212,13 @@ const verifyPages = async () => {
   expectIncludes(exploreText, 'Explore official budget records', 'explorer heading');
   expectIncludes(exploreText, 'Unreviewed candidates are not public findings', 'explorer warning');
 
+  const contracts = await request('/contracts/');
+  expectStatus(contracts, 200, '/contracts/');
+  const contractsText = await contracts.text();
+  expectIncludes(contractsText, 'Contract intelligence explorer', 'contract explorer heading');
+  expectIncludes(contractsText, '/assets/contracts-v1.js', 'contract explorer client');
+  expectIncludes(contractsText, 'Source patterns are review leads, not findings', 'contract explorer boundary');
+
   const signals = await request('/signals/');
   expectStatus(signals, 200, '/signals/');
   const signalsText = await signals.text();
@@ -262,7 +276,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -275,7 +289,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -283,7 +297,7 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v11.css',
+    '/assets/site-visual-v12.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-social-v1.png',
     '/assets/busisi-evidence-banner-v1.webp',
@@ -295,14 +309,14 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v11.css');
+  const css = await request('/assets/site-visual-v12.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
   for (const value of [
     'Source Sans 3', '--paper:#fff', '--ink:#111', '--accent:#111', '.home-ledger',
     '.explorer-shell', '.review-shell', '.integrity-shell', '.contractor-shell',
-    '.lifecycle-grid', '.lifecycle-item',
+    '.lifecycle-grid', '.lifecycle-item', '.contract-explorer', '.contract-card',
   ]) {
     expectIncludes(cssText, value, 'design CSS');
   }
@@ -470,6 +484,46 @@ const verifyData = async () => {
     || acquisitionCoverage.data.queue.quarantined !== 161) {
     fail('acquisition coverage: state or queue controls mismatch');
   }
+
+  const contractSummary = (await readJson('/api/v1/contract-intelligence-summary')).data;
+  if (contractSummary.total_contracts !== expectedCounts.delivery_records) {
+    fail(`contract intelligence: expected ${expectedCounts.delivery_records} contracts`);
+  }
+  for (const [state, expected] of Object.entries(expectedContractStates)) {
+    if (contractSummary.states[state] !== expected) {
+      fail(`contract intelligence: ${state} expected ${expected}, received ${contractSummary.states[state]}`);
+    }
+  }
+  if (contractSummary.facets.categories.length !== 76
+    || contractSummary.facets.regions.length !== 18
+    || contractSummary.facets.statuses.length !== 5) {
+    fail('contract intelligence: filter facet controls do not reconcile');
+  }
+  const exactContracts = await readJson('/api/v1/contracts?q=24CM0078&state=structured_exact&limit=1');
+  if (exactContracts.meta.total !== 1
+    || exactContracts.meta.review_scope !== 'contract_intelligence_evidence'
+    || exactContracts.data[0]?.contract_id !== '24CM0078'
+    || exactContracts.data[0]?.match_state !== 'structured_exact'
+    || exactContracts.data[0]?.reader_url !== '/contracts/24CM0078/') {
+    fail('contract intelligence: exact contract filter does not reconcile');
+  }
+  const conflictContracts = await readJson('/api/v1/contracts?q=24CJ0309&state=conflict_review&limit=1');
+  if (conflictContracts.meta.total !== 1
+    || conflictContracts.data[0]?.contract_id !== '24CJ0309'
+    || conflictContracts.data[0]?.quarantined_match_rows !== 3) {
+    fail('contract intelligence: conflict contract filter does not reconcile');
+  }
+  const contractCsv = await request('/api/v1/contracts.csv?q=24CJ0309&state=conflict_review');
+  expectStatus(contractCsv, 200, 'contract intelligence CSV');
+  expectContentType(contractCsv, 'text/csv', 'contract intelligence CSV');
+  if (contractCsv.headers.get('x-export-row-limit') !== '10000') {
+    fail('contract intelligence CSV: export limit is not explicit');
+  }
+  const contractCsvText = await contractCsv.text();
+  expectIncludes(contractCsvText, '"contract_id","match_state"', 'contract intelligence CSV');
+  expectIncludes(contractCsvText, '24CJ0309', 'contract intelligence CSV');
+  expectIncludes(contractCsvText, 'conflict_review', 'contract intelligence CSV');
+
   const exactContract = await readJson('/api/v1/contracts/24CM0078');
   if (exactContract.meta.review_scope !== 'contract_acquisition_evidence'
     || exactContract.data.acquisition.match_state !== 'structured_exact'

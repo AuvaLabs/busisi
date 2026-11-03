@@ -45,6 +45,13 @@ expose the local queue database or individual secondary rows. Current controls
 are 47,071 contracts with usable exact secondary rows, 9,655 with no exact row,
 161 quarantined identifier conflicts, and 83 conflicting source rows.
 
+The contract intelligence explorer at `/contracts/` makes that full publication
+universe searchable by fiscal year, place, category, delivery status, budget,
+contractor, acquisition state and deterministic review coverage. Readers can
+compare up to three records and export the same filtered evidence as CSV. Exact
+secondary rows remain labelled as discovery evidence, conflicts remain
+quarantined, and missing evidence is never presented as clearance.
+
 ## Production verification
 
 ```bash
@@ -57,7 +64,9 @@ security headers, exact dataset counts, artifact hashes, representative source
 queries, stage-change controls, deterministic review-queue counts, evidence CSV,
 reviewed and quarantined dossier boundaries, redirects and assets.
 It also checks the full-universe acquisition counts, queue controls and source
-SHA-256 published at `/api/v1/acquisition-coverage`.
+SHA-256 published at `/api/v1/acquisition-coverage`. Contract explorer checks
+cover the full state reconciliation, representative exact and conflict filters,
+CSV export and the interactive page assets.
 
 Deployment and D1 mutation require operator credentials. The scheduled GitHub
 monitor is credential-free and read-only.

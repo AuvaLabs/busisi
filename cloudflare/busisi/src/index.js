@@ -28,6 +28,12 @@ import { getCoaSummary, queryCoaReports } from './coa-query.js';
 import { getProcurementSummary, queryProcurementRecords } from './procurement-query.js';
 import { getAcquisitionCoverage } from './acquisition-coverage-query.js';
 import { getContractAcquisition } from './contract-acquisition-query.js';
+import {
+  exportContractIntelligenceCsv,
+  getContractIntelligenceSummary,
+  parseContractIntelligenceQuery,
+  queryContractIntelligence,
+} from './contract-intelligence-query.js';
 import { queryContractOutcomes } from './outcome-query.js';
 import {
   getContractEvidenceSummary,
@@ -164,6 +170,33 @@ const apiResponse = async (request, environment, url) => {
     return jsonResponse({
       meta: { review_scope: 'full_contract_universe_acquisition' },
       data: await getAcquisitionCoverage(environment.DB),
+    });
+  }
+  if (url.pathname === '/api/v1/contract-intelligence-summary') {
+    return jsonResponse({ data: await getContractIntelligenceSummary(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/contracts' || url.pathname === '/api/v1/contracts.csv') {
+    const query = parseContractIntelligenceQuery(url);
+    if (url.pathname.endsWith('.csv')) {
+      const document = await exportContractIntelligenceCsv(environment.DB, query);
+      return new Response(document, {
+        headers: {
+          'Content-Disposition': 'attachment; filename=busisi-contract-evidence.csv',
+          'Content-Type': 'text/csv; charset=utf-8',
+          'X-Export-Row-Limit': '10000',
+        },
+      });
+    }
+    const page = await queryContractIntelligence(environment.DB, query);
+    return jsonResponse({
+      meta: {
+        total: page.total,
+        count: page.records.length,
+        limit: query.limit,
+        next_cursor: page.nextCursor,
+        review_scope: 'contract_intelligence_evidence',
+      },
+      data: page.records,
     });
   }
   const contractMatch = url.pathname.match(/^\/api\/v1\/contracts\/([^/]+)$/);

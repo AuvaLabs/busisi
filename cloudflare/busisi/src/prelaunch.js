@@ -2,6 +2,7 @@ import {
   changesBody,
   agenciesBody,
   budgetCycleBody,
+  contractExplorerBody,
   document,
   exploreBody,
   favicon,
@@ -74,6 +75,18 @@ const EXPLORE_SCHEMA = Object.freeze({
   temporalCoverage: '2022/2026',
   spatialCoverage: 'Philippines',
   isAccessibleForFree: true,
+});
+
+const CONTRACTS_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi Philippine DPWH contract intelligence explorer',
+  url: `${SITE.origin}/contracts/`,
+  description: 'Search and compare 56,887 archived DPWH contracts by evidence state, contractor, location, budget, delivery status and deterministic review coverage.',
+  temporalCoverage: '2024/2026',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
 });
 
 const SIGNALS_SCHEMA = Object.freeze({
@@ -203,6 +216,14 @@ const explore = () => page(document({
   canonicalPath: '/explore/',
   body: exploreBody,
   schema: EXPLORE_SCHEMA,
+}));
+
+const contracts = () => page(document({
+  title: 'Philippine DPWH contract intelligence | Busisi',
+  description: 'Search and compare 56,887 DPWH contracts with acquisition states, contractor identities, review signals, provenance and explicit evidence gaps.',
+  canonicalPath: '/contracts/',
+  body: contractExplorerBody,
+  schema: CONTRACTS_SCHEMA,
 }));
 
 const signals = () => page(document({
@@ -385,6 +406,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/sulit/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/explore/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/contracts/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/changes/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/agencies/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/budget-trail/</loc><lastmod>2026-11-03</lastmod></url>
@@ -418,6 +440,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Overview: ${SITE.origin}/
 - Public value desk: ${SITE.origin}/sulit/
 - Explorer: ${SITE.origin}/explore/
+- Contract intelligence: ${SITE.origin}/contracts/
 - FY2027 change ledger: ${SITE.origin}/changes/
 - Appropriation heads: ${SITE.origin}/agencies/
 - FY2027 budget publication trail: ${SITE.origin}/budget-trail/
@@ -438,7 +461,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 `, { type: 'text/plain; charset=utf-8' });
 
 const assets = (path) => {
-  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css' || path === '/assets/site-visual-v8.css' || path === '/assets/site-visual-v9.css' || path === '/assets/site-visual-v10.css' || path === '/assets/site-visual-v11.css') {
+  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css' || path === '/assets/site-visual-v8.css' || path === '/assets/site-visual-v9.css' || path === '/assets/site-visual-v10.css' || path === '/assets/site-visual-v11.css' || path === '/assets/site-visual-v12.css') {
     return response(siteCss, { type: 'text/css; charset=utf-8', cache: 'public, max-age=604800, immutable' });
   }
   if (path === '/assets/favicon.svg') {
@@ -474,6 +497,7 @@ const route = (path) => {
   if (path === '/') return home();
   if (path === '/sulit' || path === '/sulit/') return sulit();
   if (path === '/explore' || path === '/explore/') return explore();
+  if (path === '/contracts' || path === '/contracts/') return contracts();
   if (path === '/changes' || path === '/changes/') return changes();
   if (path === '/agencies' || path === '/agencies/') return agencies();
   if (path === '/budget-trail' || path === '/budget-trail/') return budgetCycle();

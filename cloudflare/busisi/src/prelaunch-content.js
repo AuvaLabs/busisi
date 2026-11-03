@@ -10,6 +10,7 @@ import { siteCss as baseSiteCss } from './prelaunch-styles.js';
 import { typeCss } from './prelaunch-type-styles.js';
 import { editorialCss } from './prelaunch-editorial-styles.js';
 import { recordCss } from './prelaunch-record-styles.js';
+import { contractsCss } from './prelaunch-contracts-styles.js';
 import { methodDiagram } from './prelaunch-visuals.js';
 
 const icon = (name, className = 'section-icon') => (
@@ -19,10 +20,10 @@ const icon = (name, className = 'section-icon') => (
 const navigation = (canonicalPath) => {
   const groups = [
     { label: 'Budget', icon: 'budget', href: '/sulit/', paths: ['/sulit/', '/agencies/', '/changes/'] },
-    { label: 'Projects', icon: 'projects', href: '/explore/', paths: ['/explore/'] },
+    { label: 'Projects', icon: 'projects', href: '/contracts/', paths: ['/contracts/'] },
     { label: 'Investigate', icon: 'investigate', href: '/signals/', paths: ['/signals/', '/integrity/'] },
     { label: 'Sources', icon: 'sources', href: '/budget-trail/', paths: ['/budget-trail/', '/audit/', '/procurement/'] },
-    { label: 'Search', icon: 'search', href: '/explore/#record-search', paths: [] },
+    { label: 'Search', icon: 'search', href: '/contracts/#contract-search', paths: [] },
   ];
   const links = groups.map(({ label, icon: iconName, href, paths }) => (
     `<a data-nav-group="${label.toLowerCase()}" href="${href}"${paths.includes(canonicalPath) ? ' aria-current="page"' : ''}>${icon(iconName, 'nav-icon')}<span>${label}</span></a>`
@@ -35,7 +36,7 @@ const navigation = (canonicalPath) => {
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent civic data initiative for traceable Philippine public budget records.</p></div>
-  <nav class="footer-nav" aria-label="Footer navigation"><a href="/sulit/">Sulit Ba?</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Projects</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/methodology/">Method</a></nav>
+  <nav class="footer-nav" aria-label="Footer navigation"><a href="/sulit/">Sulit Ba?</a><a href="/contracts/">Contracts</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/methodology/">Method</a></nav>
   <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.</p>
 </div></footer>`;
 
@@ -61,11 +62,11 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${safeTitle}</title><meta name="description" content="${safeDescription}"><meta name="robots" content="${robots}">
-  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v11.css">
+  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v12.css">
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${safeTitle}"><meta property="og:description" content="${safeDescription}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow public money from proposal to project">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta name="twitter:image:alt" content="Busisi: Follow public money from proposal to project">
-  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js"></script>' : ''}
+  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js"></script>' : ''}${canonicalPath === '/contracts/' ? '<script type="module" src="/assets/contracts-v1.js"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js"></script>' : ''}
 </head><body>
   <a class="skip-link" href="#main-content">Skip to content</a><header class="site-header">${navigation(canonicalPath)}</header>
   <main id="main-content">${body}</main>${footer}
@@ -78,7 +79,7 @@ export const homeBody = `
       <p class="eyebrow">Philippine budget evidence · FY2027</p>
       <h1>Follow public money from proposal to project.</h1>
       <p class="lede">Start with official records. Compare what changed, inspect delivery evidence, and see exactly where the public trail ends.</p>
-      <form class="home-search" action="/explore/" method="get">
+      <form class="home-search" action="/contracts/" method="get">
         <label for="home-query">Search a project, place, agency, or contractor</label>
         <div><input id="home-query" name="q" type="search" maxlength="200" placeholder="DPWH, Cebu, flood control…"><button type="submit">Search records</button></div>
       </form>
@@ -113,7 +114,7 @@ export const homeBody = `
     <div class="preview-heading"><p class="kicker">Start with the public record</p><h2 id="register-preview-heading">Choose what you want to examine.</h2><p>Each desk keeps official records, derived comparisons, and unreviewed candidates visibly separate.</p></div>
     <div class="preview-panels">
       <a href="/explore/?view=budgets"><span class="panel-index" aria-hidden="true"><b>01</b>${icon('appropriations')}</span><div><h3>GAA appropriations</h3><p>Search 68,608 positive budget records across fiscal years 2024 to 2026.</p></div><small>Official source records</small></a>
-      <a href="/explore/?view=delivery"><span class="panel-index" aria-hidden="true"><b>02</b>${icon('delivery')}</span><div><h3>DPWH delivery records</h3><p>Inspect 56,887 contracts with recorded budgets, locations, and funding sources.</p></div><small>Official source records</small></a>
+      <a href="/contracts/"><span class="panel-index" aria-hidden="true"><b>02</b>${icon('delivery')}</span><div><h3>Contract intelligence</h3><p>Filter 56,887 contracts by evidence state, contractor, location, budget, and review signals.</p></div><small>Traceable contract evidence</small></a>
       <a href="/explore/?view=candidates"><span class="panel-index" aria-hidden="true"><b>03</b>${icon('candidate-links')}</span><div><h3>Candidate links</h3><p>Review 385 explainable machine matches without treating them as confirmed identity.</p></div><small>Human review required</small></a>
       <a href="/changes/"><span class="panel-index" aria-hidden="true"><b>04</b>${icon('compare')}</span><div><h3>FY2027 stage changes</h3><p>Compare 20,431 project rows between the NEP and the House bill with document-page evidence.</p></div><small>Provisional comparisons</small></a>
     </div>
@@ -168,6 +169,32 @@ export const exploreBody = `
     <noscript><p class="explorer-error">JavaScript is required for interactive filtering. The source APIs remain available as JSON.</p></noscript>
   </section>
   <section class="candidate-warning"><h2>Unreviewed candidates are not public findings.</h2><p>Candidate links are generated from year, description, amount, funding, and location signals. They may connect separate phases or unrelated records. Only records marked reviewed have passed the current human evidence check.</p></section>`;
+
+export const contractExplorerBody = `
+  <section class="contract-intro"><div><p class="kicker">Contract intelligence explorer</p><h1>Inspect the contract, then inspect the evidence.</h1><p class="lede">Search all 56,887 archived DPWH contract records. Filter the evidence state, contractor, place, budget, delivery status, and deterministic review coverage without turning a source pattern into an accusation.</p></div><aside><span>Evidence boundary</span><strong>FY 2024 to 2026</strong><p>Secondary award rows are discovery evidence. Conflicts remain quarantined. Payment and physical existence require separate official evidence.</p><a href="/methodology/">Read the method</a></aside></section>
+  <section class="contract-summary" data-contract-summary aria-label="Contract evidence summary"><article><span>All contracts</span><strong>56,887</strong><small>Full archived DPWH universe</small></article><article><span>Usable exact rows</span><strong>47,071</strong><small>Secondary evidence, not award notices</small></article><article><span>Identifier conflicts</span><strong>161</strong><small>Contracts held for review</small></article><article><span>No exact mirror row</span><strong>9,655</strong><small>Evidence gap, not clearance</small></article></section>
+  <section class="contract-priority" aria-labelledby="priority-heading"><div><p class="kicker">Start with a question</p><h2 id="priority-heading">Priority evidence views</h2></div><div class="contract-presets"><button type="button" data-contract-preset="conflict_review"><strong>Identifier conflicts</strong><span>Exact fields point to different contracts</span></button><button type="button" data-contract-preset="no_exact_row"><strong>No exact award row</strong><span>No usable row in the archived mirror</span></button><button type="button" data-contract-preset="multiple_exact_rows"><strong>Multiple exact rows</strong><span>More than one secondary record retained</span></button><button type="button" data-contract-preset="with_signals"><strong>Source-review signals</strong><span>Deterministic contradictions or gaps</span></button></div></section>
+  <section class="contract-explorer" data-contract-explorer>
+    <form id="contract-search" class="contract-controls" data-contract-form role="search">
+      <label class="contract-search-field">Search contracts<input type="search" name="q" maxlength="200" placeholder="Contract, project, place, or contractor"></label>
+      <label>Fiscal year<select name="year"><option value="">All years</option><option>2026</option><option>2025</option><option>2024</option></select></label>
+      <label>Evidence state<select name="state"><option value="all">All states</option><option value="structured_exact">Exact structured ID</option><option value="title_exact">Exact title ID</option><option value="multiple_exact_rows">Multiple exact rows</option><option value="conflict_review">Identifier conflict</option><option value="no_exact_row">No exact row</option><option value="invalid_identifier">Invalid identifier</option></select></label>
+      <label>Budget band<select name="budget"><option value="all">Any budget</option><option value="under_10m">Under ₱10M</option><option value="10m_50m">₱10M to ₱50M</option><option value="50m_100m">₱50M to ₱100M</option><option value="100m_500m">₱100M to ₱500M</option><option value="500m_plus">₱500M and above</option></select></label>
+      <label>Review signals<select name="signal"><option value="all">Any coverage</option><option value="with_signals">Has review signals</option><option value="without_signals">No published signals</option></select></label>
+      <label>Region<select name="region" data-contract-region><option value="">All regions</option></select></label>
+      <label>Category<select name="category" data-contract-category><option value="">All categories</option></select></label>
+      <label>Delivery status<select name="status" data-contract-status><option value="">All statuses</option></select></label>
+      <label>Contractor or awardee<input type="search" name="contractor" maxlength="200" placeholder="Recorded name"></label>
+      <label>Sort<select name="sort"><option value="budget_desc">Largest project budget</option><option value="signals_desc">Most review signals</option><option value="awards_desc">Most secondary award rows</option><option value="year_desc">Newest fiscal year</option><option value="contract_asc">Contract number</option></select></label>
+      <div class="contract-control-actions"><button type="submit">Apply filters</button><button type="button" class="secondary-control" data-contract-reset>Reset</button></div>
+    </form>
+    <div class="contract-toolbar" aria-live="polite"><p><strong data-contract-count>0</strong> of <span data-contract-total>0</span> contracts shown. <span data-contract-status-text>Loading verified contract evidence...</span></p><a data-contract-export href="/api/v1/contracts.csv">Download filtered CSV, up to 10,000 rows</a></div>
+    <section class="contract-compare" data-contract-compare hidden><header><div><p class="kicker">Side-by-side evidence</p><h2>Compare selected contracts</h2></div><button type="button" data-contract-clear>Clear comparison</button></header><div data-contract-comparison></div><p>Comparison reproduces source fields and evidence coverage. It does not rank wrongdoing, intent, quality, or public value.</p></section>
+    <div class="contract-result-list" data-contract-results></div>
+    <div class="contract-actions"><button type="button" data-contract-more hidden>Load more contracts</button></div>
+    <noscript><p class="explorer-error">JavaScript is required for interactive filtering. The read-only JSON and CSV interfaces remain available.</p></noscript>
+  </section>
+  <section class="contract-boundary"><div><p class="kicker">How to read this desk</p><h2>Source patterns are review leads, not findings.</h2></div><ul><li>An exact secondary mirror row is not an official notice of award.</li><li>A contractor name is reproduced from archived records and may require identity verification.</li><li>Quarantine means identifiers conflict and documentary review is required.</li><li>No exact row means an evidence gap, not proof that no award exists.</li><li>A delivery status, coordinate, or image field does not prove physical existence, completion, payment, or quality.</li></ul></section>`;
 
 export const signalsBody = `
   <section class="data-intro review-intro"><div><p class="kicker">Deterministic review desk</p><h1>Start with the records that moved.</h1><p class="lede">Rank FY2027 project changes, inspect geographic concentrations, trace repeated project-family candidates, and export the evidence for independent review.</p></div><aside class="snapshot-card"><span>Evidence boundary</span><strong>Questions, not verdicts</strong><p>Every result comes from a disclosed rule. No model assigns risk or intent.</p><a href="/methodology/">Read the method</a></aside></section>
@@ -291,6 +318,6 @@ export const methodologyBody = `
     <div class="section-heading"><p class="section-number">08 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#111" stroke-width="2.5" stroke-linejoin="round"><path fill="#d6d6d2" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#fff" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fff" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fff" stroke="#111" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fff" stroke="#111" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#111"/><path fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/></svg>`;
