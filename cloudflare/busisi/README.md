@@ -22,6 +22,13 @@ The COA bundle keeps report discovery, archived source copies, agency or program
 context, and reviewed project-observation matches as separate states. A missing
 match is never presented as audit clearance.
 
+The contract outcome endpoint derives read-only cross-checks from exact
+procurement evidence, three version-pinned secondary PhilGEPS mirror rows, and
+the DPWH delivery snapshot. Mirror awardees and amounts stay visibly secondary
+because the complete mirror file and original award pages are not archived. It
+does not infer inspection, payment, or audit results from a contractor name or
+status.
+
 ## Production verification
 
 ```bash

@@ -139,6 +139,14 @@ As of 2026-11-03:
 - Coordinate checks currently cover missing values, broad Philippine bounds,
   exact coordinate reuse and conflicting source location labels. They do not
   claim point-in-polygon validation against administrative boundaries.
+- The contract outcome pack compares the three exact procurement matches with
+  their DPWH delivery records. It checks amount consistency, completion-state
+  conflicts, event order, planned-versus-actual dates, inspection coverage and
+  project-specific payment coverage without inferring missing values.
+- Three contract rows extracted from a version-pinned BetterGov PhilGEPS mirror
+  add secondary awardee and award-amount comparisons. Each row has a canonical
+  SHA-256 and source revision. The complete mirror file and original PhilGEPS
+  award pages are not archived and are not represented as official evidence.
 - Source artifact hashes, row counts and monetary control totals reconcile
   exactly between the canonical SQLite store, the generated D1 bundle and the
   remote D1 database.
@@ -190,6 +198,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_agencies.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_public_value.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_coa.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_procurement.py
 cd cloudflare/busisi
 npm test
 npm run check

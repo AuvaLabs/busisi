@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-11-03T16:20:00+04:00",
+  "source": {
+    "title": "BetterGov.PH PhilGEPS award notices mirror",
+    "publisher": "BetterGov.PH",
+    "dataset_url": "https://huggingface.co/datasets/bettergovph/philgeps-data",
+    "file_url": "https://huggingface.co/datasets/bettergovph/philgeps-data/resolve/b98de579579e8c7e79bac2a22ac7491549db6d0d/philgeps.parquet",
+    "dataset_file": "philgeps.parquet",
+    "revision": "b98de579579e8c7e79bac2a22ac7491549db6d0d",
+    "last_modified": "2026-01-06T08:31:06+00:00",
+    "retrieved_at": "2026-11-03T16:20:00+04:00",
+    "license": "CC0-1.0",
+    "acquisition_status": "row_extract_source_file_unarchived",
+    "evidence_note": "Three exact contract rows were extracted from the version-pinned public Parquet file. The complete source file and original PhilGEPS award pages were not archived, so these rows are secondary mirror evidence rather than verified official award artifacts."
+  },
+  "records": [
+    {
+      "source_row_id": "2165894c-9bd5-415e-8384-f6e6c18064d1",
+      "contract_id": "25HI0028",
+      "fiscal_year": 2025,
+      "reference_id": "25HI0028",
+      "award_title": "25HI0028",
+      "notice_title": "25HI0028 - CSSP Basic Infrastructure Program (BIP) - Multi-Purpose Buildings/Facilities to Support Social Services - Construction (Completion) of Multi-Purpose Building, Barangay Corazon, Catmon, Ceb",
+      "awardee_name": "LA PRUEBA CONSTRUCTION",
+      "organization_name": "DEPARTMENT OF PUBLIC WORKS AND HIGHWAYS - CEBU 5TH DEO",
+      "area_of_delivery": "Cebu",
+      "business_category": "Construction Projects",
+      "contract_amount_centavos": 197899499,
+      "award_date": "2025-02-04",
+      "award_status": "active",
+      "row_sha256": "e15c898ab65f2becacc66119005ac7b0112fb5601f16acb62c739142aca3d41b"
+    },
+    {
+      "source_row_id": "87a2d048-f6ae-42e1-980d-77a65cfb2f45",
+      "contract_id": "24HI0148",
+      "fiscal_year": 2024,
+      "reference_id": "24HI0148",
+      "award_title": "24HI0148",
+      "notice_title": "24HI0148 - Construction of Multi-Purpose Building, Phase 1, Barangay Corazon, Catmon, Cebu",
+      "awardee_name": "LA PRUEBA CONSTRUCTION",
+      "organization_name": "DEPARTMENT OF PUBLIC WORKS AND HIGHWAYS - CEBU 5TH DEO",
+      "area_of_delivery": "Cebu",
+      "business_category": "Construction Projects",
+      "contract_amount_centavos": 494467510,
+      "award_date": "2024-09-02",
+      "award_status": "active",
+      "row_sha256": "5e5632f22d6f4a89823b4dcc6cc0d4099ba19059bdef140108753a7aa6a1df02"
+    },
+    {
+      "source_row_id": "52f6852f-a66a-4882-8b5a-8f6229862355",
+      "contract_id": "24HI0131",
+      "fiscal_year": 2024,
+      "reference_id": "24HI0131",
+      "award_title": "24HI0131",
+      "notice_title": "24HI0131 - Construction of Multi-Purpose Building, Phase 2, Barangay Corazon, Catmon, Cebu",
+      "awardee_name": "LA PRUEBA CONSTRUCTION",
+      "organization_name": "DEPARTMENT OF PUBLIC WORKS AND HIGHWAYS - CEBU 5TH DEO",
+      "area_of_delivery": "Cebu",
+      "business_category": "Construction Projects",
+      "contract_amount_centavos": 493416373,
+      "award_date": "2024-06-18",
+      "award_status": "active",
+      "row_sha256": "9d652878c6c91701b4376aab9d1206a9ac7c8ea4a9b0e317dc6ce06b09082054"
+    }
+  ]
+}

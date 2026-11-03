@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { parseChangeQuery } from '../src/change-query.js';
 import { coaDeskBody, coaReportBody } from '../src/coa-content.js';
 import { getProjectCoaEvidence } from '../src/coa-query.js';
+import { buildContractOutcome } from '../src/contract-outcome.js';
+import { queryContractOutcomes } from '../src/outcome-query.js';
 import { procurementDeskBody } from '../src/procurement-content.js';
 import { getProjectProcurementEvidence } from '../src/procurement-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
@@ -58,6 +60,12 @@ const coaMigrationPath = fileURLToPath(
 const procurementMigrationPath = fileURLToPath(
   new URL('../migrations/0013_procurement_evidence.sql', import.meta.url),
 );
+const awardMirrorMigrationPath = fileURLToPath(
+  new URL('../migrations/0014_contract_award_mirror.sql', import.meta.url),
+);
+const awardMirrorBundlePath = fileURLToPath(
+  new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
+);
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
 );
@@ -99,6 +107,8 @@ class LocalD1 {
     this.database.exec(readFileSync(deliveryDetailsMigrationPath, 'utf8'));
     this.database.exec(readFileSync(coaMigrationPath, 'utf8'));
     this.database.exec(readFileSync(procurementMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(awardMirrorMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -1092,6 +1102,197 @@ test('publishes exact procurement evidence and preserves missing coverage', asyn
   const missing = await getProjectProcurementEvidence(database, '26ZERO01');
   assert.equal(missing.coverage.status, 'not_located');
   assert.deepEqual(missing.records, []);
+});
+
+test('publishes contract outcome cross-checks without inventing award or payment evidence', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  database.database.exec(`
+    INSERT INTO projects VALUES
+      ('pump-reviewed', 'pump-reviewed', 'San Andres Pumping Station', 2025, 'Manila',
+       40000000000, 37679270658, 2320729342, '25O00113',
+       'Construction of San Andres Pumping Station', 'Manila 1st DEO', 'GAA 2025',
+       'high', 95, '["year_match"]', 'Reviewed identity link.',
+       '["https://budget.example/pump"]', 'family:pump',
+       'san andres pumping station', 'Reviewed link', 'reviewed', 1);
+    UPDATE delivery_project_details
+    SET progress = '100.0', status = 'On-Going'
+    WHERE contract_id = '25O00113';
+  `);
+
+  const response = await worker.fetch(
+    request('/api/v1/contract-outcomes'), environment(database),
+  );
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  const outcome = payload.data.find((item) => item.contract_id === '25O00113');
+  assert.ok(outcome);
+  assert.equal(outcome.amount_check.state, 'consistent');
+  assert.equal(outcome.awardee_evidence.state, 'gap');
+  assert.equal(outcome.payment_evidence.state, 'gap');
+  assert.ok(outcome.questions.some((item) => item.code === 'progress_status_conflict'));
+
+  const desk = await siteWorker.fetch(request('/procurement/'), environment(database));
+  const deskDocument = await desk.text();
+  assert.match(deskDocument, /Contract outcome cross-checks/);
+  assert.match(deskDocument, /Awardee not established by acquired procurement evidence/);
+  assert.match(deskDocument, /Questions, not findings/);
+
+  const dossier = await siteWorker.fetch(
+    request('/projects/pump-reviewed/'), environment(database),
+  );
+  const dossierDocument = await dossier.text();
+  assert.match(dossierDocument, /Contract outcome pack/);
+  assert.match(dossierDocument, /Delivery record contractor/);
+  assert.match(dossierDocument, /Payment evidence/);
+  assert.match(dossierDocument, /No project-specific payment record acquired/);
+});
+
+test('classifies contract amount, sequence, schedule and completion questions deterministically', () => {
+  const outcome = buildContractOutcome({
+    coverage: { case_id: 'case', contract_id: '24TEST', fiscal_year: 2024 },
+    procurementRecords: [{
+      project_title: 'Test project', procurement_status: 'Completed',
+      contract_cost_centavos: 9900,
+      events: [
+        { stage: 'advertisement', event_date: '2024-01-01', date_kind: 'planned' },
+        { stage: 'advertisement', event_date: '2024-01-03', date_kind: 'actual' },
+        { stage: 'contract_signing', event_date: '2024-02-02', date_kind: 'actual' },
+        { stage: 'notice_to_proceed', event_date: '2024-02-01', date_kind: 'actual' },
+      ],
+    }],
+    delivery: {
+      contract_id: '24TEST', fiscal_year: 2024, description: 'Test project',
+      budget_centavos: 10000, contractor_name: 'TEST BUILDER', status: 'On-Going',
+      progress: '100.00', start_date: '2024-01-31', completion_date: '',
+    },
+  });
+  assert.equal(outcome.amount_check.state, 'question');
+  assert.equal(outcome.amount_check.difference_centavos, 100);
+  assert.deepEqual(outcome.questions.map((item) => item.code), [
+    'contract_amount_mismatch',
+    'completion_status_conflict',
+    'progress_status_conflict',
+    'completion_without_inspection_evidence',
+    'notice_to_proceed_before_contract',
+    'implementation_before_notice_to_proceed',
+    'schedule_variance:advertisement',
+  ]);
+});
+
+test('keeps absent and available contract outcome evidence in separate states', () => {
+  const absent = buildContractOutcome({
+    coverage: null,
+    procurementRecords: null,
+    delivery: null,
+  });
+  assert.equal(absent.contract_id, null);
+  assert.equal(absent.amount_check.state, 'gap');
+  assert.equal(absent.award_evidence.state, 'gap');
+  assert.equal(absent.awardee_evidence.detail, 'No acquired award artifact names the awardee.');
+  assert.deepEqual(absent.questions, []);
+
+  const inspected = buildContractOutcome({
+    coverage: { case_id: 'case', contract_id: '25TEST', fiscal_year: 2025 },
+    procurementRecords: [{
+      project_title: 'Inspected project', procurement_status: 'Open',
+      contract_cost_centavos: null,
+      events: [
+        { stage: 'notice_of_award', event_date: '2025-01-01', date_kind: 'actual' },
+        { stage: 'contract_signing', event_date: '2025-01-02', date_kind: 'actual' },
+        { stage: 'notice_to_proceed', event_date: '2025-01-03', date_kind: 'actual' },
+        { stage: 'inspection_acceptance', event_date: '2025-03-03', date_kind: 'actual' },
+      ],
+    }],
+    delivery: {
+      contract_id: '25TEST', fiscal_year: 2025, budget_centavos: 100,
+      contractor_name: '', status: 'Completed', progress: '99',
+      start_date: '2025-01-03', completion_date: '2025-03-01',
+    },
+  });
+  assert.equal(inspected.title, 'Inspected project');
+  assert.equal(inspected.award_evidence.state, 'partial');
+  assert.equal(inspected.inspection_evidence.state, 'available');
+  assert.equal(inspected.amount_check.delivery_centavos, 100);
+  assert.deepEqual(inspected.questions, []);
+});
+
+test('uses a versioned award mirror as secondary evidence without overstating verification', () => {
+  const outcome = buildContractOutcome({
+    coverage: { case_id: 'case', contract_id: '25TEST', fiscal_year: 2025 },
+    procurementRecords: [],
+    delivery: {
+      contract_id: '25TEST', fiscal_year: 2025, description: 'Test project',
+      budget_centavos: 10000, contractor_name: 'TEST BUILDER (12345)', status: 'On-Going',
+      progress: '20', start_date: '2025-02-01', completion_date: '',
+    },
+    awardMirror: {
+      awardee_name: 'Test Builder', contract_amount_centavos: 10000,
+      source_row_id: 'row', source_revision: 'revision', row_sha256: 'hash',
+    },
+  });
+
+  assert.equal(outcome.amount_check.state, 'consistent');
+  assert.equal(outcome.amount_check.source_label, 'Secondary PhilGEPS mirror award amount');
+  assert.equal(outcome.award_evidence.state, 'secondary');
+  assert.equal(outcome.awardee_evidence.state, 'secondary');
+  assert.equal(outcome.awardee_check.state, 'consistent_secondary');
+  assert.deepEqual(outcome.questions, []);
+
+  const mismatch = buildContractOutcome({
+    coverage: { case_id: 'case', contract_id: '25TEST', fiscal_year: 2025 },
+    procurementRecords: [],
+    delivery: {
+      contract_id: '25TEST', fiscal_year: 2025, description: 'Test project',
+      budget_centavos: 10000, contractor_name: 'OTHER BUILDER', status: 'On-Going',
+      progress: '20', start_date: '', completion_date: '',
+    },
+    awardMirror: {
+      awardee_name: 'Test Builder', contract_amount_centavos: 9900,
+      source_row_id: 'row', source_revision: 'revision', row_sha256: 'hash',
+    },
+  });
+  assert.equal(mismatch.awardee_check.state, 'question');
+  assert.deepEqual(mismatch.questions.map((item) => item.code), [
+    'contract_amount_mismatch', 'awardee_contractor_name_mismatch',
+  ]);
+});
+
+test('fails closed when contract outcome event arrays are malformed', async () => {
+  const database = {
+    prepare: (query) => ({
+      all: async () => {
+        if (query.includes('FROM procurement_project_coverage\n')) {
+          return { results: [{
+            case_id: 'case', contract_id: '25TEST', fiscal_year: 2025,
+            status: 'exact_evidence', record_count: 2,
+          }] };
+        }
+        if (query.includes('SELECT r.*')) {
+          return { results: [{
+            evidence_id: 'one', contract_id: '25TEST', project_title: 'Test',
+            procurement_status: 'Awarded', contract_cost_centavos: null,
+            events_json: '{broken',
+          }, {
+            evidence_id: 'two', contract_id: '25TEST', project_title: 'Test',
+            procurement_status: 'Open', contract_cost_centavos: null,
+            events_json: '{}',
+          }] };
+        }
+        if (query.includes('contract_award_mirror_records')) return { results: [] };
+        return { results: [{
+          contract_id: '25TEST', fiscal_year: 2025, description: 'Test',
+          budget_centavos: 100, status: 'On-Going', progress: '20',
+          contractor_name: '', start_date: '', completion_date: '',
+        }] };
+      },
+    }),
+  };
+  const outcomes = await queryContractOutcomes(database);
+  const outcome = outcomes.find((item) => item.contract_id === '25TEST');
+  assert.ok(outcome);
+  assert.equal(outcome.award_evidence.state, 'partial');
+  assert.equal(outcome.inspection_evidence.state, 'gap');
 });
 
 test('fails closed for malformed procurement record arrays', async () => {

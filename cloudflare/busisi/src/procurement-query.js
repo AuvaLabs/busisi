@@ -1,3 +1,5 @@
+import { queryContractOutcomes } from './outcome-query.js';
+
 const resultRows = (result) => result.results || [];
 
 const safeArray = (value) => {
@@ -88,10 +90,11 @@ export const getProjectProcurementEvidence = async (database, contractId) => {
 };
 
 export const getProcurementDesk = async (database) => {
-  const [summary, sources, coverage] = await Promise.all([
+  const [summary, sources, coverage, outcomes] = await Promise.all([
     getProcurementSummary(database),
     queryProcurementSources(database),
     queryCoverage(database),
+    queryContractOutcomes(database),
   ]);
-  return { summary, sources, coverage };
+  return { summary, sources, coverage, outcomes };
 };

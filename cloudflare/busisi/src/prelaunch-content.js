@@ -61,7 +61,7 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${safeTitle}</title><meta name="description" content="${safeDescription}"><meta name="robots" content="${robots}">
-  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v8.css">
+  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v9.css">
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${safeTitle}"><meta property="og:description" content="${safeDescription}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow public money from proposal to project">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta name="twitter:image:alt" content="Busisi: Follow public money from proposal to project">
@@ -274,7 +274,7 @@ export const methodologyBody = `
 
   <section class="narrative-section" id="procurement" aria-labelledby="procurement-heading">
     <div class="section-heading"><p class="section-number">05 / Procurement</p><div><h2 id="procurement-heading">A contract ID must survive every source boundary.</h2><p class="section-intro">Busisi links procurement evidence only through an exact contract ID or solicitation number. APP dates remain planned, PMR dates remain agency-reported, and PhilGEPS notices retain their own scope.</p></div></div>
-    <div class="standards-grid"><article class="standard-panel"><h3>Amounts and events</h3><p>ABC, contract cost, and difference are stored as integer centavos. Event order is validated, and planned dates are never presented as actual dates.</p></article><article class="standard-panel"><h3>What procurement cannot prove</h3><p>A posting or PMR row does not establish release, payment, inspection quality, physical completion, public value, or COA clearance. Missing evidence does not mean procurement did not occur.</p></article></div>
+    <div class="standards-grid"><article class="standard-panel"><h3>Amounts and events</h3><p>ABC, contract cost, and difference are stored as integer centavos. Event order is validated, and planned dates are never presented as actual dates. Contract outcome checks compare procurement fields with the DPWH delivery snapshot without silently choosing one source over another.</p></article><article class="standard-panel"><h3>What procurement cannot prove</h3><p>A posting or PMR row does not establish release, payment, inspection quality, physical completion, public value, or COA clearance. A delivery-record contractor is not a verified awardee without an acquired award notice or signed contract. Missing evidence does not mean procurement did not occur.</p></article></div>
   </section>
 
   <section class="narrative-section" id="public-value" aria-labelledby="public-value-heading">

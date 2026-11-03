@@ -6,7 +6,12 @@ an FY2027 NEP-to-House project ledger, a national appropriation-head ledger,
 an FY2027 source-separated budget publication trail, and a small reviewed dossier set
 without using a language model. A separate COA evidence layer records which official
 audit catalogues were checked, whether source bytes were acquired, and whether a
-project-level observation was actually matched.
+project-level observation was actually matched. Contract outcome cross-checks
+compare exact procurement records with the DPWH delivery snapshot while keeping
+award, awardee, inspection and payment evidence states explicit. Three exact
+award rows from a version-pinned BetterGov PhilGEPS mirror add secondary
+awardee and amount context. The complete mirror file and original official
+award pages are not archived, so the rows are never labelled official proof.
 
 The public review desk ranks stage changes, groups monetary movement by region,
 office, program or dataset, identifies conservative cross-year project-family

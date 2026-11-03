@@ -37,6 +37,16 @@ their recorded SHA-256 checks. Senate committee, Senate amendment, bicameral,
 and enacted GAA stages remain explicitly unavailable rather than being inferred
 from the portal's fiscal-year label.
 
+The contract outcome pack cross-checks exact procurement evidence against the
+DPWH delivery snapshot. It compares contract amounts, procurement and delivery
+states, planned and actual events, implementation dates, inspection coverage
+and project-specific payment coverage. A discrepancy is a documentary-review
+question, not a finding. Contractor names from delivery records are not treated
+as independently verified awardees. Three version-pinned BetterGov PhilGEPS
+mirror rows support secondary awardee and amount cross-checks. Their source
+revision and row hashes are retained, while the complete source file and
+original official award pages remain explicitly unarchived.
+
 Project and change records also show congressional district context when the
 listed DPWH office can be matched exactly. A single-district office names that
 district and its representative as recorded in the dated roster snapshot. Shared offices show every served
@@ -64,8 +74,9 @@ or evidence that a representative requested or controls the project.
 3. Refresh the FY2027 publication catalogue and extend the comparison ledger
    when stable Senate, bicameral and final GAA artifacts can be acquired and
    reconciled.
-4. Add PhilGEPS contract-level awards and COA findings only after complete,
-   reproducible artifacts and their identifier limitations are modeled.
+4. Acquire PhilGEPS award notices, signed contracts, inspection records and COA
+   findings only when reproducible official artifacts can be retained and their
+   identifier limitations modeled.
 5. Register an authoritative, reusable administrative-boundary artifact before
    adding point-in-polygon coordinate validation. Until then, keep exact source
    coordinate checks visibly separate from geographic verification.

@@ -11,12 +11,13 @@
     "build:budget-cycle": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_senate.py",
     "build:coa": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_coa.py",
     "build:procurement": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_procurement.py",
-    "test": "npm run build:data && npm run build:budget-cycle && npm run build:coa && npm run build:procurement && node --disable-warning=ExperimentalWarning --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=95 --test-coverage-include='src/*.js' --test test/*.test.js",
+    "build:award-mirror": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_award_mirror.py",
+    "test": "npm run build:data && npm run build:budget-cycle && npm run build:coa && npm run build:procurement && npm run build:award-mirror && node --disable-warning=ExperimentalWarning --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=95 --test-coverage-include='src/*.js' --test test/*.test.js",
     "check": "npm test && wrangler deploy --dry-run --outdir ../../data/budget_watchdog/worker-dry-run",
     "deploy:publication": "wrangler deploy --config wrangler.jsonc",
     "submit:indexnow": "node scripts/submit-indexnow.mjs",
     "verify:live": "node scripts/verify-live.mjs",
-    "dev": "npm run build:data && npm run build:budget-cycle && npm run build:coa && npm run build:procurement && CI=1 wrangler d1 migrations apply busisi-publication --local && wrangler d1 execute busisi-publication --local --file=../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql && wrangler d1 execute busisi-publication --local --file=../../data/budget_watchdog/senate-d1-bundle/budget-cycle.sql && wrangler d1 execute busisi-publication --local --file=../../data/budget_watchdog/coa-d1-bundle/coa-audit-evidence.sql && wrangler d1 execute busisi-publication --local --file=../../data/budget_watchdog/procurement-d1-bundle/procurement-evidence.sql && wrangler dev",
+    "dev": "npm run build:data && npm run build:budget-cycle && npm run build:coa && npm run build:procurement && npm run build:award-mirror && CI=1 wrangler d1 migrations apply busisi-publication --local && wrangler d1 execute busisi-publication --local --file=../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql && wrangler d1 execute busisi-publication --local --file=../../data/budget_watchdog/senate-d1-bundle/budget-cycle.sql && wrangler d1 execute busisi-publication --local --file=../../data/budget_watchdog/coa-d1-bundle/coa-audit-evidence.sql && wrangler d1 execute busisi-publication --local --file=../../data/budget_watchdog/procurement-d1-bundle/procurement-evidence.sql && wrangler d1 execute busisi-publication --local --file=../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql && wrangler dev",
     "dev:publication": "wrangler dev --config wrangler.jsonc"
   },
   "devDependencies": {

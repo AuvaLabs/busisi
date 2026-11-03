@@ -238,6 +238,8 @@ const verifyPages = async () => {
   expectIncludes(procurementText, 'Procurement evidence desk', 'procurement desk heading');
   expectIncludes(procurementText, '3 of 6 reviewed dossiers', 'procurement desk coverage');
   expectIncludes(procurementText, 'Evidence gap, not a clean bill', 'procurement boundary');
+  expectIncludes(procurementText, 'Contract outcome cross-checks', 'contract outcome heading');
+  expectIncludes(procurementText, 'Questions, not findings', 'contract outcome boundary');
 
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
@@ -267,7 +269,7 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v8.css',
+    '/assets/site-visual-v9.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-social-v1.png',
     '/assets/busisi-evidence-banner-v1.webp',
@@ -279,7 +281,7 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v8.css');
+  const css = await request('/assets/site-visual-v9.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
@@ -430,6 +432,23 @@ const verifyData = async () => {
       acquisition_status === 'verified_archived'
     )).length !== 1) {
     fail('procurement records: count, scope or acquisition boundary mismatch');
+  }
+  const contractOutcomes = await readJson('/api/v1/contract-outcomes');
+  if (contractOutcomes.meta.total !== 3
+    || contractOutcomes.meta.review_scope !== 'deterministic_cross_source_contract_outcomes'
+    || !contractOutcomes.data.every(({
+      awardee_evidence: awardee, awardee_check: awardeeCheck, payment_evidence: payment,
+    }) => (
+      awardee.state === 'secondary'
+      && awardeeCheck.state === 'consistent_secondary'
+      && payment.state === 'gap'
+    ))) {
+    fail('contract outcomes: count, scope or secondary-evidence boundary mismatch');
+  }
+  const amountMismatch = contractOutcomes.data.find(({ contract_id: id }) => id === '24HI0131');
+  if (amountMismatch?.amount_check.difference_centavos !== 22979
+    || !amountMismatch.questions.some(({ code }) => code === 'completion_status_conflict')) {
+    fail('contract outcomes: 24HI0131 amount or completion cross-check mismatch');
   }
   if (cycleDocuments.data.filter(({ acquisition_status }) => (
     acquisition_status === 'verified_archived'
@@ -601,6 +620,9 @@ const verifyBoundaries = async () => {
     '2024-09-05', '2024-12-18', '10.7218472, 124.0110944',
     'Identifiers and archived source fingerprints', 'Reader evidence links',
     'Procurement timeline', 'Notice of award', 'Page 6', '₱5,324.90',
+    'Contract outcome pack', 'Payment evidence',
+    'Awardee reported by the PhilGEPS mirror', 'LA PRUEBA CONSTRUCTION',
+    'complete source file and official award page not archived',
   ]) expectIncludes(reviewedText, value, 'reviewed dossier detail');
   if (/api\.dpwh\.bettergov\.ph|budget\.bettergov\.ph\/api/.test(reviewedText)) {
     fail('reviewed dossier: raw API reader link is public');
