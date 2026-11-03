@@ -11,16 +11,20 @@ import { typeCss } from './prelaunch-type-styles.js';
 import { editorialCss } from './prelaunch-editorial-styles.js';
 import { methodDiagram } from './prelaunch-visuals.js';
 
+const icon = (name, className = 'section-icon') => (
+  `<svg class="${className}" aria-hidden="true" focusable="false"><use href="/assets/busisi-icons-v1.svg#${name}"></use></svg>`
+);
+
 const navigation = (canonicalPath) => {
   const groups = [
-    { label: 'Budget', href: '/sulit/', paths: ['/sulit/', '/agencies/', '/changes/'] },
-    { label: 'Projects', href: '/explore/', paths: ['/explore/'] },
-    { label: 'Investigate', href: '/signals/', paths: ['/signals/', '/integrity/'] },
-    { label: 'Sources', href: '/budget-trail/', paths: ['/budget-trail/'] },
-    { label: 'Search', href: '/explore/#record-search', paths: [] },
+    { label: 'Budget', icon: 'budget', href: '/sulit/', paths: ['/sulit/', '/agencies/', '/changes/'] },
+    { label: 'Projects', icon: 'projects', href: '/explore/', paths: ['/explore/'] },
+    { label: 'Investigate', icon: 'investigate', href: '/signals/', paths: ['/signals/', '/integrity/'] },
+    { label: 'Sources', icon: 'sources', href: '/budget-trail/', paths: ['/budget-trail/'] },
+    { label: 'Search', icon: 'search', href: '/explore/#record-search', paths: [] },
   ];
-  const links = groups.map(({ label, href, paths }) => (
-    `<a data-nav-group="${label.toLowerCase()}" href="${href}"${paths.includes(canonicalPath) ? ' aria-current="page"' : ''}>${label}</a>`
+  const links = groups.map(({ label, icon: iconName, href, paths }) => (
+    `<a data-nav-group="${label.toLowerCase()}" href="${href}"${paths.includes(canonicalPath) ? ' aria-current="page"' : ''}>${icon(iconName, 'nav-icon')}<span>${label}</span></a>`
   )).join('');
   return `<div class="header-inner">
     <a class="wordmark" href="/" aria-label="Busisi home"><img class="brand-mark" src="/assets/busisi-mark-v2.svg" width="44" height="44" alt=""><span>Busisi</span></a>
@@ -88,6 +92,8 @@ export const homeBody = `
     </aside>
   </section>
 
+  <div class="editorial-banner" aria-hidden="true"><img src="/assets/busisi-evidence-banner-v1.webp" width="1600" height="520" alt="" loading="lazy" decoding="async"></div>
+
   <section class="budget-stage-line" aria-labelledby="budget-stage-heading">
     <header><p class="kicker">FY2027 publication trail</p><h2 id="budget-stage-heading">What is available now</h2></header>
     <ol>
@@ -103,19 +109,19 @@ export const homeBody = `
   <section class="register-preview" aria-labelledby="register-preview-heading">
     <div class="preview-heading"><p class="kicker">Start with the public record</p><h2 id="register-preview-heading">Choose what you want to examine.</h2><p>Each desk keeps official records, derived comparisons, and unreviewed candidates visibly separate.</p></div>
     <div class="preview-panels">
-      <a href="/explore/?view=budgets"><span aria-hidden="true">01</span><div><h3>GAA appropriations</h3><p>Search 68,608 positive budget records across fiscal years 2024 to 2026.</p></div><small>Official source records</small></a>
-      <a href="/explore/?view=delivery"><span aria-hidden="true">02</span><div><h3>DPWH delivery records</h3><p>Inspect 56,887 contracts with recorded budgets, locations, and funding sources.</p></div><small>Official source records</small></a>
-      <a href="/explore/?view=candidates"><span aria-hidden="true">03</span><div><h3>Candidate links</h3><p>Review 385 explainable machine matches without treating them as confirmed identity.</p></div><small>Human review required</small></a>
-      <a href="/changes/"><span aria-hidden="true">04</span><div><h3>FY2027 stage changes</h3><p>Compare 20,431 project rows between the NEP and the House bill with document-page evidence.</p></div><small>Provisional comparisons</small></a>
+      <a href="/explore/?view=budgets"><span class="panel-index" aria-hidden="true"><b>01</b>${icon('appropriations')}</span><div><h3>GAA appropriations</h3><p>Search 68,608 positive budget records across fiscal years 2024 to 2026.</p></div><small>Official source records</small></a>
+      <a href="/explore/?view=delivery"><span class="panel-index" aria-hidden="true"><b>02</b>${icon('delivery')}</span><div><h3>DPWH delivery records</h3><p>Inspect 56,887 contracts with recorded budgets, locations, and funding sources.</p></div><small>Official source records</small></a>
+      <a href="/explore/?view=candidates"><span class="panel-index" aria-hidden="true"><b>03</b>${icon('candidate-links')}</span><div><h3>Candidate links</h3><p>Review 385 explainable machine matches without treating them as confirmed identity.</p></div><small>Human review required</small></a>
+      <a href="/changes/"><span class="panel-index" aria-hidden="true"><b>04</b>${icon('compare')}</span><div><h3>FY2027 stage changes</h3><p>Compare 20,431 project rows between the NEP and the House bill with document-page evidence.</p></div><small>Provisional comparisons</small></a>
     </div>
   </section>
 
   <section class="home-questions" aria-labelledby="home-questions-heading">
     <header><p class="kicker">Questions Busisi can answer</p><h2 id="home-questions-heading">Move from a headline to the evidence.</h2></header>
     <div>
-      <a href="/agencies/"><span>Budget</span><strong>Which agencies gained or lost funding in the House bill?</strong><b aria-hidden="true">→</b></a>
-      <a href="/integrity/"><span>Delivery</span><strong>Which project records contain contradictions or missing fields?</strong><b aria-hidden="true">→</b></a>
-      <a href="/integrity/#contractors"><span>Contractors</span><strong>Which contractors are associated with the most projects and budget?</strong><b aria-hidden="true">→</b></a>
+      <a href="/agencies/"><span>${icon('budget')}Budget</span><strong>Which agencies gained or lost funding in the House bill?</strong><b aria-hidden="true">→</b></a>
+      <a href="/integrity/"><span>${icon('investigate')}Delivery</span><strong>Which project records contain contradictions or missing fields?</strong><b aria-hidden="true">→</b></a>
+      <a href="/integrity/#contractors"><span>${icon('contractors')}Contractors</span><strong>Which contractors are associated with the most projects and budget?</strong><b aria-hidden="true">→</b></a>
     </div>
   </section>
 

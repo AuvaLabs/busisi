@@ -7,8 +7,9 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 .brand-mark{filter:grayscale(1) contrast(1.7);width:38px;height:38px}
 .wordmark{gap:10px;color:#111;letter-spacing:.08em}
 .primary-nav{gap:0}
-.primary-nav a{min-height:74px;padding:0 17px;color:#111;font-size:.78rem;letter-spacing:.035em;text-transform:none;border:0;border-bottom:3px solid transparent}
+.primary-nav a{min-height:74px;padding:0 17px;gap:7px;color:#111;font-size:.78rem;letter-spacing:.035em;text-transform:none;border:0;border-bottom:3px solid transparent}
 .primary-nav a:hover,.primary-nav a:focus-visible,.primary-nav a[aria-current]{color:#111;background:var(--soft);border-bottom-color:#111}
+.nav-icon{width:17px;height:17px;flex:0 0 auto}.section-icon{display:block;width:34px;height:34px;flex:0 0 auto}
 h1,.hero h1,.page-intro h1,.data-intro h1,.dossier-header h1,.not-found h1{font-size:var(--heading-lg);line-height:1.02;letter-spacing:-.035em}
 h2,.preview-heading h2,.signal-catalog h2,.candidate-warning h2,.dossier-grid h2,.dossier-sources h2{font-size:var(--heading-md);line-height:1.1;letter-spacing:-.025em}
 .kicker,.eyebrow,.section-number{color:#111;letter-spacing:.055em}
@@ -35,6 +36,8 @@ h2,.preview-heading h2,.signal-catalog h2,.candidate-warning h2,.dossier-grid h2
 .home-ledger dd{margin:0;font-size:1.35rem;font-weight:800;font-variant-numeric:tabular-nums}
 .home-ledger>a{display:flex;justify-content:space-between;gap:18px;padding:20px 22px;color:#fff;font-weight:800;text-decoration:none}
 .home-ledger>a:hover{background:#2b2b2b}
+.editorial-banner{height:clamp(260px,31vw,390px);margin:0 0 12px;overflow:hidden;border-bottom:1px solid #111;background:var(--soft)}
+.editorial-banner img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;filter:grayscale(1) contrast(1.03)}
 .budget-stage-line{padding:52px 0 62px;border-bottom:1px solid var(--line)}
 .budget-stage-line header{display:flex;justify-content:space-between;gap:32px;align-items:end;margin-bottom:28px}
 .budget-stage-line header p{margin:0}.budget-stage-line h2{font-size:1.65rem}
@@ -53,6 +56,7 @@ h2,.preview-heading h2,.signal-catalog h2,.candidate-warning h2,.dossier-grid h2
 .preview-panels{grid-template-columns:repeat(4,1fr);border-color:#111}
 .preview-panels>a{min-height:245px;padding:24px;color:#111}
 .preview-panels>a>span,.preview-panels article>span{display:block;width:auto;height:auto;border-radius:0;background:transparent;color:#111;font-size:.8rem;text-align:left}
+.preview-panels>a>.panel-index{display:flex;align-items:flex-start;justify-content:space-between}.panel-index b{font-size:.8rem;letter-spacing:.06em}.panel-index .section-icon{width:38px;height:38px}
 .preview-panels>a div,.preview-panels article div{margin:32px 0 auto}
 .preview-panels h3{margin:0 0 10px;font-size:1.2rem}
 .preview-panels small{color:#111;letter-spacing:.04em}
@@ -63,7 +67,7 @@ h2,.preview-heading h2,.signal-catalog h2,.candidate-warning h2,.dossier-grid h2
 .home-questions>div{border-top:1px solid #111}
 .home-questions a{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:22px;align-items:center;padding:24px 0;border-bottom:1px solid var(--line);color:#111;text-decoration:none}
 .home-questions a:hover{background:var(--soft)}
-.home-questions a span{font-size:.78rem;font-weight:800;text-transform:uppercase}.home-questions a strong{font-size:1.12rem}.home-questions a b{font-size:1.3rem}
+.home-questions a span{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:800;text-transform:uppercase}.home-questions a span .section-icon{width:20px;height:20px}.home-questions a strong{font-size:1.12rem}.home-questions a b{font-size:1.3rem}
 .home-boundary{display:grid;grid-template-columns:200px minmax(0,1fr) auto;gap:30px;align-items:start;padding:28px 0 68px;border-top:1px solid #111}
 .home-boundary strong{font-size:1.05rem}.home-boundary p{max-width:690px;margin:0;color:var(--muted)}.home-boundary a{color:#111;font-weight:800;white-space:nowrap}
 .data-intro,.page-intro{padding-top:72px;gap:56px}
@@ -101,6 +105,7 @@ h2,.preview-heading h2,.signal-catalog h2,.candidate-warning h2,.dossier-grid h2
 .site-footer{background:#fff;border-color:#111}.footer-nav{flex-wrap:wrap}.footer-nav a{text-transform:none;letter-spacing:0;color:#111}
 @media(max-width:980px){
   .editorial-hero{grid-template-columns:1fr;gap:44px;padding:62px 0}.editorial-hero .hero-copy{order:0}.home-ledger{order:1;max-width:680px}
+  .editorial-banner{height:300px}
   .preview-panels{grid-template-columns:1fr 1fr}.preview-panels>a:nth-child(3){border-left:0;border-top:1px solid var(--line)}.preview-panels>a:nth-child(4){border-top:1px solid var(--line)}
   .budget-stage-line ol{grid-template-columns:1fr 1fr}.budget-stage-line li:nth-child(odd){border-left:0}.budget-stage-line li:nth-child(n+3){border-top:1px solid var(--line)}
   .home-questions{grid-template-columns:1fr;gap:34px}
@@ -108,8 +113,9 @@ h2,.preview-heading h2,.signal-catalog h2,.candidate-warning h2,.dossier-grid h2
 @media(max-width:720px){
   html{scroll-padding-top:126px}.header-inner{min-height:0;padding:9px 0 0;gap:8px}.wordmark{min-height:45px}.brand-mark{width:34px;height:34px}
   .primary-nav{display:grid;grid-template-columns:repeat(5,1fr);width:100%;border-top:1px solid var(--line)}
-  .primary-nav a{min-height:48px;padding:0 2px;font-size:.7rem;letter-spacing:0;text-align:center;justify-content:center}
+  .primary-nav a{min-height:52px;padding:4px 2px;gap:2px;flex-direction:column;font-size:.67rem;letter-spacing:0;text-align:center;justify-content:center}.nav-icon{width:15px;height:15px}
   .editorial-hero{padding:48px 0 50px}.editorial-hero h1{font-size:clamp(2.55rem,12vw,3.2rem)}.editorial-hero .lede{font-size:1rem}
+  .editorial-banner{height:190px}
   .home-search>div{grid-template-columns:1fr}.home-search input{border-right:1px solid #111;border-bottom:0}.home-search button{width:100%}
   .home-ledger header{display:grid}.home-ledger dl div{grid-template-columns:1fr}.home-ledger dd{font-size:1.25rem}
   .budget-stage-line header{display:grid;gap:8px}.budget-stage-line ol{grid-template-columns:1fr}.budget-stage-line li+li{border-left:0;border-top:1px solid var(--line)}

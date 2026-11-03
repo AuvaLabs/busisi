@@ -230,6 +230,8 @@ const verifyDesign = async () => {
     '/assets/site-visual-v8.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-social-v1.png',
+    '/assets/busisi-evidence-banner-v1.webp',
+    '/assets/busisi-icons-v1.svg#appropriations',
     'class="home-ledger"',
     'Current FY2027 budget evidence',
   ]) expectIncludes(html, value, 'home design');
@@ -262,11 +264,27 @@ const verifyDesign = async () => {
   if (socialCardBytes.length > 250_000) fail('social card: exceeds the 250 KB performance budget');
   expectBytes(socialCardBytes.subarray(1, 4), 'PNG', 'social card');
 
+  const banner = await request('/assets/busisi-evidence-banner-v1.webp');
+  expectStatus(banner, 200, 'editorial banner');
+  expectContentType(banner, 'image/webp', 'editorial banner');
+  const bannerBytes = Buffer.from(await banner.arrayBuffer());
+  if (bannerBytes.length > 200_000) fail('editorial banner: exceeds the 200 KB performance budget');
+  expectBytes(bannerBytes.subarray(0, 4), 'RIFF', 'editorial banner');
+  expectBytes(bannerBytes.subarray(8, 12), 'WEBP', 'editorial banner');
+
+  const icons = await request('/assets/busisi-icons-v1.svg');
+  expectStatus(icons, 200, 'icon system');
+  expectContentType(icons, 'image/svg+xml', 'icon system');
+  const iconText = await icons.text();
+  if (iconText.length > 12_000 || /<script/i.test(iconText)) fail('icon system: unsafe or oversized SVG');
+
   const sourceSansBytes = await verifyFont('/assets/source-sans-3-latin.woff2');
 
   return {
     mark_bytes: Buffer.byteLength(markText),
     social_card_bytes: socialCardBytes.length,
+    banner_bytes: bannerBytes.length,
+    icon_bytes: Buffer.byteLength(iconText),
     font_bytes: sourceSansBytes,
   };
 };

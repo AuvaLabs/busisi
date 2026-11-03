@@ -48,6 +48,11 @@ test('home provides task-led navigation and a data-led editorial masthead', asyn
   assert.match(document, /56,887/);
   assert.match(document, /NEP published/);
   assert.match(document, /House partially acquired/);
+  assert.match(document, /src="\/assets\/busisi-evidence-banner-v1\.webp"/);
+  assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#appropriations"/);
+  assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#delivery"/);
+  assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#candidate-links"/);
+  assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#compare"/);
   assert.doesNotMatch(document, /busisi-masthead\.webp|Illustrative view/);
   assert.doesNotMatch(document, /class="utility-strip"/);
   assert.equal((document.match(/data-nav-group=/g) ?? []).length, 5);
@@ -306,6 +311,8 @@ test('serves the monochrome editorial system and safe method boundaries', async 
   assert.match(cssText, /\.integrity-shell/);
   assert.match(cssText, /\.contractor-shell/);
   assert.match(cssText, /\.home-ledger/);
+  assert.match(cssText, /\.editorial-banner/);
+  assert.match(cssText, /\.section-icon/);
   assert.match(cssText, /\.budget-stage-line/);
   assert.match(cssText, /\.primary-nav/);
   assert.match(cssText, /\.preview-panels>a>span[^}]*border-radius:0/);
@@ -350,6 +357,31 @@ test('passes the editorial social card through the static asset binding', async 
   assert.equal(asset.status, 200);
   assert.equal(asset.headers.get('content-type'), 'image/png');
   assert.equal(await asset.text(), '/assets/busisi-social-v1.png');
+});
+
+test('passes the editorial banner and icon system through the static asset binding', async () => {
+  const env = {
+    ASSETS: {
+      fetch: async (request) => {
+        const path = new URL(request.url).pathname;
+        const type = path.endsWith('.svg') ? 'image/svg+xml' : 'image/webp';
+        return new Response(path, { headers: { 'content-type': type } });
+      },
+    },
+  };
+  const banner = await worker.fetch(
+    new Request('https://busisi.org/assets/busisi-evidence-banner-v1.webp'),
+    env,
+  );
+  const icons = await worker.fetch(
+    new Request('https://busisi.org/assets/busisi-icons-v1.svg'),
+    env,
+  );
+
+  assert.equal(banner.status, 200);
+  assert.equal(banner.headers.get('content-type'), 'image/webp');
+  assert.equal(icons.status, 200);
+  assert.equal(icons.headers.get('content-type'), 'image/svg+xml');
 });
 
 test('reader actions use human-readable evidence instead of raw JSON endpoints', () => {
