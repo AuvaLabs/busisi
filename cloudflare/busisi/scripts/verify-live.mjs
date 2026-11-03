@@ -184,13 +184,13 @@ const verifyPages = async () => {
   expectIncludes(integrityText, 'Inspect contradictions in delivery records', 'integrity heading');
   expectIncludes(integrityText, '/assets/integrity-v1.js', 'integrity client');
   expectIncludes(integrityText, 'Contractors with the most projects', 'contractor ranking');
-  expectIncludes(integrityText, 'Not a corruption score', 'integrity limitation');
+  expectIncludes(integrityText, 'What this desk flags', 'integrity limitation');
 
   const changes = await request('/changes/');
   expectStatus(changes, 200, '/changes/');
   const changesText = await changes.text();
   expectIncludes(changesText, 'Trace what changed between the NEP and House bill', 'changes heading');
-  expectIncludes(changesText, 'Not a corruption finding', 'changes warning');
+  expectIncludes(changesText, 'How to read a change', 'changes warning');
 
   const budgetTrail = await request('/budget-trail/');
   expectStatus(budgetTrail, 200, '/budget-trail/');
@@ -227,19 +227,22 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v7.css',
+    '/assets/site-visual-v8.css',
     '/assets/busisi-mark-v2.svg',
-    '/assets/busisi-masthead.webp',
-    'Illustrative view · not a project record',
+    '/assets/busisi-social-v1.png',
+    'class="home-ledger"',
+    'Current FY2027 budget evidence',
   ]) expectIncludes(html, value, 'home design');
-  if (/busisi-mark\.webp|auva\s*labs?/i.test(html)) fail('home design: retired branding is public');
+  if (/busisi-mark\.webp|busisi-masthead\.webp|auva\s*labs?/i.test(html)) {
+    fail('home design: retired branding or illustration is public');
+  }
 
-  const css = await request('/assets/site-visual-v7.css');
+  const css = await request('/assets/site-visual-v8.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
   for (const value of [
-    'Source Sans 3', '--paper:#fff', '--text-xs:.8125rem', '.hero-art-note',
+    'Source Sans 3', '--paper:#fff', '--ink:#111', '--accent:#111', '.home-ledger',
     '.explorer-shell', '.review-shell', '.integrity-shell', '.contractor-shell',
   ]) {
     expectIncludes(cssText, value, 'design CSS');
@@ -252,19 +255,18 @@ const verifyDesign = async () => {
   const markText = await mark.text();
   if (markText.length > 4_096 || /<script/i.test(markText)) fail('brand mark: unsafe or oversized SVG');
 
-  const masthead = await request('/assets/busisi-masthead.webp');
-  expectStatus(masthead, 200, 'masthead');
-  expectContentType(masthead, 'image/webp', 'masthead');
-  const mastheadBytes = Buffer.from(await masthead.arrayBuffer());
-  if (mastheadBytes.length > 100_000) fail('masthead: exceeds the 100 KB performance budget');
-  expectBytes(mastheadBytes.subarray(0, 4), 'RIFF', 'masthead');
-  expectBytes(mastheadBytes.subarray(8, 12), 'WEBP', 'masthead');
+  const socialCard = await request('/assets/busisi-social-v1.png');
+  expectStatus(socialCard, 200, 'social card');
+  expectContentType(socialCard, 'image/png', 'social card');
+  const socialCardBytes = Buffer.from(await socialCard.arrayBuffer());
+  if (socialCardBytes.length > 250_000) fail('social card: exceeds the 250 KB performance budget');
+  expectBytes(socialCardBytes.subarray(1, 4), 'PNG', 'social card');
 
   const sourceSansBytes = await verifyFont('/assets/source-sans-3-latin.woff2');
 
   return {
     mark_bytes: Buffer.byteLength(markText),
-    masthead_bytes: mastheadBytes.length,
+    social_card_bytes: socialCardBytes.length,
     font_bytes: sourceSansBytes,
   };
 };

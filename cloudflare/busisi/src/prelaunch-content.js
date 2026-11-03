@@ -8,27 +8,25 @@ import { integrityCss } from './prelaunch-integrity-styles.js';
 import { reviewCss } from './prelaunch-review-styles.js';
 import { siteCss as baseSiteCss } from './prelaunch-styles.js';
 import { typeCss } from './prelaunch-type-styles.js';
-import {
-  evidenceOrbit,
-  gateVisual,
-  illustrativeSequence,
-  methodDiagram,
-  signalAnatomy,
-} from './prelaunch-visuals.js';
+import { editorialCss } from './prelaunch-editorial-styles.js';
+import { methodDiagram } from './prelaunch-visuals.js';
 
 const navigation = (canonicalPath) => {
-  const methodology = canonicalPath === '/methodology/';
-  const links = `<a href="/sulit/"${canonicalPath === '/sulit/' ? ' aria-current="page"' : ''}>Sulit Ba?</a><a href="/agencies/"${canonicalPath === '/agencies/' ? ' aria-current="page"' : ''}>Agencies</a><a href="/changes/"${canonicalPath === '/changes/' ? ' aria-current="page"' : ''}>Projects</a><a href="/budget-trail/"${canonicalPath === '/budget-trail/' ? ' aria-current="page"' : ''}>Budget trail</a><a href="/signals/"${canonicalPath === '/signals/' ? ' aria-current="page"' : ''}>Red flags</a><a href="/integrity/"${canonicalPath === '/integrity/' ? ' aria-current="page"' : ''}>Integrity</a>`;
+  const groups = [
+    { label: 'Budget', href: '/sulit/', paths: ['/sulit/', '/agencies/', '/changes/'] },
+    { label: 'Projects', href: '/explore/', paths: ['/explore/'] },
+    { label: 'Investigate', href: '/signals/', paths: ['/signals/', '/integrity/'] },
+    { label: 'Sources', href: '/budget-trail/', paths: ['/budget-trail/'] },
+    { label: 'Search', href: '/explore/#record-search', paths: [] },
+  ];
+  const links = groups.map(({ label, href, paths }) => (
+    `<a data-nav-group="${label.toLowerCase()}" href="${href}"${paths.includes(canonicalPath) ? ' aria-current="page"' : ''}>${label}</a>`
+  )).join('');
   return `<div class="header-inner">
     <a class="wordmark" href="/" aria-label="Busisi home"><img class="brand-mark" src="/assets/busisi-mark-v2.svg" width="44" height="44" alt=""><span>Busisi</span></a>
-    <nav class="primary-nav" aria-label="Primary navigation">${links}<a class="method-link" href="/methodology/"${methodology ? ' aria-current="page"' : ''}>Methodology</a></nav>
+    <nav class="primary-nav" aria-label="Primary navigation">${links}</nav>
   </div>`;
 };
-
-const utilityStrip = `<div class="utility-strip"><div class="utility-inner">
-  <span>Independent Philippine budget evidence project</span>
-  <a href="/sulit/"><i aria-hidden="true"></i>FY2027 public value desk: Sulit ba?</a>
-</div></div>`;
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent civic data initiative for traceable Philippine public budget records.</p></div>
@@ -56,38 +54,54 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${title}</title><meta name="description" content="${description}"><meta name="robots" content="${robots}">
-  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="/assets/busisi-masthead.webp" as="image" type="image/webp" fetchpriority="high"><link rel="stylesheet" href="/assets/site-visual-v7.css">
+  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v8.css">
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}"><meta property="og:url" content="${canonical}">
-  <meta property="og:image" content="${SITE.origin}/assets/busisi-masthead.webp"><meta property="og:image:width" content="1600"><meta property="og:image:height" content="666">
-  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${description}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-masthead.webp">
+  <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow public money from proposal to project">
+  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${description}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta name="twitter:image:alt" content="Busisi: Follow public money from proposal to project">
   <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js"></script>' : ''}
 </head><body>
-  <a class="skip-link" href="#main-content">Skip to content</a>${utilityStrip}<header class="site-header">${navigation(canonicalPath)}</header>
+  <a class="skip-link" href="#main-content">Skip to content</a><header class="site-header">${navigation(canonicalPath)}</header>
   <main id="main-content">${body}</main>${footer}
 </body></html>`;
 };
 
-const principles = `
-  <div class="principles">
-    <article class="principle"><span class="principle-icon" aria-hidden="true">⌁</span><h3>Source before claim</h3><p>Every record retains its official origin, retrieval context, and archived fingerprint.</p></article>
-    <article class="principle"><span class="principle-icon" aria-hidden="true">≡</span><h3>Uncertainty stays visible</h3><p>Candidate links remain candidates. Confidence and conflicting evidence are never hidden.</p></article>
-    <article class="principle"><span class="principle-icon" aria-hidden="true">✓</span><h3>Review before release</h3><p>Weak matches and failed controls stay quarantined instead of becoming public assertions.</p></article>
-  </div>`;
-
 export const homeBody = `
-  <section class="hero">
-    <img class="hero-art" src="/assets/busisi-masthead.webp" width="1600" height="666" alt="Illustration of public records linked to roads, schools, health services, and water infrastructure across the Philippines" fetchpriority="high" decoding="async">
-    <p class="hero-art-note">Illustrative view · not a project record</p>
+  <section class="hero editorial-hero">
     <div class="hero-copy">
-      <div class="eyebrow"><span></span> FY2027 public value desk</div>
-      <h1>₱7.2 trillion. What should it deliver?</h1>
-      <p class="lede">Test the national budget against need, value, affordability, readiness, and delivery. Then inspect the official records behind each answer.</p>
-      <div class="actions"><a class="primary" href="/sulit/">Ask: Sulit ba?</a><a class="secondary" href="/explore/">Explore source records</a></div>
+      <p class="eyebrow">Philippine budget evidence · FY2027</p>
+      <h1>Follow public money from proposal to project.</h1>
+      <p class="lede">Start with official records. Compare what changed, inspect delivery evidence, and see exactly where the public trail ends.</p>
+      <form class="home-search" action="/explore/" method="get">
+        <label for="home-query">Search a project, place, agency, or contractor</label>
+        <div><input id="home-query" name="q" type="search" maxlength="200" placeholder="DPWH, Cebu, flood control…"><button type="submit">Search records</button></div>
+      </form>
     </div>
+    <aside class="home-ledger" aria-label="Current FY2027 budget evidence">
+      <header><span>Current evidence</span><time datetime="2026-11-03">Updated 3 Nov 2026</time></header>
+      <dl>
+        <div><dt>Proposed expenditure program</dt><dd>₱7.200T</dd></div>
+        <div><dt>Project rows compared</dt><dd>20,431</dd></div>
+        <div><dt>DPWH delivery records</dt><dd>56,887</dd></div>
+        <div><dt>Integrity review signals</dt><dd>16,814</dd></div>
+      </dl>
+      <a href="/sulit/">Read the national budget overview <span aria-hidden="true">→</span></a>
+    </aside>
+  </section>
+
+  <section class="budget-stage-line" aria-labelledby="budget-stage-heading">
+    <header><p class="kicker">FY2027 publication trail</p><h2 id="budget-stage-heading">What is available now</h2></header>
+    <ol>
+      <li class="complete"><span>01</span><strong>NEP published</strong><small>Executive proposal</small></li>
+      <li class="partial"><span>02</span><strong>House partially acquired</strong><small>Four bill volumes listed</small></li>
+      <li><span>03</span><strong>Senate pending</strong><small>No comparable stage acquired</small></li>
+      <li><span>04</span><strong>Bicam pending</strong><small>No report acquired</small></li>
+      <li><span>05</span><strong>GAA pending</strong><small>No enacted FY2027 law acquired</small></li>
+    </ol>
+    <a href="/budget-trail/">Open the document trail <span aria-hidden="true">→</span></a>
   </section>
 
   <section class="register-preview" aria-labelledby="register-preview-heading">
-    <div class="preview-heading"><p class="kicker">Explore the source record</p><h2 id="register-preview-heading">Four ways to inspect public money.</h2><p>Official records are published as source records. Cross-source relationships stay labelled as candidates until they pass human review.</p></div>
+    <div class="preview-heading"><p class="kicker">Start with the public record</p><h2 id="register-preview-heading">Choose what you want to examine.</h2><p>Each desk keeps official records, derived comparisons, and unreviewed candidates visibly separate.</p></div>
     <div class="preview-panels">
       <a href="/explore/?view=budgets"><span aria-hidden="true">01</span><div><h3>GAA appropriations</h3><p>Search 68,608 positive budget records across fiscal years 2024 to 2026.</p></div><small>Official source records</small></a>
       <a href="/explore/?view=delivery"><span aria-hidden="true">02</span><div><h3>DPWH delivery records</h3><p>Inspect 56,887 contracts with recorded budgets, locations, and funding sources.</p></div><small>Official source records</small></a>
@@ -96,25 +110,16 @@ export const homeBody = `
     </div>
   </section>
 
-  <nav class="page-map" aria-label="Project sections"><a href="/#mission"><span>01</span>Mission<b>→</b></a><a href="/#system"><span>02</span>Evidence system<b>→</b></a><a href="/#gate"><span>03</span>Release gate<b>→</b></a></nav>
-
-  <section class="narrative-section" id="mission" aria-labelledby="mission-heading">
-    <div class="section-heading"><p class="section-number">01 / Mission</p><div><h2 id="mission-heading">A record trail, not a verdict.</h2><p class="section-intro">Public budget information is spread across documents, years, agencies, and inconsistent names. Busisi makes the path between those records inspectable without turning a pattern into an accusation.</p></div></div>
-    <div class="mission-visuals">${evidenceOrbit}${principles}</div>
+  <section class="home-questions" aria-labelledby="home-questions-heading">
+    <header><p class="kicker">Questions Busisi can answer</p><h2 id="home-questions-heading">Move from a headline to the evidence.</h2></header>
+    <div>
+      <a href="/agencies/"><span>Budget</span><strong>Which agencies gained or lost funding in the House bill?</strong><b aria-hidden="true">→</b></a>
+      <a href="/integrity/"><span>Delivery</span><strong>Which project records contain contradictions or missing fields?</strong><b aria-hidden="true">→</b></a>
+      <a href="/integrity/#contractors"><span>Contractors</span><strong>Which contractors are associated with the most projects and budget?</strong><b aria-hidden="true">→</b></a>
+    </div>
   </section>
 
-  <section class="narrative-section" id="system" aria-labelledby="system-heading">
-    <div class="section-heading"><p class="section-number">02 / System</p><div><h2 id="system-heading">One project can leave many records.</h2><p class="section-intro">The system follows evidence across stages while keeping the original language and source beside every normalized field.</p></div></div>
-    <div class="system-panel">${illustrativeSequence}</div>
-  </section>
-
-  <section class="signal-band" aria-labelledby="signal-heading">
-    <div class="signal-layout"><div><p class="section-number">Review signals</p><h2 id="signal-heading">Not a ranking. Not an accusation.</h2><p>A signal is a documented reason to inspect a record more closely. Its calculation, inputs, confidence, and limitations must travel with it.</p></div>${signalAnatomy}</div>
-  </section>
-
-  <section class="narrative-section" id="gate" aria-labelledby="gate-heading">
-    <div class="gate-layout"><div class="gate-copy"><p class="kicker">03 / Release gate</p><h2 id="gate-heading">Evidence before inference.</h2><p>Official source records can be inspected now. The gate controls when Busisi may present an inferred relationship as a reviewed project link.</p><a class="text-link" href="/methodology/#release-standard">Read the release standard&nbsp; →</a></div>${gateVisual}</div>
-  </section>`;
+  <section class="home-boundary"><strong>Where the evidence stops</strong><p>Budget authority, release, procurement, payment, completion, and public benefit are different stages. Busisi publishes only the stages supported by acquired records.</p><a href="/methodology/">Read the evidence rules <span aria-hidden="true">→</span></a></section>`;
 
 const publicValueTests = `
   <article class="value-test"><span>01 · Purpose</span><h3>Need and plan alignment</h3><p>Does the allocation answer a measured public need and an adopted national or regional plan?</p><small class="mixed">Mixed evidence available</small></article>
@@ -145,7 +150,7 @@ export const exploreBody = `
   <section class="explorer-shell" data-explorer>
     <div class="explorer-tabs" role="tablist" aria-label="Choose a public record collection"><button type="button" role="tab" data-explorer-view="budgets">GAA appropriations</button><button type="button" role="tab" data-explorer-view="delivery">DPWH delivery records</button><button type="button" role="tab" data-explorer-view="candidates">Candidate links</button><button type="button" role="tab" data-explorer-view="reviewed">Reviewed dossiers</button></div>
     <div class="explorer-notice" data-explorer-notice><strong>Source records are not findings.</strong><span data-explorer-description>Amounts reproduce the archived official snapshot and should be read with its date and limitations.</span></div>
-    <form class="explorer-controls" data-explorer-form role="search"><label>Search records<input type="search" name="q" maxlength="200" placeholder="Project, place, contract, or description"></label><label>Fiscal year<select name="year"><option value="">All years</option><option>2026</option><option>2025</option><option>2024</option><option>2023</option><option>2022</option></select></label><label>Sort<select name="sort" data-explorer-sort></select></label><button type="submit">Apply</button><button type="button" class="secondary-control" data-explorer-reset>Reset</button></form>
+    <form id="record-search" class="explorer-controls" data-explorer-form role="search"><label>Search records<input type="search" name="q" maxlength="200" placeholder="Project, place, contract, or description"></label><label>Fiscal year<select name="year"><option value="">All years</option><option>2026</option><option>2025</option><option>2024</option><option>2023</option><option>2022</option></select></label><label>Sort<select name="sort" data-explorer-sort></select></label><button type="submit">Apply</button><button type="button" class="secondary-control" data-explorer-reset>Reset</button></form>
     <div class="result-summary" aria-live="polite"><p><strong data-explorer-count>0</strong> of <span data-explorer-total>0</span> records shown</p><p data-explorer-status>Loading the public snapshot…</p></div>
     <div class="record-list" data-explorer-results></div>
     <div class="explorer-actions"><button type="button" data-explorer-more hidden>Load more</button></div>
@@ -155,7 +160,7 @@ export const exploreBody = `
 
 export const signalsBody = `
   <section class="data-intro review-intro"><div><p class="kicker">Deterministic review desk</p><h1>Start with the records that moved.</h1><p class="lede">Rank FY2027 project changes, inspect geographic concentrations, trace repeated project-family candidates, and export the evidence for independent review.</p></div><aside class="snapshot-card"><span>Evidence boundary</span><strong>Questions, not verdicts</strong><p>Every result comes from a disclosed rule. No model assigns risk or intent.</p><a href="/methodology/">Read the method</a></aside></section>
-  <section class="review-warning"><strong>Not a corruption score.</strong><p>Rankings identify records that meet a deterministic review rule. Similar wording, a large increase, or a House-only row does not establish duplication, authorship, illegality, or wrongdoing.</p></section>
+  <section class="review-warning"><strong>How to read a review signal.</strong><p>A ranking shows which records meet a disclosed review rule. Verify the source documents and project context before drawing a conclusion about duplication, authorship, legality, or conduct.</p></section>
   <section class="review-summary" data-review-summary aria-label="FY2027 change summary"><p>Loading reconciled totals…</p></section>
   <section class="review-shell" data-review-desk>
     <form class="review-controls" data-review-form><label>Review rule<select name="signal"><option value="house_only">Largest House-only rows</option><option value="increased">Largest increases</option><option value="decreased">Largest decreases</option><option value="nep_only">Largest NEP-only rows</option><option value="repeat_family">Prior-year family candidates</option><option value="similar_family">Similar FY2027 family candidates</option></select></label><label>Program<select name="dataset"><option value="all">All four</option><option value="dpwh">DPWH</option><option value="fmr">Farm-to-market roads</option><option value="hfep">Health facilities</option><option value="nia">Irrigation</option></select></label><label>Group by<select name="dimension"><option value="region">Region</option><option value="office">Office</option><option value="program">Program</option><option value="dataset">Dataset</option></select></label><button type="submit">Apply rule</button></form>
@@ -168,7 +173,7 @@ export const signalsBody = `
 
 export const integrityBody = `
   <section class="data-intro integrity-intro"><div><p class="kicker">Project integrity desk</p><h1>Inspect contradictions in delivery records.</h1><p class="lede">Filter deterministic review signals from the archived DPWH project snapshot, inspect the source evidence, and compare contractor activity without turning a data inconsistency into an accusation.</p></div><aside class="snapshot-card"><span>Snapshot boundary</span><strong>FY 2024 to 2026</strong><p>56,887 DPWH records<br>Source modified 22 Jan 2026</p><a href="/methodology/#source-policy">Read the source policy</a></aside></section>
-  <section class="integrity-warning"><strong>Not a corruption score.</strong><p>Each signal describes a specific source contradiction, missing field, or identity question. It does not establish fraud, a ghost project, poor workmanship, collusion, or unlawful conduct.</p></section>
+  <section class="integrity-warning"><strong>What this desk flags.</strong><p>Each signal identifies a source contradiction, missing field, or identity question. Use the attached record and limitation to decide what needs independent verification.</p></section>
   <section class="integrity-summary" data-integrity-summary aria-label="Delivery-integrity snapshot"><p>Loading verified snapshot totals...</p></section>
   <section class="integrity-shell" data-integrity-desk>
     <form class="integrity-controls" data-integrity-form role="search"><label>Search records<input type="search" name="q" maxlength="200" placeholder="Contract, project, contractor, or place"></label><label>Review signal<select name="signal"><option value="all">All signals</option><option value="status_progress_conflict">Ongoing at 100% progress</option><option value="completed_progress_conflict">Completed below 100%</option><option value="past_completion_not_complete">Completion date passed without completed status</option><option value="date_order_conflict">Date order conflict</option><option value="nonpositive_active_budget">Nonpositive active budget</option><option value="missing_coordinate">Coordinate not available</option><option value="coordinate_outside_philippines">Coordinate outside broad bounds</option><option value="completed_without_satellite_image">Completed without satellite image</option><option value="reused_coordinate">Coordinate reused across projects</option><option value="same_site_repeat_family">Same site and project family across fiscal years</option><option value="coordinate_location_conflict">Coordinate and location conflict</option></select></label><label>Evidence class<select name="classification"><option value="all">All classes</option><option value="source_conflict">Source conflict</option><option value="amount_review">Amount review</option><option value="identity_review">Identity review</option><option value="coverage_gap">Coverage gap</option></select></label><label>Fiscal year<select name="year"><option value="">All years</option><option>2026</option><option>2025</option><option>2024</option></select></label><label>Sort<select name="sort"><option value="budget_desc">Largest project budget</option><option value="year_desc">Newest fiscal year</option><option value="contract_asc">Contract number</option></select></label><button type="submit">Apply</button></form>
@@ -185,7 +190,7 @@ export const integrityBody = `
 
 export const changesBody = `
   <section class="data-intro change-intro"><div><p class="kicker">FY2027 budget change ledger</p><h1>Trace what changed between the NEP and House bill.</h1><p class="lede">Inspect project-level additions, removals and amount changes across DPWH infrastructure, farm-to-market roads, health facilities and irrigation.</p></div><aside class="snapshot-card"><span>Evidence boundary</span><strong>NEP → House</strong><p>Four project-level programs<br>House second or third reading</p><a href="/methodology/#source-policy">Read the source policy</a></aside></section>
-  <section class="change-disclaimer"><strong>Not a corruption finding.</strong> A new-line candidate means a House project row was not matched to a NEP row in this comparison. It may be new, renamed, split, merged or outside the matching evidence.</section>
+  <section class="change-disclaimer"><strong>How to read a change.</strong> A new-line candidate is a House project row without a matched NEP row in this comparison. Check the source pages because the project may be new, renamed, split, merged, or outside the matching evidence.</section>
   <section class="change-summary" aria-label="Change-ledger totals"><article><strong>20,431</strong><span>reconciled comparison rows</span></article><article><strong>4</strong><span>project-level programs</span></article><article><strong>426</strong><span>quarantined or scope-review rows</span></article><article><strong>8</strong><span>hashed source documents</span></article></section>
   <section class="change-shell" data-change-ledger>
     <form class="change-controls" data-change-form role="search"><label>Search projects<input type="search" name="q" maxlength="200" placeholder="Project, program, office"></label><label>Program<select name="dataset"><option value="all">All four</option><option value="dpwh">DPWH</option><option value="fmr">Farm-to-market roads</option><option value="hfep">Health facilities</option><option value="nia">Irrigation</option></select></label><label>Change<select name="change"><option value="all">All changes</option><option value="house_only">In the House bill only</option><option value="nep_only">In the NEP only</option><option value="increased">Amount increased</option><option value="decreased">Amount decreased</option><option value="unchanged">Unchanged</option><option value="scope_review">Scope review</option></select></label><label>Review status<select name="review"><option value="all">All statuses</option><option value="candidate">Candidate</option><option value="quarantine">Quarantine</option></select></label><label>Sort<select name="sort"><option value="absolute_desc">Largest movement</option><option value="house_desc">Largest House amount</option><option value="increase_desc">Largest increase</option><option value="decrease_desc">Largest decrease</option><option value="title_asc">Project A to Z</option></select></label><button type="submit">Apply</button><button type="button" class="secondary-control" data-change-reset>Reset</button></form>
@@ -198,7 +203,7 @@ export const changesBody = `
 export const agenciesBody = `
   <section class="data-intro agency-intro"><div><p class="kicker">FY2027 agency budget ledger</p><h1>See how agency budgets changed in the House bill.</h1><p class="lede">Compare every national appropriation head from the Executive's NEP with page-specific totals in HB 10858. Senate and House are shown separately under Congress.</p></div><aside class="snapshot-card"><span>Reconciled scope</span><strong>39 appropriation heads</strong><p>37 departments and constitutional bodies<br>Special Purpose Funds<br>Automatic Appropriations shown separately</p><a href="/methodology/#agency-ledger">Read the comparison method</a></aside></section>
   <section class="agency-stage-map" aria-label="FY2027 budget stages"><article><span>01 · Baseline</span><strong>FY2026 base</strong><p>Prior-year comparison values in the NEP dataset.</p></article><article><span>02 · Executive</span><strong>FY2027 NEP</strong><p>The President's proposed national budget.</p></article><article><span>03 · Legislature</span><strong>House Bill 10858</strong><p>Third-reading appropriation totals by source page.</p></article><article class="pending"><span>04 · Pending</span><strong>Senate, bicam, GAA</strong><p>Not published as comparable totals yet. Never treated as zero.</p></article></section>
-  <section class="agency-disclaimer"><strong>Not spending or a finding of wrongdoing.</strong><p>These are proposed appropriations and recorded movements between documents. A large increase, decrease, or congressional change is a lead for document review, not proof of an insertion, release, payment, loss, or unlawful act.</p></section>
+  <section class="agency-disclaimer"><strong>How to read this comparison.</strong><p>These are proposed appropriations and recorded movements between documents. Treat a large increase, decrease, or congressional change as a question for document review. Releases, payments, outputs, and responsibility require separate evidence.</p></section>
   <section class="agency-summary" aria-label="Ledger summary"><article><strong>₱4.619T</strong><span>NEP bill-scope total</span></article><article><strong>₱4.606T</strong><span>House bill control</span></article><article><strong>−₱12.637B</strong><span>Net bill-scope movement</span></article><article><strong>43 of 44</strong><span>Rows compared; Automatic Appropriations not applicable</span></article></section>
   <section class="agency-shell" data-agency-ledger>
     <form class="agency-controls" data-agency-form><label>Search appropriation heads<input type="search" name="q" maxlength="200" placeholder="DPWH, education, Senate…"></label><label>Level<select name="level"><option value="heads">Appropriation heads</option><option value="congress">Congress institutions</option><option value="all">All rows</option></select></label><label>Movement<select name="direction"><option value="all">All movements</option><option value="increase">House increases</option><option value="decrease">House decreases</option><option value="unchanged">No change</option><option value="unavailable">House stage unavailable</option></select></label><label>Sort<select name="sort"><option value="difference_desc">Largest increase</option><option value="difference_asc">Largest decrease</option><option value="house_desc">Largest House amount</option><option value="nep_desc">Largest NEP amount</option><option value="name_asc">Name A–Z</option></select></label><button type="submit">Apply</button><button class="secondary-control" type="button" data-agency-reset>Reset</button></form>
@@ -289,6 +294,6 @@ export const methodologyBody = `
     <div class="section-heading"><p class="section-number">07 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}`;
 
-export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#102f2a" stroke-width="2.5" stroke-linejoin="round"><path fill="#a7ddc3" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#fbf8ef" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fbf8ef" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#b83b27" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#102f2a"/><path fill="none" stroke="#f3efe4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/></svg>`;
+export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#111" stroke-width="2.5" stroke-linejoin="round"><path fill="#d6d6d2" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#fff" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fff" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fff" stroke="#111" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fff" stroke="#111" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#111"/><path fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/></svg>`;

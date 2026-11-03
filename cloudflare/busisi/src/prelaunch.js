@@ -18,7 +18,7 @@ import dataWorker from './index.js';
 import { getProject } from './query.js';
 
 const SECURITY_HEADERS = Object.freeze({
-  'content-security-policy': "default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'",
+  'content-security-policy': "default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'",
   'permissions-policy': 'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
   'referrer-policy': 'no-referrer',
   'strict-transport-security': 'max-age=31536000',
@@ -295,7 +295,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 `, { type: 'text/plain; charset=utf-8' });
 
 const assets = (path) => {
-  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css') {
+  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css' || path === '/assets/site-visual-v8.css') {
     return response(siteCss, { type: 'text/css; charset=utf-8', cache: 'public, max-age=604800, immutable' });
   }
   if (path === '/assets/favicon.svg') {

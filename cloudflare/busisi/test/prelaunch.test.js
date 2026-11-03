@@ -16,7 +16,11 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<link rel="canonical" href="https:\/\/busisi\.org\/">/);
   assert.match(document, /<meta name="robots" content="index, follow, max-image-preview:large">/);
   assert.match(document, /<meta property="og:url" content="https:\/\/busisi\.org\/">/);
-  assert.match(document, /href="\/assets\/site-visual-v7\.css"/);
+  assert.match(document, /<meta property="og:image" content="https:\/\/busisi\.org\/assets\/busisi-social-v1\.png">/);
+  assert.match(document, /<meta property="og:image:width" content="1200">/);
+  assert.match(document, /<meta property="og:image:height" content="630">/);
+  assert.match(document, /<meta name="twitter:card" content="summary_large_image">/);
+  assert.match(document, /href="\/assets\/site-visual-v8\.css"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
@@ -27,23 +31,26 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
     /script-src 'self' https:\/\/static\.cloudflareinsights\.com/,
   );
   assert.match(response.headers.get('content-security-policy'), /connect-src 'self'/);
+  assert.match(response.headers.get('content-security-policy'), /form-action 'self'/);
 });
 
-test('home provides direct navigation and substantive motion-led visuals', async () => {
+test('home provides task-led navigation and a data-led editorial masthead', async () => {
   const response = await fetchPath('/');
   const document = await response.text();
 
-  assert.match(document, /href="\/#mission"/);
-  assert.match(document, /href="\/#system"/);
-  assert.match(document, /href="\/#gate"/);
   assert.match(document, /href="\/explore\/"/);
   assert.match(document, /href="\/signals\/"/);
-  assert.match(document, /href="\/integrity\/"/);
   assert.match(document, /href="\/sulit\/"/);
-  assert.match(document, /class="evidence-orbit"/);
-  assert.match(document, /aria-label="Evidence moves from official source to reviewed publication"/);
-  assert.match(document, /Illustrative sequence/);
-  assert.match(document, /Not a ranking\. Not an accusation\./);
+  assert.match(document, /class="home-ledger"/);
+  assert.match(document, /aria-label="Current FY2027 budget evidence"/);
+  assert.match(document, /20,431 project rows/);
+  assert.match(document, /DPWH delivery records/);
+  assert.match(document, /56,887/);
+  assert.match(document, /NEP published/);
+  assert.match(document, /House partially acquired/);
+  assert.doesNotMatch(document, /busisi-masthead\.webp|Illustrative view/);
+  assert.doesNotMatch(document, /class="utility-strip"/);
+  assert.equal((document.match(/data-nav-group=/g) ?? []).length, 5);
 });
 
 test('publishes the source-record explorer without implying reviewed links', async () => {
@@ -70,7 +77,7 @@ test('publishes the deterministic review desk and names unavailable analyses', a
   assert.match(document, /Prior-year family candidates/);
   assert.match(document, /Similar FY2027 family candidates/);
   assert.match(document, /Download evidence CSV/);
-  assert.match(document, /Not a corruption score/);
+  assert.match(document, /How to read a review signal/);
   assert.match(document, /src="\/assets\/review-v1\.js"/);
   assert.match(document, /Physical existence verification/);
 });
@@ -90,7 +97,7 @@ test('publishes the project-integrity desk and contractor leaderboard', async ()
   assert.match(document, /Current PCAB-table status/);
   assert.match(document, /Congressional district context/);
   assert.match(document, /does not establish political authorship/);
-  assert.match(document, /Not a corruption score/);
+  assert.match(document, /What this desk flags/);
   assert.match(document, /src="\/assets\/integrity-v1\.js"/);
   assert.doesNotMatch(document, /proves? (?:fraud|corruption)/i);
 });
@@ -104,7 +111,7 @@ test('publishes an interactive FY2027 budget change ledger with careful labels',
   assert.match(document, /20,431/);
   assert.match(document, /data-change-ledger/);
   assert.match(document, /In the House bill only/);
-  assert.match(document, /Not a corruption finding/);
+  assert.match(document, /How to read a change/);
   assert.match(document, /src="\/assets\/changes-v1\.js"/);
   assert.doesNotMatch(document, /proves? (?:an )?insertion/i);
 });
@@ -119,7 +126,7 @@ test('publishes a reconciled FY2027 appropriation-head ledger', async () => {
   assert.match(document, /Senate and House are shown separately/);
   assert.match(document, /data-agency-ledger/);
   assert.match(document, /Automatic Appropriations/);
-  assert.match(document, /Not spending or a finding of wrongdoing/);
+  assert.match(document, /How to read this comparison/);
   assert.match(document, /src="\/assets\/agencies-v1\.js"/);
 });
 
@@ -153,20 +160,20 @@ test('publishes the Sulit Ba public-value desk as the primary civic question', a
   assert.doesNotMatch(document, /overall score|AI score|Auva Labs/i);
 });
 
-test('home uses the original Busisi identity and professional exploration panels', async () => {
+test('home uses the monochrome Busisi identity and direct evidence desks', async () => {
   const response = await fetchPath('/');
   const document = await response.text();
 
   assert.match(document, /src="\/assets\/busisi-mark-v2\.svg"/);
   assert.doesNotMatch(document, /src="\/assets\/busisi-mark\.webp"/);
-  assert.match(document, /src="\/assets\/busisi-masthead\.webp"/);
-  assert.match(document, /Independent Philippine budget evidence project/);
-  assert.match(document, /Explore the source record/);
+  assert.doesNotMatch(document, /busisi-masthead\.webp/);
+  assert.match(document, /Philippine budget evidence/);
+  assert.match(document, /Start with the public record/);
   assert.match(document, /GAA appropriations/);
   assert.match(document, /DPWH delivery records/);
   assert.match(document, /Candidate links/);
   assert.match(document, /Human review required/);
-  assert.match(document, /Illustrative view · not a project record/);
+  assert.match(document, /Where the evidence stops/);
 });
 
 test('methodology is canonical and explains the publication gate', async () => {
@@ -276,8 +283,8 @@ test('renders a reviewed evidence dossier when the publication database is bound
   assert.match(document, /Official evidence 1/);
 });
 
-test('serves immutable assets and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v7.css');
+test('serves the monochrome editorial system and safe method boundaries', async () => {
+  const css = await fetchPath('/assets/site-visual-v8.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));
@@ -289,14 +296,19 @@ test('serves immutable assets and safe method boundaries', async () => {
   assert.match(cssText, /font-family:'Source Sans 3'/);
   assert.doesNotMatch(cssText, /Merriweather|Georgia|Times New Roman/i);
   assert.match(cssText, /--paper:#fff/);
+  assert.match(cssText, /--ink:#111/);
+  assert.match(cssText, /--accent:#111/);
+  assert.match(cssText, /--signal-red:#a12b1f/);
   assert.match(cssText, /--text-xs:\.8125rem/);
   assert.match(cssText, /body\{[^}]*font-size:var\(--text-md\)[^}]*line-height:1\.6/);
   assert.match(cssText, /body:before\{display:none/);
   assert.match(cssText, /@media\(prefers-contrast:more\)/);
   assert.match(cssText, /\.integrity-shell/);
   assert.match(cssText, /\.contractor-shell/);
-  assert.match(cssText, /\.primary-nav\{grid-template-columns:repeat\(4,1fr\)\}/);
-  assert.match(await css.clone().text(), /@keyframes orbit-pulse/);
+  assert.match(cssText, /\.home-ledger/);
+  assert.match(cssText, /\.budget-stage-line/);
+  assert.match(cssText, /\.primary-nav/);
+  assert.match(cssText, /\.preview-panels>a>span[^}]*border-radius:0/);
   assert.match(await css.text(), /prefers-reduced-motion:reduce/);
   assert.match(icon.headers.get('content-type'), /^image\/svg\+xml/);
   assert.equal(missingAsset.status, 404);
@@ -305,7 +317,7 @@ test('serves immutable assets and safe method boundaries', async () => {
   assert.equal(post.status, 405);
 });
 
-test('passes generated media and self-hosted fonts through the static asset binding', async () => {
+test('passes self-hosted fonts through the static asset binding', async () => {
   const env = {
     ASSETS: {
       fetch: async (request) => new Response(new URL(request.url).pathname, {
@@ -314,12 +326,30 @@ test('passes generated media and self-hosted fonts through the static asset bind
     },
   };
   const asset = await worker.fetch(
-    new Request('https://busisi.org/assets/busisi-masthead.webp'),
+    new Request('https://busisi.org/assets/source-sans-3-latin.woff2'),
     env,
   );
 
   assert.equal(asset.status, 200);
-  assert.equal(await asset.text(), '/assets/busisi-masthead.webp');
+  assert.equal(await asset.text(), '/assets/source-sans-3-latin.woff2');
+});
+
+test('passes the editorial social card through the static asset binding', async () => {
+  const env = {
+    ASSETS: {
+      fetch: async (request) => new Response(new URL(request.url).pathname, {
+        headers: { 'content-type': 'image/png' },
+      }),
+    },
+  };
+  const asset = await worker.fetch(
+    new Request('https://busisi.org/assets/busisi-social-v1.png'),
+    env,
+  );
+
+  assert.equal(asset.status, 200);
+  assert.equal(asset.headers.get('content-type'), 'image/png');
+  assert.equal(await asset.text(), '/assets/busisi-social-v1.png');
 });
 
 test('reader actions use human-readable evidence instead of raw JSON endpoints', () => {
