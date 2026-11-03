@@ -21,6 +21,13 @@ const expectedChanges = Object.freeze({
   fiscal_year: 2027,
   source_commit: 'a0caa778442cdae5583f5a006ea7401dab00e5ac',
 });
+const expectedBudgetCycle = Object.freeze({
+  fiscal_year: '2027',
+  document_count: '5',
+  verified_document_count: '2',
+  discovered_document_count: '3',
+  catalog_sha256: '7fb461156cba8bd04b48315b298fb2b908506b6a2bb6e3df656d179ad59608ff',
+});
 const expectedReviewCounts = Object.freeze({
   decreased: 265,
   house_only: 6_954,
@@ -185,6 +192,13 @@ const verifyPages = async () => {
   expectIncludes(changesText, 'Trace what changed between the NEP and House bill', 'changes heading');
   expectIncludes(changesText, 'Not a corruption finding', 'changes warning');
 
+  const budgetTrail = await request('/budget-trail/');
+  expectStatus(budgetTrail, 200, '/budget-trail/');
+  const budgetTrailText = await budgetTrail.text();
+  expectIncludes(budgetTrailText, 'Follow the FY2027 budget through each published stage', 'budget trail heading');
+  expectIncludes(budgetTrailText, '/assets/budget-cycle-v1.js', 'budget trail client');
+  expectIncludes(budgetTrailText, 'Publisher is not stage', 'budget trail evidence boundary');
+
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
   expectIncludes(await robots.text(), `Sitemap: ${origin}/sitemap.xml`, 'robots sitemap');
@@ -192,7 +206,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/explore/', '/changes/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/explore/', '/changes/', '/budget-trail/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -205,7 +219,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/explore/', '/changes/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/explore/', '/changes/', '/budget-trail/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -293,6 +307,29 @@ const verifyData = async () => {
   }
   expectIncludes(changes.data[0].source_url, 'budget.bettergov.ph', 'change source URL');
   if (!changes.data[0].house_pdf_url) fail('change query: House evidence link missing');
+
+  const budgetCycle = (await readJson('/api/v1/budget-cycle')).data;
+  for (const [key, expected] of Object.entries(expectedBudgetCycle)) {
+    if (budgetCycle.metadata[key] !== expected) {
+      fail(`budget cycle: ${key} expected ${expected}, received ${budgetCycle.metadata[key]}`);
+    }
+  }
+  const unavailableStages = budgetCycle.stages
+    .filter(({ status }) => status === 'unavailable')
+    .map(({ stage }) => stage);
+  for (const stage of ['senate_committee', 'senate_amendment', 'bicam', 'gaa']) {
+    if (!unavailableStages.includes(stage)) fail(`budget cycle: ${stage} should be unavailable`);
+  }
+  const cycleDocuments = await readJson('/api/v1/budget-cycle/documents');
+  if (cycleDocuments.meta.total !== 5
+    || cycleDocuments.meta.review_scope !== 'source_separated_budget_cycle_catalogue') {
+    fail('budget cycle documents: count or review scope mismatch');
+  }
+  if (cycleDocuments.data.filter(({ acquisition_status }) => (
+    acquisition_status === 'verified_archived'
+  )).length !== 2) {
+    fail('budget cycle documents: verified copy count mismatch');
+  }
 
   const publicValueSummary = (await readJson('/api/v1/public-value-summary')).data;
   for (const [key, expected] of Object.entries({
@@ -421,6 +458,7 @@ const verifyData = async () => {
     contractors: integritySummary.contractors,
     district_offices: integritySummary.district_offices,
     public_value_indicators: publicValueSummary.indicator_count,
+    budget_cycle_documents: cycleDocuments.meta.total,
     reviewed_public: reviewed.meta.total,
   };
 };

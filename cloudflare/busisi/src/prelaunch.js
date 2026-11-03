@@ -1,6 +1,7 @@
 import {
   changesBody,
   agenciesBody,
+  budgetCycleBody,
   document,
   exploreBody,
   favicon,
@@ -113,6 +114,17 @@ const PUBLIC_VALUE_SCHEMA = Object.freeze({
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
 });
 
+const BUDGET_CYCLE_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi FY2027 Philippine budget publication trail',
+  url: `${SITE.origin}/budget-trail/`,
+  description: 'Source-separated FY2027 budget-cycle documents with explicit acquisition status and missing-stage coverage.',
+  temporalCoverage: '2027',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+});
+
 const page = (html, status = 200) => response(html, {
   status,
   type: 'text/html; charset=utf-8',
@@ -192,6 +204,14 @@ const sulit = () => page(document({
   schema: PUBLIC_VALUE_SCHEMA,
 }));
 
+const budgetCycle = () => page(document({
+  title: 'FY2027 Philippine budget publication trail | Busisi',
+  description: 'Follow acquired and missing FY2027 Philippine budget documents from the NEP through House, Senate, bicameral and enacted stages.',
+  canonicalPath: '/budget-trail/',
+  body: budgetCycleBody,
+  schema: BUDGET_CYCLE_SCHEMA,
+}));
+
 const project = (record) => page(document({
   title: `${record.title} | Busisi`,
   description: `Evidence dossier comparing the FY ${record.fiscal_year} appropriation with DPWH contract ${record.contract_id}.`,
@@ -232,6 +252,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/explore/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/changes/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/agencies/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/budget-trail/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/signals/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/integrity/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
@@ -258,6 +279,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Explorer: ${SITE.origin}/explore/
 - FY2027 change ledger: ${SITE.origin}/changes/
 - Appropriation heads: ${SITE.origin}/agencies/
+- FY2027 budget publication trail: ${SITE.origin}/budget-trail/
 - Deterministic review desk: ${SITE.origin}/signals/
 - Project integrity desk: ${SITE.origin}/integrity/
 - Methodology: ${SITE.origin}/methodology/
@@ -288,6 +310,7 @@ const route = (path) => {
   if (path === '/explore' || path === '/explore/') return explore();
   if (path === '/changes' || path === '/changes/') return changes();
   if (path === '/agencies' || path === '/agencies/') return agencies();
+  if (path === '/budget-trail' || path === '/budget-trail/') return budgetCycle();
   if (path === '/signals' || path === '/signals/') return signals();
   if (path === '/integrity' || path === '/integrity/') return integrity();
   if (path === '/methodology' || path === '/methodology/') return methodology();

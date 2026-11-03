@@ -3,6 +3,7 @@ import { dataCss } from './prelaunch-data-styles.js';
 import { changeCss } from './prelaunch-change-styles.js';
 import { agencyCss } from './prelaunch-agency-styles.js';
 import { publicValueCss } from './prelaunch-public-value-styles.js';
+import { budgetCycleCss } from './prelaunch-budget-cycle-styles.js';
 import { integrityCss } from './prelaunch-integrity-styles.js';
 import { reviewCss } from './prelaunch-review-styles.js';
 import { siteCss as baseSiteCss } from './prelaunch-styles.js';
@@ -17,7 +18,7 @@ import {
 
 const navigation = (canonicalPath) => {
   const methodology = canonicalPath === '/methodology/';
-  const links = `<a href="/sulit/"${canonicalPath === '/sulit/' ? ' aria-current="page"' : ''}>Sulit Ba?</a><a href="/agencies/"${canonicalPath === '/agencies/' ? ' aria-current="page"' : ''}>Agencies</a><a href="/changes/"${canonicalPath === '/changes/' ? ' aria-current="page"' : ''}>Projects</a><a href="/signals/"${canonicalPath === '/signals/' ? ' aria-current="page"' : ''}>Red flags</a><a href="/integrity/"${canonicalPath === '/integrity/' ? ' aria-current="page"' : ''}>Integrity</a>`;
+  const links = `<a href="/sulit/"${canonicalPath === '/sulit/' ? ' aria-current="page"' : ''}>Sulit Ba?</a><a href="/agencies/"${canonicalPath === '/agencies/' ? ' aria-current="page"' : ''}>Agencies</a><a href="/changes/"${canonicalPath === '/changes/' ? ' aria-current="page"' : ''}>Projects</a><a href="/budget-trail/"${canonicalPath === '/budget-trail/' ? ' aria-current="page"' : ''}>Budget trail</a><a href="/signals/"${canonicalPath === '/signals/' ? ' aria-current="page"' : ''}>Red flags</a><a href="/integrity/"${canonicalPath === '/integrity/' ? ' aria-current="page"' : ''}>Integrity</a>`;
   return `<div class="header-inner">
     <a class="wordmark" href="/" aria-label="Busisi home"><img class="brand-mark" src="/assets/busisi-mark-v2.svg" width="44" height="44" alt=""><span>Busisi</span></a>
     <nav class="primary-nav" aria-label="Primary navigation">${links}<a class="method-link" href="/methodology/"${methodology ? ' aria-current="page"' : ''}>Methodology</a></nav>
@@ -31,7 +32,7 @@ const utilityStrip = `<div class="utility-strip"><div class="utility-inner">
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent civic data initiative for traceable Philippine public budget records.</p></div>
-  <nav class="footer-nav" aria-label="Footer navigation"><a href="/sulit/">Sulit Ba?</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Projects</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/methodology/">Method</a></nav>
+  <nav class="footer-nav" aria-label="Footer navigation"><a href="/sulit/">Sulit Ba?</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Projects</a><a href="/budget-trail/">Budget trail</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/methodology/">Method</a></nav>
   <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.</p>
 </div></footer>`;
 
@@ -59,7 +60,7 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-masthead.webp"><meta property="og:image:width" content="1600"><meta property="og:image:height" content="666">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${description}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-masthead.webp">
-  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js"></script>' : ''}
+  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js"></script>' : ''}
 </head><body>
   <a class="skip-link" href="#main-content">Skip to content</a>${utilityStrip}<header class="site-header">${navigation(canonicalPath)}</header>
   <main id="main-content">${body}</main>${footer}
@@ -205,6 +206,20 @@ export const agenciesBody = `
   </section>
   <section class="agency-method"><div><p class="kicker">How to read this ledger</p><h2>Totals are comparable only inside their declared scope.</h2></div><div><ul><li>The 39 appropriation heads reconcile to the ₱7.200186 trillion NEP, including Automatic Appropriations.</li><li>The 38 House-comparable heads reconcile to the bill's printed ₱4.606066495 trillion new-appropriations control.</li><li>Automatic Appropriations are outside the House bill control and therefore remain not applicable, not zero.</li><li>Congress institution rows are children of the Congress head and must not be added again to the national total.</li></ul></div></section>`;
 
+export const budgetCycleBody = `
+  <section class="data-intro cycle-intro"><div><p class="kicker">FY2027 publication trail</p><h1>Follow the FY2027 budget through each published stage.</h1><p class="lede">See which legislative documents Busisi has identified, which copies are archived and fingerprinted, and which stages remain unavailable.</p></div><aside class="snapshot-card"><span>Current Senate portal catalogue</span><strong>5 records</strong><p>4 House bill volumes<br>1 supporting fiscal note<br>2 archived copies verified</p><a href="/methodology/#budget-cycle">Read the stage rules</a></aside></section>
+  <section class="cycle-boundary"><strong>Publisher is not stage.</strong><p>A Senate-hosted document is not automatically a Senate-stage document. HB 10858 as approved by the House remains a House bill even when the Senate portal publishes a copy.</p></section>
+  <section class="cycle-map" data-budget-cycle aria-label="FY2027 budget publication stages">
+    <article class="cycle-stage available" data-cycle-stage="nep"><span>01 · Executive proposal</span><h2>NEP</h2><p>Available through DBM and the existing Busisi comparison ledger.</p><b>Available elsewhere</b></article>
+    <article class="cycle-stage partial" data-cycle-stage="house_gab"><span>02 · House</span><h2>House bill, third reading</h2><p>Four volumes identified in the Senate publication catalogue.</p><b>Partial catalogue</b></article>
+    <article class="cycle-stage unavailable" data-cycle-stage="senate_committee"><span>03 · Senate review</span><h2>Senate committee stage</h2><p>No comparable FY2027 document has been acquired.</p><b>Not yet acquired</b></article>
+    <article class="cycle-stage unavailable" data-cycle-stage="senate_amendment"><span>04 · Senate action</span><h2>Senate amendments</h2><p>No comparable FY2027 document has been acquired.</p><b>Not yet acquired</b></article>
+    <article class="cycle-stage unavailable" data-cycle-stage="bicam"><span>05 · Reconciliation</span><h2>Bicameral report</h2><p>No comparable FY2027 document has been acquired.</p><b>Not yet acquired</b></article>
+    <article class="cycle-stage unavailable" data-cycle-stage="gaa"><span>06 · Enacted law</span><h2>General Appropriations Act</h2><p>No enacted FY2027 GAA has been acquired.</p><b>Not yet acquired</b></article>
+  </section>
+  <section class="cycle-documents"><header><p class="kicker">Document register</p><h2>What the portal currently publishes.</h2><p>“Archived copy verified” means the retained copy passed its recorded SHA-256 check. “Catalogue record only” means Busisi can verify the listing, but not yet acquire the document bytes.</p><p data-cycle-status aria-live="polite">Loading the publication register…</p></header><div class="cycle-document-list" data-cycle-documents><p class="cycle-empty">Loading documents…</p></div></section>
+  <section class="cycle-note"><p class="kicker">Evidence boundary</p><h2>Missing stages are not zero and not inferred.</h2><p>The portal's “GAA 2027” navigation label describes a fiscal-year collection. Busisi will not call a document enacted GAA, a Senate amendment, or a bicameral report unless the document title and acquired content support that classification.</p></section>`;
+
 export const projectDossierBody = (record) => {
   const signals = record.match_signals
     .map((signal) => `<li>${escapeHtml(signal.replaceAll('_', ' '))}</li>`)
@@ -234,7 +249,7 @@ const pipeline = `
 
 export const methodologyBody = `
   <section class="page-intro"><div><p class="kicker">Methodology</p><h1>Every public link needs a source trail.</h1></div><div><p class="lede">Collection, normalization, matching, review, and publication are separated so that a plausible relationship cannot quietly become a public claim.</p>${methodDiagram}</div></section>
-  <nav class="local-nav" aria-label="Methodology sections"><span>Jump to</span><a href="#pipeline">Pipeline</a><a href="#source-policy">Source policy</a><a href="#agency-ledger">Agency ledger</a><a href="#public-value">Public value</a><a href="#release-standard">Release standard</a><a href="#corrections">Corrections</a></nav>
+  <nav class="local-nav" aria-label="Methodology sections"><span>Jump to</span><a href="#pipeline">Pipeline</a><a href="#source-policy">Source policy</a><a href="#agency-ledger">Agency ledger</a><a href="#budget-cycle">Budget trail</a><a href="#public-value">Public value</a><a href="#release-standard">Release standard</a><a href="#corrections">Corrections</a></nav>
 
   <section class="narrative-section" id="pipeline" aria-labelledby="pipeline-heading">
     <div class="section-heading"><p class="section-number">01 / Pipeline</p><div><h2 id="pipeline-heading">Ten controls. Four evidence stages.</h2><p class="section-intro">A failure at any stage prevents publication. Quarantine is an intended outcome, not an exception.</p></div></div>${pipeline}
@@ -255,20 +270,25 @@ export const methodologyBody = `
     <div class="standards-grid"><article class="standard-panel"><h3>Source and arithmetic controls</h3><p>Original PDF and API bytes are archived by SHA-256. Money is stored as integer centavos. The NEP heads reconcile to ₱7.200186 trillion; the House-comparable heads reconcile to the printed ₱4.606066495 trillion new-appropriations control.</p></article><article class="standard-panel"><h3>Stage and hierarchy controls</h3><p>Automatic Appropriations are outside the House bill control and remain not applicable. The five Congress institutions are child rows, so they are never added again to the national total. Senate, bicameral, GAA, release, obligation, and payment stages remain unavailable until comparable evidence is acquired.</p></article></div>
   </section>
 
+  <section class="narrative-section" id="budget-cycle" aria-labelledby="budget-cycle-heading">
+    <div class="section-heading"><p class="section-number">04 / Budget trail</p><div><h2 id="budget-cycle-heading">Classify the document, not the website that hosts it.</h2><p class="section-intro">A fiscal-year portal can publish Executive, House, Senate, bicameral, enacted, and supporting records. Busisi assigns a stage only from explicit document evidence and keeps acquisition status separate from stage.</p></div></div>
+    <div class="standards-grid"><article class="standard-panel"><h3>Three acquisition states</h3><p>Archived copy verified means retained bytes pass their recorded SHA-256 check. Catalogue record only means the official listing was observed but the file bytes were not acquired. Not yet acquired means no qualifying document is present, and never means zero.</p></article><article class="standard-panel"><h3>Blocked source boundary</h3><p>The Senate portal currently blocks ordinary server-side acquisition. A disclosed secondary renderer may discover catalogue identifiers and titles, but it cannot make its representation an official artifact. Mirror documents remain labeled as mirrors and must match their recorded fingerprints.</p></article></div>
+  </section>
+
   <section class="narrative-section" id="public-value" aria-labelledby="public-value-heading">
-    <div class="section-heading"><p class="section-number">04 / Public value</p><div><h2 id="public-value-heading">No composite score and no inferred motive.</h2><p class="section-intro">The public-value desk keeps economy, fiscal space, composition, readiness, distribution, and delivery as separate questions. A favorable forecast cannot cancel weak project evidence.</p></div></div>
+    <div class="section-heading"><p class="section-number">05 / Public value</p><div><h2 id="public-value-heading">No composite score and no inferred motive.</h2><p class="section-intro">The public-value desk keeps economy, fiscal space, composition, readiness, distribution, and delivery as separate questions. A favorable forecast cannot cancel weak project evidence.</p></div></div>
     <div class="standards-grid"><article class="standard-panel"><h3>Deterministic fiscal directions</h3><p>FY2026 and FY2027 cells come from DBM BESF Tables A.1 and A.2. Every row declares whether higher or lower is treated as favorable. Rows without an inherently favorable direction remain context only. Counts are descriptive and are never combined into a grade.</p></article><article class="standard-panel"><h3>Evidence boundary</h3><p>Forecasts are not observed outcomes. Appropriations are authority to spend, not releases, obligations, payments, completed outputs, or public benefit. Motive cannot be inferred from an amount, movement, sponsor name, or location.</p></article></div>
   </section>
 
   <section class="narrative-section" id="release-standard" aria-labelledby="release-heading">
-    <div class="section-heading"><p class="section-number">05 / Release standard</p><div><h2 id="release-heading">The register opens only after measured review.</h2></div></div>
+    <div class="section-heading"><p class="section-number">06 / Release standard</p><div><h2 id="release-heading">The register opens only after measured review.</h2></div></div>
     <div class="standards-grid"><article class="standard-panel"><h3>Required before release</h3><p>At least <strong>100 reviewed linkage cases</strong>, at least 95% measured precision, at least 95% reviewer agreement, and no unresolved critical reconciliation failure.</p></article><article class="standard-panel"><h3>How to read a signal</h3><p>A signal identifies a record pattern for examination. It is <strong>not evidence of wrongdoing</strong>, waste, or unlawful conduct.</p><p>Every published signal must show its rule, inputs, confidence, source references, and known limitations.</p></article></div>
   </section>
 
   <section class="narrative-section" id="corrections" aria-labelledby="corrections-heading">
-    <div class="section-heading"><p class="section-number">06 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
+    <div class="section-heading"><p class="section-number">07 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#102f2a" stroke-width="2.5" stroke-linejoin="round"><path fill="#a7ddc3" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#fbf8ef" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fbf8ef" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#b83b27" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#102f2a"/><path fill="none" stroke="#f3efe4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/></svg>`;

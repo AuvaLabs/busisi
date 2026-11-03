@@ -123,6 +123,20 @@ test('publishes a reconciled FY2027 appropriation-head ledger', async () => {
   assert.match(document, /src="\/assets\/agencies-v1\.js"/);
 });
 
+test('publishes a budget trail without claiming missing Senate or GAA stages', async () => {
+  const response = await fetchPath('/budget-trail/');
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /Follow the FY2027 budget through each published stage/);
+  assert.match(document, /data-budget-cycle/);
+  assert.match(document, /House bill, third reading/);
+  assert.match(document, /Senate committee stage/);
+  assert.match(document, /Not yet acquired/);
+  assert.match(document, /A Senate-hosted document is not automatically a Senate-stage document/);
+  assert.match(document, /src="\/assets\/budget-cycle-v1\.js"/);
+});
+
 test('publishes the Sulit Ba public-value desk as the primary civic question', async () => {
   const response = await fetchPath('/sulit/');
   const document = await response.text();
@@ -186,6 +200,7 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/signals\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/changes\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/agencies\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/budget-trail\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/integrity\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/sulit\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/projects\/corazon-2024-phase-1\/<\/loc>/);
@@ -280,7 +295,7 @@ test('serves immutable assets and safe method boundaries', async () => {
   assert.match(cssText, /@media\(prefers-contrast:more\)/);
   assert.match(cssText, /\.integrity-shell/);
   assert.match(cssText, /\.contractor-shell/);
-  assert.match(cssText, /\.primary-nav\{grid-template-columns:repeat\(3,1fr\)\}/);
+  assert.match(cssText, /\.primary-nav\{grid-template-columns:repeat\(4,1fr\)\}/);
   assert.match(await css.clone().text(), /@keyframes orbit-pulse/);
   assert.match(await css.text(), /prefers-reduced-motion:reduce/);
   assert.match(icon.headers.get('content-type'), /^image\/svg\+xml/);

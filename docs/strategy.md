@@ -29,6 +29,14 @@ slash-delimited joint ventures. Current PCAB lookup status and transparent
 contractor-party concentration shares are published with their limitations.
 Neither view produces a composite risk score or infers wrongdoing.
 
+The FY2027 publication trail separately catalogs the Senate Budget
+Transparency Portal. Four portal records are classified as House bill volumes
+because their titles identify HB 10858 at third reading, and one record is
+classified as supporting fiscal analysis. Two archived mirror copies pass
+their recorded SHA-256 checks. Senate committee, Senate amendment, bicameral,
+and enacted GAA stages remain explicitly unavailable rather than being inferred
+from the portal's fiscal-year label.
+
 Project and change records also show congressional district context when the
 listed DPWH office can be matched exactly. A single-district office names that
 district and its representative as recorded in the dated roster snapshot. Shared offices show every served
@@ -53,8 +61,9 @@ or evidence that a representative requested or controls the project.
 1. Review and label representative candidates from each deterministic FY2027
    queue without treating queue position as a risk score.
 2. Expand the cross-source reviewed golden set from 6 to 100 cases.
-3. Extend the FY2027 ledger to Senate, bicameral and final GAA stages when
-   stable source artifacts can be acquired and reconciled.
+3. Refresh the FY2027 publication catalogue and extend the comparison ledger
+   when stable Senate, bicameral and final GAA artifacts can be acquired and
+   reconciled.
 4. Add PhilGEPS contract-level awards and COA findings only after complete,
    reproducible artifacts and their identifier limitations are modeled.
 5. Register an authoritative, reusable administrative-boundary artifact before

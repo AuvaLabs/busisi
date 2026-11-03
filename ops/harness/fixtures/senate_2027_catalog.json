@@ -1,0 +1,130 @@
+{
+  "documents": [
+    {
+      "acquisition_status": "discovered",
+      "artifact_sha256": null,
+      "byte_size": null,
+      "document_id": "senate-portal:384",
+      "evidence_note": "Discovered in the Senate portal catalogue through the disclosed secondary renderer. The official viewer did not expose retrievable file bytes to the acquisition worker.",
+      "mirror_url": null,
+      "publication_date": "2026-10-13",
+      "publisher": "Senate Budget Transparency Portal",
+      "source_record_id": "384",
+      "source_url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027",
+      "stage": "house_gab",
+      "stage_label": "House bill, third reading",
+      "title": "HB 10858 FOR 3RD READING VOL I-A",
+      "viewer_url": "https://budget-transparency-portal.senate.gov.ph/file_viewer?id=384&type=Documents",
+      "volume": "I-A"
+    },
+    {
+      "acquisition_status": "verified_archived",
+      "artifact_sha256": "4cc0f17e472d1af380ea6d3972561f6bb241137826fd85ed7e7e70bcd92986b9",
+      "byte_size": 15663076,
+      "document_id": "senate-portal:385",
+      "evidence_note": "The archived BetterGov copy identifies the Senate portal as its source and matches the recorded SHA-256 fingerprint. This verifies the archived copy, not a fresh direct Senate download.",
+      "mirror_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-3r-vol-ib.pdf",
+      "publication_date": "2026-10-13",
+      "publisher": "Senate Budget Transparency Portal",
+      "source_record_id": "385",
+      "source_url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027",
+      "stage": "house_gab",
+      "stage_label": "House bill, third reading",
+      "title": "HB 10858 FOR 3RD READING VOL I-B",
+      "viewer_url": "https://budget-transparency-portal.senate.gov.ph/file_viewer?id=385&type=Documents",
+      "volume": "I-B"
+    },
+    {
+      "acquisition_status": "verified_archived",
+      "artifact_sha256": "48cb7a11e391bd4da89d4f47cf39a2eba8fe9bfe636dba101c8284b224ac1b1b",
+      "byte_size": 9600816,
+      "document_id": "senate-portal:386",
+      "evidence_note": "The archived BetterGov copy identifies the Senate portal as its source and matches the recorded SHA-256 fingerprint. This verifies the archived copy, not a fresh direct Senate download.",
+      "mirror_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-3r-vol-ic.pdf",
+      "publication_date": "2026-10-13",
+      "publisher": "Senate Budget Transparency Portal",
+      "source_record_id": "386",
+      "source_url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027",
+      "stage": "house_gab",
+      "stage_label": "House bill, third reading",
+      "title": "HB 10858 FOR 3RD READING VOL I-C",
+      "viewer_url": "https://budget-transparency-portal.senate.gov.ph/file_viewer?id=386&type=Documents",
+      "volume": "I-C"
+    },
+    {
+      "acquisition_status": "discovered",
+      "artifact_sha256": null,
+      "byte_size": null,
+      "document_id": "senate-portal:387",
+      "evidence_note": "Discovered in the Senate portal catalogue through the disclosed secondary renderer. The official viewer did not expose retrievable file bytes to the acquisition worker.",
+      "mirror_url": null,
+      "publication_date": "2026-10-13",
+      "publisher": "Senate Budget Transparency Portal",
+      "source_record_id": "387",
+      "source_url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027",
+      "stage": "house_gab",
+      "stage_label": "House bill, third reading",
+      "title": "HB 10858 3RD READING VOL II",
+      "viewer_url": "https://budget-transparency-portal.senate.gov.ph/file_viewer?id=387&type=Documents",
+      "volume": "II"
+    },
+    {
+      "acquisition_status": "discovered",
+      "artifact_sha256": null,
+      "byte_size": null,
+      "document_id": "senate-portal:417",
+      "evidence_note": "Discovered in the Senate portal catalogue through the disclosed secondary renderer. It is a supporting analysis, not a legislative budget stage.",
+      "mirror_url": null,
+      "publication_date": null,
+      "publisher": "Senate Budget Transparency Portal",
+      "source_record_id": "417",
+      "source_url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027",
+      "stage": "supporting",
+      "stage_label": "Supporting fiscal analysis",
+      "title": "SEPO Budget Notes: An Assessment of the Macroeconomic and Fiscal Assumptions of the Proposed 2027 National Budget",
+      "viewer_url": "https://budget-transparency-portal.senate.gov.ph/file_viewer?id=417&type=Documents",
+      "volume": null
+    }
+  ],
+  "fiscal_year": 2027,
+  "schema_version": 1,
+  "source": {
+    "acquisition_status": "direct_blocked_secondary_discovery",
+    "discovery_source_id": "jina-reader",
+    "retrieved_at": "2026-11-03T08:58:00+00:00",
+    "source_id": "senate-budget-portal",
+    "url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027"
+  },
+  "stage_coverage": [
+    {
+      "document_count": 0,
+      "stage": "nep",
+      "status": "available_elsewhere"
+    },
+    {
+      "document_count": 4,
+      "stage": "house_gab",
+      "status": "partial"
+    },
+    {
+      "document_count": 0,
+      "stage": "senate_committee",
+      "status": "unavailable"
+    },
+    {
+      "document_count": 0,
+      "stage": "senate_amendment",
+      "status": "unavailable"
+    },
+    {
+      "document_count": 0,
+      "stage": "bicam",
+      "status": "unavailable"
+    },
+    {
+      "document_count": 0,
+      "stage": "gaa",
+      "status": "unavailable"
+    }
+  ]
+}

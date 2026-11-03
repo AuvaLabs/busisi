@@ -20,6 +20,8 @@ def test_default_registry_distinguishes_primary_and_secondary_sources() -> None:
     assert registry.get("bettergov-analysis-github").authority is SourceAuthority.SECONDARY
     assert registry.get("bettergov-gaa-snapshot").authority is SourceAuthority.SECONDARY
     assert registry.get("bettergov-dpwh-snapshot").authority is SourceAuthority.SECONDARY
+    assert registry.get("senate-budget-portal").authority is SourceAuthority.PRIMARY
+    assert registry.get("jina-reader").authority is SourceAuthority.SECONDARY
 
 
 def test_registry_rejects_duplicate_ids_and_non_https_urls() -> None:

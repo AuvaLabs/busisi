@@ -21,6 +21,10 @@ import {
   queryPublicValueIndicators,
 } from './public-value-query.js';
 import {
+  getBudgetCycleSummary,
+  queryBudgetCycleDocuments,
+} from './budget-cycle-query.js';
+import {
   exportReviewCsv,
   getReviewSummary,
   parseReviewQuery,
@@ -112,6 +116,19 @@ const apiResponse = async (request, environment, url) => {
     return jsonResponse({
       meta: { review_scope: 'official_dbm_fiscal_program' },
       data: await queryPublicValueIndicators(environment.DB),
+    });
+  }
+  if (url.pathname === '/api/v1/budget-cycle') {
+    return jsonResponse({ data: await getBudgetCycleSummary(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/budget-cycle/documents') {
+    const records = await queryBudgetCycleDocuments(environment.DB);
+    return jsonResponse({
+      meta: {
+        total: records.length,
+        review_scope: 'source_separated_budget_cycle_catalogue',
+      },
+      data: records,
     });
   }
   if (url.pathname === '/api/v1/changes') {

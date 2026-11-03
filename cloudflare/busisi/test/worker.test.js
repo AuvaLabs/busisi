@@ -41,6 +41,9 @@ const agencyMigrationPath = fileURLToPath(
 const publicValueMigrationPath = fileURLToPath(
   new URL('../migrations/0009_public_value.sql', import.meta.url),
 );
+const budgetCycleMigrationPath = fileURLToPath(
+  new URL('../migrations/0010_budget_cycle.sql', import.meta.url),
+);
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
 );
@@ -78,6 +81,7 @@ class LocalD1 {
     this.database.exec(readFileSync(districtMigrationPath, 'utf8'));
     this.database.exec(readFileSync(agencyMigrationPath, 'utf8'));
     this.database.exec(readFileSync(publicValueMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(budgetCycleMigrationPath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -154,6 +158,23 @@ class LocalD1 {
       INSERT INTO public_value_indicators VALUES
         ('real_gdp_growth', 'economy', 'Real GDP growth forecast', 'range_basis_points', 400, 550, 350, 450, 500, 600, 150, 'improving', 'Higher is treated as favorable for this indicator.', 'besf-a1', 1, 'https://www.dbm.gov.ph/A1.pdf', '${'5'.repeat(64)}', 'Forecast range, not an observed outcome.'),
         ('interest_share', 'fiscal_space', 'Interest share of disbursements', 'basis_points', 1540, 1610, NULL, NULL, NULL, NULL, 70, 'pressure', 'Lower is treated as favorable for this indicator.', 'besf-a2', 2, 'https://www.dbm.gov.ph/A2.pdf', '${'6'.repeat(64)}', '');
+      INSERT INTO budget_cycle_metadata VALUES
+        ('fiscal_year', '2027'), ('document_count', '2'),
+        ('verified_document_count', '1'), ('discovered_document_count', '1'),
+        ('acquisition_status', 'direct_blocked_secondary_discovery'),
+        ('source_url', 'https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027'),
+        ('retrieved_at', '2026-11-03T08:58:00+00:00'),
+        ('catalog_sha256', '${'7'.repeat(64)}');
+      INSERT INTO budget_cycle_stages VALUES
+        ('nep', 1, 'available_elsewhere', 0),
+        ('house_gab', 2, 'partial', 1),
+        ('senate_committee', 3, 'unavailable', 0),
+        ('senate_amendment', 4, 'unavailable', 0),
+        ('bicam', 5, 'unavailable', 0),
+        ('gaa', 6, 'unavailable', 0);
+      INSERT INTO budget_cycle_documents VALUES
+        ('senate-portal:385', 2027, '385', 'HB 10858 FOR 3RD READING VOL I-B', 'house_gab', 'House bill, third reading', 'Senate Budget Transparency Portal', 'I-B', '2026-10-13', 'https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027', 'https://budget-transparency-portal.senate.gov.ph/file_viewer?id=385&type=Documents', 'verified_archived', '${'4'.repeat(64)}', 15663076, 'https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-3r-vol-ib.pdf', 'Archived copy verified by SHA-256.'),
+        ('senate-portal:417', 2027, '417', 'SEPO Budget Notes', 'supporting', 'Supporting fiscal analysis', 'Senate Budget Transparency Portal', NULL, NULL, 'https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027', 'https://budget-transparency-portal.senate.gov.ph/file_viewer?id=417&type=Documents', 'discovered', NULL, NULL, NULL, 'Catalogue discovery only.');
     `);
   }
 
@@ -209,6 +230,28 @@ test('validates appropriation-head query filters and cursor contract', () => {
       { name: 'QueryError', message: 'cursor is invalid for this query' },
     );
   }
+});
+
+test('publishes the source-separated FY2027 budget-cycle catalogue', async () => {
+  const database = new LocalD1();
+  const summary = await worker.fetch(
+    request('/api/v1/budget-cycle'), environment(database),
+  );
+  const documents = await worker.fetch(
+    request('/api/v1/budget-cycle/documents'), environment(database),
+  );
+  const summaryBody = await summary.json();
+  const documentBody = await documents.json();
+
+  assert.equal(summary.status, 200);
+  assert.equal(summaryBody.data.metadata.fiscal_year, '2027');
+  assert.equal(summaryBody.data.stages.length, 6);
+  assert.equal(summaryBody.data.stages.find(({ stage }) => stage === 'gaa').status, 'unavailable');
+  assert.equal(documentBody.meta.total, 2);
+  assert.equal(documentBody.data[0].stage, 'house_gab');
+  assert.equal(documentBody.data[0].acquisition_status, 'verified_archived');
+  assert.equal(documentBody.data[1].stage, 'supporting');
+  database.close();
 });
 
 test('keeps unavailable and malformed district evidence unassigned', () => {

@@ -107,6 +107,12 @@ def default_source_registry() -> SourceRegistry:
                 SourceAuthority.PRIMARY,
             ),
             SourceDefinition(
+                "senate-budget-portal",
+                "Senate Budget Transparency Portal",
+                "https://budget-transparency-portal.senate.gov.ph",
+                SourceAuthority.PRIMARY,
+            ),
+            SourceDefinition(
                 "bettergov-budget",
                 "BetterGov Budget API",
                 "https://budget.bettergov.ph",
@@ -140,6 +146,12 @@ def default_source_registry() -> SourceRegistry:
                 "bettergov-dpwh-snapshot",
                 "BetterGov DPWH Parquet Snapshot",
                 "https://huggingface.co",
+                SourceAuthority.SECONDARY,
+            ),
+            SourceDefinition(
+                "jina-reader",
+                "Jina Reader rendered-page discovery",
+                "https://r.jina.ai",
                 SourceAuthority.SECONDARY,
             ),
         )
