@@ -9,6 +9,7 @@ const paths = [
   '/contracts/',
   '/explore/',
   '/agencies/',
+  '/releases/',
   '/changes/',
   '/budget-trail/',
   '/audit/',

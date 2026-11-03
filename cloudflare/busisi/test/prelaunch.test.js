@@ -252,6 +252,14 @@ test('serves the public IndexNow ownership key', async () => {
   assert.equal((await response.text()).trim(), key);
 });
 
+test('submits the allotment-release desk for search discovery', () => {
+  const source = readFileSync(
+    new URL('../scripts/submit-indexnow.mjs', import.meta.url), 'utf8',
+  );
+
+  assert.match(source, /'\/releases\/'/);
+});
+
 test('redirects www and returns a useful 404', async () => {
   const redirect = await fetchPath('/methodology/', 'www.busisi.org');
   const missing = await fetchPath('/not-a-page');

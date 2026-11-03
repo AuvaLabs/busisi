@@ -173,8 +173,9 @@ As of 2026-11-03:
 - The public surface includes canonical URLs, page descriptions, Open Graph
   metadata, JSON-LD, `robots.txt`, `sitemap.xml` and `llms.txt`. It uses no
   model inference, model API, cookies or application analytics.
-- IndexNow submission includes the seven canonical pages and five reviewed
-  dossiers. The quarantined dossier and public APIs are excluded from indexing.
+- IndexNow submission includes every canonical evidence desk, the release
+  ledger, public report and contract pages, and five reviewed dossiers. The
+  quarantined dossier and public APIs are excluded from indexing.
 
 Run the reviewed-case harness with:
 
