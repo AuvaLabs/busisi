@@ -33,7 +33,7 @@ const expectedCoa = Object.freeze({
   archived_reports: '0',
   checked_projects: '6',
   project_matches: '0',
-  catalog_sha256: '495d72928306df3a61558609298d1d0dd3916667b48c9cea69baf30cbfb6c79c',
+  catalog_sha256: '4c6cbc56a5226dff8499f097bf8c800c1b952ed51198cce4842b724b2498d4ba',
 });
 const expectedReviewCounts = Object.freeze({
   decreased: 265,

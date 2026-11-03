@@ -355,6 +355,10 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/agencies/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/budget-trail/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/audit/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/audit/reports/coa-oda-consolidated-2024/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/audit/reports/coa-dpwh-region-i-sao-2023-02/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/audit/reports/coa-cpa-benguet-local-roads-2022/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/audit/reports/coa-cpa-capiz-fmr-2015-01/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/signals/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/integrity/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
