@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <rect x="32" y="32" width="1136" height="566" fill="none" stroke="#15191d" stroke-width="2"/>
+  <rect x="32" y="32" width="12" height="566" fill="#17415f"/>
+  <g transform="translate(82 68)">
+    <g transform="scale(.72)" stroke="#15191d" stroke-width="3.5" stroke-linejoin="round">
+      <path fill="#d2d9de" d="m8 39 24 14 24-14v9L32 62 8 48Z"/>
+      <path fill="#e9f0f4" d="m8 28 24 14 24-14v9L32 51 8 37Z"/>
+      <path fill="#ffffff" d="M8 17 32 3l24 14-24 14Z"/>
+      <path fill="none" stroke="#17415f" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/>
+      <circle cx="18" cy="44" r="3.5" fill="#ffffff" stroke="#17415f"/>
+      <circle cx="32" cy="26" r="3.5" fill="#ffffff" stroke="#17415f"/>
+      <circle cx="51" cy="12" r="10" fill="#17415f" stroke="none"/>
+      <path fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/>
+    </g>
+    <text x="64" y="35" fill="#15191d" font-family="Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="3">BUSISI</text>
+  </g>
+  <text x="82" y="185" fill="#17415f" font-family="Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="2">PHILIPPINE PUBLIC BUDGET EVIDENCE</text>
+  <text x="82" y="270" fill="#15191d" font-family="Arial, sans-serif" font-size="56" font-weight="700">
+    <tspan x="82" dy="0">Follow public money</tspan>
+    <tspan x="82" dy="67">from proposal to project.</tspan>
+  </text>
+  <line x1="82" y1="448" x2="680" y2="448" stroke="#17415f" stroke-width="3"/>
+  <circle cx="697" cy="448" r="6" fill="#8a4600"/>
+  <text x="82" y="487" fill="#48515a" font-family="Arial, sans-serif" font-size="22">Official records. Traceable comparisons. Visible limits.</text>
+  <text x="82" y="548" fill="#17415f" font-family="Arial, sans-serif" font-size="20" font-weight="700">busisi.org</text>
+  <g transform="translate(820 132)">
+    <rect x="78" y="50" width="232" height="318" fill="#e8ecee" stroke="#15191d" stroke-width="2"/>
+    <rect x="38" y="25" width="232" height="318" fill="#e9f0f4" stroke="#15191d" stroke-width="2"/>
+    <rect width="232" height="318" fill="#17415f"/>
+    <text x="24" y="42" fill="#ffffff" font-family="Arial, sans-serif" font-size="13" font-weight="700" letter-spacing="1.5">EVIDENCE TRAIL</text>
+    <line x1="24" y1="64" x2="208" y2="64" stroke="#7894a7"/>
+    <text x="24" y="105" fill="#e0ebf1" font-family="Arial, sans-serif" font-size="14">01  PROPOSAL</text>
+    <line x1="24" y1="122" x2="208" y2="122" stroke="#7894a7"/>
+    <text x="24" y="159" fill="#e0ebf1" font-family="Arial, sans-serif" font-size="14">02  APPROPRIATION</text>
+    <line x1="24" y1="176" x2="208" y2="176" stroke="#7894a7"/>
+    <text x="24" y="213" fill="#e0ebf1" font-family="Arial, sans-serif" font-size="14">03  DELIVERY</text>
+    <line x1="24" y1="230" x2="208" y2="230" stroke="#7894a7"/>
+    <rect x="24" y="254" width="8" height="8" fill="#d98116"/>
+    <text x="43" y="264" fill="#ffffff" font-family="Arial, sans-serif" font-size="14" font-weight="700">SOURCE BEFORE CLAIM</text>
+  </g>
+</svg>

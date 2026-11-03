@@ -30,7 +30,7 @@ const navigation = (canonicalPath) => {
     `<a data-nav-group="${label.toLowerCase()}" href="${href}"${paths.includes(canonicalPath) ? ' aria-current="page"' : ''}>${icon(iconName, 'nav-icon')}<span>${label}</span></a>`
   )).join('');
   return `<div class="header-inner">
-    <a class="wordmark" href="/" aria-label="Busisi home"><img class="brand-mark" src="/assets/busisi-mark-v2.svg" width="44" height="44" alt=""><span>Busisi</span></a>
+    <a class="wordmark" href="/" aria-label="Busisi home"><img class="brand-mark" src="/assets/busisi-mark-v3.svg" width="44" height="44" alt=""><span>Busisi</span></a>
     <nav class="primary-nav" aria-label="Primary navigation">${links}</nav>
   </div>`;
 };
@@ -63,10 +63,10 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${safeTitle}</title><meta name="description" content="${safeDescription}"><meta name="robots" content="${robots}">
-  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v16.css">
+  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v17.css">
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${safeTitle}"><meta property="og:description" content="${safeDescription}"><meta property="og:url" content="${canonical}">
-  <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow public money from proposal to project">
-  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta name="twitter:image:alt" content="Busisi: Follow public money from proposal to project">
+  <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow public money from proposal to project">
+  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta name="twitter:image:alt" content="Busisi: Follow public money from proposal to project">
   <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js?v=2"></script>' : ''}${canonicalPath === '/contracts/' ? '<script type="module" src="/assets/contracts-v1.js?v=2"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js?v=2"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/releases/' ? '<script type="module" src="/assets/releases-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js?v=2"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js?v=2"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js?v=2"></script>' : ''}
 </head><body>
   <a class="skip-link" href="#main-content">Skip to content</a><header class="site-header">${navigation(canonicalPath)}</header>
@@ -97,7 +97,7 @@ export const homeBody = `
     </aside>
   </section>
 
-  <div class="editorial-banner" aria-hidden="true"><img src="/assets/busisi-evidence-banner-v1.webp" width="1600" height="520" alt="" loading="lazy" decoding="async"></div>
+  <div class="editorial-banner" aria-hidden="true"><img src="/assets/busisi-evidence-banner-v2.webp" width="1600" height="520" alt="" loading="lazy" decoding="async"></div>
 
   <section class="budget-stage-line" aria-labelledby="budget-stage-heading">
     <header><p class="kicker">FY2027 publication trail</p><h2 id="budget-stage-heading">What is available now</h2></header>
@@ -255,7 +255,7 @@ export const agenciesBody = `
 
 export const releasesBody = `
   <section class="data-intro release-intro"><div><p class="kicker">FY2026 allotment-release ledger</p><h1>See what DBM had released by September.</h1><p class="lede">Search department, attached-agency, subunit, and Special Purpose Fund allotment totals from DBM's official status report as of 30 September 2026.</p></div><aside class="snapshot-card"><span>Official evidence snapshot</span><strong>96 records</strong><p>36 departments<br>47 attached agencies and subunits<br>13 Special Purpose Funds</p><a href="/methodology/#allotment-releases">Read the release controls</a></aside></section>
-  <div class="release-editorial-banner" aria-hidden="true"><img src="/assets/busisi-budget-evidence-banner-v1.webp" width="1600" height="534" alt="" loading="lazy" decoding="async"></div>
+  <div class="release-editorial-banner" aria-hidden="true"><img src="/assets/busisi-budget-evidence-banner-v2.webp" width="1600" height="534" alt="" loading="lazy" decoding="async"></div>
   <section class="release-boundary"><strong>Allotment release is not payment.</strong><p>This report shows budget authority released by DBM. It does not establish agency obligations, cash disbursements, contractor payments, completed work, or public benefit. The published rows are agency-level and Special Purpose Fund totals, not project-level records.</p></section>
   <section class="release-summary" aria-label="Allotment-release controls"><article><strong data-release-current>₱4.072T</strong><span>current GAA allotments released</span></article><article><strong data-release-balance>₱318.817B</strong><span>current GAA balance</span></article><article><strong data-release-all>₱6.533T</strong><span>all-source allotments released</span></article><article><strong data-release-rows>96</strong><span>searchable records</span></article></section>
   <section class="release-shell" data-release-ledger>
@@ -341,4 +341,4 @@ export const methodologyBody = `
 
 export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}`;
 
-export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#111" stroke-width="2.5" stroke-linejoin="round"><path fill="#d6d6d2" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#fff" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fff" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fff" stroke="#111" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fff" stroke="#111" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#111"/><path fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/></svg>`;
+export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#15191d" stroke-width="2.5" stroke-linejoin="round"><path fill="#d2d9de" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#e9f0f4" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fff" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#17415f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#17415f"/><path fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/><circle cx="18" cy="44" r="1.2" fill="#8a4600"/></svg>`;

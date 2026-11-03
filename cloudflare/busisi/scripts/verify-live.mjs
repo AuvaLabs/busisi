@@ -325,10 +325,10 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v16.css',
-    '/assets/busisi-mark-v2.svg',
-    '/assets/busisi-social-v1.png',
-    '/assets/busisi-evidence-banner-v1.webp',
+    '/assets/site-visual-v17.css',
+    '/assets/busisi-mark-v3.svg',
+    '/assets/busisi-social-v2.png',
+    '/assets/busisi-evidence-banner-v2.webp',
     '/assets/busisi-icons-v1.svg#appropriations',
     'class="home-ledger"',
     'Current FY2027 budget evidence',
@@ -337,12 +337,13 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v16.css');
+  const css = await request('/assets/site-visual-v17.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
   for (const value of [
-    'Source Sans 3', '--paper:#fff', '--ink:#111', '--accent:#111', '.home-ledger',
+    'Source Sans 3', '--paper:#fff', '--ink:#15191d', '--accent:#17415f',
+    '--review:#8a4600', '--signal-red:#982b25', '--verified:#1f6547', '.home-ledger',
     '.explorer-shell', '.review-shell', '.integrity-shell', '.contractor-shell',
     '.lifecycle-grid', '.lifecycle-item', '.contract-explorer', '.contract-card',
     '.release-shell', '.release-card',
@@ -350,21 +351,26 @@ const verifyDesign = async () => {
     expectIncludes(cssText, value, 'design CSS');
   }
   if (/Merriweather|Georgia|Times New Roman/i.test(cssText)) fail('design CSS: decorative serif font remains');
+  if (/\.project-image-card img\{[^}]*(?:filter|mix-blend-mode|opacity):/i.test(cssText)) {
+    fail('design CSS: documentary project images are visually altered');
+  }
+  expectIncludes(cssText, '.editorial-banner img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;filter:none}', 'design CSS');
+  expectIncludes(cssText, '.release-editorial-banner img{filter:none}', 'design CSS');
 
-  const mark = await request('/assets/busisi-mark-v2.svg');
+  const mark = await request('/assets/busisi-mark-v3.svg');
   expectStatus(mark, 200, 'brand mark');
   expectContentType(mark, 'image/svg+xml', 'brand mark');
   const markText = await mark.text();
   if (markText.length > 4_096 || /<script/i.test(markText)) fail('brand mark: unsafe or oversized SVG');
 
-  const socialCard = await request('/assets/busisi-social-v1.png');
+  const socialCard = await request('/assets/busisi-social-v2.png');
   expectStatus(socialCard, 200, 'social card');
   expectContentType(socialCard, 'image/png', 'social card');
   const socialCardBytes = Buffer.from(await socialCard.arrayBuffer());
   if (socialCardBytes.length > 250_000) fail('social card: exceeds the 250 KB performance budget');
   expectBytes(socialCardBytes.subarray(1, 4), 'PNG', 'social card');
 
-  const banner = await request('/assets/busisi-evidence-banner-v1.webp');
+  const banner = await request('/assets/busisi-evidence-banner-v2.webp');
   expectStatus(banner, 200, 'editorial banner');
   expectContentType(banner, 'image/webp', 'editorial banner');
   const bannerBytes = Buffer.from(await banner.arrayBuffer());
@@ -372,7 +378,7 @@ const verifyDesign = async () => {
   expectBytes(bannerBytes.subarray(0, 4), 'RIFF', 'editorial banner');
   expectBytes(bannerBytes.subarray(8, 12), 'WEBP', 'editorial banner');
 
-  const budgetBanner = await request('/assets/busisi-budget-evidence-banner-v1.webp');
+  const budgetBanner = await request('/assets/busisi-budget-evidence-banner-v2.webp');
   expectStatus(budgetBanner, 200, 'budget evidence banner');
   expectContentType(budgetBanner, 'image/webp', 'budget evidence banner');
   const budgetBannerBytes = Buffer.from(await budgetBanner.arrayBuffer());

@@ -16,11 +16,11 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<link rel="canonical" href="https:\/\/busisi\.org\/">/);
   assert.match(document, /<meta name="robots" content="index, follow, max-image-preview:large">/);
   assert.match(document, /<meta property="og:url" content="https:\/\/busisi\.org\/">/);
-  assert.match(document, /<meta property="og:image" content="https:\/\/busisi\.org\/assets\/busisi-social-v1\.png">/);
+  assert.match(document, /<meta property="og:image" content="https:\/\/busisi\.org\/assets\/busisi-social-v2\.png">/);
   assert.match(document, /<meta property="og:image:width" content="1200">/);
   assert.match(document, /<meta property="og:image:height" content="630">/);
   assert.match(document, /<meta name="twitter:card" content="summary_large_image">/);
-  assert.match(document, /href="\/assets\/site-visual-v16\.css"/);
+  assert.match(document, /href="\/assets\/site-visual-v17\.css"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
@@ -48,7 +48,7 @@ test('home provides task-led navigation and a data-led editorial masthead', asyn
   assert.match(document, /56,887/);
   assert.match(document, /NEP published/);
   assert.match(document, /House partially acquired/);
-  assert.match(document, /src="\/assets\/busisi-evidence-banner-v1\.webp"/);
+  assert.match(document, /src="\/assets\/busisi-evidence-banner-v2\.webp"/);
   assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#appropriations"/);
   assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#delivery"/);
   assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#candidate-links"/);
@@ -182,11 +182,11 @@ test('publishes the Sulit Ba public-value desk as the primary civic question', a
   assert.doesNotMatch(document, /overall score|AI score|Auva Labs/i);
 });
 
-test('home uses the monochrome Busisi identity and direct evidence desks', async () => {
+test('home uses the restrained-color Busisi identity and direct evidence desks', async () => {
   const response = await fetchPath('/');
   const document = await response.text();
 
-  assert.match(document, /src="\/assets\/busisi-mark-v2\.svg"/);
+  assert.match(document, /src="\/assets\/busisi-mark-v3\.svg"/);
   assert.doesNotMatch(document, /src="\/assets\/busisi-mark\.webp"/);
   assert.doesNotMatch(document, /busisi-masthead\.webp/);
   assert.match(document, /Philippine budget evidence/);
@@ -324,8 +324,8 @@ test('renders a reviewed evidence dossier when the publication database is bound
   assert.doesNotMatch(document, /budget\.example|dpwh\.example/);
 });
 
-test('serves the monochrome editorial system and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v16.css');
+test('serves the accessible civic color system and safe method boundaries', async () => {
+  const css = await fetchPath('/assets/site-visual-v17.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));
@@ -337,9 +337,11 @@ test('serves the monochrome editorial system and safe method boundaries', async 
   assert.match(cssText, /font-family:'Source Sans 3'/);
   assert.doesNotMatch(cssText, /Merriweather|Georgia|Times New Roman/i);
   assert.match(cssText, /--paper:#fff/);
-  assert.match(cssText, /--ink:#111/);
-  assert.match(cssText, /--accent:#111/);
-  assert.match(cssText, /--signal-red:#a12b1f/);
+  assert.match(cssText, /--ink:#15191d/);
+  assert.match(cssText, /--accent:#17415f/);
+  assert.match(cssText, /--review:#8a4600/);
+  assert.match(cssText, /--signal-red:#982b25/);
+  assert.match(cssText, /--verified:#1f6547/);
   assert.match(cssText, /--text-xs:\.8125rem/);
   assert.match(cssText, /body\{[^}]*font-size:var\(--text-md\)[^}]*line-height:1\.6/);
   assert.match(cssText, /body:before\{display:none/);
@@ -350,6 +352,9 @@ test('serves the monochrome editorial system and safe method boundaries', async 
   assert.match(cssText, /\.editorial-banner/);
   assert.match(cssText, /\.project-image-gallery/);
   assert.doesNotMatch(cssText, /\.project-image-card img\{[^}]*grayscale/);
+  assert.doesNotMatch(cssText, /\.project-image-card img\{[^}]*(filter|mix-blend-mode|opacity):/);
+  assert.match(cssText, /\.primary-nav a:hover,[^{]+\{[^}]*color:var\(--accent\)/);
+  assert.match(cssText, /\.editorial-banner img\{[^}]*filter:none/);
   assert.match(cssText, /\.section-icon/);
   assert.match(cssText, /\.budget-stage-line/);
   assert.match(cssText, /\.primary-nav/);
@@ -360,6 +365,23 @@ test('serves the monochrome editorial system and safe method boundaries', async 
   assert.equal(head.status, 200);
   assert.equal(await head.text(), '');
   assert.equal(post.status, 405);
+});
+
+test('keeps semantic text colors at WCAG AA contrast on white', async () => {
+  const cssText = await (await fetchPath('/assets/site-visual-v17.css')).text();
+  const token = (name) => cssText.match(new RegExp(`--${name}:(#[0-9a-f]{6})`))?.[1];
+  const luminance = (hex) => {
+    const channels = [1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
+    const linear = channels.map((value) => (
+      value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+    ));
+    return (0.2126 * linear[0]) + (0.7152 * linear[1]) + (0.0722 * linear[2]);
+  };
+  const contrastOnWhite = (hex) => 1.05 / (luminance(hex) + 0.05);
+
+  for (const name of ['ink', 'accent', 'review', 'signal-red', 'verified', 'muted']) {
+    assert.ok(contrastOnWhite(token(name)) >= 4.5, `${name} must meet WCAG AA on white`);
+  }
 });
 
 test('passes self-hosted fonts through the static asset binding', async () => {
@@ -388,13 +410,13 @@ test('passes the editorial social card through the static asset binding', async 
     },
   };
   const asset = await worker.fetch(
-    new Request('https://busisi.org/assets/busisi-social-v1.png'),
+    new Request('https://busisi.org/assets/busisi-social-v2.png'),
     env,
   );
 
   assert.equal(asset.status, 200);
   assert.equal(asset.headers.get('content-type'), 'image/png');
-  assert.equal(await asset.text(), '/assets/busisi-social-v1.png');
+  assert.equal(await asset.text(), '/assets/busisi-social-v2.png');
 });
 
 test('passes the editorial banner and icon system through the static asset binding', async () => {
@@ -408,7 +430,7 @@ test('passes the editorial banner and icon system through the static asset bindi
     },
   };
   const banner = await worker.fetch(
-    new Request('https://busisi.org/assets/busisi-budget-evidence-banner-v1.webp'),
+    new Request('https://busisi.org/assets/busisi-budget-evidence-banner-v2.webp'),
     env,
   );
   const icons = await worker.fetch(
@@ -426,10 +448,10 @@ test('places the decorative budget evidence banner on the release ledger', async
   const response = await fetchPath('/releases/');
   const document = await response.text();
 
-  assert.match(document, /busisi-budget-evidence-banner-v1\.webp/);
+  assert.match(document, /busisi-budget-evidence-banner-v2\.webp/);
   assert.match(document, /class="release-editorial-banner" aria-hidden="true"/);
   assert.match(document, /width="1600" height="534" alt=""/);
-  assert.match(document, /site-visual-v16\.css/);
+  assert.match(document, /site-visual-v17\.css/);
 });
 
 test('reader actions use human-readable evidence instead of raw JSON endpoints', () => {
