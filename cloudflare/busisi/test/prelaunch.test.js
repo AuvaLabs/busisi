@@ -275,6 +275,7 @@ test('renders a reviewed evidence dossier when the publication database is bound
   const environment = {
     DB: {
       prepare: (sql) => ({
+        all: async () => ({ results: [] }),
         bind: () => ({
           first: async () => sql.includes('FROM projects WHERE slug') ? row : null,
           all: async () => ({ results: [] }),
@@ -292,7 +293,8 @@ test('renders a reviewed evidence dossier when the publication database is bound
   assert.match(document, /Reviewed public project/);
   assert.match(document, /Reviewed project evidence dossier/);
   assert.match(document, /Authority to spend/);
-  assert.match(document, /Official evidence 1/);
+  assert.match(document, /Reader evidence links/);
+  assert.doesNotMatch(document, /budget\.example|dpwh\.example/);
 });
 
 test('serves the monochrome editorial system and safe method boundaries', async () => {

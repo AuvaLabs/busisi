@@ -212,9 +212,33 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
         connection.executescript(migration_0006.read_text())
         migration_0007 = migration.with_name("0007_district_attribution.sql")
         connection.executescript(migration_0007.read_text())
+        migration_0011 = migration.with_name("0011_delivery_details.sql")
+        connection.executescript(migration_0011.read_text())
         for chunk in sorted((output / "chunks").glob("*.sql")):
             connection.executescript(chunk.read_text())
         assert connection.execute("SELECT COUNT(*) FROM integrity_signal_items").fetchone()[0] == 4
+        details = connection.execute(
+            "SELECT contract_id, category, status, progress, contractor_name, start_date, "
+            "completion_date, latitude, longitude, has_satellite_image "
+            "FROM delivery_project_details ORDER BY contract_id"
+        ).fetchall()
+        assert details == [
+            (
+                "24B", "Buildings and Facilities", "Completed", "0.0",
+                "ACME BUILDERS (12345)", "2024-01-01", "2024-12-01", "", "", 0,
+            ),
+            (
+                "25A", "Buildings and Facilities", "On-Going", "100.0",
+                "ACME BUILDERS (12345)", "2025-01-01", "2025-12-01",
+                "14.5995", "120.9842", 1,
+            ),
+        ]
+        parties = connection.execute(
+            "SELECT contractor_parties_json FROM delivery_project_details WHERE contract_id = '25A'"
+        ).fetchone()[0]
+        assert json.loads(parties) == [
+            {"contractor_key": "pcab:12345", "contractor_name": "ACME BUILDERS", "pcab_id": "12345"}
+        ]
         contractor = connection.execute(
             "SELECT project_count, total_budget_centavos FROM contractor_rankings"
         ).fetchone()

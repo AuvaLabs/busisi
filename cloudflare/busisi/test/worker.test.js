@@ -45,6 +45,9 @@ const publicValueMigrationPath = fileURLToPath(
 const budgetCycleMigrationPath = fileURLToPath(
   new URL('../migrations/0010_budget_cycle.sql', import.meta.url),
 );
+const deliveryDetailsMigrationPath = fileURLToPath(
+  new URL('../migrations/0011_delivery_details.sql', import.meta.url),
+);
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
 );
@@ -83,6 +86,7 @@ class LocalD1 {
     this.database.exec(readFileSync(agencyMigrationPath, 'utf8'));
     this.database.exec(readFileSync(publicValueMigrationPath, 'utf8'));
     this.database.exec(readFileSync(budgetCycleMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(deliveryDetailsMigrationPath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -93,6 +97,13 @@ class LocalD1 {
       INSERT INTO delivery_items VALUES
         ('25O00113', 2025, 'Construction of San Andres Pumping Station', 37679270658, 'Manila 1st DEO, NCR', 'GAA 2025', 'family:pump', 'san andres pumping station', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
         ('26ZERO01', 2026, 'Construction of Sample Health Center', 0, 'Cebu, Region VII', 'GAA 2026', 'family:health', 'sample health center', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+      INSERT INTO delivery_project_details VALUES
+        ('25O00113', 2025, 'Flood Control', 'On-Going', '62.5', 'ACME BUILDERS (12345)',
+         '[{"contractor_key":"pcab:12345","contractor_name":"ACME BUILDERS","pcab_id":"12345"}]',
+         '2025-01-15', '2025-12-20', 'Manila 1st DEO', 'NCR', '14.5995', '120.9842', 1,
+         '${'b'.repeat(64)}'),
+        ('26ZERO01', 2026, 'Buildings and Facilities', 'Not Yet Started', '0', '', '[]',
+         '', '', 'Cebu', 'Region VII', '', '', 0, '${'b'.repeat(64)}');
       INSERT INTO candidate_links VALUES
         ('2025:pump:25O00113', 2025, '18-001|pump', '25O00113', 'high', 90, '["year_match"]', 'Construction of San Andres Pumping Station', 'Construction of San Andres Pumping Station', 40000000000, 37679270658, 2320729342, 'https://budget.example/pump', 'https://dpwh.example/25O00113', 'candidate'),
         ('2026:health:26ZERO01', 2026, '18-001|health', '26ZERO01', 'candidate', 70, '["year_match"]', 'Construction of Sample Health Center', 'Construction of Sample Health Center', 2500000000, 0, 2500000000, 'https://budget.example/health', 'https://dpwh.example/26ZERO01', 'candidate');
@@ -104,7 +115,7 @@ class LocalD1 {
         ('dpwh:3', 2027, 'dpwh', 'Held road match', 'Road Program', '', 'NCR', 'Central Office', 'scope_review', 'Different scope', 'quarantine', 1, 0, 30000, 35000, 5000, 'https://budget.example/3', 'https://budget.example/nep.pdf#page=4', 'https://budget.example/house.pdf#page=5', 4, 5, '${'a'.repeat(40)}', '${'d'.repeat(64)}', 'held road match'),
         ('dpwh:4', 2027, 'dpwh', 'Sample bridge Phase II', 'Network Development', 'Bridge Program', 'Region III', 'Quezon 1st DEO', 'house_only', 'In the House bill only', 'candidate', 0, 0, 0, 12000, 12000, 'https://budget.example/4', '', 'https://budget.example/house.pdf#page=6', NULL, 6, '${'a'.repeat(40)}', '${'e'.repeat(64)}', 'sample public bridge project');
       INSERT INTO integrity_metadata VALUES
-        ('source_records', '3'), ('integrity_signals', '3'), ('contractors', '2'),
+        ('source_records', '3'), ('delivery_details', '2'), ('integrity_signals', '3'), ('contractors', '2'),
         ('concentrations', '2'), ('pcab_records', '1'),
         ('pcab_retrieved_on', '2026-11-03'),
         ('pcab_source_sha256', '${'e'.repeat(64)}'),
@@ -727,6 +738,7 @@ test('publishes delivery-integrity signals and contractor rankings', async (cont
 
   assert.deepEqual((await summary.json()).data, {
     source_records: 3,
+    delivery_details: 2,
     integrity_signals: 3,
     contractors: 2,
     source_artifact_sha256: 'f'.repeat(64),
@@ -976,6 +988,12 @@ test('renders enriched record relationships and tolerates malformed candidate me
       ('missing-delivery', 2025, '18-001|pump', 'NOT-PRESENT', 'candidate', 40, '{broken',
        'Construction of San Andres Pumping Station', 'Missing delivery row', 40000000000,
        0, 40000000000, 'https://budget.example/pump', '', 'candidate');
+    INSERT INTO stage_change_items VALUES
+      ('dpwh:pump-2027', 2027, 'dpwh', 'San Andres Pumping Station Expansion',
+       'Flood Management', 'Pumping Stations', 'NCR', 'Manila 1st DEO', 'house_only',
+       'In the House bill only', 'candidate', 0, 1, 0, 5000000000, 5000000000,
+       'https://budget.example/pump-2027', '', 'https://budget.example/house.pdf#page=9',
+       NULL, 9, '${'a'.repeat(40)}', '${'c'.repeat(64)}', 'san andres pumping station');
   `);
 
   const paths = [
@@ -983,7 +1001,7 @@ test('renders enriched record relationships and tolerates malformed candidate me
     ['/records/integrity/25O00113%3Amissing_coordinate/', /1 additional signal/],
     ['/records/candidate/2025%3Apump%3A25O00113/', /San Andres Pumping Station/],
     ['/records/candidate/missing-delivery/', /Matching delivery row is not available/],
-    ['/projects/pump-reviewed/', /Official evidence 2/],
+    ['/projects/pump-reviewed/', /Reader evidence links/],
   ];
   for (const [path, expected] of paths) {
     const response = await siteWorker.fetch(request(path), environment(database));
@@ -992,4 +1010,20 @@ test('renders enriched record relationships and tolerates malformed candidate me
     assert.match(document, expected, path);
     assert.doesNotMatch(document, /unsafe\.example/, path);
   }
+
+  database.database.exec("UPDATE candidate_links SET signals_json = '{}' WHERE candidate_id = 'missing-delivery'");
+  const objectSignals = await siteWorker.fetch(
+    request('/records/candidate/missing-delivery/'),
+    environment(database),
+  );
+  assert.equal(objectSignals.status, 200);
+
+  const project = await siteWorker.fetch(request('/projects/pump-reviewed/'), environment(database));
+  const dossier = await project.text();
+  for (const expected of [
+    'Flood Control', 'On-Going', '62.5%', '2025-01-15', '2025-12-20',
+    '14.5995, 120.9842', 'ACME BUILDERS', 'Evidence by public-money stage',
+    'Identifiers and archived source fingerprints', 'San Andres Pumping Station Expansion',
+  ]) assert.match(dossier, new RegExp(expected.replace('.', '\\.')));
+  assert.doesNotMatch(dossier, /api\.dpwh\.bettergov\.ph|budget\.bettergov\.ph\/api/);
 });

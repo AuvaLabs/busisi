@@ -38,6 +38,7 @@ const expectedReviewCounts = Object.freeze({
 });
 const expectedIntegrity = Object.freeze({
   source_records: 56_887,
+  delivery_details: 56_887,
   integrity_signals: 16_814,
   contractors: 4_297,
   concentrations: 737,
@@ -526,6 +527,14 @@ const verifyBoundaries = async () => {
   const reviewedText = await reviewed.text();
   expectIncludes(reviewedText, 'Reviewed project evidence dossier', 'reviewed dossier');
   expectIncludes(reviewedText, 'Related reviewed phases', 'reviewed dossier');
+  for (const value of [
+    'Recorded implementation details', 'Completed', '100.0%', 'LA PRUEBA CONSTRUCTION',
+    '2024-09-05', '2024-12-18', '10.7218472, 124.0110944',
+    'Identifiers and archived source fingerprints', 'Reader evidence links',
+  ]) expectIncludes(reviewedText, value, 'reviewed dossier detail');
+  if (/api\.dpwh\.bettergov\.ph|budget\.bettergov\.ph\/api/.test(reviewedText)) {
+    fail('reviewed dossier: raw API reader link is public');
+  }
   if (reviewedText.includes('noindex, nofollow')) fail('reviewed dossier: unexpectedly noindex');
 
   const quarantined = await request('/projects/corazon-2026-completion/');

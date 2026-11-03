@@ -11,6 +11,11 @@ const safeJson = (value, fallback = []) => {
   }
 };
 
+const safeArray = (value) => {
+  const parsed = safeJson(value);
+  return Array.isArray(parsed) ? parsed : [];
+};
+
 const withDistrict = (row) => row && ({
   ...row,
   district_context: districtContext(row),
@@ -21,7 +26,7 @@ const withDistrict = (row) => row && ({
 
 const candidateRecord = (row) => row && ({
   ...row,
-  signals: safeJson(row.signals_json),
+  signals: safeArray(row.signals_json),
   signals_json: undefined,
 });
 
@@ -30,14 +35,32 @@ const contractorRecord = (row) => row && ({
   pcab_url: 'https://www.pcab.construction.gov.ph/verify/',
 });
 
+const contractorParties = (record) => safeArray(record?.contractor_parties_json);
+
+const contractorsForDelivery = async (database, record) => {
+  const parties = contractorParties(record);
+  const found = await Promise.all(parties.map((party) => database.prepare(
+    'SELECT * FROM contractor_rankings WHERE contractor_key = ?',
+  ).bind(party.contractor_key).first()));
+  return parties.map((party) => ({
+    ...party,
+    profile: contractorRecord(found.find((item) => item?.contractor_key === party.contractor_key)),
+  }));
+};
+
 const budgetById = (database, recordId) => database
   .prepare('SELECT * FROM budget_items WHERE record_id = ?')
   .bind(recordId)
   .first();
 
 const deliveryById = (database, contractId) => database.prepare(`
-  SELECT d.*, ${DISTRICT_SELECT}
+  SELECT d.*, detail.category, detail.status, detail.progress, detail.contractor_name,
+    detail.contractor_parties_json, detail.start_date, detail.completion_date,
+    detail.province, detail.region, detail.latitude, detail.longitude,
+    detail.has_satellite_image, detail.source_artifact_sha256 AS detail_artifact_sha256,
+    ${DISTRICT_SELECT}
   FROM delivery_items d
+  LEFT JOIN delivery_project_details detail ON detail.contract_id = d.contract_id
   ${districtOfficeJoin("CASE WHEN INSTR(d.location, ',') > 0 THEN SUBSTR(d.location, 1, INSTR(d.location, ',') - 1) ELSE d.location END")}
   WHERE d.contract_id = ?
 `).bind(contractId).first();
@@ -101,12 +124,7 @@ export const getDeliveryRecord = async (database, contractId) => {
     `).bind(contractId).all(),
   ]);
   const signalRows = rows(signals);
-  const identity = signalRows[0] || {};
-  const contractor = contractorRecord(await contractorForIdentity(
-    database,
-    identity.pcab_id,
-    identity.contractor_name,
-  ));
+  const contractors = await contractorsForDelivery(database, record);
   return {
     record,
     related: rows(related),
@@ -114,7 +132,7 @@ export const getDeliveryRecord = async (database, contractId) => {
     candidates: rows(candidates).map(candidateRecord),
     projects: rows(projects),
     signals: signalRows,
-    contractor,
+    contractors,
   };
 };
 
@@ -206,7 +224,7 @@ export const getContractorRecord = async (database, contractorKey) => {
 export const getEnhancedProject = async (database, slug) => {
   const record = await getProject(database, slug);
   if (!record) return null;
-  const [delivery, signals, related, budgets, deliveries] = await Promise.all([
+  const [delivery, signals, related, budgets, deliveries, candidates, changes, publicMeta, integrityMeta] = await Promise.all([
     deliveryById(database, record.contract_id),
     database.prepare('SELECT * FROM integrity_signal_items WHERE contract_id = ? ORDER BY code ASC')
       .bind(record.contract_id).all(),
@@ -222,21 +240,42 @@ export const getEnhancedProject = async (database, slug) => {
       SELECT contract_id, fiscal_year, description, budget_centavos, location FROM delivery_items
       WHERE project_family_id = ? ORDER BY fiscal_year DESC, budget_centavos DESC LIMIT 20
     `).bind(record.family_id).all(),
+    database.prepare(`
+      SELECT candidate_id, score, confidence, review_status, budget_description,
+        delivery_description, difference_centavos
+      FROM candidate_links WHERE contract_id = ? ORDER BY score DESC LIMIT 20
+    `).bind(record.contract_id).all(),
+    database.prepare(`
+      SELECT record_id, title, dataset, change_type, change_label, review_status,
+        nep_centavos, house_centavos, difference_centavos
+      FROM stage_change_items WHERE family_label = ?
+      ORDER BY ABS(difference_centavos) DESC, record_id ASC LIMIT 20
+    `).bind(record.family_label).all(),
+    database.prepare(`
+      SELECT key, value FROM public_metadata
+      WHERE key IN ('budget_artifact_sha256', 'delivery_artifact_sha256')
+    `).all(),
+    database.prepare(`
+      SELECT key, value FROM integrity_metadata
+      WHERE key IN ('source_as_of', 'source_artifact_sha256', 'pcab_retrieved_on',
+        'district_source_retrieved_on')
+    `).all(),
   ]);
   const signalRows = rows(signals);
-  const identity = signalRows[0] || {};
-  const contractor = contractorRecord(await contractorForIdentity(
-    database,
-    identity.pcab_id,
-    identity.contractor_name,
-  ));
+  const deliveryRecord = withDistrict(delivery);
+  const contractors = await contractorsForDelivery(database, deliveryRecord);
   return {
     record,
-    delivery: withDistrict(delivery),
+    delivery: deliveryRecord,
     signals: signalRows,
     related: rows(related),
     budgets: rows(budgets),
     deliveries: rows(deliveries),
-    contractor,
+    contractors,
+    candidates: rows(candidates),
+    changes: rows(changes),
+    provenance: Object.fromEntries(
+      [...rows(publicMeta), ...rows(integrityMeta)].map((item) => [item.key, item.value]),
+    ),
   };
 };

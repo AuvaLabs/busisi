@@ -27,6 +27,7 @@ from engine.budget_watchdog.integrity import (
     DeliveryIntegrityRecord,
     IntegritySignal,
     build_integrity_snapshot,
+    contractor_identities,
     contractor_concentrations,
 )
 from engine.budget_watchdog.models import validate_fiscal_year
@@ -38,6 +39,7 @@ MIGRATION_PATHS = (
     MIGRATION_DIRECTORY / "0005_integrity.sql",
     MIGRATION_DIRECTORY / "0006_contractor_verification.sql",
     MIGRATION_DIRECTORY / "0007_district_attribution.sql",
+    MIGRATION_DIRECTORY / "0011_delivery_details.sql",
 )
 SNAPSHOT_COLUMNS = (
     "contractId",
@@ -176,6 +178,35 @@ def _signal_statement(signal: IntegritySignal) -> str:
     return f"INSERT INTO integrity_signal_items VALUES ({_sql_values(values)});"  # noqa: S608
 
 
+def _detail_statement(record: DeliveryIntegrityRecord) -> str:
+    parties = [
+        {
+            "contractor_key": item.key,
+            "contractor_name": item.display_name,
+            "pcab_id": item.pcab_id,
+        }
+        for item in contractor_identities(record.contractor)
+    ]
+    values = (
+        record.contract_id,
+        record.fiscal_year,
+        record.category,
+        record.status,
+        record.progress,
+        record.contractor,
+        json.dumps(parties, ensure_ascii=False, separators=(",", ":")),
+        record.start_date.isoformat() if record.start_date else "",
+        record.completion_date.isoformat() if record.completion_date else "",
+        record.province,
+        record.region,
+        record.latitude or "",
+        record.longitude or "",
+        int(record.has_satellite_image),
+        record.source_artifact_sha256,
+    )
+    return f"INSERT INTO delivery_project_details VALUES ({_sql_values(values)});"  # noqa: S608
+
+
 def _contractor_statement(contractor: ContractorSummary) -> str:
     values = (
         contractor.contractor_key,
@@ -275,6 +306,7 @@ def _write_chunks(
 
 def _metadata_sql(metadata: dict[str, str]) -> str:
     lines = [
+        "DELETE FROM delivery_project_details;",
         "DELETE FROM integrity_signal_items;",
         "DELETE FROM contractor_rankings;",
         "DELETE FROM contractor_concentrations;",
@@ -288,7 +320,7 @@ def _metadata_sql(metadata: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int, int]) -> None:
+def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int, int, int]) -> None:
     connection = sqlite3.connect(":memory:")
     try:
         for migration in MIGRATION_PATHS:
@@ -296,6 +328,7 @@ def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int, int]) 
         for chunk in chunks:
             connection.executescript(chunk.read_text(encoding="utf-8"))
         actual = (
+            connection.execute("SELECT COUNT(*) FROM delivery_project_details").fetchone()[0],
             connection.execute("SELECT COUNT(*) FROM integrity_signal_items").fetchone()[0],
             connection.execute("SELECT COUNT(*) FROM contractor_rankings").fetchone()[0],
             connection.execute("SELECT COUNT(*) FROM contractor_concentrations").fetchone()[0],
@@ -389,10 +422,11 @@ def build_integrity_bundle(
     pcab_status_counts = Counter(item.pcab_status for item in snapshot.contractors)
     metadata = {
         "contractors": str(len(snapshot.contractors)),
+        "delivery_details": str(len(records)),
         "fiscal_years": ",".join(str(year) for year in fiscal_years),
         "integrity_signals": str(len(snapshot.signals)),
         "concentrations": str(len(concentrations)),
-        "schema_version": "2",
+        "schema_version": "3",
         "source_artifact_sha256": source_digest,
         "source_records": str(len(records)),
         **{f"signal:{code}": str(count) for code, count in sorted(signal_counts.items())},
@@ -420,6 +454,14 @@ def build_integrity_bundle(
     metadata_path = chunks_dir / "000-metadata.sql"
     metadata_path.write_text(_metadata_sql(metadata), encoding="utf-8")
     chunks = [metadata_path]
+    chunks.extend(
+        _write_chunks(
+            chunks_dir,
+            "050-delivery-details",
+            (_detail_statement(record) for record in records),
+            chunk_rows,
+        )
+    )
     chunks.extend(
         _write_chunks(
             chunks_dir,
@@ -460,6 +502,7 @@ def build_integrity_bundle(
     _verify_bundle(
         chunks,
         (
+            len(records),
             len(snapshot.signals),
             len(snapshot.contractors),
             len(concentrations),
