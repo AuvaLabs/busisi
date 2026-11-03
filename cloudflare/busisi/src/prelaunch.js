@@ -14,6 +14,8 @@ import {
 } from './prelaunch-content.js';
 import { INDEX_NOW_KEY, SITE } from './prelaunch-config.js';
 import dataWorker from './index.js';
+import { coaDeskBody, coaReportBody } from './coa-content.js';
+import { getCoaDesk, getCoaReport } from './coa-query.js';
 import {
   budgetRecordBody,
   candidateRecordBody,
@@ -141,6 +143,16 @@ const BUDGET_CYCLE_SCHEMA = Object.freeze({
   isAccessibleForFree: true,
 });
 
+const COA_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi Commission on Audit evidence desk',
+  url: `${SITE.origin}/audit/`,
+  description: 'Reviewed COA report coverage and project-level audit evidence with explicit acquisition and match status.',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+});
+
 const page = (html, status = 200) => response(html, {
   status,
   type: 'text/html; charset=utf-8',
@@ -227,6 +239,25 @@ const budgetCycle = () => page(document({
   body: budgetCycleBody,
   schema: BUDGET_CYCLE_SCHEMA,
 }));
+
+const audit = (payload) => page(document({
+  title: 'COA audit evidence for Philippine public projects | Busisi',
+  description: 'Inspect official COA report coverage, project-level observation matches, cited pages, and explicit evidence gaps.',
+  canonicalPath: '/audit/',
+  body: coaDeskBody(payload),
+  schema: COA_SCHEMA,
+}));
+
+const auditReport = (record) => {
+  const path = `/audit/reports/${encodeURIComponent(record.report_id)}/`;
+  return page(document({
+    title: `${record.title} | Busisi`,
+    description: `${record.report_type.replaceAll('_', ' ')} evidence record for ${record.audited_entity}, with acquisition status and scope limits.`,
+    canonicalPath: path,
+    body: coaReportBody(record),
+    schema: evidenceSchema(record.title, record.scope_note, path, record.fiscal_year),
+  }));
+};
 
 const evidenceSchema = (name, description, path, year) => ({
   '@context': 'https://schema.org',
@@ -323,6 +354,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/changes/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/agencies/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/budget-trail/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/audit/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/signals/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/integrity/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
@@ -350,6 +382,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - FY2027 change ledger: ${SITE.origin}/changes/
 - Appropriation heads: ${SITE.origin}/agencies/
 - FY2027 budget publication trail: ${SITE.origin}/budget-trail/
+- COA audit evidence: ${SITE.origin}/audit/
 - Deterministic review desk: ${SITE.origin}/signals/
 - Project integrity desk: ${SITE.origin}/integrity/
 - Methodology: ${SITE.origin}/methodology/
@@ -432,6 +465,14 @@ export default {
     if (projectMatch && env.DB) {
       const payload = await getEnhancedProject(env.DB, projectMatch[1]);
       if (payload) result = project(payload);
+    }
+    if (!result && (url.pathname === '/audit' || url.pathname === '/audit/') && env.DB) {
+      result = audit(await getCoaDesk(env.DB));
+    }
+    const auditReportMatch = url.pathname.match(/^\/audit\/reports\/([a-z0-9-]+)\/?$/);
+    if (!result && auditReportMatch && env.DB) {
+      const record = await getCoaReport(env.DB, auditReportMatch[1]);
+      if (record) result = auditReport(record);
     }
     const recordMatch = url.pathname.match(/^\/records\/(budget|delivery|candidate|change|integrity)\/([^/]+)\/?$/);
     if (!result && recordMatch && env.DB) {

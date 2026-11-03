@@ -5,6 +5,8 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { parseChangeQuery } from '../src/change-query.js';
+import { coaDeskBody, coaReportBody } from '../src/coa-content.js';
+import { getProjectCoaEvidence } from '../src/coa-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
 import { parseReviewQuery } from '../src/review-query.js';
@@ -48,6 +50,9 @@ const budgetCycleMigrationPath = fileURLToPath(
 const deliveryDetailsMigrationPath = fileURLToPath(
   new URL('../migrations/0011_delivery_details.sql', import.meta.url),
 );
+const coaMigrationPath = fileURLToPath(
+  new URL('../migrations/0012_coa_audit_evidence.sql', import.meta.url),
+);
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
 );
@@ -87,6 +92,7 @@ class LocalD1 {
     this.database.exec(readFileSync(publicValueMigrationPath, 'utf8'));
     this.database.exec(readFileSync(budgetCycleMigrationPath, 'utf8'));
     this.database.exec(readFileSync(deliveryDetailsMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(coaMigrationPath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -104,6 +110,32 @@ class LocalD1 {
          '${'b'.repeat(64)}'),
         ('26ZERO01', 2026, 'Buildings and Facilities', 'Not Yet Started', '0', '', '[]',
          '', '', 'Cebu', 'Region VII', '', '', 0, '${'b'.repeat(64)}');
+      INSERT INTO coa_metadata VALUES
+        ('checked_at', '2026-11-03T12:00:00+04:00'), ('report_count', '1'),
+        ('archived_reports', '0'), ('checked_projects', '3'), ('project_matches', '1'),
+        ('status:not_covered', '2'), ('status:reviewed_observation_match', '1'),
+        ('catalog_sha256', '${'8'.repeat(64)}');
+      INSERT INTO coa_source_catalogs VALUES
+        ('coa-aar-nga', 'COA NGA Annual Audit Reports',
+         'https://www.coa.gov.ph/reports/annual-audit-reports/aar-national-government-agencies/',
+         'blocked', 'Official catalogue checked; deterministic acquisition was blocked.');
+      INSERT INTO coa_reports VALUES
+        ('coa-report-1', 'DPWH reviewed annual audit report', 'annual_audit_report',
+         'Department of Public Works and Highways', 2025, '2026-06-01',
+         'https://www.coa.gov.ph/wpfd_file/dpwh-reviewed-report/',
+         'https://www.coa.gov.ph/reports/', 'discovered', NULL, NULL, NULL,
+         'Agency accounts and operations.', 'Official report record discovered.');
+      INSERT INTO coa_project_coverage VALUES
+        ('pump-reviewed', '25O00113', 2025, 'reviewed_observation_match', 'coa-report-1',
+         'exact', '["contract_id"]', 12, 13, 'The report discusses this contract.',
+         'Verify delivery records.', 'Management agreed to review the record.', 'in_progress',
+         'Contract identifier appears on the cited pages.', '2026-11-03'),
+        ('health-uncovered', '26ZERO01', 2026, 'not_covered', NULL, 'none', '[]', NULL, NULL,
+         '', '', '', 'not_applicable',
+         'No qualifying project-level COA evidence was located.', '2026-11-03'),
+        ('corazon-2024-phase-1', '24HI0148', 2024, 'not_covered', NULL, 'none', '[]',
+         NULL, NULL, '', '', '', 'not_applicable',
+         'No qualifying project-level COA evidence was located.', '2026-11-03');
       INSERT INTO candidate_links VALUES
         ('2025:pump:25O00113', 2025, '18-001|pump', '25O00113', 'high', 90, '["year_match"]', 'Construction of San Andres Pumping Station', 'Construction of San Andres Pumping Station', 40000000000, 37679270658, 2320729342, 'https://budget.example/pump', 'https://dpwh.example/25O00113', 'candidate'),
         ('2026:health:26ZERO01', 2026, '18-001|health', '26ZERO01', 'candidate', 70, '["year_match"]', 'Construction of Sample Health Center', 'Construction of Sample Health Center', 2500000000, 0, 2500000000, 'https://budget.example/health', 'https://dpwh.example/26ZERO01', 'candidate');
@@ -921,6 +953,83 @@ test('expands reviewed project dossiers with phase history and evidence boundari
   assert.match(document, /corazon-2024-phase-2/);
   assert.match(document, /Release, obligation and payment/);
   assert.match(document, /Not available in the acquired records/);
+  assert.match(document, /COA audit evidence/);
+  assert.match(document, /No qualifying project-level COA evidence/);
+});
+
+test('publishes the COA audit desk without turning absence into clearance', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+
+  const summary = await worker.fetch(request('/api/v1/coa-summary'), environment(database));
+  assert.equal(summary.status, 200);
+  const payload = await summary.json();
+  assert.equal(payload.data.metadata.report_count, '1');
+  assert.equal(payload.data.metadata.project_matches, '1');
+  assert.equal(payload.data.statuses.not_covered, 2);
+
+  const reports = await worker.fetch(request('/api/v1/coa-reports'), environment(database));
+  assert.equal(reports.status, 200);
+  assert.equal((await reports.json()).data[0].acquisition_status, 'discovered');
+
+  const desk = await siteWorker.fetch(request('/audit/'), environment(database));
+  const document = await desk.text();
+  assert.equal(desk.status, 200);
+  assert.match(document, /COA audit evidence desk/);
+  assert.match(document, /Absence is not clearance/);
+  assert.match(document, /DPWH reviewed annual audit report/);
+
+  const report = await siteWorker.fetch(
+    request('/audit/reports/coa-report-1/'), environment(database),
+  );
+  assert.equal(report.status, 200);
+  const reportDocument = await report.text();
+  assert.match(reportDocument, /Agency accounts and operations/);
+  assert.match(reportDocument, /Source copy not archived/);
+  assert.doesNotMatch(reportDocument, /audit score|cleared the project/i);
+});
+
+test('renders archived, unavailable and incomplete COA report presentation states', () => {
+  const archived = {
+    report_id: 'archived-report', title: 'Archived report', report_type: 'performance_audit',
+    audited_entity: 'Public agency', fiscal_year: 2024, publication_date: null,
+    source_url: 'https://www.coa.gov.ph/report', landing_url: 'https://www.coa.gov.ph/reports/',
+    acquisition_status: 'verified_archived', artifact_sha256: 'a'.repeat(64), page_count: 12,
+    scope_note: 'Reviewed program scope.', evidence_note: 'Official bytes archived.',
+  };
+  const unavailable = { ...archived, report_id: 'unavailable-report', title: 'Unavailable report',
+    acquisition_status: 'unavailable', artifact_sha256: null, page_count: null };
+  const desk = coaDeskBody({
+    summary: { metadata: {}, statuses: {}, catalogs: [{
+      catalog_id: 'catalog', title: 'Official catalogue', source_url: 'https://www.coa.gov.ph/',
+      checked_status: 'reachable', evidence_note: 'Checked.',
+    }] },
+    reports: [archived, unavailable],
+  });
+  const archivedPage = coaReportBody(archived);
+  const unavailablePage = coaReportBody(unavailable);
+
+  assert.match(desk, /Source copy archived and verified/);
+  assert.match(desk, /Source unavailable/);
+  assert.match(desk, /0 dossiers checked/);
+  assert.match(archivedPage, /Source copy archived/);
+  assert.match(archivedPage, new RegExp('a{64}'));
+  assert.match(archivedPage, /Not stated/);
+  assert.match(unavailablePage, /Source copy not archived/);
+});
+
+test('fails closed for malformed COA match-basis metadata', async () => {
+  const database = (matchBasis) => ({
+    prepare: () => ({
+      bind: () => ({ first: async () => ({
+        contract_id: '24TEST', status: 'candidate_observation_match',
+        match_basis_json: matchBasis,
+      }) }),
+    }),
+  });
+
+  assert.deepEqual((await getProjectCoaEvidence(database('{}'), '24TEST')).match_basis, []);
+  assert.deepEqual((await getProjectCoaEvidence(database('{broken'), '24TEST')).match_basis, []);
 });
 
 test('rejects malformed and missing evidence record identifiers', async (context) => {
@@ -1024,6 +1133,18 @@ test('renders enriched record relationships and tolerates malformed candidate me
     'Flood Control', 'On-Going', '62.5%', '2025-01-15', '2025-12-20',
     '14.5995, 120.9842', 'ACME BUILDERS', 'Evidence by public-money stage',
     'Identifiers and archived source fingerprints', 'San Andres Pumping Station Expansion',
+    'Reviewed project observation match', 'pages 12–13', 'Verify delivery records',
   ]) assert.match(dossier, new RegExp(expected.replace('.', '\\.')));
   assert.doesNotMatch(dossier, /api\.dpwh\.bettergov\.ph|budget\.bettergov\.ph\/api/);
+
+  database.database.exec(`
+    UPDATE coa_project_coverage SET status = 'program_audit_available',
+      match_confidence = 'none', page_start = NULL, page_end = NULL,
+      observation_summary = '', recommendation_summary = '', management_response = ''
+    WHERE contract_id = '25O00113';
+  `);
+  const contextual = await siteWorker.fetch(
+    request('/projects/pump-reviewed/'), environment(database),
+  );
+  assert.match(await contextual.text(), /program audit available/);
 });

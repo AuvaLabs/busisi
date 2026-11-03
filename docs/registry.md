@@ -26,6 +26,8 @@ no deployment credentials.
 | `/api/v1/projects` | Reviewed and quarantined dossier register |
 | `/api/v1/projects/<slug>` | Evidence dossier lookup |
 | `/api/v1/projects.csv` | Filtered reviewed-register export |
+| `/api/v1/coa-summary` | COA catalogue and project-coverage summary |
+| `/api/v1/coa-reports` | Indexed official COA report records |
 
 ## Published dataset contract
 
@@ -33,6 +35,9 @@ The current production snapshot contains 68,608 positive GAA records, 56,887
 DPWH delivery records, 385 explicitly unreviewed candidate links, five reviewed
 dossiers and one quarantined example. Exact artifact hashes and monetary totals
 are verified by the live contract in `cloudflare/busisi/scripts/verify-live.mjs`.
+The COA pilot separately indexes four official report records and records a
+completed coverage review for all six dossiers. No project-level COA observation
+match is currently claimed, and no COA source copy is marked archived.
 
 The canonical ingestion database remains local and is never reachable through
 the Worker. D1 contains only publication records derived from reconciled source

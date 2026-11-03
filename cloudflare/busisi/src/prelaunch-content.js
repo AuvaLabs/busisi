@@ -21,7 +21,7 @@ const navigation = (canonicalPath) => {
     { label: 'Budget', icon: 'budget', href: '/sulit/', paths: ['/sulit/', '/agencies/', '/changes/'] },
     { label: 'Projects', icon: 'projects', href: '/explore/', paths: ['/explore/'] },
     { label: 'Investigate', icon: 'investigate', href: '/signals/', paths: ['/signals/', '/integrity/'] },
-    { label: 'Sources', icon: 'sources', href: '/budget-trail/', paths: ['/budget-trail/'] },
+    { label: 'Sources', icon: 'sources', href: '/budget-trail/', paths: ['/budget-trail/', '/audit/'] },
     { label: 'Search', icon: 'search', href: '/explore/#record-search', paths: [] },
   ];
   const links = groups.map(({ label, icon: iconName, href, paths }) => (
@@ -35,7 +35,7 @@ const navigation = (canonicalPath) => {
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent civic data initiative for traceable Philippine public budget records.</p></div>
-  <nav class="footer-nav" aria-label="Footer navigation"><a href="/sulit/">Sulit Ba?</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Projects</a><a href="/budget-trail/">Budget trail</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/methodology/">Method</a></nav>
+  <nav class="footer-nav" aria-label="Footer navigation"><a href="/sulit/">Sulit Ba?</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Projects</a><a href="/budget-trail/">Budget trail</a><a href="/audit/">COA audit</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/methodology/">Method</a></nav>
   <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.</p>
 </div></footer>`;
 
@@ -125,6 +125,7 @@ export const homeBody = `
       <a href="/agencies/"><span>${icon('budget')}Budget</span><strong>Which agencies gained or lost funding in the House bill?</strong><b aria-hidden="true">→</b></a>
       <a href="/integrity/"><span>${icon('investigate')}Delivery</span><strong>Which project records contain contradictions or missing fields?</strong><b aria-hidden="true">→</b></a>
       <a href="/integrity/#contractors"><span>${icon('contractors')}Contractors</span><strong>Which contractors are associated with the most projects and budget?</strong><b aria-hidden="true">→</b></a>
+      <a href="/audit/"><span>${icon('sources')}Audit</span><strong>Did COA publish a report or observation that can be linked to this project?</strong><b aria-hidden="true">→</b></a>
     </div>
   </section>
 

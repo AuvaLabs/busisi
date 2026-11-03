@@ -24,6 +24,7 @@ import {
   getBudgetCycleSummary,
   queryBudgetCycleDocuments,
 } from './budget-cycle-query.js';
+import { getCoaSummary, queryCoaReports } from './coa-query.js';
 import {
   exportReviewCsv,
   getReviewSummary,
@@ -128,6 +129,16 @@ const apiResponse = async (request, environment, url) => {
         total: records.length,
         review_scope: 'source_separated_budget_cycle_catalogue',
       },
+      data: records,
+    });
+  }
+  if (url.pathname === '/api/v1/coa-summary') {
+    return jsonResponse({ data: await getCoaSummary(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/coa-reports') {
+    const records = await queryCoaReports(environment.DB);
+    return jsonResponse({
+      meta: { total: records.length, review_scope: 'official_coa_report_catalogue' },
       data: records,
     });
   }

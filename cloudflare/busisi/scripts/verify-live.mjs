@@ -28,6 +28,13 @@ const expectedBudgetCycle = Object.freeze({
   discovered_document_count: '3',
   catalog_sha256: '7fb461156cba8bd04b48315b298fb2b908506b6a2bb6e3df656d179ad59608ff',
 });
+const expectedCoa = Object.freeze({
+  report_count: '4',
+  archived_reports: '0',
+  checked_projects: '6',
+  project_matches: '0',
+  catalog_sha256: '495d72928306df3a61558609298d1d0dd3916667b48c9cea69baf30cbfb6c79c',
+});
 const expectedReviewCounts = Object.freeze({
   decreased: 265,
   house_only: 6_954,
@@ -209,6 +216,13 @@ const verifyPages = async () => {
   expectIncludes(budgetTrailText, '/assets/budget-cycle-v1.js', 'budget trail client');
   expectIncludes(budgetTrailText, 'Publisher is not stage', 'budget trail evidence boundary');
 
+  const audit = await request('/audit/');
+  expectStatus(audit, 200, '/audit/');
+  const auditText = await audit.text();
+  expectIncludes(auditText, 'COA audit evidence desk', 'audit desk heading');
+  expectIncludes(auditText, 'Absence is not clearance', 'audit desk evidence boundary');
+  expectIncludes(auditText, '6 dossiers checked', 'audit desk coverage');
+
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
   expectIncludes(await robots.text(), `Sitemap: ${origin}/sitemap.xml`, 'robots sitemap');
@@ -216,7 +230,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/explore/', '/changes/', '/budget-trail/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -229,7 +243,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/explore/', '/changes/', '/budget-trail/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -362,6 +376,26 @@ const verifyData = async () => {
     || cycleDocuments.meta.review_scope !== 'source_separated_budget_cycle_catalogue') {
     fail('budget cycle documents: count or review scope mismatch');
   }
+
+  const coaSummary = (await readJson('/api/v1/coa-summary')).data;
+  for (const [key, expected] of Object.entries(expectedCoa)) {
+    if (coaSummary.metadata[key] !== expected) {
+      fail(`COA summary: ${key} expected ${expected}, received ${coaSummary.metadata[key]}`);
+    }
+  }
+  if (coaSummary.statuses.not_covered !== 6 || coaSummary.catalogs.length !== 4) {
+    fail('COA summary: coverage status or catalogue count mismatch');
+  }
+  const coaReports = await readJson('/api/v1/coa-reports');
+  if (coaReports.meta.total !== 4
+    || coaReports.meta.review_scope !== 'official_coa_report_catalogue'
+    || !coaReports.data.every((report) => report.acquisition_status === 'discovered')) {
+    fail('COA reports: count, scope or acquisition boundary mismatch');
+  }
+  await verifyHtmlRecord(
+    '/audit/reports/coa-oda-consolidated-2024/',
+    'Source copy not archived',
+  );
   if (cycleDocuments.data.filter(({ acquisition_status }) => (
     acquisition_status === 'verified_archived'
   )).length !== 2) {

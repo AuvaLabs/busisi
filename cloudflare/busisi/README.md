@@ -18,6 +18,10 @@ npm run check
 percent line and function coverage and 90 percent branch coverage, and performs
 a Wrangler dry run.
 
+The COA bundle keeps report discovery, archived source copies, agency or program
+context, and reviewed project-observation matches as separate states. A missing
+match is never presented as audit clearance.
+
 ## Production verification
 
 ```bash
