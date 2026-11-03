@@ -19,6 +19,8 @@ const paths = [
   '/signals/',
   '/integrity/',
   '/methodology/',
+  '/contracts/24CM0078/',
+  '/contracts/24CJ0309/',
   '/projects/corazon-2022-combined/',
   '/projects/agoncillo-2023/',
   '/projects/corazon-2024-phase-1/',

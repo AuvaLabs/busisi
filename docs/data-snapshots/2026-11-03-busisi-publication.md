@@ -4,7 +4,7 @@
 
 - Origin: `https://busisi.org`
 - Worker: `busisi-publication`
-- Worker version: `67ef049a-3b36-4208-af36-363c4be70287`
+- Worker version: `ed1b5188-e5b5-4155-94aa-d44ca9744123`
 - D1 database: `busisi-publication`
 - D1 database ID: `506a96f9-03a3-47f5-8f86-dd3b6c7d1f2c`
 - D1 region: Western Europe
@@ -22,6 +22,11 @@ or model binding and performs no model inference.
 | Reviewed dossiers | 5 | Per-record comparison only |
 | Quarantined dossier examples | 1 | Per-record comparison only |
 
+The contract acquisition detail layer separately reconciles 56,887 contract
+states, 62,129 accepted exact secondary rows, 83 quarantined source rows and
+166 candidate relationships. The mutable acquisition queue and review
+decisions remain local.
+
 The remote D1 counts and monetary totals match the canonical SQLite source
 exactly. The canonical SQLite integrity check returned `ok`.
 
@@ -31,8 +36,11 @@ exactly. The canonical SQLite integrity check returned `ok`.
 - DPWH artifact SHA-256: `5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123`
 - Public D1 manifest SHA-256: `edf802d5cfcd764cdcea6c8fa2a3210132692c106cd4becd86def578bef4c5e9`
 - Reviewed seed SHA-256: `3f59f5100cd5bbe7cb64e80142ab6ff52faae70dc34b2fbf18c3ea829ce5bcf0`
+- Contract detail manifest SHA-256: `88784a10d921d4d03bc326da3f3cfacf7dbf700029a41c20d7c632f7ff13bca7`
 
 All 66 D1 import chunks matched their manifest hashes before upload.
+All 28 contract-detail chunks matched their manifest hashes and reconciled
+against the four remote D1 table counts after upload.
 
 ## Publication boundary
 
@@ -43,6 +51,9 @@ All 66 D1 import chunks matched their manifest hashes before upload.
 - Insertion analysis remains unavailable until stage-by-stage budget records
   are acquired.
 - Physical existence cannot be established from budget data alone.
+- Every acquired DPWH contract has a human-readable contract page. Exact mirror
+  rows remain labelled secondary evidence, and conflicting identifiers remain
+  quarantined as review leads rather than findings.
 - The 100-case accuracy gate remains in force for automatic publication of
   inferred cross-source links.
 
