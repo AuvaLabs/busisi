@@ -203,20 +203,22 @@ const verifyPages = async () => {
   expectStatus(publicValue, 200, '/sulit/');
   const publicValueText = await publicValue.text();
   expectIncludes(publicValueText, '₱7.2 trillion. Sulit ba para sa Pilipino?', 'public value heading');
-  expectIncludes(publicValueText, '/assets/public-value-v1.js', 'public value client');
+  expectIncludes(publicValueText, '/assets/public-value-v1.js?v=2', 'public value client');
   expectIncludes(publicValueText, 'Motive cannot be inferred', 'public value limitation');
 
   const explore = await request('/explore/');
   expectStatus(explore, 200, '/explore/');
   const exploreText = await explore.text();
   expectIncludes(exploreText, 'Explore official budget records', 'explorer heading');
+  expectIncludes(exploreText, '/assets/explorer-v1.js?v=2', 'explorer client');
   expectIncludes(exploreText, 'Unreviewed candidates are not public findings', 'explorer warning');
 
   const contracts = await request('/contracts/');
   expectStatus(contracts, 200, '/contracts/');
   const contractsText = await contracts.text();
   expectIncludes(contractsText, 'Contract intelligence explorer', 'contract explorer heading');
-  expectIncludes(contractsText, '/assets/contracts-v1.js', 'contract explorer client');
+  expectIncludes(contractsText, '/assets/contracts-v1.js?v=2', 'contract explorer client');
+  expectIncludes(contractsText, 'Province or district office', 'contract province filter');
   expectIncludes(contractsText, 'Source patterns are review leads, not findings', 'contract explorer boundary');
 
   const signals = await request('/signals/');
@@ -231,7 +233,7 @@ const verifyPages = async () => {
   expectStatus(integrity, 200, '/integrity/');
   const integrityText = await integrity.text();
   expectIncludes(integrityText, 'Inspect contradictions in delivery records', 'integrity heading');
-  expectIncludes(integrityText, '/assets/integrity-v1.js', 'integrity client');
+  expectIncludes(integrityText, '/assets/integrity-v1.js?v=2', 'integrity client');
   expectIncludes(integrityText, 'Contractors with the most projects', 'contractor ranking');
   expectIncludes(integrityText, 'What this desk flags', 'integrity limitation');
 
@@ -239,6 +241,7 @@ const verifyPages = async () => {
   expectStatus(changes, 200, '/changes/');
   const changesText = await changes.text();
   expectIncludes(changesText, 'Trace what changed between the NEP and House bill', 'changes heading');
+  expectIncludes(changesText, '/assets/changes-v1.js?v=2', 'changes client');
   expectIncludes(changesText, 'How to read a change', 'changes warning');
 
   const budgetTrail = await request('/budget-trail/');
@@ -254,6 +257,7 @@ const verifyPages = async () => {
   expectIncludes(auditText, 'COA audit evidence desk', 'audit desk heading');
   expectIncludes(auditText, 'Absence is not clearance', 'audit desk evidence boundary');
   expectIncludes(auditText, '6 dossiers checked', 'audit desk coverage');
+  expectIncludes(auditText, 'class="record-title-link"', 'audit report drill-down');
 
   const procurement = await request('/procurement/');
   expectStatus(procurement, 200, '/procurement/');
@@ -268,6 +272,7 @@ const verifyPages = async () => {
   expectIncludes(procurementText, '3 acquisition checks queued', 'acquisition retry queue');
   expectIncludes(procurementText, 'Contract outcome cross-checks', 'contract outcome heading');
   expectIncludes(procurementText, 'Questions, not findings', 'contract outcome boundary');
+  expectIncludes(procurementText, 'class="record-title-link"', 'procurement dossier drill-down');
 
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
@@ -297,7 +302,7 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v13.css',
+    '/assets/site-visual-v14.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-social-v1.png',
     '/assets/busisi-evidence-banner-v1.webp',
@@ -309,7 +314,7 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v13.css');
+  const css = await request('/assets/site-visual-v14.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
@@ -496,6 +501,7 @@ const verifyData = async () => {
   }
   if (contractSummary.facets.categories.length !== 76
     || contractSummary.facets.regions.length !== 18
+    || contractSummary.facets.provinces.length !== 100
     || contractSummary.facets.statuses.length !== 5) {
     fail('contract intelligence: filter facet controls do not reconcile');
   }
@@ -512,6 +518,13 @@ const verifyData = async () => {
     || conflictContracts.data[0]?.contract_id !== '24CJ0309'
     || conflictContracts.data[0]?.quarantined_match_rows !== 3) {
     fail('contract intelligence: conflict contract filter does not reconcile');
+  }
+  const provinceContracts = await readJson(
+    '/api/v1/contracts?province=Ilocos%20Norte%201st%20DEO&limit=1',
+  );
+  if (provinceContracts.meta.total !== 1148
+    || provinceContracts.data[0]?.province !== 'Ilocos Norte 1st DEO') {
+    fail('contract intelligence: exact province filter does not reconcile');
   }
   const contractCsv = await request('/api/v1/contracts.csv?q=24CJ0309&state=conflict_review');
   expectStatus(contractCsv, 200, 'contract intelligence CSV');

@@ -795,13 +795,14 @@ test('renders sparse contract acquisition fields without inventing evidence', ()
 });
 
 test('validates contract intelligence filters and cursor scope', () => {
-  const url = new URL('https://busisi.test/api/v1/contracts?q=pump&year=2025&state=structured_exact&category=Flood%20Control&region=NCR&status=On-Going&contractor=ACME&signal=without_signals&budget=100m_500m&sort=contract_asc&limit=10');
+  const url = new URL('https://busisi.test/api/v1/contracts?q=pump&year=2025&state=structured_exact&category=Flood%20Control&region=NCR&province=Manila%201st%20DEO&status=On-Going&contractor=ACME&signal=without_signals&budget=100m_500m&sort=contract_asc&limit=10');
   assert.deepEqual(parseContractIntelligenceQuery(url), {
     q: 'pump',
     year: 2025,
     state: 'structured_exact',
     category: 'Flood Control',
     region: 'NCR',
+    province: 'Manila 1st DEO',
     status: 'On-Going',
     contractor: 'ACME',
     signal: 'without_signals',
@@ -822,6 +823,7 @@ test('validates contract intelligence filters and cursor scope', () => {
     `?q=${'x'.repeat(201)}`,
     `?category=${'x'.repeat(121)}`,
     `?region=${'x'.repeat(121)}`,
+    `?province=${'x'.repeat(121)}`,
     `?status=${'x'.repeat(121)}`,
     `?contractor=${'x'.repeat(201)}`,
     '?cursor=not-a-cursor',
@@ -842,7 +844,7 @@ test('publishes searchable contract intelligence, facets and CSV evidence', asyn
     environment(database),
   );
   const records = await worker.fetch(
-    request('/api/v1/contracts?year=2025&state=structured_exact&category=Flood%20Control&region=NCR&status=On-Going&contractor=ACME&signal=without_signals&budget=100m_500m'),
+    request('/api/v1/contracts?year=2025&state=structured_exact&category=Flood%20Control&region=NCR&province=Manila%201st%20DEO&status=On-Going&contractor=ACME&signal=without_signals&budget=100m_500m'),
     environment(database),
   );
   const conflicts = await worker.fetch(
@@ -865,6 +867,7 @@ test('publishes searchable contract intelligence, facets and CSV evidence', asyn
     structured_exact: 1,
   });
   assert.ok(summaryBody.data.facets.categories.some((item) => item.value === 'Flood Control'));
+  assert.ok(summaryBody.data.facets.provinces.some((item) => item.value === 'Manila 1st DEO'));
   assert.equal(recordsBody.meta.total, 1);
   assert.equal(recordsBody.meta.review_scope, 'contract_intelligence_evidence');
   assert.equal(recordsBody.data[0].contract_id, '25O00113');
@@ -940,8 +943,9 @@ test('publishes the contract intelligence explorer and client', async (context) 
   assert.match(document, /Contract intelligence explorer/);
   assert.match(document, /56,887 archived DPWH contract records/);
   assert.match(document, /Compare selected contracts/);
+  assert.match(document, /Province/);
   assert.match(document, /Download filtered CSV, up to 10,000 rows/);
-  assert.match(document, /\/assets\/contracts-v1\.js/);
+  assert.match(document, /\/assets\/contracts-v1\.js\?v=2/);
   assert.match(document, /Source patterns are review leads, not findings/);
 });
 
@@ -1400,6 +1404,7 @@ test('publishes the COA audit desk without turning absence into clearance', asyn
   assert.match(document, /COA audit evidence desk/);
   assert.match(document, /Absence is not clearance/);
   assert.match(document, /DPWH reviewed annual audit report/);
+  assert.match(document, /class="record-title-link"/);
 
   const report = await siteWorker.fetch(
     request('/audit/reports/coa-report-1/'), environment(database),
@@ -1448,6 +1453,7 @@ test('publishes exact procurement evidence and preserves missing coverage', asyn
   assert.match(document, /1 of 2 reviewed dossiers/);
   assert.match(document, /PhilGEPS bid notice 123/);
   assert.match(document, /Evidence gap, not a clean bill/);
+  assert.match(document, /class="record-title-link"/);
 
   const dossier = await siteWorker.fetch(
     request('/projects/pump-reviewed/'), environment(database),

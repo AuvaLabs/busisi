@@ -139,7 +139,9 @@ const renderIntegrityRecord = (record) => {
     'integrity-badge classification',
   );
   card.append(heading);
-  appendText(card, 'h3', record.description);
+  const title = appendText(card, 'h3', '');
+  const titleLink = appendText(title, 'a', record.description, 'record-title-link');
+  titleLink.href = `/records/integrity/${encodeURIComponent(record.signal_id)}/`;
   appendText(
     card,
     'p',
@@ -162,7 +164,7 @@ const renderIntegrityRecord = (record) => {
   appendText(card, 'p', `Limit: ${record.limitations}`, 'integrity-limit');
   card.append(renderDistrictContext(record.district_context));
   const links = appendText(card, 'div', '', 'integrity-links');
-  appendLink(links, 'Inspect this review signal', `/records/integrity/${encodeURIComponent(record.signal_id)}/`);
+  appendLink(links, 'Inspect this review signal', titleLink.href);
   appendLink(links, 'View project record', record.reader_source_url);
   if (record.pcab_id) appendLink(links, `Verify PCAB ID ${record.pcab_id}`, 'https://www.pcab.construction.gov.ph/verify/');
   return card;
@@ -172,7 +174,9 @@ const renderContractor = (record) => {
   const row = document.createElement('article');
   row.className = 'contractor-record';
   const identity = document.createElement('div');
-  appendText(identity, 'h3', record.contractor_name);
+  const title = appendText(identity, 'h3', '');
+  const titleLink = appendText(title, 'a', record.contractor_name, 'record-title-link');
+  titleLink.href = `/contractors/${encodeURIComponent(record.contractor_key)}/`;
   appendText(
     identity,
     'p',
@@ -205,21 +209,32 @@ const renderContractor = (record) => {
     appendText(detail, 'span', `${number.format(record.joint_project_count)} joint projects`);
   }
   if (record.pcab_valid_to) appendText(detail, 'span', `Current listing valid to ${record.pcab_valid_to}`);
-  appendLink(detail, 'Open contractor activity', `/contractors/${encodeURIComponent(record.contractor_key)}/`);
+  appendLink(detail, 'Open contractor activity', titleLink.href);
   if (record.pcab_id) appendLink(detail, 'Verify contractor registration', record.pcab_url);
   return row;
+};
+
+const contractGroupUrl = (record) => {
+  const field = { region: 'region', province: 'province', category: 'category' }[record.dimension];
+  const params = new URLSearchParams();
+  if (field) params.set(field, record.group_label);
+  if (record.fiscal_year) params.set('year', String(record.fiscal_year));
+  return `/contracts/?${params}`;
 };
 
 const renderConcentration = (record) => {
   const row = document.createElement('article');
   row.className = 'concentration-record';
-  appendText(row, 'h3', record.group_label);
+  const title = appendText(row, 'h3', '');
+  const groupLink = appendText(title, 'a', record.group_label, 'record-title-link');
+  groupLink.href = contractGroupUrl(record);
   appendText(row, 'strong', `${percent(record.top_share_basis_points)} of party associations`);
-  appendText(
-    row,
-    'p',
-    `${record.top_contractor_name} appears on ${number.format(record.top_project_count)} of ${number.format(record.party_association_count)} contractor-party associations.`,
-  );
+  const description = appendText(row, 'p', '');
+  const contractorLink = appendText(description, 'a', record.top_contractor_name, 'concentration-contractor-link');
+  contractorLink.href = `/contractors/${encodeURIComponent(record.top_contractor_key)}/`;
+  description.append(document.createTextNode(
+    ` appears on ${number.format(record.top_project_count)} of ${number.format(record.party_association_count)} contractor-party associations.`,
+  ));
   appendText(
     row,
     'small',

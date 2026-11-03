@@ -69,18 +69,20 @@ import { renderDistrictContext } from './district-context-v1.js';
     card.append(block);
   };
 
-  const baseCard = (type, heading) => {
+  const baseCard = (type, heading, href) => {
     const card = document.createElement('article');
     card.className = 'record-card';
     const main = document.createElement('div');
     appendText(main, 'span', type, `record-type ${type === 'Unreviewed candidate' ? 'candidate' : type === 'Reviewed dossier' ? 'reviewed' : ''}`);
-    appendText(main, 'h2', heading);
+    const title = appendText(main, 'h2', '');
+    const titleLink = appendText(title, 'a', heading, 'record-title-link');
+    titleLink.href = href;
     card.append(main);
     return { card, main };
   };
 
   const renderBudget = (record) => {
-    const { card, main } = baseCard('GAA appropriation', record.description);
+    const { card, main } = baseCard('GAA appropriation', record.description, record.reader_source_url);
     const meta = appendText(main, 'div', '', 'record-meta');
     appendText(meta, 'span', `FY ${record.fiscal_year}`);
     appendText(meta, 'span', record.budget_line_id.split('|')[0]);
@@ -94,7 +96,7 @@ import { renderDistrictContext } from './district-context-v1.js';
   };
 
   const renderDelivery = (record) => {
-    const { card, main } = baseCard('DPWH delivery record', record.description);
+    const { card, main } = baseCard('DPWH delivery record', record.description, record.reader_source_url);
     const meta = appendText(main, 'div', '', 'record-meta');
     appendText(meta, 'span', `FY ${record.fiscal_year}`);
     appendText(meta, 'span', `Contract ${record.contract_id}`);
@@ -109,7 +111,7 @@ import { renderDistrictContext } from './district-context-v1.js';
   };
 
   const renderCandidate = (record) => {
-    const { card, main } = baseCard('Unreviewed candidate', record.budget_description);
+    const { card, main } = baseCard('Unreviewed candidate', record.budget_description, record.review_url);
     const meta = appendText(main, 'div', '', 'record-meta');
     appendText(meta, 'span', `FY ${record.fiscal_year}`);
     appendText(meta, 'span', `Contract ${record.contract_id}`);
@@ -124,14 +126,15 @@ import { renderDistrictContext } from './district-context-v1.js';
   };
 
   const renderReviewed = (record) => {
-    const { card, main } = baseCard('Reviewed dossier', record.title);
+    const detailUrl = `/projects/${record.slug}/`;
+    const { card, main } = baseCard('Reviewed dossier', record.title, detailUrl);
     const meta = appendText(main, 'div', '', 'record-meta');
     appendText(meta, 'span', `FY ${record.fiscal_year}`);
     appendText(meta, 'span', `Contract ${record.contract_id}`);
     appendText(meta, 'span', record.status_label);
     appendText(main, 'p', record.location);
     const links = appendText(main, 'div', '', 'record-links');
-    link(links, 'Open evidence dossier', `/projects/${record.slug}/`);
+    link(links, 'Open evidence dossier', detailUrl);
     amountBlock(card, 'Appropriation', record.appropriation_centavos);
     return card;
   };

@@ -64,13 +64,15 @@ import { renderDistrictContext } from './district-context-v1.js';
       appendText(header, 'span', 'Quarantine', 'change-badge quarantine');
     }
     copy.append(header);
-    appendText(copy, 'h2', record.title);
+    const title = appendText(copy, 'h2', '');
+    const titleLink = appendText(title, 'a', record.title, 'record-title-link');
+    titleLink.href = `/records/change/${encodeURIComponent(record.record_id)}/`;
     const context = [record.program, record.region, record.office].filter(Boolean).join(' · ');
     appendText(copy, 'p', context || 'Context not stated in source row', 'change-meta');
     copy.append(renderDistrictContext(record.district_context));
     const links = appendText(copy, 'div', '', 'change-evidence');
     const detail = appendText(links, 'a', 'Open comparison record');
-    detail.href = `/records/change/${encodeURIComponent(record.record_id)}/`;
+    detail.href = titleLink.href;
     evidenceLink(links, record.nep_page ? `View NEP PDF · page ${record.nep_page}` : 'View NEP PDF', record.nep_pdf_url);
     evidenceLink(links, record.house_page ? `View House bill PDF · page ${record.house_page}` : 'View House bill PDF', record.house_pdf_url);
     card.append(copy);

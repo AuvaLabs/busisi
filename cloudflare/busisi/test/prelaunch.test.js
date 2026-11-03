@@ -20,7 +20,7 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<meta property="og:image:width" content="1200">/);
   assert.match(document, /<meta property="og:image:height" content="630">/);
   assert.match(document, /<meta name="twitter:card" content="summary_large_image">/);
-  assert.match(document, /href="\/assets\/site-visual-v13\.css"/);
+  assert.match(document, /href="\/assets\/site-visual-v14\.css"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
@@ -68,6 +68,7 @@ test('publishes the source-record explorer without implying reviewed links', asy
   assert.match(document, /GAA appropriations/);
   assert.match(document, /DPWH delivery records/);
   assert.match(document, /Candidate links/);
+  assert.match(document, /src="\/assets\/explorer-v1\.js\?v=2"/);
   assert.match(document, /Unreviewed candidates are not public findings/);
   assert.doesNotMatch(document, /ghost project/i);
 });
@@ -103,7 +104,7 @@ test('publishes the project-integrity desk and contractor leaderboard', async ()
   assert.match(document, /Congressional district context/);
   assert.match(document, /does not establish political authorship/);
   assert.match(document, /What this desk flags/);
-  assert.match(document, /src="\/assets\/integrity-v1\.js"/);
+  assert.match(document, /src="\/assets\/integrity-v1\.js\?v=2"/);
   assert.doesNotMatch(document, /proves? (?:fraud|corruption)/i);
 });
 
@@ -117,7 +118,7 @@ test('publishes an interactive FY2027 budget change ledger with careful labels',
   assert.match(document, /data-change-ledger/);
   assert.match(document, /In the House bill only/);
   assert.match(document, /How to read a change/);
-  assert.match(document, /src="\/assets\/changes-v1\.js"/);
+  assert.match(document, /src="\/assets\/changes-v1\.js\?v=2"/);
   assert.doesNotMatch(document, /proves? (?:an )?insertion/i);
 });
 
@@ -161,7 +162,7 @@ test('publishes the Sulit Ba public-value desk as the primary civic question', a
   assert.match(document, /Opportunity cost/);
   assert.match(document, /Motive cannot be inferred/);
   assert.match(document, /not enacted appropriations, releases, payments, or outcomes/i);
-  assert.match(document, /src="\/assets\/public-value-v1\.js"/);
+  assert.match(document, /src="\/assets\/public-value-v1\.js\?v=2"/);
   assert.doesNotMatch(document, /overall score|AI score|Auva Labs/i);
 });
 
@@ -300,7 +301,7 @@ test('renders a reviewed evidence dossier when the publication database is bound
 });
 
 test('serves the monochrome editorial system and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v13.css');
+  const css = await fetchPath('/assets/site-visual-v14.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));
@@ -397,7 +398,7 @@ test('passes the editorial banner and icon system through the static asset bindi
 
 test('reader actions use human-readable evidence instead of raw JSON endpoints', () => {
   const assets = Object.fromEntries(
-    ['explorer', 'agencies', 'changes', 'review', 'integrity'].map((name) => [
+    ['explorer', 'agencies', 'changes', 'review', 'integrity', 'contracts', 'public-value'].map((name) => [
       name,
       readFileSync(new URL(`../public/assets/${name}-v1.js`, import.meta.url), 'utf8'),
     ]),
@@ -414,5 +415,12 @@ test('reader actions use human-readable evidence instead of raw JSON endpoints',
   assert.match(assets.review, /Inspect project evidence/);
   assert.match(assets.review, /Clear group filter/);
   assert.match(assets.review, /params\.set\('group', label\)/);
+  assert.match(assets.explorer, /record-title-link/);
+  assert.match(assets.changes, /record-title-link/);
+  assert.match(assets.integrity, /record-title-link/);
+  assert.match(assets.integrity, /top_contractor_key/);
+  assert.match(assets.integrity, /contractGroupUrl/);
+  assert.match(assets.contracts, /province/);
+  assert.match(assets['public-value'], /\/agencies\/\?q=/);
   assert.doesNotMatch(assets.integrity, /Open archived source record.*record\.source_url/);
 });

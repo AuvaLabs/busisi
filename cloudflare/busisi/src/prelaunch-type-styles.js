@@ -22,6 +22,7 @@ h3,.principle h3,.pipeline-group h3,.policy-item h3,.standard-panel h3,.preview-
 .explorer-notice,.dossier-warning{background:var(--soft)}
 .record-card:hover,.preview-panels>a:hover{background:var(--soft)}
 a,button,input,select{font-family:var(--sans)}
+.record-title-link{color:inherit;text-decoration-thickness:1px;text-underline-offset:4px}.record-title-link:hover{text-decoration-thickness:2px}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--rust);outline-offset:3px}
 @media(max-width:720px){
   .primary-nav a,.utility-inner{font-size:var(--text-xs)}

@@ -157,7 +157,7 @@
     const data = new FormData(form);
     const params = new URLSearchParams();
     for (const name of [
-      'q', 'year', 'state', 'budget', 'signal', 'region', 'category', 'status',
+      'q', 'year', 'state', 'budget', 'signal', 'region', 'province', 'category', 'status',
       'contractor', 'sort',
     ]) {
       const value = String(data.get(name) || '').trim();
@@ -238,6 +238,7 @@
       if (!response.ok) return;
       const { data } = await response.json();
       populateFacet('[data-contract-region]', data.facets.regions, 'All regions');
+      populateFacet('[data-contract-province]', data.facets.provinces, 'All provinces');
       populateFacet('[data-contract-category]', data.facets.categories, 'All categories');
       populateFacet('[data-contract-status]', data.facets.statuses, 'All statuses');
     } catch {
@@ -276,13 +277,13 @@
 
   const initial = new URLSearchParams(location.search);
   for (const name of [
-    'q', 'year', 'state', 'budget', 'signal', 'region', 'category', 'status',
+    'q', 'year', 'state', 'budget', 'signal', 'region', 'province', 'category', 'status',
     'contractor', 'sort',
   ]) {
     if (initial.has(name) && form.elements[name]) form.elements[name].value = initial.get(name);
   }
   loadSummary().finally(() => {
-    for (const name of ['region', 'category', 'status']) {
+    for (const name of ['region', 'province', 'category', 'status']) {
       if (initial.has(name)) form.elements[name].value = initial.get(name);
     }
     load();

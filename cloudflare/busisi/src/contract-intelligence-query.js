@@ -44,7 +44,7 @@ const boundedText = (params, name, maximum = MAX_FACET_TEXT) => {
 };
 
 const fingerprint = (query) => [
-  query.q, query.year, query.state, query.category, query.region, query.status,
+  query.q, query.year, query.state, query.category, query.region, query.province, query.status,
   query.contractor, query.signal, query.budget, query.sort,
 ].join('|');
 
@@ -74,6 +74,7 @@ export const parseContractIntelligenceQuery = (url) => {
   const state = params.get('state') || 'all';
   const category = boundedText(params, 'category');
   const region = boundedText(params, 'region');
+  const province = boundedText(params, 'province');
   const status = boundedText(params, 'status');
   const contractor = boundedText(params, 'contractor', MAX_TEXT);
   const signal = params.get('signal') || 'all';
@@ -85,7 +86,7 @@ export const parseContractIntelligenceQuery = (url) => {
   if (!BUDGETS.has(budget)) throw new QueryError('budget is invalid');
   if (!Object.hasOwn(SORTS, sort)) throw new QueryError('sort is invalid');
   const query = {
-    q, year, state, category, region, status, contractor, signal, budget,
+    q, year, state, category, region, province, status, contractor, signal, budget,
     sort, limit, offset: 0,
   };
   const cursor = params.get('cursor');
@@ -115,7 +116,8 @@ const filters = (query) => {
   }
   for (const [value, field] of [
     [query.state, 'a.match_state'], [query.category, 'detail.category'],
-    [query.region, 'detail.region'], [query.status, 'detail.status'],
+    [query.region, 'detail.region'], [query.province, 'detail.province'],
+    [query.status, 'detail.status'],
   ]) {
     if (value && value !== 'all') {
       clauses.push(`${field} = ?`);
@@ -229,7 +231,7 @@ const facet = async (database, field) => {
 };
 
 export const getContractIntelligenceSummary = async (database) => {
-  const [states, total, signals, categories, regions, statuses] = await Promise.all([
+  const [states, total, signals, categories, regions, provinces, statuses] = await Promise.all([
     database.prepare(`
       SELECT match_state AS state, COUNT(*) AS count
       FROM contract_acquisition_details GROUP BY match_state ORDER BY state
@@ -244,6 +246,7 @@ export const getContractIntelligenceSummary = async (database) => {
     `).first(),
     facet(database, 'category'),
     facet(database, 'region'),
+    facet(database, 'province'),
     facet(database, 'status'),
   ]);
   return Object.freeze({
@@ -253,7 +256,7 @@ export const getContractIntelligenceSummary = async (database) => {
     states: Object.fromEntries((states.results || []).map((item) => [
       item.state, Number(item.count),
     ])),
-    facets: { categories, regions, statuses },
+    facets: { categories, regions, provinces, statuses },
   });
 };
 

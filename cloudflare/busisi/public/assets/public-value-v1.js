@@ -94,8 +94,10 @@ const renderSummary = (summary) => {
 const renderMovements = (root, rows) => {
   root.replaceChildren(...rows.map((row) => {
     const item = document.createElement('li');
-    const name = document.createElement('strong');
+    const name = document.createElement('a');
+    name.className = 'record-title-link';
     name.textContent = row.name;
+    name.href = `/agencies/?q=${encodeURIComponent(row.name)}`;
     const value = document.createElement('span');
     value.textContent = `${row.difference_centavos >= 0 ? '+' : '−'}${money(Math.abs(row.difference_centavos))}`;
     item.append(name, value);

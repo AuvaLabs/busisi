@@ -12,7 +12,7 @@ const statusLabel = (status) => ({
 }[status] || status.replaceAll('_', ' '));
 
 const reportCard = (report) => `<article class="audit-report-card">
-  <div><span>${html(report.report_type.replaceAll('_', ' '))} · FY ${report.fiscal_year}</span><h3>${html(report.title)}</h3><p>${html(report.scope_note)}</p></div>
+  <div><span>${html(report.report_type.replaceAll('_', ' '))} · FY ${report.fiscal_year}</span><h3><a class="record-title-link" href="/audit/reports/${encodeURIComponent(report.report_id)}/">${html(report.title)}</a></h3><p>${html(report.scope_note)}</p></div>
   <dl><div><dt>Audited entity</dt><dd>${html(report.audited_entity)}</dd></div><div><dt>Acquisition</dt><dd>${html(statusLabel(report.acquisition_status))}</dd></div></dl>
   <a href="/audit/reports/${encodeURIComponent(report.report_id)}/">Read the evidence record</a>
 </article>`;
