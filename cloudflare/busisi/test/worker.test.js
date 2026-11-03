@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { parseChangeQuery } from '../src/change-query.js';
 import { coaDeskBody, coaReportBody } from '../src/coa-content.js';
 import { getProjectCoaEvidence } from '../src/coa-query.js';
+import { procurementDeskBody } from '../src/procurement-content.js';
+import { getProjectProcurementEvidence } from '../src/procurement-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
 import { parseReviewQuery } from '../src/review-query.js';
@@ -53,6 +55,9 @@ const deliveryDetailsMigrationPath = fileURLToPath(
 const coaMigrationPath = fileURLToPath(
   new URL('../migrations/0012_coa_audit_evidence.sql', import.meta.url),
 );
+const procurementMigrationPath = fileURLToPath(
+  new URL('../migrations/0013_procurement_evidence.sql', import.meta.url),
+);
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
 );
@@ -93,6 +98,7 @@ class LocalD1 {
     this.database.exec(readFileSync(budgetCycleMigrationPath, 'utf8'));
     this.database.exec(readFileSync(deliveryDetailsMigrationPath, 'utf8'));
     this.database.exec(readFileSync(coaMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(procurementMigrationPath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -136,6 +142,52 @@ class LocalD1 {
         ('corazon-2024-phase-1', '24HI0148', 2024, 'not_covered', NULL, 'none', '[]',
          NULL, NULL, '', '', '', 'not_applicable',
          'No qualifying project-level COA evidence was located.', '2026-11-03');
+      INSERT INTO procurement_metadata VALUES
+        ('checked_at', '2026-11-03T15:47:02+04:00'), ('source_count', '1'),
+        ('archived_sources', '1'), ('record_count', '1'), ('exact_records', '1'),
+        ('checked_projects', '2'), ('projects_with_evidence', '1'),
+        ('status:exact_evidence', '1'), ('status:not_located', '1'),
+        ('catalog_sha256', '${'7'.repeat(64)}');
+      INSERT INTO procurement_sources VALUES
+        ('philgeps-test', 'PhilGEPS bid notice 123', 'PhilGEPS', 'bid_notice', 2025,
+         NULL, 'https://notices.philgeps.gov.ph/test', 'verified_archived',
+         '${'6'.repeat(64)}', 1234, NULL, 'Original official HTML archived.'),
+        ('dpwh-pmr-test', 'DPWH procurement monitoring report', 'DPWH Cebu 5th DEO',
+         'procurement_monitoring_report', 2024, '2024-12-31',
+         'https://www.dpwh.gov.ph/test-pmr.pdf', 'blocked', NULL, NULL, NULL,
+         'Official source discovered; archive blocked.'),
+        ('dpwh-app-test', 'DPWH annual procurement plan', 'DPWH Cebu 5th DEO',
+         'annual_procurement_plan', 2025, '2025-01-31',
+         'https://www.dpwh.gov.ph/test-app.pdf', 'discovered', NULL, NULL, NULL,
+         'Official plan row discovered.');
+      INSERT INTO procurement_records VALUES
+        ('philgeps-25o00113', 'pump-reviewed', '25O00113', 2025, 'philgeps-test',
+         'bid_notice', 'exact_solicitation_number', 'Construction of San Andres Pumping Station',
+         'DPWH Test Office', 'Public Bidding', 'Awarded', NULL, '123', 40000000000,
+         37679270658, 2320729342, '[]',
+         '[{"stage":"advertisement","event_date":"2024-11-06","date_kind":"actual"},{"stage":"bid_opening","event_date":"2024-11-26","date_kind":"actual"},{"stage":"notice_of_award","event_date":"2025-02-04","date_kind":"actual"}]',
+         '2026-11-03', 'Bid evidence does not prove payment or completion.'),
+        ('pmr-24hi0148', 'corazon-2024-phase-1', '24HI0148', 2024, 'dpwh-pmr-test',
+         'monitoring_report', 'exact_contract_id', 'Construction of Multi-Purpose Building',
+         'DPWH Cebu 5th DEO', 'Competitive Bidding', 'Completed', 6, NULL, 495000000,
+         494467510, 532490, '["COA","PICE"]',
+         '[{"stage":"advertisement","event_date":"2024-07-31","date_kind":"actual"},{"stage":"notice_of_award","event_date":"2024-09-02","date_kind":"actual"},{"stage":"notice_to_proceed","event_date":"2024-09-05","date_kind":"actual"}]',
+         '2026-11-03', 'PMR status does not prove physical completion.'),
+        ('app-25o00113', 'pump-reviewed', '25O00113', 2025, 'dpwh-app-test',
+         'plan', 'exact_contract_id', 'Construction of San Andres Pumping Station',
+         'DPWH Test Office', 'Competitive Bidding', 'Early procurement activity planned',
+         5, NULL, 40000000000, NULL, NULL, '[]',
+         '[{"stage":"advertisement","event_date":"2024-11-06","date_kind":"planned"},{"stage":"bid_opening","event_date":"2024-11-26","date_kind":"planned"},{"stage":"contract_signing","event_date":"2025-02-14","date_kind":"planned"}]',
+         '2026-11-03', 'Planned dates are not evidence that events occurred.');
+      INSERT INTO procurement_project_coverage VALUES
+        ('pump-reviewed', '25O00113', 2025, 'exact_evidence', 2,
+         'Exact solicitation number located.', '2026-11-03'),
+        ('health-uncovered', '26ZERO01', 2026, 'not_located', 0,
+         'No exact official procurement artifact was located.', '2026-11-03'),
+        ('corazon-2024-phase-1', '24HI0148', 2024, 'exact_evidence', 1,
+         'Exact contract ID located on page 6.', '2026-11-03'),
+        ('corazon-2026-completion', '26HI0094', 2026, 'quarantined', 0,
+         'Underlying relationship and procurement evidence remain quarantined.', '2026-11-03');
       INSERT INTO candidate_links VALUES
         ('2025:pump:25O00113', 2025, '18-001|pump', '25O00113', 'high', 90, '["year_match"]', 'Construction of San Andres Pumping Station', 'Construction of San Andres Pumping Station', 40000000000, 37679270658, 2320729342, 'https://budget.example/pump', 'https://dpwh.example/25O00113', 'candidate'),
         ('2026:health:26ZERO01', 2026, '18-001|health', '26ZERO01', 'candidate', 70, '["year_match"]', 'Construction of Sample Health Center', 'Construction of Sample Health Center', 2500000000, 0, 2500000000, 'https://budget.example/health', 'https://dpwh.example/26ZERO01', 'candidate');
@@ -987,6 +1039,104 @@ test('publishes the COA audit desk without turning absence into clearance', asyn
   assert.match(reportDocument, /Agency accounts and operations/);
   assert.match(reportDocument, /Source copy not archived/);
   assert.doesNotMatch(reportDocument, /audit score|cleared the project/i);
+});
+
+test('publishes exact procurement evidence and preserves missing coverage', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  database.database.exec(`
+    INSERT INTO projects VALUES
+      ('pump-reviewed', 'pump-reviewed', 'San Andres Pumping Station', 2025, 'Manila',
+       40000000000, 37679270658, 2320729342, '25O00113',
+       'Construction of San Andres Pumping Station', 'Manila 1st DEO', 'GAA 2025',
+       'high', 95, '["year_match"]', 'Reviewed identity link.',
+       '["https://budget.example/pump"]', 'family:pump',
+       'san andres pumping station', 'Reviewed link', 'reviewed', 1);
+  `);
+
+  const summary = await worker.fetch(
+    request('/api/v1/procurement-summary'), environment(database),
+  );
+  assert.equal(summary.status, 200);
+  const summaryPayload = await summary.json();
+  assert.equal(summaryPayload.data.metadata.checked_projects, '2');
+  assert.equal(summaryPayload.data.metadata.projects_with_evidence, '1');
+
+  const records = await worker.fetch(
+    request('/api/v1/procurement-records'), environment(database),
+  );
+  assert.equal(records.status, 200);
+  const recordsPayload = await records.json();
+  assert.equal(recordsPayload.data[0].contract_id, '25O00113');
+  assert.equal(recordsPayload.data[0].events[2].stage, 'notice_of_award');
+  assert.equal(recordsPayload.data[0].artifact_sha256, '6'.repeat(64));
+
+  const desk = await siteWorker.fetch(request('/procurement/'), environment(database));
+  const document = await desk.text();
+  assert.equal(desk.status, 200);
+  assert.match(document, /Procurement evidence desk/);
+  assert.match(document, /1 of 2 reviewed dossiers/);
+  assert.match(document, /PhilGEPS bid notice 123/);
+  assert.match(document, /Evidence gap, not a clean bill/);
+
+  const dossier = await siteWorker.fetch(
+    request('/projects/pump-reviewed/'), environment(database),
+  );
+  const dossierDocument = await dossier.text();
+  assert.match(dossierDocument, /Procurement timeline/);
+  assert.match(dossierDocument, /Notice of award/);
+  assert.match(dossierDocument, /Difference below ABC/);
+  assert.match(dossierDocument, /₱23,207,293\.42/);
+  assert.match(dossierDocument, /Archived source SHA-256/);
+
+  const missing = await getProjectProcurementEvidence(database, '26ZERO01');
+  assert.equal(missing.coverage.status, 'not_located');
+  assert.deepEqual(missing.records, []);
+});
+
+test('fails closed for malformed procurement record arrays', async () => {
+  const database = {
+    prepare: (query) => ({
+      bind: () => ({
+        first: async () => ({ contract_id: '24TEST', status: 'exact_evidence' }),
+        all: async () => ({ results: query.includes('procurement_records') ? [{
+          evidence_id: 'record', events_json: '{broken', observers_json: '{}',
+        }] : [] }),
+      }),
+    }),
+  };
+  const evidence = await getProjectProcurementEvidence(database, '24TEST');
+  assert.deepEqual(evidence.records[0].events, []);
+  assert.deepEqual(evidence.records[0].observers, []);
+});
+
+test('renders procurement desk counts without unsafe source URLs', () => {
+  const document = procurementDeskBody({
+    summary: {
+      metadata: { checked_projects: '1', projects_with_evidence: '1', archived_sources: '1' },
+      statuses: { exact_evidence: 1 },
+    },
+    sources: [{
+      source_id: 'source', title: 'Official source', publisher: 'Agency',
+      document_type: 'bid_notice', fiscal_year: 2025, source_url: 'javascript:alert(1)',
+      acquisition_status: 'verified_archived', artifact_sha256: 'a'.repeat(64),
+      evidence_note: 'Archived official source.',
+    }, {
+      source_id: 'discovered', title: 'Discovered source', publisher: 'Agency',
+      document_type: 'annual_procurement_plan', fiscal_year: 2025, source_url: 'not a url',
+      acquisition_status: 'discovered', artifact_sha256: null,
+      evidence_note: 'Catalogue record only.',
+    }],
+    coverage: [
+      { case_id: 'a', contract_id: 'A', fiscal_year: 2025, status: 'partial_evidence', review_note: 'Partial.', reviewed_at: '2026-11-03' },
+      { case_id: 'b', contract_id: 'B', fiscal_year: 2025, status: 'current_year_not_yet_located', review_note: 'Pending.', reviewed_at: '2026-11-03' },
+      { case_id: 'c', contract_id: 'C', fiscal_year: 2025, status: 'unexpected_status', review_note: 'Unknown.', reviewed_at: '2026-11-03' },
+    ],
+  });
+  assert.match(document, /1 of 1 reviewed dossiers/);
+  assert.match(document, /Source archived and verified/);
+  assert.match(document, /discovered/);
+  assert.doesNotMatch(document, /javascript:/);
 });
 
 test('renders archived, unavailable and incomplete COA report presentation states', () => {

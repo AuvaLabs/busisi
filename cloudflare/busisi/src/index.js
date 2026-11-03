@@ -25,6 +25,7 @@ import {
   queryBudgetCycleDocuments,
 } from './budget-cycle-query.js';
 import { getCoaSummary, queryCoaReports } from './coa-query.js';
+import { getProcurementSummary, queryProcurementRecords } from './procurement-query.js';
 import {
   exportReviewCsv,
   getReviewSummary,
@@ -139,6 +140,16 @@ const apiResponse = async (request, environment, url) => {
     const records = await queryCoaReports(environment.DB);
     return jsonResponse({
       meta: { total: records.length, review_scope: 'official_coa_report_catalogue' },
+      data: records,
+    });
+  }
+  if (url.pathname === '/api/v1/procurement-summary') {
+    return jsonResponse({ data: await getProcurementSummary(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/procurement-records') {
+    const records = await queryProcurementRecords(environment.DB);
+    return jsonResponse({
+      meta: { total: records.length, review_scope: 'exact_official_procurement_evidence' },
       data: records,
     });
   }

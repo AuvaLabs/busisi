@@ -11,6 +11,7 @@ const paths = [
   '/changes/',
   '/budget-trail/',
   '/audit/',
+  '/procurement/',
   '/audit/reports/coa-oda-consolidated-2024/',
   '/audit/reports/coa-dpwh-region-i-sao-2023-02/',
   '/audit/reports/coa-cpa-benguet-local-roads-2022/',

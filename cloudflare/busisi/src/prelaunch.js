@@ -16,6 +16,8 @@ import { INDEX_NOW_KEY, SITE } from './prelaunch-config.js';
 import dataWorker from './index.js';
 import { coaDeskBody, coaReportBody } from './coa-content.js';
 import { getCoaDesk, getCoaReport } from './coa-query.js';
+import { procurementDeskBody } from './procurement-content.js';
+import { getProcurementDesk } from './procurement-query.js';
 import {
   budgetRecordBody,
   candidateRecordBody,
@@ -153,6 +155,16 @@ const COA_SCHEMA = Object.freeze({
   isAccessibleForFree: true,
 });
 
+const PROCUREMENT_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi Philippine public procurement evidence desk',
+  url: `${SITE.origin}/procurement/`,
+  description: 'Exact contract evidence from official procurement plans, bid notices, and monitoring reports with explicit acquisition status.',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+});
+
 const page = (html, status = 200) => response(html, {
   status,
   type: 'text/html; charset=utf-8',
@@ -259,6 +271,14 @@ const auditReport = (record) => {
   }));
 };
 
+const procurement = (payload) => page(document({
+  title: 'Philippine public procurement evidence | Busisi',
+  description: 'Trace exact contract IDs through official procurement plans, bid notices, monitoring reports, source fingerprints, and explicit evidence gaps.',
+  canonicalPath: '/procurement/',
+  body: procurementDeskBody(payload),
+  schema: PROCUREMENT_SCHEMA,
+}));
+
 const evidenceSchema = (name, description, path, year) => ({
   '@context': 'https://schema.org',
   '@type': 'Dataset',
@@ -355,6 +375,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/agencies/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/budget-trail/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/audit/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/procurement/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/audit/reports/coa-oda-consolidated-2024/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/audit/reports/coa-dpwh-region-i-sao-2023-02/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/audit/reports/coa-cpa-benguet-local-roads-2022/</loc><lastmod>2026-11-03</lastmod></url>
@@ -387,6 +408,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Appropriation heads: ${SITE.origin}/agencies/
 - FY2027 budget publication trail: ${SITE.origin}/budget-trail/
 - COA audit evidence: ${SITE.origin}/audit/
+- Procurement evidence: ${SITE.origin}/procurement/
 - Deterministic review desk: ${SITE.origin}/signals/
 - Project integrity desk: ${SITE.origin}/integrity/
 - Methodology: ${SITE.origin}/methodology/
@@ -472,6 +494,9 @@ export default {
     }
     if (!result && (url.pathname === '/audit' || url.pathname === '/audit/') && env.DB) {
       result = audit(await getCoaDesk(env.DB));
+    }
+    if (!result && (url.pathname === '/procurement' || url.pathname === '/procurement/') && env.DB) {
+      result = procurement(await getProcurementDesk(env.DB));
     }
     const auditReportMatch = url.pathname.match(/^\/audit\/reports\/([a-z0-9-]+)\/?$/);
     if (!result && auditReportMatch && env.DB) {

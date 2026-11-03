@@ -87,14 +87,27 @@ const contractorCards = (items) => items.length ? `<div class="contractor-card-g
   return `<article><span>${item.pcab_id ? `PCAB ${html(item.pcab_id)}` : 'No PCAB ID stated'}</span><h3>${html(item.contractor_name)}</h3>${profile ? `<p>${profile.project_count} archived project associations · ${html(money(profile.total_budget_centavos))}</p><a href="${contractorPath(profile.contractor_key)}">Open contractor activity</a>` : '<p>No exact contractor aggregate is available.</p>'}</article>`;
 }).join('')}</div>` : empty('No contractor identity is stated in the acquired project-detail record.');
 
-const projectAvailability = (delivery) => `<section class="evidence-panel evidence-availability">
+const projectAvailability = (delivery, procurementEvidence, auditEvidence) => {
+  const procurementAvailable = Boolean(procurementEvidence?.records?.length);
+  const awardAvailable = procurementEvidence?.records?.some((item) => (
+    item.procurement_status.toLowerCase().includes('awarded')
+      || item.events.some((event) => event.stage === 'notice_of_award' && event.date_kind === 'actual')
+  ));
+  const inspectionAvailable = procurementEvidence?.records?.some((item) => (
+    item.events.some((event) => event.stage === 'inspection_acceptance' && event.date_kind === 'actual')
+  ));
+  const auditAvailable = Boolean(auditEvidence) && !['not_covered', 'agency_report_available', 'program_audit_available'].includes(auditEvidence.status);
+  return `<section class="evidence-panel evidence-availability">
   <p class="kicker">Traceability</p><h2>Evidence by public-money stage</h2><ol>
     <li class="available"><b>01</b><span><strong>Appropriation</strong><small>Reviewed GAA source row available</small></span></li>
-    <li class="available"><b>02</b><span><strong>Delivery tracking</strong><small>DPWH contract record ${delivery ? 'available' : 'not acquired'}</small></span></li>
-    <li class="${delivery?.contractor_name ? 'available' : ''}"><b>03</b><span><strong>Contractor identity</strong><small>${delivery?.contractor_name ? 'Stated in the DPWH source record' : 'Not available in the acquired details'}</small></span></li>
-    <li><b>04</b><span><strong>Release, obligation and payment</strong><small>Not available in the acquired records</small></span></li>
-    <li><b>05</b><span><strong>Receipt, audit and ground verification</strong><small>Not available in the acquired records</small></span></li>
+    <li class="${procurementAvailable ? 'available' : ''}"><b>02</b><span><strong>Procurement</strong><small>${procurementAvailable ? 'Exact contract evidence available' : 'No exact artifact located'}</small></span></li>
+    <li class="${awardAvailable ? 'available' : ''}"><b>03</b><span><strong>Award</strong><small>${awardAvailable ? 'Award status or actual award date reported' : 'Not established by acquired evidence'}</small></span></li>
+    <li class="${delivery ? 'available' : ''}"><b>04</b><span><strong>Implementation</strong><small>DPWH delivery record ${delivery ? 'available' : 'not acquired'}</small></span></li>
+    <li class="${inspectionAvailable ? 'available' : ''}"><b>05</b><span><strong>Inspection and acceptance</strong><small>${inspectionAvailable ? 'Actual event date reported' : 'Not available in acquired procurement evidence'}</small></span></li>
+    <li><b>06</b><span><strong>Release, obligation and payment</strong><small>Not available in the acquired records</small></span></li>
+    <li class="${auditAvailable ? 'available' : ''}"><b>07</b><span><strong>COA project observation</strong><small>${auditAvailable ? 'Reviewed project match available' : 'No reviewed project-level match located'}</small></span></li>
   </ol></section>`;
+};
 
 const projectProvenance = (record, delivery, provenance) => `<section class="evidence-section" id="provenance"><p class="kicker">Provenance</p><h2>Identifiers and archived source fingerprints</h2><dl class="provenance-grid">
   <div><dt>Reviewed case</dt><dd>${html(record.case_id)}</dd></div><div><dt>Project family</dt><dd>${html(record.family_id)}</dd></div>
@@ -165,17 +178,54 @@ const auditEvidencePanel = (evidence) => {
   return `<section class="evidence-section" id="audit-evidence"><p class="kicker">COA audit evidence</p><h2>${html(label)}</h2><p>${html(evidence.observation_summary || evidence.review_note)}</p><dl class="evidence-details"><div><dt>Report</dt><dd>${html(evidence.report_title)}</dd></div><div><dt>Citation</dt><dd>${html(pages)}</dd></div><div><dt>Match confidence</dt><dd>${html(evidence.match_confidence)}</dd></div><div><dt>Implementation status</dt><dd>${html(evidence.implementation_status.replaceAll('_', ' '))}</dd></div></dl>${evidence.recommendation_summary ? `<h3>COA recommendation</h3><p>${html(evidence.recommendation_summary)}</p>` : ''}${evidence.management_response ? `<h3>Management response</h3><p>${html(evidence.management_response)}</p>` : ''}<a class="evidence-action" href="/audit/reports/${encodeURIComponent(evidence.report_id)}/">Read the audit evidence record</a><p class="evidence-limit">An audit observation is not automatically a disallowance, criminal finding, or proof of wrongdoing.</p></section>`;
 };
 
+const procurementStageLabel = (stage) => ({
+  pre_procurement_conference: 'Pre-procurement conference',
+  advertisement: 'Advertisement or posting',
+  pre_bid: 'Pre-bid conference',
+  eligibility_check: 'Eligibility check',
+  bid_opening: 'Bid opening',
+  bid_evaluation: 'Bid evaluation',
+  post_qualification: 'Post qualification',
+  bac_resolution: 'BAC award resolution',
+  notice_of_award: 'Notice of award',
+  contract_signing: 'Contract signing',
+  notice_to_proceed: 'Notice to proceed',
+  delivery_completion: 'Delivery or completion',
+  inspection_acceptance: 'Inspection and acceptance',
+}[stage] || stage.replaceAll('_', ' '));
+
+const procurementRecordCard = (item) => {
+  const source = safeLink(item.source_url);
+  const amounts = [
+    item.abc_centavos === null ? null : `<div><dt>Approved budget</dt><dd>${html(money(item.abc_centavos))}</dd></div>`,
+    item.contract_cost_centavos === null ? null : `<div><dt>Contract cost</dt><dd>${html(money(item.contract_cost_centavos))}</dd></div>`,
+    item.savings_centavos === null ? null : `<div><dt>Difference below ABC</dt><dd>${html(money(item.savings_centavos))}</dd></div>`,
+  ].filter(Boolean).join('');
+  const events = item.events.length ? `<ol class="procurement-timeline">${item.events.map((event) => `<li class="${html(event.date_kind)}"><span>${html(event.event_date)}</span><strong>${html(procurementStageLabel(event.stage))}</strong><small>${html(event.date_kind)}</small></li>`).join('')}</ol>` : empty('No event dates are stated in this evidence record.');
+  const sourceState = item.acquisition_status === 'verified_archived'
+    ? `<div><dt>Archived source SHA-256</dt><dd>${hash(item.artifact_sha256)}</dd></div>`
+    : '<div><dt>Archive status</dt><dd>Official source discovered, original bytes not acquired</dd></div>';
+  return `<article class="procurement-record"><header><span>${html(item.evidence_type.replaceAll('_', ' '))}</span><b>${html(item.procurement_status)}</b></header><h3>${html(item.source_title)}</h3><p>${html(item.procuring_entity)} · ${html(item.procurement_mode)}</p><dl class="evidence-details">${amounts}<div><dt>Contract match</dt><dd>${html(item.match_basis.replaceAll('_', ' '))}</dd></div>${item.page_number ? `<div><dt>Source citation</dt><dd>Page ${item.page_number}</dd></div>` : ''}${item.reference_number ? `<div><dt>Reference number</dt><dd>${html(item.reference_number)}</dd></div>` : ''}${sourceState}</dl>${events}${item.observers.length ? `<p class="evidence-limit"><strong>Invited observers stated:</strong> ${html(item.observers.join(', '))}</p>` : ''}${source ? `<a class="evidence-action" href="${html(source)}" target="_blank" rel="noopener noreferrer">Open official procurement document</a>` : ''}<p class="evidence-limit">${html(item.boundary_note)}</p></article>`;
+};
+
+const procurementEvidencePanel = (evidence) => {
+  if (!evidence) return `<section class="evidence-section" id="procurement-evidence"><p class="kicker">Procurement timeline</p><h2>Coverage review not yet recorded</h2><p class="evidence-empty">This dossier has not passed the separate procurement evidence review.</p><a class="evidence-action" href="/procurement/">Open the procurement evidence desk</a></section>`;
+  if (!evidence.records.length) return `<section class="evidence-section" id="procurement-evidence"><p class="kicker">Procurement timeline</p><h2>No exact official procurement artifact located</h2><p>${html(evidence.coverage.review_note)}</p><dl class="evidence-details"><div><dt>Coverage status</dt><dd>${html(evidence.coverage.status.replaceAll('_', ' '))}</dd></div><div><dt>Last reviewed</dt><dd>${html(evidence.coverage.reviewed_at)}</dd></div></dl><p class="evidence-limit">Missing evidence is not evidence that procurement did not occur.</p><a class="evidence-action" href="/procurement/">Open the procurement evidence desk</a></section>`;
+  return `<section class="evidence-section" id="procurement-evidence"><p class="kicker">Procurement timeline</p><h2>${evidence.records.length} exact official evidence record${evidence.records.length === 1 ? '' : 's'}</h2><p>${html(evidence.coverage.review_note)}</p><div class="procurement-records">${evidence.records.map(procurementRecordCard).join('')}</div><a class="evidence-action" href="/procurement/">Open the procurement evidence desk</a></section>`;
+};
+
 export const enhancedProjectBody = ({
   record, delivery, signals: items, related, budgets, deliveries, contractors,
-  candidates, changes, provenance, auditEvidence,
+  candidates, changes, provenance, auditEvidence, procurementEvidence,
 }) => `${breadcrumb('Reviewed dossier', record.contract_id)}
 <article class="evidence-dossier">${heading({ badge: record.is_quarantined ? 'Quarantined project candidate' : 'Reviewed project evidence dossier', tone: record.is_quarantined ? 'candidate' : 'reviewed', kicker: `FY ${record.fiscal_year} · ${record.contract_id}`, title: record.title, summary: record.location })}
 ${record.is_quarantined ? boundary('This relationship remains quarantined and is not a confirmed cross-source link.') : ''}
 ${facts([['GAA appropriation', money(record.appropriation_centavos), 'Authority to spend'], ['DPWH project budget', money(record.contract_budget_centavos), 'Archived snapshot value'], ['Recorded difference', money(record.variance_centavos), 'Comparison only']])}
-<nav class="dossier-index" aria-label="Dossier sections"><span>Jump to</span><a href="#project-record">Project record</a><a href="#link-evidence">Link evidence</a><a href="#contractors">Contractors</a><a href="#audit-evidence">COA audit</a><a href="#phases">Related phases</a><a href="#source-records">Source records</a><a href="#provenance">Provenance</a></nav>
+<nav class="dossier-index" aria-label="Dossier sections"><span>Jump to</span><a href="#project-record">Project record</a><a href="#link-evidence">Link evidence</a><a href="#procurement-evidence">Procurement</a><a href="#contractors">Contractors</a><a href="#audit-evidence">COA audit</a><a href="#phases">Related phases</a><a href="#source-records">Source records</a><a href="#provenance">Provenance</a></nav>
 <section class="project-status-band"><div><span>Source status</span><strong>${html(delivery?.status || 'Not stated')}</strong></div><div><span>Reported progress</span><strong>${delivery?.progress ? `${html(delivery.progress)}%` : 'Not stated'}</strong></div><div><span>Recorded period</span><strong>${html(delivery?.start_date || 'Not stated')} to ${html(delivery?.completion_date || 'Not stated')}</strong></div><div><span>Category</span><strong>${html(delivery?.category || 'Not stated')}</strong></div></section>
 <div class="evidence-columns" id="project-record"><section class="evidence-panel"><p class="kicker">DPWH project record</p><h2>Recorded implementation details</h2>${projectDetails(delivery)}${delivery ? `<a class="evidence-action" href="${idPath('delivery', delivery.contract_id)}">Open complete delivery record</a>` : ''}</section>${delivery ? district(delivery.district_context) : district(null)}</div>
-<div class="evidence-columns" id="link-evidence"><section class="evidence-panel"><p class="kicker">Reviewed relationship</p><h2>Why the appropriation and delivery records may relate</h2><ul class="evidence-list">${record.match_signals.map((item) => `<li><strong>${html(item.replaceAll('_', ' '))}</strong></li>`).join('')}</ul><p class="evidence-limit">${html(record.match_limitations)}</p><dl class="evidence-details"><div><dt>Confidence</dt><dd>${html(record.confidence)} · score ${record.confidence_score}</dd></div><div><dt>Publication status</dt><dd>${html(record.status_label)}</dd></div></dl></section>${projectAvailability(delivery)}</div>
+<div class="evidence-columns" id="link-evidence"><section class="evidence-panel"><p class="kicker">Reviewed relationship</p><h2>Why the appropriation and delivery records may relate</h2><ul class="evidence-list">${record.match_signals.map((item) => `<li><strong>${html(item.replaceAll('_', ' '))}</strong></li>`).join('')}</ul><p class="evidence-limit">${html(record.match_limitations)}</p><dl class="evidence-details"><div><dt>Confidence</dt><dd>${html(record.confidence)} · score ${record.confidence_score}</dd></div><div><dt>Publication status</dt><dd>${html(record.status_label)}</dd></div></dl></section>${projectAvailability(delivery, procurementEvidence, auditEvidence)}</div>
+${procurementEvidencePanel(procurementEvidence)}
 <section class="evidence-section" id="contractors"><p class="kicker">Contractor identities</p><h2>Parties stated in the DPWH record</h2>${contractorCards(contractors)}</section>
 <section class="evidence-section"><p class="kicker">Integrity review</p><h2>Deterministic signals on this contract</h2>${signals(items)}</section>
 ${auditEvidencePanel(auditEvidence)}

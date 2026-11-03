@@ -21,7 +21,7 @@ const navigation = (canonicalPath) => {
     { label: 'Budget', icon: 'budget', href: '/sulit/', paths: ['/sulit/', '/agencies/', '/changes/'] },
     { label: 'Projects', icon: 'projects', href: '/explore/', paths: ['/explore/'] },
     { label: 'Investigate', icon: 'investigate', href: '/signals/', paths: ['/signals/', '/integrity/'] },
-    { label: 'Sources', icon: 'sources', href: '/budget-trail/', paths: ['/budget-trail/', '/audit/'] },
+    { label: 'Sources', icon: 'sources', href: '/budget-trail/', paths: ['/budget-trail/', '/audit/', '/procurement/'] },
     { label: 'Search', icon: 'search', href: '/explore/#record-search', paths: [] },
   ];
   const links = groups.map(({ label, icon: iconName, href, paths }) => (
@@ -35,7 +35,7 @@ const navigation = (canonicalPath) => {
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent civic data initiative for traceable Philippine public budget records.</p></div>
-  <nav class="footer-nav" aria-label="Footer navigation"><a href="/sulit/">Sulit Ba?</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Projects</a><a href="/budget-trail/">Budget trail</a><a href="/audit/">COA audit</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/methodology/">Method</a></nav>
+  <nav class="footer-nav" aria-label="Footer navigation"><a href="/sulit/">Sulit Ba?</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Projects</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/methodology/">Method</a></nav>
   <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.</p>
 </div></footer>`;
 
@@ -124,6 +124,7 @@ export const homeBody = `
     <div>
       <a href="/agencies/"><span>${icon('budget')}Budget</span><strong>Which agencies gained or lost funding in the House bill?</strong><b aria-hidden="true">→</b></a>
       <a href="/integrity/"><span>${icon('investigate')}Delivery</span><strong>Which project records contain contradictions or missing fields?</strong><b aria-hidden="true">→</b></a>
+      <a href="/procurement/"><span>${icon('sources')}Procurement</span><strong>Which contracts have exact bid, plan, or monitoring evidence?</strong><b aria-hidden="true">→</b></a>
       <a href="/integrity/#contractors"><span>${icon('contractors')}Contractors</span><strong>Which contractors are associated with the most projects and budget?</strong><b aria-hidden="true">→</b></a>
       <a href="/audit/"><span>${icon('sources')}Audit</span><strong>Did COA publish a report or observation that can be linked to this project?</strong><b aria-hidden="true">→</b></a>
     </div>
@@ -245,7 +246,7 @@ const pipeline = `
 
 export const methodologyBody = `
   <section class="page-intro"><div><p class="kicker">Methodology</p><h1>Every public link needs a source trail.</h1></div><div><p class="lede">Collection, normalization, matching, review, and publication are separated so that a plausible relationship cannot quietly become a public claim.</p>${methodDiagram}</div></section>
-  <nav class="local-nav" aria-label="Methodology sections"><span>Jump to</span><a href="#pipeline">Pipeline</a><a href="#source-policy">Source policy</a><a href="#agency-ledger">Agency ledger</a><a href="#budget-cycle">Budget trail</a><a href="#public-value">Public value</a><a href="#release-standard">Release standard</a><a href="#corrections">Corrections</a></nav>
+  <nav class="local-nav" aria-label="Methodology sections"><span>Jump to</span><a href="#pipeline">Pipeline</a><a href="#source-policy">Source policy</a><a href="#agency-ledger">Agency ledger</a><a href="#budget-cycle">Budget trail</a><a href="#procurement">Procurement</a><a href="#public-value">Public value</a><a href="#release-standard">Release standard</a><a href="#corrections">Corrections</a></nav>
 
   <section class="narrative-section" id="pipeline" aria-labelledby="pipeline-heading">
     <div class="section-heading"><p class="section-number">01 / Pipeline</p><div><h2 id="pipeline-heading">Ten controls. Four evidence stages.</h2><p class="section-intro">A failure at any stage prevents publication. Quarantine is an intended outcome, not an exception.</p></div></div>${pipeline}
@@ -271,18 +272,23 @@ export const methodologyBody = `
     <div class="standards-grid"><article class="standard-panel"><h3>Three acquisition states</h3><p>Archived copy verified means retained bytes pass their recorded SHA-256 check. Catalogue record only means the official listing was observed but the file bytes were not acquired. Not yet acquired means no qualifying document is present, and never means zero.</p></article><article class="standard-panel"><h3>Blocked source boundary</h3><p>The Senate portal currently blocks ordinary server-side acquisition. A disclosed secondary renderer may discover catalogue identifiers and titles, but it cannot make its representation an official artifact. Mirror documents remain labeled as mirrors and must match their recorded fingerprints.</p></article></div>
   </section>
 
+  <section class="narrative-section" id="procurement" aria-labelledby="procurement-heading">
+    <div class="section-heading"><p class="section-number">05 / Procurement</p><div><h2 id="procurement-heading">A contract ID must survive every source boundary.</h2><p class="section-intro">Busisi links procurement evidence only through an exact contract ID or solicitation number. APP dates remain planned, PMR dates remain agency-reported, and PhilGEPS notices retain their own scope.</p></div></div>
+    <div class="standards-grid"><article class="standard-panel"><h3>Amounts and events</h3><p>ABC, contract cost, and difference are stored as integer centavos. Event order is validated, and planned dates are never presented as actual dates.</p></article><article class="standard-panel"><h3>What procurement cannot prove</h3><p>A posting or PMR row does not establish release, payment, inspection quality, physical completion, public value, or COA clearance. Missing evidence does not mean procurement did not occur.</p></article></div>
+  </section>
+
   <section class="narrative-section" id="public-value" aria-labelledby="public-value-heading">
-    <div class="section-heading"><p class="section-number">05 / Public value</p><div><h2 id="public-value-heading">No composite score and no inferred motive.</h2><p class="section-intro">The public-value desk keeps economy, fiscal space, composition, readiness, distribution, and delivery as separate questions. A favorable forecast cannot cancel weak project evidence.</p></div></div>
+    <div class="section-heading"><p class="section-number">06 / Public value</p><div><h2 id="public-value-heading">No composite score and no inferred motive.</h2><p class="section-intro">The public-value desk keeps economy, fiscal space, composition, readiness, distribution, and delivery as separate questions. A favorable forecast cannot cancel weak project evidence.</p></div></div>
     <div class="standards-grid"><article class="standard-panel"><h3>Deterministic fiscal directions</h3><p>FY2026 and FY2027 cells come from DBM BESF Tables A.1 and A.2. Every row declares whether higher or lower is treated as favorable. Rows without an inherently favorable direction remain context only. Counts are descriptive and are never combined into a grade.</p></article><article class="standard-panel"><h3>Evidence boundary</h3><p>Forecasts are not observed outcomes. Appropriations are authority to spend, not releases, obligations, payments, completed outputs, or public benefit. Motive cannot be inferred from an amount, movement, sponsor name, or location.</p></article></div>
   </section>
 
   <section class="narrative-section" id="release-standard" aria-labelledby="release-heading">
-    <div class="section-heading"><p class="section-number">06 / Release standard</p><div><h2 id="release-heading">The register opens only after measured review.</h2></div></div>
+    <div class="section-heading"><p class="section-number">07 / Release standard</p><div><h2 id="release-heading">The register opens only after measured review.</h2></div></div>
     <div class="standards-grid"><article class="standard-panel"><h3>Required before release</h3><p>At least <strong>100 reviewed linkage cases</strong>, at least 95% measured precision, at least 95% reviewer agreement, and no unresolved critical reconciliation failure.</p></article><article class="standard-panel"><h3>How to read a signal</h3><p>A signal identifies a record pattern for examination. It is <strong>not evidence of wrongdoing</strong>, waste, or unlawful conduct.</p><p>Every published signal must show its rule, inputs, confidence, source references, and known limitations.</p></article></div>
   </section>
 
   <section class="narrative-section" id="corrections" aria-labelledby="corrections-heading">
-    <div class="section-heading"><p class="section-number">07 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
+    <div class="section-heading"><p class="section-number">08 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
   </section>`;
 
 export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}`;

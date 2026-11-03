@@ -35,6 +35,15 @@ const expectedCoa = Object.freeze({
   project_matches: '0',
   catalog_sha256: '4c6cbc56a5226dff8499f097bf8c800c1b952ed51198cce4842b724b2498d4ba',
 });
+const expectedProcurement = Object.freeze({
+  source_count: '3',
+  archived_sources: '1',
+  record_count: '4',
+  exact_records: '4',
+  checked_projects: '6',
+  projects_with_evidence: '3',
+  catalog_sha256: '4f9d9d76fe00fa4f31bf274a5834964978c6f4a137bf8b7aeed3e8983e0b8d91',
+});
 const expectedReviewCounts = Object.freeze({
   decreased: 265,
   house_only: 6_954,
@@ -223,6 +232,13 @@ const verifyPages = async () => {
   expectIncludes(auditText, 'Absence is not clearance', 'audit desk evidence boundary');
   expectIncludes(auditText, '6 dossiers checked', 'audit desk coverage');
 
+  const procurement = await request('/procurement/');
+  expectStatus(procurement, 200, '/procurement/');
+  const procurementText = await procurement.text();
+  expectIncludes(procurementText, 'Procurement evidence desk', 'procurement desk heading');
+  expectIncludes(procurementText, '3 of 6 reviewed dossiers', 'procurement desk coverage');
+  expectIncludes(procurementText, 'Evidence gap, not a clean bill', 'procurement boundary');
+
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
   expectIncludes(await robots.text(), `Sitemap: ${origin}/sitemap.xml`, 'robots sitemap');
@@ -230,7 +246,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -243,7 +259,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -396,6 +412,25 @@ const verifyData = async () => {
     '/audit/reports/coa-oda-consolidated-2024/',
     'Source copy not archived',
   );
+  const procurementSummary = (await readJson('/api/v1/procurement-summary')).data;
+  for (const [key, expected] of Object.entries(expectedProcurement)) {
+    if (procurementSummary.metadata[key] !== expected) {
+      fail(`procurement summary: ${key} expected ${expected}, received ${procurementSummary.metadata[key]}`);
+    }
+  }
+  if (procurementSummary.statuses.exact_evidence !== 3
+    || procurementSummary.statuses.not_located !== 2
+    || procurementSummary.statuses.quarantined !== 1) {
+    fail('procurement summary: coverage status counts mismatch');
+  }
+  const procurementRecords = await readJson('/api/v1/procurement-records');
+  if (procurementRecords.meta.total !== 4
+    || procurementRecords.meta.review_scope !== 'exact_official_procurement_evidence'
+    || procurementRecords.data.filter(({ acquisition_status }) => (
+      acquisition_status === 'verified_archived'
+    )).length !== 1) {
+    fail('procurement records: count, scope or acquisition boundary mismatch');
+  }
   if (cycleDocuments.data.filter(({ acquisition_status }) => (
     acquisition_status === 'verified_archived'
   )).length !== 2) {
@@ -565,6 +600,7 @@ const verifyBoundaries = async () => {
     'Recorded implementation details', 'Completed', '100.0%', 'LA PRUEBA CONSTRUCTION',
     '2024-09-05', '2024-12-18', '10.7218472, 124.0110944',
     'Identifiers and archived source fingerprints', 'Reader evidence links',
+    'Procurement timeline', 'Notice of award', 'Page 6', '₱5,324.90',
   ]) expectIncludes(reviewedText, value, 'reviewed dossier detail');
   if (/api\.dpwh\.bettergov\.ph|budget\.bettergov\.ph\/api/.test(reviewedText)) {
     fail('reviewed dossier: raw API reader link is public');
