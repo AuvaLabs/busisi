@@ -150,6 +150,13 @@ const verifyPages = async () => {
   expectIncludes(methodologyText, '100 reviewed linkage cases', 'methodology gate');
   expectIncludes(methodologyText, 'Congressional district context', 'methodology district boundary');
 
+  const publicValue = await request('/sulit/');
+  expectStatus(publicValue, 200, '/sulit/');
+  const publicValueText = await publicValue.text();
+  expectIncludes(publicValueText, '₱7.2 trillion. Sulit ba para sa Pilipino?', 'public value heading');
+  expectIncludes(publicValueText, '/assets/public-value-v1.js', 'public value client');
+  expectIncludes(publicValueText, 'Motive cannot be inferred', 'public value limitation');
+
   const explore = await request('/explore/');
   expectStatus(explore, 200, '/explore/');
   const exploreText = await explore.text();
@@ -185,7 +192,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/explore/', '/changes/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/explore/', '/changes/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -198,7 +205,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/explore/', '/changes/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/explore/', '/changes/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -286,6 +293,26 @@ const verifyData = async () => {
   }
   expectIncludes(changes.data[0].source_url, 'budget.bettergov.ph', 'change source URL');
   if (!changes.data[0].house_pdf_url) fail('change query: House evidence link missing');
+
+  const publicValueSummary = (await readJson('/api/v1/public-value-summary')).data;
+  for (const [key, expected] of Object.entries({
+    reading: 'mixed', indicator_count: 19, improving_count: 3, pressure_count: 6,
+    context_count: 10, revenue_coverage_bps: 7544,
+    expenditure_per_capita_centavos: 6244753,
+  })) {
+    if (publicValueSummary[key] !== expected) {
+      fail(`public value summary: ${key} expected ${expected}, received ${publicValueSummary[key]}`);
+    }
+  }
+  const publicValueIndicators = await readJson('/api/v1/public-value-indicators');
+  if (publicValueIndicators.data.length !== 19
+    || publicValueIndicators.meta.review_scope !== 'official_dbm_fiscal_program') {
+    fail('public value indicators: count or evidence scope mismatch');
+  }
+  if (!publicValueIndicators.data.every((row) => row.source_url?.startsWith('https://www.dbm.gov.ph/')
+    && row.artifact_sha256?.length === 64)) {
+    fail('public value indicators: official source evidence missing');
+  }
 
   const reviewSummary = (await readJson('/api/v1/review-summary')).data;
   if (reviewSummary.quarantine_count !== expectedChanges.quarantine_count) {
@@ -393,6 +420,7 @@ const verifyData = async () => {
     integrity_signals: integritySummary.integrity_signals,
     contractors: integritySummary.contractors,
     district_offices: integritySummary.district_offices,
+    public_value_indicators: publicValueSummary.indicator_count,
     reviewed_public: reviewed.meta.total,
   };
 };

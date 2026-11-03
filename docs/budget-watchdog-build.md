@@ -188,6 +188,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_pcab.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_districts.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_agencies.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_public_value.py
 cd cloudflare/busisi
 npm test
 npm run check
@@ -202,7 +203,10 @@ uses the same verification contract. The appropriation-head bundle is built
 under `data/budget_watchdog/agency-d1-bundle/`, with its source snapshot under
 `data/budget_watchdog/agency-2027-snapshot/`. The delivery-integrity bundle is built
 under `data/budget_watchdog/integrity-d1-bundle/`, hashes every import chunk and
-verifies the generated SQL in an isolated SQLite database. `npm run check`
+verifies the generated SQL in an isolated SQLite database. The public-value
+bundle is built under `data/budget_watchdog/public-value-d1-bundle/` from the
+official DBM BESF Tables A.1 and A.2 snapshot under
+`data/budget_watchdog/public-value-2027-snapshot/`. `npm run check`
 enforces at least 95
 percent Worker line and function coverage and at least 90 percent branch
 coverage, then performs Wrangler dry runs. Verify the production deployment

@@ -38,6 +38,7 @@ test('home provides direct navigation and substantive motion-led visuals', async
   assert.match(document, /href="\/explore\/"/);
   assert.match(document, /href="\/signals\/"/);
   assert.match(document, /href="\/integrity\/"/);
+  assert.match(document, /href="\/sulit\/"/);
   assert.match(document, /class="evidence-orbit"/);
   assert.match(document, /aria-label="Evidence moves from official source to reviewed publication"/);
   assert.match(document, /Illustrative sequence/);
@@ -121,6 +122,22 @@ test('publishes a reconciled FY2027 appropriation-head ledger', async () => {
   assert.match(document, /src="\/assets\/agencies-v1\.js"/);
 });
 
+test('publishes the Sulit Ba public-value desk as the primary civic question', async () => {
+  const response = await fetchPath('/sulit/');
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /₱7\.2 trillion\. Sulit ba para sa Pilipino\?/);
+  assert.match(document, /Mixed fiscal direction/);
+  assert.match(document, /data-public-value-desk/);
+  assert.match(document, /Need and plan alignment/);
+  assert.match(document, /Opportunity cost/);
+  assert.match(document, /Motive cannot be inferred/);
+  assert.match(document, /not enacted appropriations, releases, payments, or outcomes/i);
+  assert.match(document, /src="\/assets\/public-value-v1\.js"/);
+  assert.doesNotMatch(document, /overall score|AI score|Auva Labs/i);
+});
+
 test('home uses the original Busisi identity and professional exploration panels', async () => {
   const response = await fetchPath('/');
   const document = await response.text();
@@ -168,12 +185,14 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/changes\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/agencies\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/integrity\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/sulit\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/projects\/corazon-2024-phase-1\/<\/loc>/);
   assert.doesNotMatch(sitemapText, /corazon-2026-completion/);
   const llmsText = await llms.text();
   assert.match(llmsText, /Evidence and publication rules/);
   assert.match(llmsText, /Project integrity desk/);
   assert.match(llmsText, /Appropriation heads/);
+  assert.match(llmsText, /Public value desk/);
   assert.match(llms.headers.get('content-type'), /^text\/plain/);
 });
 

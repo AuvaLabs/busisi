@@ -10,6 +10,7 @@ import {
   projectDossierBody,
   signalsBody,
   siteCss,
+  sulitBody,
 } from './prelaunch-content.js';
 import { INDEX_NOW_KEY, SITE } from './prelaunch-config.js';
 import dataWorker from './index.js';
@@ -99,6 +100,19 @@ const AGENCIES_SCHEMA = Object.freeze({
   isAccessibleForFree: true,
 });
 
+const PUBLIC_VALUE_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'AnalysisNewsArticle',
+  headline: '₱7.2 trillion. Sulit ba para sa Pilipino?',
+  url: `${SITE.origin}/sulit/`,
+  description: 'An evidence-led test of the FY2027 Philippine fiscal program against public need, value, affordability, readiness, opportunity cost, and delivery.',
+  datePublished: '2026-11-03',
+  dateModified: '2026-11-03',
+  inLanguage: ['en-PH', 'fil-PH'],
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
 const page = (html, status = 200) => response(html, {
   status,
   type: 'text/html; charset=utf-8',
@@ -170,6 +184,14 @@ const agencies = () => page(document({
   schema: AGENCIES_SCHEMA,
 }));
 
+const sulit = () => page(document({
+  title: 'Sulit Ba? FY2027 Philippine budget public value desk | Busisi',
+  description: 'Test the ₱7.2 trillion FY2027 Philippine budget against public need, economic and social value, fiscal affordability, readiness, opportunity cost, and delivery evidence.',
+  canonicalPath: '/sulit/',
+  body: sulitBody,
+  schema: PUBLIC_VALUE_SCHEMA,
+}));
+
 const project = (record) => page(document({
   title: `${record.title} | Busisi`,
   description: `Evidence dossier comparing the FY ${record.fiscal_year} appropriation with DPWH contract ${record.contract_id}.`,
@@ -206,6 +228,7 @@ Sitemap: ${SITE.origin}/sitemap.xml
 const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${SITE.origin}/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/sulit/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/explore/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/changes/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/agencies/</loc><lastmod>2026-11-03</lastmod></url>
@@ -231,6 +254,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 ## Canonical pages
 
 - Overview: ${SITE.origin}/
+- Public value desk: ${SITE.origin}/sulit/
 - Explorer: ${SITE.origin}/explore/
 - FY2027 change ledger: ${SITE.origin}/changes/
 - Appropriation heads: ${SITE.origin}/agencies/
@@ -260,6 +284,7 @@ const assets = (path) => {
 
 const route = (path) => {
   if (path === '/') return home();
+  if (path === '/sulit' || path === '/sulit/') return sulit();
   if (path === '/explore' || path === '/explore/') return explore();
   if (path === '/changes' || path === '/changes/') return changes();
   if (path === '/agencies' || path === '/agencies/') return agencies();

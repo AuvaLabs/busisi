@@ -38,6 +38,9 @@ const districtMigrationPath = fileURLToPath(
 const agencyMigrationPath = fileURLToPath(
   new URL('../migrations/0008_agency_budgets.sql', import.meta.url),
 );
+const publicValueMigrationPath = fileURLToPath(
+  new URL('../migrations/0009_public_value.sql', import.meta.url),
+);
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
 );
@@ -74,6 +77,7 @@ class LocalD1 {
     this.database.exec(readFileSync(verificationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(districtMigrationPath, 'utf8'));
     this.database.exec(readFileSync(agencyMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(publicValueMigrationPath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -140,6 +144,16 @@ class LocalD1 {
         ('head:18', 2027, 2026, 'appropriation_head', NULL, '18', 'Department of Public Works and Highways', 90000, 100000, 130000, 30000, 3000, 'compared', 'house-ib', '[113]', 'https://example.test/ib.pdf', 'https://budget.example/nep', '${'1'.repeat(64)}', '${'2'.repeat(64)}', 'Compared source total.'),
         ('head:AUTO', 2027, 2026, 'appropriation_head', NULL, 'AUTO', 'Automatic Appropriations', 190000, 200000, NULL, NULL, NULL, 'not_applicable', NULL, '[]', NULL, 'https://budget.example/nep', '${'1'.repeat(64)}', NULL, 'Outside House bill comparison.'),
         ('congress:004', 2027, 2026, 'congress_institution', 'head:01', '004', 'House of Representatives', 80000, 100000, 210000, 110000, 11000, 'compared', 'house-ia', '[19]', 'https://example.test/ia.pdf', 'https://budget.example/congress', '${'3'.repeat(64)}', '${'4'.repeat(64)}', 'Compared source total.');
+      INSERT INTO public_value_metadata VALUES
+        ('reading', 'mixed'), ('indicator_count', '2'), ('improving_count', '1'),
+        ('pressure_count', '1'), ('context_count', '0'), ('fiscal_year', '2027'),
+        ('baseline_year', '2026'), ('revenue_coverage_bps', '7544'),
+        ('expenditure_per_capita_centavos', '6244753'),
+        ('source_scope', 'FY2027 BESF Tables A.1 and A.2'),
+        ('evidence_boundary', 'DBM projections and fiscal program');
+      INSERT INTO public_value_indicators VALUES
+        ('real_gdp_growth', 'economy', 'Real GDP growth forecast', 'range_basis_points', 400, 550, 350, 450, 500, 600, 150, 'improving', 'Higher is treated as favorable for this indicator.', 'besf-a1', 1, 'https://www.dbm.gov.ph/A1.pdf', '${'5'.repeat(64)}', 'Forecast range, not an observed outcome.'),
+        ('interest_share', 'fiscal_space', 'Interest share of disbursements', 'basis_points', 1540, 1610, NULL, NULL, NULL, NULL, 70, 'pressure', 'Lower is treated as favorable for this indicator.', 'besf-a2', 2, 'https://www.dbm.gov.ph/A2.pdf', '${'6'.repeat(64)}', '');
     `);
   }
 
@@ -537,6 +551,29 @@ test('publishes reconciled appropriation heads and Congress institutions', async
     environment(database),
   );
   assert.equal((await secondPage.json()).data.length, 1);
+});
+
+test('publishes sourced public-value indicators without a composite score', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const summary = await worker.fetch(
+    request('/api/v1/public-value-summary'), environment(database),
+  );
+  const indicators = await worker.fetch(
+    request('/api/v1/public-value-indicators'), environment(database),
+  );
+
+  const summaryBody = await summary.json();
+  assert.equal(summary.status, 200);
+  assert.equal(summaryBody.data.reading, 'mixed');
+  assert.equal(summaryBody.data.revenue_coverage_bps, 7544);
+  const indicatorBody = await indicators.json();
+  assert.equal(indicators.status, 200);
+  assert.equal(indicatorBody.meta.review_scope, 'official_dbm_fiscal_program');
+  assert.equal(indicatorBody.data.length, 2);
+  assert.equal(indicatorBody.data[0].indicator_id, 'real_gdp_growth');
+  assert.equal(indicatorBody.data[0].lower_2027, 500);
+  assert.doesNotMatch(JSON.stringify(indicatorBody), /score|corruption/i);
 });
 
 test('publishes ranked review candidates, concentrations and CSV evidence', async (context) => {

@@ -5,6 +5,7 @@ const key = INDEX_NOW_KEY;
 const keyLocation = `${origin}/${key}.txt`;
 const paths = [
   '/',
+  '/sulit/',
   '/explore/',
   '/agencies/',
   '/changes/',

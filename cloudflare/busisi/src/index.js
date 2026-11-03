@@ -17,6 +17,10 @@ import {
   queryAgencyBudgets,
 } from './agency-budget-query.js';
 import {
+  getPublicValueSummary,
+  queryPublicValueIndicators,
+} from './public-value-query.js';
+import {
   exportReviewCsv,
   getReviewSummary,
   parseReviewQuery,
@@ -99,6 +103,15 @@ const apiResponse = async (request, environment, url) => {
         review_scope: 'reconciled_appropriation_head_totals',
       },
       data: page.records,
+    });
+  }
+  if (url.pathname === '/api/v1/public-value-summary') {
+    return jsonResponse({ data: await getPublicValueSummary(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/public-value-indicators') {
+    return jsonResponse({
+      meta: { review_scope: 'official_dbm_fiscal_program' },
+      data: await queryPublicValueIndicators(environment.DB),
     });
   }
   if (url.pathname === '/api/v1/changes') {
