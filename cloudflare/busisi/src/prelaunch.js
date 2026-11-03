@@ -8,14 +8,30 @@ import {
   homeBody,
   integrityBody,
   methodologyBody,
-  projectDossierBody,
   signalsBody,
   siteCss,
   sulitBody,
 } from './prelaunch-content.js';
 import { INDEX_NOW_KEY, SITE } from './prelaunch-config.js';
 import dataWorker from './index.js';
-import { getProject } from './query.js';
+import {
+  budgetRecordBody,
+  candidateRecordBody,
+  changeRecordBody,
+  contractorRecordBody,
+  deliveryRecordBody,
+  enhancedProjectBody,
+  integrityRecordBody,
+} from './record-content.js';
+import {
+  getBudgetRecord,
+  getCandidateRecord,
+  getChangeRecord,
+  getContractorRecord,
+  getDeliveryRecord,
+  getEnhancedProject,
+  getIntegrityRecord,
+} from './record-query.js';
 
 const SECURITY_HEADERS = Object.freeze({
   'content-security-policy': "default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'",
@@ -212,22 +228,76 @@ const budgetCycle = () => page(document({
   schema: BUDGET_CYCLE_SCHEMA,
 }));
 
-const project = (record) => page(document({
-  title: `${record.title} | Busisi`,
-  description: `Evidence dossier comparing the FY ${record.fiscal_year} appropriation with DPWH contract ${record.contract_id}.`,
-  canonicalPath: `/projects/${record.slug}/`,
-  body: projectDossierBody(record),
-  noindex: record.is_quarantined,
+const evidenceSchema = (name, description, path, year) => ({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name,
+  description,
+  url: `${SITE.origin}${path}`,
+  temporalCoverage: String(year),
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
+const project = (payload) => page(document({
+  title: `${payload.record.title} | Busisi`,
+  description: `Evidence dossier comparing the FY ${payload.record.fiscal_year} appropriation with DPWH contract ${payload.record.contract_id}.`,
+  canonicalPath: `/projects/${payload.record.slug}/`,
+  body: enhancedProjectBody(payload),
+  noindex: payload.record.is_quarantined,
   schema: {
     '@context': 'https://schema.org',
     '@type': 'Dataset',
-    name: record.title,
-    description: record.match_limitations,
-    temporalCoverage: String(record.fiscal_year),
-    spatialCoverage: record.location,
+    name: payload.record.title,
+    description: payload.record.match_limitations,
+    temporalCoverage: String(payload.record.fiscal_year),
+    spatialCoverage: payload.record.location,
     isAccessibleForFree: true,
   },
 }));
+
+const recordPage = (kind, payload) => {
+  const record = payload.record;
+  const id = {
+    budget: record.record_id,
+    delivery: record.contract_id,
+    candidate: record.candidate_id,
+    change: record.record_id,
+    integrity: record.signal_id,
+  }[kind];
+  const path = `/records/${kind}/${encodeURIComponent(id)}/`;
+  const config = {
+    budget: ['GAA appropriation record', record.description, budgetRecordBody, false],
+    delivery: ['DPWH delivery record', record.description, deliveryRecordBody, false],
+    candidate: ['Unreviewed candidate comparison', record.budget_description, candidateRecordBody, true],
+    change: ['FY2027 budget stage comparison', record.title, changeRecordBody, true],
+    integrity: ['Project integrity review signal', record.label, integrityRecordBody, true],
+  }[kind];
+  const [label, name, renderer, noindex] = config;
+  const description = `${label}: ${name}. Evidence, provenance, limitations, and related public records.`;
+  return page(document({
+    title: `${name} | Busisi`,
+    description,
+    canonicalPath: path,
+    body: renderer(payload),
+    noindex,
+    schema: evidenceSchema(name, description, path, record.fiscal_year),
+  }));
+};
+
+const contractor = (payload) => {
+  const record = payload.record;
+  const path = `/contractors/${encodeURIComponent(record.contractor_key)}/`;
+  const description = `Archived DPWH project-record activity associated with ${record.contractor_name}, with PCAB snapshot context and explicit evidence limits.`;
+  return page(document({
+    title: `${record.contractor_name} project activity | Busisi`,
+    description,
+    canonicalPath: path,
+    body: contractorRecordBody(payload),
+    schema: evidenceSchema(record.contractor_name, description, path, `${record.first_year}/${record.last_year}`),
+  }));
+};
 
 const notFound = (path) => page(document({
   title: 'Page not found | Busisi',
@@ -304,6 +374,24 @@ const assets = (path) => {
   return null;
 };
 
+const decodeRecordId = (value) => {
+  try {
+    const decoded = decodeURIComponent(value);
+    if (!decoded || decoded.length > 512 || /[\u0000-\u001f\u007f]/.test(decoded)) return null;
+    return decoded;
+  } catch {
+    return null;
+  }
+};
+
+const getRecordPayload = (database, kind, id) => ({
+  budget: getBudgetRecord,
+  delivery: getDeliveryRecord,
+  candidate: getCandidateRecord,
+  change: getChangeRecord,
+  integrity: getIntegrityRecord,
+}[kind])(database, id);
+
 const route = (path) => {
   if (path === '/') return home();
   if (path === '/sulit' || path === '/sulit/') return sulit();
@@ -342,8 +430,20 @@ export default {
     let result = null;
     const projectMatch = url.pathname.match(/^\/projects\/([a-z0-9-]+)\/?$/);
     if (projectMatch && env.DB) {
-      const record = await getProject(env.DB, projectMatch[1]);
-      if (record) result = project(record);
+      const payload = await getEnhancedProject(env.DB, projectMatch[1]);
+      if (payload) result = project(payload);
+    }
+    const recordMatch = url.pathname.match(/^\/records\/(budget|delivery|candidate|change|integrity)\/([^/]+)\/?$/);
+    if (!result && recordMatch && env.DB) {
+      const id = decodeRecordId(recordMatch[2]);
+      const payload = id ? await getRecordPayload(env.DB, recordMatch[1], id) : null;
+      if (payload) result = recordPage(recordMatch[1], payload);
+    }
+    const contractorMatch = url.pathname.match(/^\/contractors\/([^/]+)\/?$/);
+    if (!result && contractorMatch && env.DB) {
+      const id = decodeRecordId(contractorMatch[1]);
+      const payload = id ? await getContractorRecord(env.DB, id) : null;
+      if (payload) result = contractor(payload);
     }
     result ??= route(url.pathname);
     if (!result && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/data/')) && env.ASSETS) {

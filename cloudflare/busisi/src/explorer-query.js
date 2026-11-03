@@ -149,7 +149,8 @@ const mapBudget = (row) => ({
   ...row,
   record_type: 'budget',
   source_url: sourceBudgetUrl(row),
-  reader_source_url: gaaDocumentsUrl(row.fiscal_year),
+  reader_source_url: `/records/budget/${encodeURIComponent(row.record_id)}/`,
+  official_documents_url: gaaDocumentsUrl(row.fiscal_year),
 });
 
 const mapDelivery = (row) => ({
@@ -170,6 +171,7 @@ const mapCandidate = (row) => ({
   signals_json: undefined,
   budget_reader_url: budgetRecordUrl(row.budget_description, row.fiscal_year),
   delivery_reader_url: deliveryRecordUrl(row.contract_id),
+  review_url: `/records/candidate/${encodeURIComponent(row.candidate_id)}/`,
 });
 
 const MAPPERS = Object.freeze({ budgets: mapBudget, delivery: mapDelivery, candidates: mapCandidate });

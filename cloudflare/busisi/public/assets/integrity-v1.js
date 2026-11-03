@@ -63,8 +63,10 @@ const appendLink = (parent, label, href) => {
   if (!href) return;
   const link = appendText(parent, 'a', label);
   link.href = href;
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
+  if (href.startsWith('http')) {
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+  }
 };
 
 const formatMoney = (centavos) => peso.format(Number(centavos || 0) / 100);
@@ -160,6 +162,7 @@ const renderIntegrityRecord = (record) => {
   appendText(card, 'p', `Limit: ${record.limitations}`, 'integrity-limit');
   card.append(renderDistrictContext(record.district_context));
   const links = appendText(card, 'div', '', 'integrity-links');
+  appendLink(links, 'Inspect this review signal', `/records/integrity/${encodeURIComponent(record.signal_id)}/`);
   appendLink(links, 'View project record', record.reader_source_url);
   if (record.pcab_id) appendLink(links, `Verify PCAB ID ${record.pcab_id}`, 'https://www.pcab.construction.gov.ph/verify/');
   return card;
@@ -202,6 +205,7 @@ const renderContractor = (record) => {
     appendText(detail, 'span', `${number.format(record.joint_project_count)} joint projects`);
   }
   if (record.pcab_valid_to) appendText(detail, 'span', `Current listing valid to ${record.pcab_valid_to}`);
+  appendLink(detail, 'Open contractor activity', `/contractors/${encodeURIComponent(record.contractor_key)}/`);
   if (record.pcab_id) appendLink(detail, 'Verify contractor registration', record.pcab_url);
   return row;
 };

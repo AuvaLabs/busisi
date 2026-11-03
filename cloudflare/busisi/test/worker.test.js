@@ -15,6 +15,7 @@ import {
   parseIntegrityQuery,
 } from '../src/integrity-query.js';
 import worker from '../src/index.js';
+import siteWorker from '../src/prelaunch.js';
 
 const migrationPath = fileURLToPath(new URL('../migrations/0001_publication.sql', import.meta.url));
 const explorerMigrationPath = fileURLToPath(
@@ -476,6 +477,10 @@ test('publishes source collection statistics and separate record APIs', async (c
   assert.match(budgetBody.data[0].source_url, /budget\.bettergov\.ph/);
   assert.equal(
     budgetBody.data[0].reader_source_url,
+    '/records/budget/2025%3Apump/',
+  );
+  assert.equal(
+    budgetBody.data[0].official_documents_url,
     'https://www.dbm.gov.ph/index.php/2025/general-appropriations-act-gaa-fy-2025',
   );
   assert.doesNotMatch(budgetBody.data[0].reader_source_url, /\/api\//);
@@ -483,7 +488,7 @@ test('publishes source collection statistics and separate record APIs', async (c
   assert.equal(deliveryBody.data[0].contract_id, '25O00113');
   assert.equal(
     deliveryBody.data[0].reader_source_url,
-    '/explore/?view=delivery&q=25O00113',
+    '/records/delivery/25O00113/',
   );
   assert.equal(deliveryBody.data[0].district_context.classification, 'single_district');
   assert.equal(deliveryBody.data[0].district_context.districts[0].representative_name, 'Representative One');
@@ -866,4 +871,125 @@ test('handles health, method, numeric and missing-record boundaries', async (con
   assert.equal(method.status, 405);
   assert.equal(numeric.status, 400);
   assert.equal(missing.status, 404);
+});
+
+test('publishes evidence drilldowns without collapsing records into findings', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const paths = [
+    ['/records/budget/2025%3Apump/', /Official GAA appropriation record/],
+    ['/records/delivery/25O00113/', /Official DPWH delivery record/],
+    ['/records/candidate/2025%3Apump%3A25O00113/', /Unreviewed candidate comparison/],
+    ['/records/change/dpwh%3A1/', /Provisional stage comparison/],
+    ['/records/integrity/25A%3Astatus_progress_conflict/', /Review signal, not a finding/],
+    ['/contractors/pcab%3A12345/', /Archived contractor activity/],
+  ];
+
+  for (const [path, expected] of paths) {
+    const response = await siteWorker.fetch(request(path), environment(database));
+    const document = await response.text();
+    assert.equal(response.status, 200, path);
+    assert.match(document, expected, path);
+    assert.doesNotMatch(document, /(?:is|confirms|establishes) (?:fraud|corruption|wrongdoing)/i, path);
+  }
+});
+
+test('expands reviewed project dossiers with phase history and evidence boundaries', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const response = await siteWorker.fetch(
+    request('/projects/corazon-2024-phase-1/'),
+    environment(database),
+  );
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /Reviewed project evidence dossier/);
+  assert.match(document, /Related reviewed phases/);
+  assert.match(document, /corazon-2024-phase-2/);
+  assert.match(document, /Release, obligation and payment/);
+  assert.match(document, /Not available in the acquired records/);
+});
+
+test('rejects malformed and missing evidence record identifiers', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  for (const path of [
+    '/records/budget/%E0%A4%A/',
+    '/records/delivery/not-present/',
+    `/records/change/${'x'.repeat(513)}/`,
+    '/contractors/not-present/',
+  ]) {
+    const response = await siteWorker.fetch(request(path), environment(database));
+    assert.equal(response.status, 404, path);
+    assert.match(await response.text(), /noindex, nofollow/, path);
+  }
+});
+
+test('renders unavailable, quarantined and alternate evidence states', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const cases = [
+    ['/records/budget/2026%3Abridge/', /No candidate delivery link/],
+    ['/records/delivery/26ZERO01/', /No exact office attribution available/],
+    ['/records/change/hfep%3A2/', /NEP page not available/],
+    ['/records/change/dpwh%3A3/', /No other FY2027 comparison row/],
+    ['/records/integrity/24B%3Amissing_coordinate/', /Quezon, 1st District/],
+    ['/records/integrity/25C%3Acoordinate_location_conflict/', /No exact office attribution available/],
+    ['/contractors/pcab%3A67890/', /not found current regular/],
+    ['/projects/agoncillo-2023/', /No other reviewed dossier/],
+    ['/projects/corazon-2026-completion/', /Quarantined project candidate/],
+  ];
+
+  for (const [path, expected] of cases) {
+    const response = await siteWorker.fetch(request(path), environment(database));
+    assert.equal(response.status, 200, path);
+    assert.match(await response.text(), expected, path);
+  }
+});
+
+test('renders enriched record relationships and tolerates malformed candidate metadata', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  database.database.exec(`
+    INSERT INTO delivery_items VALUES
+      ('25PUMP02', 2025, 'San Andres Pumping Station Phase II', 25000000000,
+       'Manila 1st DEO, NCR', 'GAA 2025', 'family:pump', 'san andres pumping station', '${'a'.repeat(64)}');
+    INSERT INTO integrity_signal_items VALUES
+      ('25O00113:missing_coordinate', '25O00113', 2025, 'missing_coordinate', 'coverage_gap',
+       'Coordinate not available', 'Construction of San Andres Pumping Station', 'ACME BUILDERS',
+       '12345', 37679270658, 'Completed', '100', 'Manila 1st DEO', 'NCR', '', '',
+       'No usable coordinate.', 'Missing coordinates do not indicate a missing project.', '${'f'.repeat(64)}'),
+      ('25O00113:completed_without_satellite_image', '25O00113', 2025,
+       'completed_without_satellite_image', 'coverage_gap', 'Completed without satellite image',
+       'Construction of San Andres Pumping Station', 'ACME BUILDERS', '12345', 37679270658,
+       'Completed', '100', 'Manila 1st DEO', 'NCR', '14.5', '120.9',
+       'No archived image reference.', 'Image coverage is incomplete.', '${'f'.repeat(64)}');
+    INSERT INTO projects VALUES
+      ('pump-reviewed', 'pump-reviewed', 'San Andres Pumping Station', 2025, 'Manila',
+       40000000000, 37679270658, 2320729342, '25O00113',
+       'Construction of San Andres Pumping Station', 'Manila 1st DEO', 'GAA 2025',
+       'high', 95, '["year_match"]', 'Reviewed identity link.',
+       '["http://unsafe.example","https://budget.example/pump"]', 'family:pump',
+       'san andres pumping station', 'Reviewed link', 'reviewed', 1);
+    INSERT INTO candidate_links VALUES
+      ('missing-delivery', 2025, '18-001|pump', 'NOT-PRESENT', 'candidate', 40, '{broken',
+       'Construction of San Andres Pumping Station', 'Missing delivery row', 40000000000,
+       0, 40000000000, 'https://budget.example/pump', '', 'candidate');
+  `);
+
+  const paths = [
+    ['/records/delivery/25O00113/', /ACME BUILDERS/],
+    ['/records/integrity/25O00113%3Amissing_coordinate/', /1 additional signal/],
+    ['/records/candidate/2025%3Apump%3A25O00113/', /San Andres Pumping Station/],
+    ['/records/candidate/missing-delivery/', /Matching delivery row is not available/],
+    ['/projects/pump-reviewed/', /Official evidence 2/],
+  ];
+  for (const [path, expected] of paths) {
+    const response = await siteWorker.fetch(request(path), environment(database));
+    assert.equal(response.status, 200, path);
+    const document = await response.text();
+    assert.match(document, expected, path);
+    assert.doesNotMatch(document, /unsafe\.example/, path);
+  }
 });

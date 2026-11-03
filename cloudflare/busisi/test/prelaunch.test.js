@@ -273,7 +273,14 @@ test('renders a reviewed evidence dossier when the publication database is bound
     status_label: 'Reviewed link', publication_status: 'reviewed', is_confirmed_link: 1,
   };
   const environment = {
-    DB: { prepare: () => ({ bind: () => ({ first: async () => row }) }) },
+    DB: {
+      prepare: (sql) => ({
+        bind: () => ({
+          first: async () => sql.includes('FROM projects WHERE slug') ? row : null,
+          all: async () => ({ results: [] }),
+        }),
+      }),
+    },
   };
   const response = await worker.fetch(
     new Request('https://busisi.org/projects/reviewed-project/'),
@@ -283,8 +290,8 @@ test('renders a reviewed evidence dossier when the publication database is bound
 
   assert.equal(response.status, 200);
   assert.match(document, /Reviewed public project/);
-  assert.match(document, /Reviewed link/);
-  assert.match(document, /Authority to spend, not proof of disbursement/);
+  assert.match(document, /Reviewed project evidence dossier/);
+  assert.match(document, /Authority to spend/);
   assert.match(document, /Official evidence 1/);
 });
 

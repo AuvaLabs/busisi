@@ -9,7 +9,7 @@ export const nepDocumentsUrl = (fiscalYear) => (
 );
 
 export const deliveryRecordUrl = (contractId) => (
-  `/explore/?${new URLSearchParams({ view: 'delivery', q: contractId })}`
+  `/records/delivery/${encodeURIComponent(contractId)}/`
 );
 
 export const budgetRecordUrl = (description, fiscalYear) => (

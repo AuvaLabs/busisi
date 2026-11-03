@@ -114,6 +114,15 @@ const readJson = async (path) => {
   return response.json();
 };
 
+const verifyHtmlRecord = async (path, expected) => {
+  const response = await request(path);
+  expectStatus(response, 200, path);
+  expectContentType(response, 'text/html', path);
+  const body = await response.text();
+  expectIncludes(body, expected, path);
+  expectIncludes(body, 'Evidence boundary', `${path} evidence boundary`);
+};
+
 const verifyFont = async (path) => {
   const response = await request(path);
   expectStatus(response, 200, path);
@@ -301,10 +310,12 @@ const verifyData = async () => {
   const budget = await readJson('/api/v1/budgets?q=pumping&year=2025&limit=1');
   if (budget.meta.total < 1 || budget.data.length !== 1) fail('budget query: no matching records');
   expectIncludes(budget.data[0].source_url, 'budget.bettergov.ph', 'budget source URL');
+  await verifyHtmlRecord(budget.data[0].reader_source_url, 'Official GAA appropriation record');
 
   const delivery = await readJson('/api/v1/delivery?q=24CM0078&limit=1');
   if (delivery.meta.total < 1 || delivery.data.length !== 1) fail('delivery query: no matching records');
   expectIncludes(delivery.data[0].source_url, 'api.dpwh.bettergov.ph', 'delivery source URL');
+  await verifyHtmlRecord(delivery.data[0].reader_source_url, 'Official DPWH delivery record');
   if (delivery.data[0].district_context?.classification === 'unassigned'
     || !delivery.data[0].district_context?.districts.length) {
     fail('delivery query: district context missing');
@@ -313,6 +324,7 @@ const verifyData = async () => {
   const candidates = await readJson('/api/v1/candidates?limit=1');
   if (candidates.meta.total !== expectedCounts.candidate_links) fail('candidate query: count mismatch');
   if (candidates.meta.review_scope !== 'unreviewed_candidates') fail('candidate query: review scope missing');
+  await verifyHtmlRecord(candidates.data[0].review_url, 'Unreviewed candidate comparison');
 
   const changeStats = (await readJson('/api/v1/change-stats')).data;
   for (const [key, value] of Object.entries(expectedChanges)) {
@@ -327,6 +339,10 @@ const verifyData = async () => {
   }
   expectIncludes(changes.data[0].source_url, 'budget.bettergov.ph', 'change source URL');
   if (!changes.data[0].house_pdf_url) fail('change query: House evidence link missing');
+  await verifyHtmlRecord(
+    `/records/change/${encodeURIComponent(changes.data[0].record_id)}/`,
+    'Provisional stage comparison',
+  );
 
   const budgetCycle = (await readJson('/api/v1/budget-cycle')).data;
   for (const [key, expected] of Object.entries(expectedBudgetCycle)) {
@@ -431,6 +447,10 @@ const verifyData = async () => {
   if (!coordinateReview.data[0]?.source_url || !coordinateReview.data[0]?.limitations) {
     fail('integrity query: source evidence or limitation missing');
   }
+  await verifyHtmlRecord(
+    `/records/integrity/${encodeURIComponent(coordinateReview.data[0].signal_id)}/`,
+    'Review signal, not a finding',
+  );
   const districtReview = await readJson(
     '/api/v1/integrity-signals?q=Metro%20Manila%201st%20DEO&limit=1',
   );
@@ -456,6 +476,10 @@ const verifyData = async () => {
       fail(`contractor query: ${label} ranking evidence missing`);
     }
   }
+  await verifyHtmlRecord(
+    `/contractors/${encodeURIComponent(contractorsByCount.data[0].contractor_key)}/`,
+    'Archived contractor activity',
+  );
   const concentrations = await readJson(
     '/api/v1/contractor-concentrations?dimension=region&year=0',
   );
@@ -500,13 +524,14 @@ const verifyBoundaries = async () => {
   const reviewed = await request('/projects/corazon-2024-phase-1/');
   expectStatus(reviewed, 200, 'reviewed dossier');
   const reviewedText = await reviewed.text();
-  expectIncludes(reviewedText, 'Reviewed link', 'reviewed dossier');
+  expectIncludes(reviewedText, 'Reviewed project evidence dossier', 'reviewed dossier');
+  expectIncludes(reviewedText, 'Related reviewed phases', 'reviewed dossier');
   if (reviewedText.includes('noindex, nofollow')) fail('reviewed dossier: unexpectedly noindex');
 
   const quarantined = await request('/projects/corazon-2026-completion/');
   expectStatus(quarantined, 200, 'quarantined dossier');
   const quarantinedText = await quarantined.text();
-  expectIncludes(quarantinedText, 'Quarantined candidate', 'quarantined dossier');
+  expectIncludes(quarantinedText, 'Quarantined project candidate', 'quarantined dossier');
   expectIncludes(quarantinedText, 'noindex, nofollow', 'quarantined dossier robots');
 
   const post = await request('/', { method: 'POST' });

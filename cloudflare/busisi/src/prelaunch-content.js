@@ -9,6 +9,7 @@ import { reviewCss } from './prelaunch-review-styles.js';
 import { siteCss as baseSiteCss } from './prelaunch-styles.js';
 import { typeCss } from './prelaunch-type-styles.js';
 import { editorialCss } from './prelaunch-editorial-styles.js';
+import { recordCss } from './prelaunch-record-styles.js';
 import { methodDiagram } from './prelaunch-visuals.js';
 
 const icon = (name, className = 'section-icon') => (
@@ -54,14 +55,16 @@ const peso = (centavos) => new Intl.NumberFormat('en-PH', {
 export const document = ({ title, description, canonicalPath, body, schema, noindex = false }) => {
   const canonical = `${SITE.origin}${canonicalPath}`;
   const robots = noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large';
+  const safeTitle = escapeHtml(title);
+  const safeDescription = escapeHtml(description);
   return `<!doctype html>
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${title}</title><meta name="description" content="${description}"><meta name="robots" content="${robots}">
+  <title>${safeTitle}</title><meta name="description" content="${safeDescription}"><meta name="robots" content="${robots}">
   <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v8.css">
-  <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}"><meta property="og:url" content="${canonical}">
+  <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${safeTitle}"><meta property="og:description" content="${safeDescription}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow public money from proposal to project">
-  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${description}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta name="twitter:image:alt" content="Busisi: Follow public money from proposal to project">
+  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v1.png"><meta name="twitter:image:alt" content="Busisi: Follow public money from proposal to project">
   <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js"></script>' : ''}
 </head><body>
   <a class="skip-link" href="#main-content">Skip to content</a><header class="site-header">${navigation(canonicalPath)}</header>
@@ -231,25 +234,6 @@ export const budgetCycleBody = `
   <section class="cycle-documents"><header><p class="kicker">Document register</p><h2>What the portal currently publishes.</h2><p>“Archived copy verified” means the retained copy passed its recorded SHA-256 check. “Catalogue record only” means Busisi can verify the listing, but not yet acquire the document bytes.</p><p data-cycle-status aria-live="polite">Loading the publication register…</p></header><div class="cycle-document-list" data-cycle-documents><p class="cycle-empty">Loading documents…</p></div></section>
   <section class="cycle-note"><p class="kicker">Evidence boundary</p><h2>Missing stages are not zero and not inferred.</h2><p>The portal's “GAA 2027” navigation label describes a fiscal-year collection. Busisi will not call a document enacted GAA, a Senate amendment, or a bicameral report unless the document title and acquired content support that classification.</p></section>`;
 
-export const projectDossierBody = (record) => {
-  const signals = record.match_signals
-    .map((signal) => `<li>${escapeHtml(signal.replaceAll('_', ' '))}</li>`)
-    .join('');
-  const sources = record.evidence_urls
-    .map((url, index) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Official evidence ${index + 1}</a>`)
-    .join('');
-  const status = record.is_quarantined ? 'Quarantined candidate' : 'Reviewed link';
-  return `
-  <nav class="dossier-breadcrumbs" aria-label="Breadcrumb"><a href="/explore/?view=reviewed">Reviewed dossiers</a><span>/</span><span>${escapeHtml(record.contract_id)}</span></nav>
-  <article class="dossier">
-    <header class="dossier-header"><div><span class="record-type ${record.is_quarantined ? 'candidate' : 'reviewed'}">${status}</span><p class="kicker">FY ${record.fiscal_year} · ${escapeHtml(record.contract_id)}</p><h1>${escapeHtml(record.title)}</h1><p>${escapeHtml(record.location)}</p></div><aside><span>Match confidence</span><strong>${escapeHtml(record.confidence)}</strong><small>Evidence score ${record.confidence_score}</small></aside></header>
-    ${record.is_quarantined ? '<section class="dossier-warning"><strong>This relationship is not confirmed.</strong><p>The source records remain separate because the current evidence does not meet the reviewed-link standard.</p></section>' : ''}
-    <section class="amount-comparison" aria-label="Budget amount comparison"><article><span>GAA appropriation</span><strong>${peso(record.appropriation_centavos)}</strong><small>Authority to spend, not proof of disbursement</small></article><article><span>DPWH project budget</span><strong>${peso(record.contract_budget_centavos)}</strong><small>Recorded in the archived DPWH snapshot</small></article><article><span>Recorded difference</span><strong>${peso(record.variance_centavos)}</strong><small>Comparison only, not a finding of loss</small></article></section>
-    <section class="dossier-grid"><div><p class="kicker">Delivery record</p><h2>${escapeHtml(record.delivery_title)}</h2><dl><div><dt>Contract</dt><dd>${escapeHtml(record.contract_id)}</dd></div><div><dt>Implementing office</dt><dd>${escapeHtml(record.implementing_office)}</dd></div><div><dt>Source of funds</dt><dd>${escapeHtml(record.source_of_funds)}</dd></div></dl></div><aside><p class="kicker">Why these records may relate</p><ul>${signals}</ul><p>${escapeHtml(record.match_limitations)}</p></aside></section>
-    <section class="dossier-sources"><div><p class="kicker">Evidence trail</p><h2>Inspect the records underneath the link.</h2></div><div>${sources}</div></section>
-  </article>`;
-};
-
 const pipeline = `
   <div class="pipeline-groups">
     <section class="pipeline-group"><span>01 / Integrity</span><h3>Preserve</h3><ol><li><strong>Acquire</strong><small>Fetch a named official source.</small></li><li><strong>Hash and archive</strong><small>Keep an immutable copy and digest.</small></li></ol></section>
@@ -300,6 +284,6 @@ export const methodologyBody = `
     <div class="section-heading"><p class="section-number">07 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#111" stroke-width="2.5" stroke-linejoin="round"><path fill="#d6d6d2" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#fff" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fff" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fff" stroke="#111" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fff" stroke="#111" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#111"/><path fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/></svg>`;

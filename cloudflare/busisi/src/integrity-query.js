@@ -149,7 +149,7 @@ export const queryIntegritySignals = async (database, query) => {
   ).bind(...where.bindings).first('total');
   const [column, direction] = INTEGRITY_SORTS[query.sort];
   const rows = await database.prepare(`
-    SELECT i.contract_id, i.fiscal_year, i.code, i.classification, i.label, i.description,
+    SELECT i.signal_id, i.contract_id, i.fiscal_year, i.code, i.classification, i.label, i.description,
       i.contractor_name, i.pcab_id, i.budget_centavos, i.status, i.progress, i.province, i.region,
       i.latitude, i.longitude, i.evidence, i.limitations, i.source_artifact_sha256,
       ${DISTRICT_SELECT}

@@ -1,0 +1,129 @@
+import { gaaDocumentsUrl } from './source-presentation.js';
+
+const html = (value) => String(value ?? '')
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#39;');
+
+const money = (centavos) => new Intl.NumberFormat('en-PH', {
+  style: 'currency',
+  currency: 'PHP',
+}).format(Number(centavos || 0) / 100);
+
+const idPath = (kind, id) => `/records/${kind}/${encodeURIComponent(id)}/`;
+const contractorPath = (key) => `/contractors/${encodeURIComponent(key)}/`;
+
+const safeLink = (value) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' ? url.toString() : '';
+  } catch {
+    return '';
+  }
+};
+
+const breadcrumb = (label, value) => `<nav class="evidence-breadcrumbs" aria-label="Breadcrumb">
+  <a href="/explore/">Public records</a><span>/</span><span>${html(label)}</span><span>/</span><span>${html(value)}</span>
+</nav>`;
+
+const heading = ({ badge, kicker, title, summary, tone = '' }) => `<header class="evidence-header">
+  <div><span class="evidence-badge ${tone}">${html(badge)}</span><p class="kicker">${html(kicker)}</p><h1>${html(title)}</h1><p class="lede">${html(summary)}</p></div>
+</header>`;
+
+const facts = (items) => `<dl class="evidence-facts">${items.map(([label, value, note]) => `
+  <div><dt>${html(label)}</dt><dd>${html(value)}</dd>${note ? `<small>${html(note)}</small>` : ''}</div>`).join('')}
+</dl>`;
+
+const boundary = (message) => `<aside class="evidence-boundary"><strong>Evidence boundary</strong><p>${html(message)}</p></aside>`;
+
+const hash = (value) => value
+  ? `<code title="${html(value)}">${html(value.slice(0, 16))}…</code>`
+  : '<span>Not available</span>';
+
+const district = (context) => {
+  if (!context || context.classification === 'unassigned') {
+    return `<section class="evidence-panel"><p class="kicker">Congressional context</p><h2>No exact office attribution available</h2><p>The listed office did not match a published office-to-district mapping.</p></section>`;
+  }
+  const rows = context.districts.map((item) => `<li><strong>${html(item.label)}</strong><span>${html(item.representative_name || 'Representative unresolved')}</span></li>`).join('');
+  return `<section class="evidence-panel"><p class="kicker">Office-linked congressional context</p><h2>${html(context.office_name)}</h2><ul class="evidence-list">${rows}</ul><p class="evidence-limit">${html(context.limitation)}</p></section>`;
+};
+
+const availability = () => `<section class="evidence-panel evidence-availability">
+  <p class="kicker">What can be traced</p><h2>Evidence by public-money stage</h2>
+  <ol><li class="available"><b>01</b><span><strong>Appropriation or project budget</strong><small>Available in this acquired snapshot</small></span></li><li><b>02</b><span><strong>Release, obligation and payment</strong><small>Not available in the acquired records</small></span></li><li><b>03</b><span><strong>Receipt and audit evidence</strong><small>Not available in the acquired records</small></span></li><li><b>04</b><span><strong>Verified output and public outcome</strong><small>Not available in the acquired records</small></span></li></ol>
+</section>`;
+
+const empty = (message) => `<p class="evidence-empty">${html(message)}</p>`;
+
+const relatedBudgets = (records) => records.length ? `<ul class="evidence-record-list">${records.map((item) => `
+  <li><div><span>FY ${item.fiscal_year}</span><strong>${html(item.description)}</strong></div><b>${html(money(item.amount_centavos))}</b><a href="${idPath('budget', item.record_id)}">Open record</a></li>`).join('')}</ul>` : empty('No related appropriation records were found under the same normalized family identity.');
+
+const relatedDeliveries = (records) => records.length ? `<ul class="evidence-record-list">${records.map((item) => `
+  <li><div><span>FY ${item.fiscal_year} · ${html(item.contract_id)}</span><strong>${html(item.description)}</strong><small>${html(item.location)}</small></div><b>${html(money(item.budget_centavos))}</b><a href="${idPath('delivery', item.contract_id)}">Open record</a></li>`).join('')}</ul>` : empty('No related delivery records were found under the same normalized family identity.');
+
+const signals = (records) => records.length ? `<ul class="evidence-signal-list">${records.map((item) => `
+  <li><span>${html(item.classification.replaceAll('_', ' '))}</span><strong>${html(item.label)}</strong><p>${html(item.evidence || item.description)}</p>${item.signal_id ? `<a href="${idPath('integrity', item.signal_id)}">Inspect signal</a>` : ''}</li>`).join('')}</ul>` : empty('No published deterministic integrity signal is associated with this record.');
+
+export const budgetRecordBody = ({ record, related, candidates, projects }) => `${breadcrumb('GAA appropriation', record.record_id)}
+<article class="evidence-dossier">${heading({
+  badge: 'Official GAA appropriation record', kicker: `FY ${record.fiscal_year} · ${record.budget_line_id}`,
+  title: record.description, summary: record.family_label,
+})}
+${facts([['Appropriation', money(record.amount_centavos), 'Authority to spend, not proof of release or payment'], ['Fiscal year', record.fiscal_year], ['Snapshot fingerprint', record.artifact_sha256.slice(0, 16), 'Full digest shown below']])}
+<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Source identity</p><h2>Archived appropriation row</h2><dl class="evidence-details"><div><dt>Record ID</dt><dd>${html(record.record_id)}</dd></div><div><dt>Budget line ID</dt><dd>${html(record.budget_line_id)}</dd></div><div><dt>Normalized family</dt><dd>${html(record.project_family_id)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.artifact_sha256)}</dd></div></dl><a class="evidence-action" href="${html(gaaDocumentsUrl(record.fiscal_year))}" target="_blank" rel="noopener noreferrer">Open FY ${record.fiscal_year} GAA document index</a></section>${availability()}</div>
+<section class="evidence-section"><p class="kicker">Related appropriation history</p><h2>Rows sharing this normalized family</h2>${relatedBudgets(related)}</section>
+<section class="evidence-section"><p class="kicker">Cross-source review</p><h2>${candidates.length} candidate link${candidates.length === 1 ? '' : 's'}</h2>${candidates.length ? candidates.map((item) => `<a class="candidate-callout" href="${idPath('candidate', item.candidate_id)}"><strong>${html(item.delivery_description)}</strong><span>Unreviewed · evidence score ${item.score}</span></a>`).join('') : empty('No candidate delivery link is associated with this budget line and fiscal year.')}${projects.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>${html(item.title)}</strong><span>${html(item.status_label)}</span></a>`).join('')}</section>
+${boundary('This page reproduces an appropriation record and normalized relationships. It does not establish procurement, release, payment, construction, completion, benefit, or wrongdoing.')}</article>`;
+
+export const deliveryRecordBody = ({ record, related, budgets, candidates, projects, signals: items, contractor }) => `${breadcrumb('DPWH delivery', record.contract_id)}
+<article class="evidence-dossier">${heading({ badge: 'Official DPWH delivery record', kicker: `FY ${record.fiscal_year} · Contract ${record.contract_id}`, title: record.description, summary: record.location })}
+${facts([['Recorded project budget', money(record.budget_centavos), 'Snapshot value, not proof of payment'], ['Source of funds', record.source_of_funds || 'Not stated'], ['Integrity signals', items.length, 'Review leads, not findings']])}
+<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Delivery record</p><h2>Source fields</h2><dl class="evidence-details"><div><dt>Contract</dt><dd>${html(record.contract_id)}</dd></div><div><dt>Location</dt><dd>${html(record.location || 'Not stated')}</dd></div><div><dt>Normalized family</dt><dd>${html(record.project_family_id)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.artifact_sha256)}</dd></div></dl></section>${district(record.district_context)}</div>
+<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Deterministic review</p><h2>Published source-record signals</h2>${signals(items)}</section>${contractor ? `<section class="evidence-panel"><p class="kicker">Recorded contractor identity</p><h2>${html(contractor.contractor_name)}</h2><p>${contractor.project_count} archived project associations · ${html(money(contractor.total_budget_centavos))}</p><a class="evidence-action" href="${contractorPath(contractor.contractor_key)}">Open contractor activity</a></section>` : `<section class="evidence-panel"><p class="kicker">Contractor</p><h2>No linked contractor profile</h2><p>The acquired delivery row does not provide a contractor identity through the current published signal table.</p></section>`}</div>
+<section class="evidence-section"><p class="kicker">Possible appropriation records</p><h2>Same normalized family</h2>${relatedBudgets(budgets)}${candidates.map((item) => `<a class="candidate-callout" href="${idPath('candidate', item.candidate_id)}"><strong>Compare candidate appropriation and delivery rows</strong><span>Unreviewed · evidence score ${item.score}</span></a>`).join('')}${projects.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>${html(item.title)}</strong><span>${html(item.status_label)}</span></a>`).join('')}</section>
+<section class="evidence-section"><p class="kicker">Related delivery history</p><h2>Other records sharing the family identity</h2>${relatedDeliveries(related)}</section>${availability()}
+${boundary('A DPWH delivery record is not by itself proof that work exists at the stated location, that payment occurred, that completion is accurate, or that the project produced public value.')}</article>`;
+
+export const candidateRecordBody = ({ record, budgets, delivery, projects }) => `${breadcrumb('Candidate comparison', record.candidate_id)}
+<article class="evidence-dossier">${heading({ badge: 'Unreviewed candidate comparison', tone: 'candidate', kicker: `FY ${record.fiscal_year} · Evidence score ${record.score}`, title: record.budget_description, summary: 'Two separate source records placed side by side for documentary review.' })}
+${boundary('Similarity is not identity. This candidate has not passed the reviewed-link publication gate and must not be cited as a confirmed project relationship.')}
+<div class="comparison-grid"><section class="evidence-panel"><p class="kicker">Appropriation side</p><h2>${html(record.budget_description)}</h2><strong class="large-money">${html(money(record.budget_amount_centavos))}</strong>${budgets.map((item) => `<a class="evidence-action" href="${idPath('budget', item.record_id)}">Open appropriation record</a>`).join('')}</section><section class="evidence-panel"><p class="kicker">Delivery side</p><h2>${html(record.delivery_description)}</h2><strong class="large-money">${html(money(record.delivery_budget_centavos))}</strong>${delivery ? `<a class="evidence-action" href="${idPath('delivery', delivery.contract_id)}">Open delivery record</a>` : '<p>Matching delivery row is not available.</p>'}</section></div>
+${facts([['Recorded difference', money(record.difference_centavos), 'Comparison only'], ['Confidence label', record.confidence], ['Review status', record.review_status]])}
+<section class="evidence-panel"><p class="kicker">Why the rule proposed this pair</p><h2>Explainable matching signals</h2><ul class="evidence-list">${record.signals.map((item) => `<li><strong>${html(item.replaceAll('_', ' '))}</strong></li>`).join('')}</ul>${projects.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>${html(item.title)}</strong><span>${html(item.status_label)}</span></a>`).join('')}</section></article>`;
+
+export const changeRecordBody = ({ record, related, prior }) => `${breadcrumb('FY2027 comparison', record.record_id)}
+<article class="evidence-dossier">${heading({ badge: 'Provisional stage comparison', tone: 'candidate', kicker: `${record.dataset.toUpperCase()} · ${record.change_label}`, title: record.title, summary: [record.program, record.region, record.office].filter(Boolean).join(' · ') })}
+${facts([['NEP', money(record.nep_centavos)], ['House bill', money(record.house_centavos)], ['Recorded movement', money(record.difference_centavos), 'Arithmetic comparison, not proof of an insertion']])}
+${boundary('This row compares acquired proposal and House bill evidence. It does not identify an author, sponsor, motive, release, payment, or final enacted amount.')}
+<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Document evidence</p><h2>Inspect the compared pages</h2>${safeLink(record.nep_pdf_url) ? `<a class="evidence-action" href="${html(safeLink(record.nep_pdf_url))}" target="_blank" rel="noopener noreferrer">Open NEP PDF${record.nep_page ? ` · page ${record.nep_page}` : ''}</a>` : '<p>NEP page not available for this row.</p>'}${safeLink(record.house_pdf_url) ? `<a class="evidence-action" href="${html(safeLink(record.house_pdf_url))}" target="_blank" rel="noopener noreferrer">Open House bill PDF${record.house_page ? ` · page ${record.house_page}` : ''}</a>` : '<p>House page not available for this row.</p>'}<dl class="evidence-details"><div><dt>Review status</dt><dd>${html(record.review_status)}</dd></div><div><dt>Confidence</dt><dd>${html(record.confidence)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.artifact_sha256)}</dd></div></dl></section>${district(record.district_context)}</div>
+<section class="evidence-section"><p class="kicker">Prior-year context</p><h2>Appropriations sharing the normalized family label</h2>${relatedBudgets(prior)}</section>
+<section class="evidence-section"><p class="kicker">FY2027 related rows</p><h2>Other rows in the same normalized family</h2>${related.length ? related.map((item) => `<a class="candidate-callout" href="${idPath('change', item.record_id)}"><strong>${html(item.title)}</strong><span>${html(item.change_type.replaceAll('_', ' '))} · ${html(money(item.difference_centavos))}</span></a>`).join('') : empty('No other FY2027 comparison row shares this family label.')}</section></article>`;
+
+export const integrityRecordBody = ({ record, delivery, contractor, related }) => `${breadcrumb('Integrity review signal', record.signal_id)}
+<article class="evidence-dossier">${heading({ badge: 'Review signal, not a finding', tone: 'signal', kicker: `${record.classification.replaceAll('_', ' ')} · Contract ${record.contract_id}`, title: record.label, summary: record.description })}
+${boundary('This deterministic rule identifies a source-record pattern for verification. It does not prove fraud, corruption, a ghost project, non-performance, or wrongdoing.')}
+${facts([['Recorded project budget', money(record.budget_centavos)], ['Status / progress', `${record.status || 'Not stated'} / ${record.progress || 'Not stated'}%`], ['Location', [record.province, record.region].filter(Boolean).join(', ') || 'Not stated']])}
+<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Rule evidence</p><h2>Why this record was surfaced</h2><p>${html(record.evidence)}</p><p class="evidence-limit"><strong>Known limit:</strong> ${html(record.limitations)}</p><dl class="evidence-details"><div><dt>Rule code</dt><dd>${html(record.code)}</dd></div><div><dt>Snapshot fingerprint</dt><dd>${hash(record.source_artifact_sha256)}</dd></div></dl>${delivery ? `<a class="evidence-action" href="${idPath('delivery', delivery.contract_id)}">Open underlying delivery record</a>` : ''}</section>${district(record.district_context)}</div>
+${contractor ? `<section class="evidence-panel"><p class="kicker">Recorded contractor identity</p><h2>${html(contractor.contractor_name)}</h2><p>${contractor.project_count} archived project associations · ${html(money(contractor.total_budget_centavos))}</p><a class="evidence-action" href="${contractorPath(contractor.contractor_key)}">Open contractor activity</a></section>` : ''}
+<section class="evidence-section"><p class="kicker">Other rules on this contract</p><h2>${related.length} additional signal${related.length === 1 ? '' : 's'}</h2>${signals(related)}</section></article>`;
+
+export const contractorRecordBody = ({ record, signals: items, concentrations }) => `${breadcrumb('Contractor activity', record.contractor_key)}
+<article class="evidence-dossier">${heading({ badge: 'Archived contractor activity', kicker: record.pcab_id ? `Recorded PCAB ID ${record.pcab_id}` : 'No PCAB ID in source identity', title: record.contractor_name, summary: `Project associations in the acquired DPWH snapshot, FY ${record.first_year} to FY ${record.last_year}.` })}
+${facts([['Project associations', record.project_count, 'Associations, not necessarily unique completed works'], ['Associated project budget', money(record.total_budget_centavos), 'Not revenue, payment, or contract value received'], ['Joint-project associations', record.joint_project_count]])}
+${boundary('These counts describe archived project-record associations. They do not prove beneficial ownership, payment, performance quality, political connection, market misconduct, or wrongdoing.')}
+<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Recorded status mix</p><h2>Projects by source status</h2>${facts([['Completed', record.completed_count], ['Ongoing', record.ongoing_count], ['Terminated', record.terminated_count]])}</section><section class="evidence-panel"><p class="kicker">PCAB verification snapshot</p><h2>${html(record.pcab_status.replaceAll('_', ' '))}</h2><dl class="evidence-details"><div><dt>Listed name</dt><dd>${html(record.pcab_name || 'Not available')}</dd></div><div><dt>Category</dt><dd>${html(record.pcab_category || 'Not available')}</dd></div><div><dt>Valid to</dt><dd>${html(record.pcab_valid_to || 'Not available')}</dd></div></dl>${record.pcab_id ? `<a class="evidence-action" href="${html(record.pcab_url)}" target="_blank" rel="noopener noreferrer">Verify in the current PCAB table</a>` : ''}</section></div>
+<section class="evidence-section"><p class="kicker">Review leads</p><h2>Signals associated with this contractor identity</h2>${signals(items)}</section>
+<section class="evidence-section"><p class="kicker">Concentration context</p><h2>Groups where this was the leading recorded party</h2>${concentrations.length ? concentrations.map((item) => `<div class="candidate-callout"><strong>${html(item.group_label)}</strong><span>${(Number(item.top_share_basis_points) / 100).toFixed(1)}% of contractor-party associations · FY ${item.fiscal_year || 'all years'}</span></div>`).join('') : empty('No published concentration group lists this contractor as the leading recorded party.')}</section></article>`;
+
+export const enhancedProjectBody = ({ record, delivery, signals: items, related, budgets, deliveries, contractor }) => `${breadcrumb('Reviewed dossier', record.contract_id)}
+<article class="evidence-dossier">${heading({ badge: record.is_quarantined ? 'Quarantined project candidate' : 'Reviewed project evidence dossier', tone: record.is_quarantined ? 'candidate' : 'reviewed', kicker: `FY ${record.fiscal_year} · ${record.contract_id}`, title: record.title, summary: record.location })}
+${record.is_quarantined ? boundary('This relationship remains quarantined and is not a confirmed cross-source link.') : ''}
+${facts([['GAA appropriation', money(record.appropriation_centavos), 'Authority to spend'], ['DPWH project budget', money(record.contract_budget_centavos), 'Archived snapshot value'], ['Recorded difference', money(record.variance_centavos), 'Comparison only']])}
+<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Reviewed relationship</p><h2>Why these records may relate</h2><ul class="evidence-list">${record.match_signals.map((item) => `<li><strong>${html(item.replaceAll('_', ' '))}</strong></li>`).join('')}</ul><p class="evidence-limit">${html(record.match_limitations)}</p><dl class="evidence-details"><div><dt>Confidence</dt><dd>${html(record.confidence)} · score ${record.confidence_score}</dd></div><div><dt>Family ID</dt><dd>${html(record.family_id)}</dd></div></dl></section>${delivery ? district(delivery.district_context) : district(null)}</div>
+<section class="evidence-section"><p class="kicker">Related reviewed phases</p><h2>Other dossiers sharing the reviewed family identity</h2>${related.length ? related.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>FY ${item.fiscal_year} · ${html(item.title)}</strong><span>${html(item.contract_id)} · ${html(item.status_label)}</span></a>`).join('') : empty('No other reviewed dossier shares this exact family identity.')}</section>
+<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Integrity review</p><h2>Signals on the linked delivery record</h2>${signals(items)}</section>${contractor ? `<section class="evidence-panel"><p class="kicker">Recorded contractor activity</p><h2>${html(contractor.contractor_name)}</h2><p>${contractor.project_count} project associations · ${html(money(contractor.total_budget_centavos))}</p><a class="evidence-action" href="${contractorPath(contractor.contractor_key)}">Open contractor profile</a></section>` : `<section class="evidence-panel"><p class="kicker">Contractor activity</p><h2>Not available for this dossier</h2><p>No exact published contractor identity is linked through the current acquired signal data.</p></section>`}</div>
+<section class="evidence-section"><p class="kicker">Source-family evidence</p><h2>Appropriation records</h2>${relatedBudgets(budgets)}<h2>Delivery records</h2>${relatedDeliveries(deliveries)}</section>${availability()}
+<section class="evidence-panel"><p class="kicker">Reviewed source trail</p><h2>Underlying evidence</h2>${record.evidence_urls.map((url, index) => safeLink(url) ? `<a class="evidence-action" href="${html(safeLink(url))}" target="_blank" rel="noopener noreferrer">Official evidence ${index + 1}</a>` : '').join('')}</section>
+${boundary('A reviewed cross-source link means the records passed Busisi’s identity-review gate. It does not prove release, payment, physical completion, quality, public benefit, or wrongdoing.')}</article>`;
