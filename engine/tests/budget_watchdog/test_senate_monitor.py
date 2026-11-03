@@ -165,6 +165,26 @@ def test_monitor_retries_transient_challenges(monkeypatch) -> None:
     assert calls == 3
 
 
+def test_monitor_records_forbidden_challenge_without_retry(monkeypatch) -> None:
+    calls = 0
+
+    def fetch(url: str, _headers: dict[str, str]) -> HttpPayload:
+        nonlocal calls
+        calls += 1
+        return HttpPayload(
+            403,
+            url,
+            b"<title>Just a moment</title> Cloudflare",
+            "text/html",
+        )
+
+    monkeypatch.setattr(senate_monitor.time, "sleep", lambda _seconds: None)
+    result = senate_monitor._fetch_checked(fetch, "https://example.test", {})
+
+    assert result.status_code == 403
+    assert calls == 1
+
+
 def test_monitor_rejects_unreliable_secondary_representations(tmp_path) -> None:
     def fetch(url: str, headers: dict[str, str]) -> HttpPayload:
         payload = _fetcher()(url, headers)

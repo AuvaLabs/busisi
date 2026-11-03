@@ -84,7 +84,9 @@ def _challenge(payload: HttpPayload) -> bool:
 def _fetch_checked(fetch: Fetch, url: str, headers: dict[str, str]) -> HttpPayload:
     for attempt in range(MAX_FETCH_ATTEMPTS):
         payload = fetch(url, headers)
-        retryable = payload.status_code in {429, 500, 502, 503, 504} or _challenge(payload)
+        retryable = payload.status_code in {429, 500, 502, 503, 504} or (
+            payload.status_code == HTTP_OK and _challenge(payload)
+        )
         if not retryable:
             return payload
         if attempt < MAX_FETCH_ATTEMPTS - 1:
