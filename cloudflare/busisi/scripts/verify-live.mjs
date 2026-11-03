@@ -302,7 +302,7 @@ const verifyData = async () => {
   if (budget.meta.total < 1 || budget.data.length !== 1) fail('budget query: no matching records');
   expectIncludes(budget.data[0].source_url, 'budget.bettergov.ph', 'budget source URL');
 
-  const delivery = await readJson('/api/v1/delivery?q=Manila&limit=1');
+  const delivery = await readJson('/api/v1/delivery?q=24CM0078&limit=1');
   if (delivery.meta.total < 1 || delivery.data.length !== 1) fail('delivery query: no matching records');
   expectIncludes(delivery.data[0].source_url, 'api.dpwh.bettergov.ph', 'delivery source URL');
   if (delivery.data[0].district_context?.classification === 'unassigned'
