@@ -1,5 +1,6 @@
 import { QueryError } from './query.js';
 import { DISTRICT_SELECT, districtContext, districtOfficeJoin } from './district-context.js';
+import { deliveryRecordUrl } from './source-presentation.js';
 
 const MAX_QUERY_TEXT = 200;
 const MAX_LIMIT = 100;
@@ -137,6 +138,7 @@ const signalRecord = (row) => ({
   district_office_name: undefined,
   districts_json: undefined,
   source_url: `https://api.dpwh.bettergov.ph/projects/${encodeURIComponent(row.contract_id)}`,
+  reader_source_url: deliveryRecordUrl(row.contract_id),
 });
 
 export const queryIntegritySignals = async (database, query) => {

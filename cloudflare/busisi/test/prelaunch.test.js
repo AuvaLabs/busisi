@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import worker from '../src/prelaunch.js';
@@ -166,6 +167,7 @@ test('methodology is canonical and explains the publication gate', async () => {
   assert.match(document, /href="#source-policy"/);
   assert.match(document, /href="#corrections"/);
   assert.match(document, /Congressional district context/);
+  assert.match(document, /Machine-readable provenance stays in the JSON API/);
   assert.match(document, /not a coordinate or boundary-polygon determination/);
   assert.doesNotMatch(document, /Auva Labs|auvalabs/i);
 });
@@ -303,4 +305,22 @@ test('passes generated media and self-hosted fonts through the static asset bind
 
   assert.equal(asset.status, 200);
   assert.equal(await asset.text(), '/assets/busisi-masthead.webp');
+});
+
+test('reader actions use human-readable evidence instead of raw JSON endpoints', () => {
+  const assets = Object.fromEntries(
+    ['explorer', 'agencies', 'changes', 'review', 'integrity'].map((name) => [
+      name,
+      readFileSync(new URL(`../public/assets/${name}-v1.js`, import.meta.url), 'utf8'),
+    ]),
+  );
+
+  assert.match(assets.explorer, /record\.reader_source_url/);
+  assert.doesNotMatch(assets.explorer, /Open official source.*record\.source_url/);
+  assert.doesNotMatch(assets.explorer, /Open DPWH source.*record\.source_url/);
+  assert.match(assets.agencies, /record\.nep_reader_url/);
+  assert.doesNotMatch(assets.agencies, /NEP dataset.*record\.nep_source_url/);
+  assert.doesNotMatch(assets.changes, /Comparison record.*record\.source_url/);
+  assert.doesNotMatch(assets.review, /Comparison.*record\.source_url/);
+  assert.doesNotMatch(assets.integrity, /Open archived source record.*record\.source_url/);
 });

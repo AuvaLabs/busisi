@@ -59,7 +59,7 @@
     appendText(copy, 'h2', record.name);
     appendText(copy, 'p', `Code ${record.code} · FY ${record.fiscal_year}`, 'agency-meta');
     const evidence = appendText(copy, 'div', '', 'agency-evidence');
-    sourceLink(evidence, 'NEP dataset', record.nep_source_url);
+    sourceLink(evidence, 'View FY2027 NEP documents', record.nep_reader_url);
     if (record.house_source_url) {
       const page = record.house_pages[0];
       sourceLink(

@@ -160,7 +160,7 @@ const renderIntegrityRecord = (record) => {
   appendText(card, 'p', `Limit: ${record.limitations}`, 'integrity-limit');
   card.append(renderDistrictContext(record.district_context));
   const links = appendText(card, 'div', '', 'integrity-links');
-  appendLink(links, 'Open archived source record', record.source_url);
+  appendLink(links, 'View project record', record.reader_source_url);
   if (record.pcab_id) appendLink(links, `Verify PCAB ID ${record.pcab_id}`, 'https://www.pcab.construction.gov.ph/verify/');
   return card;
 };

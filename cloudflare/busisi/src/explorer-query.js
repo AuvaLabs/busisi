@@ -1,5 +1,10 @@
 import { QueryError } from './query.js';
 import { DISTRICT_SELECT, districtContext, districtOfficeJoin } from './district-context.js';
+import {
+  budgetRecordUrl,
+  deliveryRecordUrl,
+  gaaDocumentsUrl,
+} from './source-presentation.js';
 
 const MAX_QUERY_TEXT = 200;
 const MAX_SOURCE_QUERY_TEXT = 40;
@@ -144,6 +149,7 @@ const mapBudget = (row) => ({
   ...row,
   record_type: 'budget',
   source_url: sourceBudgetUrl(row),
+  reader_source_url: gaaDocumentsUrl(row.fiscal_year),
 });
 
 const mapDelivery = (row) => ({
@@ -154,6 +160,7 @@ const mapDelivery = (row) => ({
   district_office_name: undefined,
   districts_json: undefined,
   source_url: `https://api.dpwh.bettergov.ph/projects/${encodeURIComponent(row.contract_id)}`,
+  reader_source_url: deliveryRecordUrl(row.contract_id),
 });
 
 const mapCandidate = (row) => ({
@@ -161,6 +168,8 @@ const mapCandidate = (row) => ({
   record_type: 'candidate',
   signals: JSON.parse(row.signals_json),
   signals_json: undefined,
+  budget_reader_url: budgetRecordUrl(row.budget_description, row.fiscal_year),
+  delivery_reader_url: deliveryRecordUrl(row.contract_id),
 });
 
 const MAPPERS = Object.freeze({ budgets: mapBudget, delivery: mapDelivery, candidates: mapCandidate });

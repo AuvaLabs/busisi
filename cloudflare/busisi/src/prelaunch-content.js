@@ -241,7 +241,7 @@ export const methodologyBody = `
   </section>
 
   <section class="narrative-section" id="source-policy" aria-labelledby="source-heading">
-    <div class="section-heading"><p class="section-number">02 / Source policy</p><div><h2 id="source-heading">Confidence follows evidence.</h2><p class="section-intro">Names alone are not enough to establish that two records refer to the same project.</p></div></div>
+    <div class="section-heading"><p class="section-number">02 / Source policy</p><div><h2 id="source-heading">Confidence follows evidence.</h2><p class="section-intro">Names alone are not enough to establish that two records refer to the same project. Machine-readable provenance stays in the JSON API. Reader actions open Busisi explanations, official document indexes, or source PDFs instead of raw JSON.</p></div></div>
     <div class="policy-grid">
       <article class="policy-item"><span>EXACT</span><h3>Direct identifier match</h3><p>Stable identifiers and compatible official fields point to the same record.</p></article>
       <article class="policy-item"><span>HIGH CONFIDENCE</span><h3>Multiple facts agree</h3><p>Location, agency, description, amount, and timing agree without material conflict.</p></article>

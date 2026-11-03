@@ -99,9 +99,8 @@ const renderRanking = (record) => {
     appendText(card, 'p', `${record.family_count} FY2027 rows share this normalized family label.`, 'review-record-note');
   }
   const links = appendText(card, 'div', '', 'review-record-links');
-  evidenceLink(links, 'Comparison', record.source_url);
-  evidenceLink(links, 'NEP evidence', record.nep_pdf_url);
-  evidenceLink(links, 'House evidence', record.house_pdf_url);
+  evidenceLink(links, 'View NEP PDF', record.nep_pdf_url);
+  evidenceLink(links, 'View House bill PDF', record.house_pdf_url);
   return card;
 };
 

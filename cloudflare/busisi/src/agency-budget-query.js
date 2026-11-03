@@ -1,4 +1,5 @@
 import { QueryError } from './query.js';
+import { nepDocumentsUrl } from './source-presentation.js';
 
 const MAX_QUERY_TEXT = 200;
 const MAX_LIMIT = 100;
@@ -103,6 +104,7 @@ export const queryAgencyBudgets = async (database, query) => {
     ...row,
     house_pages: parsePages(row.house_pages_json),
     house_pages_json: undefined,
+    nep_reader_url: nepDocumentsUrl(row.fiscal_year),
   }));
   const nextOffset = query.offset + records.length;
   const nextCursor = nextOffset < Number(count.total)

@@ -69,9 +69,8 @@ import { renderDistrictContext } from './district-context-v1.js';
     appendText(copy, 'p', context || 'Context not stated in source row', 'change-meta');
     copy.append(renderDistrictContext(record.district_context));
     const links = appendText(copy, 'div', '', 'change-evidence');
-    evidenceLink(links, 'Comparison record', record.source_url);
-    evidenceLink(links, record.nep_page ? `NEP page ${record.nep_page}` : 'NEP document', record.nep_pdf_url);
-    evidenceLink(links, record.house_page ? `House page ${record.house_page}` : 'House document', record.house_pdf_url);
+    evidenceLink(links, record.nep_page ? `View NEP PDF · page ${record.nep_page}` : 'View NEP PDF', record.nep_pdf_url);
+    evidenceLink(links, record.house_page ? `View House bill PDF · page ${record.house_page}` : 'View House bill PDF', record.house_pdf_url);
     card.append(copy);
 
     const amounts = appendText(card, 'div', '', 'change-amounts');

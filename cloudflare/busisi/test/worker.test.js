@@ -431,8 +431,17 @@ test('publishes source collection statistics and separate record APIs', async (c
   assert.equal(budgetBody.meta.total, 1);
   assert.equal(budgetBody.data[0].amount_centavos, 40000000000);
   assert.match(budgetBody.data[0].source_url, /budget\.bettergov\.ph/);
+  assert.equal(
+    budgetBody.data[0].reader_source_url,
+    'https://www.dbm.gov.ph/index.php/2025/general-appropriations-act-gaa-fy-2025',
+  );
+  assert.doesNotMatch(budgetBody.data[0].reader_source_url, /\/api\//);
   assert.equal(deliveryBody.meta.total, 1);
   assert.equal(deliveryBody.data[0].contract_id, '25O00113');
+  assert.equal(
+    deliveryBody.data[0].reader_source_url,
+    '/explore/?view=delivery&q=25O00113',
+  );
   assert.equal(deliveryBody.data[0].district_context.classification, 'single_district');
   assert.equal(deliveryBody.data[0].district_context.districts[0].representative_name, 'Representative One');
 });
@@ -522,6 +531,10 @@ test('publishes reconciled appropriation heads and Congress institutions', async
   const unavailableBody = await unavailable.json();
   assert.equal(unavailableBody.data[0].record_id, 'head:AUTO');
   assert.equal(unavailableBody.data[0].house_centavos, null);
+  assert.equal(
+    unavailableBody.data[0].nep_reader_url,
+    'https://www.dbm.gov.ph/index.php/2027/national-expenditure-program-fy-2027',
+  );
 
   database.database.exec("UPDATE agency_budget_items SET house_pages_json = 'broken' WHERE record_id = 'head:AUTO'");
   const malformedPages = await worker.fetch(
