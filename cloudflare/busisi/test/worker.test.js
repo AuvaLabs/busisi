@@ -45,7 +45,7 @@ class LocalD1 {
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
       INSERT INTO budget_items VALUES
         ('2025:pump', '18-001|pump', 2025, 'Construction of San Andres Pumping Station', 40000000000, 'family:pump', 'san andres pumping station', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'),
-        ('2024:road', '18-001|road', 2024, 'Rehabilitation of Provincial Road', 1000000000, 'family:road', 'provincial road', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+        ('2024:road', '18-001|road', 2024, 'Maintenance, Repair and Rehabilitation of Infrastructure Facilities and Other Related Activities - Routine Maintenance of National Roads', 1000000000, 'family:road', 'routine maintenance of national roads', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
       INSERT INTO delivery_items VALUES
         ('25O00113', 2025, 'Construction of San Andres Pumping Station', 37679270658, 'Manila, NCR', 'GAA 2025', 'family:pump', 'san andres pumping station', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
         ('26ZERO01', 2026, 'Construction of Sample Health Center', 0, 'Cebu, Region VII', 'GAA 2026', 'family:health', 'sample health center', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
@@ -133,6 +133,24 @@ test('publishes source collection statistics and separate record APIs', async (c
   assert.match(budgetBody.data[0].source_url, /budget\.bettergov\.ph/);
   assert.equal(deliveryBody.meta.total, 1);
   assert.equal(deliveryBody.data[0].contract_id, '25O00113');
+});
+
+test('bounds BetterGov source searches and scopes them to the record agency', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const response = await worker.fetch(
+    request('/api/v1/budgets?q=Routine+Maintenance'),
+    environment(database),
+  );
+  const body = await response.json();
+  const source = new URL(body.data[0].source_url);
+
+  assert.equal(response.status, 200);
+  assert.equal(source.pathname, '/api/v1/gaa/departments/18/programs');
+  assert.equal(source.searchParams.get('agency_id'), '18-001');
+  assert.equal(source.searchParams.get('year'), '2024');
+  assert.ok(source.searchParams.get('q').length <= 40);
+  assert.doesNotMatch(source.searchParams.get('q'), /\s$/);
 });
 
 test('filters unreviewed candidate links by supported signal', async (context) => {

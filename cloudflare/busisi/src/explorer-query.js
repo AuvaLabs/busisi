@@ -1,6 +1,7 @@
 import { QueryError } from './query.js';
 
 const MAX_QUERY_TEXT = 200;
+const MAX_SOURCE_QUERY_TEXT = 40;
 const MAX_LIMIT = 100;
 const MIN_YEAR = 2000;
 const MAX_YEAR = 2100;
@@ -115,14 +116,27 @@ const filters = (query, config) => {
   return { clauses, bindings };
 };
 
+const boundedSourceQuery = (value) => {
+  const normalized = value.trim().replace(/\s+/g, ' ');
+  if (normalized.length <= MAX_SOURCE_QUERY_TEXT) return normalized;
+  const prefix = normalized.slice(0, MAX_SOURCE_QUERY_TEXT + 1);
+  const wordBoundary = prefix.lastIndexOf(' ');
+  const bounded = wordBoundary >= 2
+    ? prefix.slice(0, wordBoundary)
+    : normalized.slice(0, MAX_SOURCE_QUERY_TEXT);
+  return bounded.replace(/[\s,;:-]+$/, '');
+};
+
 const sourceBudgetUrl = (row) => {
-  const department = row.budget_line_id.split('-', 1)[0];
+  const agency = row.budget_line_id.split('|', 1)[0];
+  const department = agency.split('-', 1)[0];
   const params = new URLSearchParams({
-    q: row.description,
-    department_id: department,
+    q: boundedSourceQuery(row.description),
+    agency_id: agency,
     year: String(row.fiscal_year),
+    limit: '25',
   });
-  return `https://budget.bettergov.ph/api/v1/gaa/search?${params.toString()}`;
+  return `https://budget.bettergov.ph/api/v1/gaa/departments/${encodeURIComponent(department)}/programs?${params.toString()}`;
 };
 
 const mapBudget = (row) => ({
