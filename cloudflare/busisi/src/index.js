@@ -33,6 +33,7 @@ import { getCoaSummary, queryCoaReports } from './coa-query.js';
 import { getProcurementSummary, queryProcurementRecords } from './procurement-query.js';
 import { getAcquisitionCoverage } from './acquisition-coverage-query.js';
 import { getCoverageStatus } from './coverage-status-query.js';
+import { getSourceMonitorStatus } from './source-monitor-query.js';
 import { getContractAcquisition } from './contract-acquisition-query.js';
 import {
   exportContractIntelligenceCsv,
@@ -199,6 +200,12 @@ const apiResponse = async (request, environment, url) => {
     return jsonResponse({
       meta: { review_scope: 'gated_project_image_coverage_release' },
       data: await getCoverageStatus(environment.DB),
+    });
+  }
+  if (url.pathname === '/api/v1/source-monitor-status') {
+    return jsonResponse({
+      meta: { review_scope: 'automated_source_revision_monitor' },
+      data: await getSourceMonitorStatus(environment.DB),
     });
   }
   if (url.pathname === '/api/v1/contract-intelligence-summary') {

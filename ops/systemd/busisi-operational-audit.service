@@ -1,0 +1,15 @@
+[Unit]
+Description=Audit Busisi source drift and production operations
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/data/auvalabs/busisi
+Environment=PYTHONPATH=/srv/data/auvalabs/busisi
+ExecStart=/usr/bin/python3 ops/harness/budget_watchdog_operational_audit.py
+TimeoutStartSec=30m
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/data/auvalabs/busisi/data/budget_watchdog

@@ -167,6 +167,12 @@ def default_source_registry() -> SourceRegistry:
                 SourceAuthority.SECONDARY,
             ),
             SourceDefinition(
+                "bettergov-philgeps-snapshot",
+                "BetterGov PhilGEPS Parquet Snapshot",
+                "https://huggingface.co",
+                SourceAuthority.SECONDARY,
+            ),
+            SourceDefinition(
                 "jina-reader",
                 "Jina Reader rendered-page discovery",
                 "https://r.jina.ai",

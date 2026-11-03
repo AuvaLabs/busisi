@@ -74,6 +74,7 @@ const expectedImageCoverage = Object.freeze({
   minimum_verified_images: 5,
   minimum_quarantined_images: 13,
 });
+const sourceMonitorMaxAgeMs = 8 * 60 * 60 * 1000;
 const expectedContractStates = Object.freeze({
   conflict_review: 161,
   multiple_exact_rows: 2_077,
@@ -95,9 +96,9 @@ const expectedIntegrity = Object.freeze({
   integrity_signals: 16_814,
   contractors: 4_297,
   concentrations: 737,
-  pcab_records: 18_868,
+  pcab_records: 18_853,
   pcab_retrieved_on: '2026-11-03',
-  pcab_source_sha256: '016bc9e3427b55e7744558f7726eb773f02f496f88279987c473546d6edb97d2',
+  pcab_source_sha256: 'e3ed711707a5c2e52efe907148d59b39a028b78fa0458d840250dad977362fa1',
   source_artifact_sha256: '5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123',
   district_count: 254,
   district_offices: 199,
@@ -226,6 +227,7 @@ const verifyPages = async () => {
   const coverageText = await coverage.text();
   expectIncludes(coverageText, 'See what the evidence pipeline has verified', 'coverage heading');
   expectIncludes(coverageText, 'No model or generative system decides publication status', 'coverage boundary');
+  expectIncludes(coverageText, 'Source monitor', 'coverage source monitor');
 
   const publicValue = await request('/sulit/');
   expectStatus(publicValue, 200, '/sulit/');
@@ -445,6 +447,21 @@ const verifyData = async () => {
       + imageCoverage.pending_contracts
     )) {
     fail('project-image coverage: release identity or control totals do not reconcile');
+  }
+
+  const sourceMonitor = (await readJson('/api/v1/source-monitor-status')).data;
+  const sourceCheckedAt = Date.parse(sourceMonitor?.checked_at ?? '');
+  if (!sourceMonitor
+    || sourceMonitor.status !== 'unchanged'
+    || !Number.isFinite(sourceCheckedAt)
+    || Date.now() - sourceCheckedAt > sourceMonitorMaxAgeMs
+    || !/^[a-f0-9]{64}$/.test(sourceMonitor.observations_sha256 ?? '')
+    || !Array.isArray(sourceMonitor.differences)
+    || sourceMonitor.differences.length !== 0
+    || !sourceMonitor.limitations?.some(({ source }) => (
+      source === 'Commission on Audit report catalogues'
+    ))) {
+    fail('source monitor: current passing evidence is missing, stale, or reports drift');
   }
 
   const budget = await readJson('/api/v1/budgets?q=pumping&year=2025&limit=1');

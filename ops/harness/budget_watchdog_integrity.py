@@ -10,7 +10,7 @@ from engine.budget_watchdog.integrity_bundle import build_integrity_bundle
 
 ROOT = Path(__file__).resolve().parents[2]
 DPWH_SHA256 = "5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123"
-PCAB_SHA256 = "016bc9e3427b55e7744558f7726eb773f02f496f88279987c473546d6edb97d2"
+PCAB_SHA256 = "e3ed711707a5c2e52efe907148d59b39a028b78fa0458d840250dad977362fa1"
 DISTRICT_SHA256 = (
     "df266f4eb6ab1ecda56a6a30b48130d7597fa2d59a455a4abf36e925222fe808",
     "95f660d853867c809a24eaf719820e7e0e14084817ebdd32f27e4973fb11672b",

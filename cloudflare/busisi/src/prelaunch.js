@@ -23,6 +23,7 @@ import { getProcurementDesk } from './procurement-query.js';
 import { getContractAcquisition } from './contract-acquisition-query.js';
 import { coverageStatusBody } from './coverage-status-content.js';
 import { getCoverageStatus } from './coverage-status-query.js';
+import { getSourceMonitorStatus } from './source-monitor-query.js';
 import {
   budgetRecordBody,
   candidateRecordBody,
@@ -236,11 +237,11 @@ const methodology = () => page(document({
   schema: METHODOLOGY_SCHEMA,
 }));
 
-const coverage = (record) => page(document({
+const coverage = (record, sourceStatus) => page(document({
   title: 'Evidence coverage status | Busisi',
   description: 'See deterministic project-image acquisition, exact reconciliation, quarantine, retry, and publication coverage.',
   canonicalPath: '/coverage/',
-  body: coverageStatusBody(record),
+  body: coverageStatusBody(record, sourceStatus),
   schema: COVERAGE_SCHEMA,
 }));
 
@@ -610,7 +611,10 @@ export default {
       result = procurement(await getProcurementDesk(env.DB));
     }
     if (!result && (url.pathname === '/coverage' || url.pathname === '/coverage/') && env.DB) {
-      result = coverage(await getCoverageStatus(env.DB));
+      const [coverageStatus, sourceStatus] = await Promise.all([
+        getCoverageStatus(env.DB), getSourceMonitorStatus(env.DB),
+      ]);
+      result = coverage(coverageStatus, sourceStatus);
     }
     const auditReportMatch = url.pathname.match(/^\/audit\/reports\/([a-z0-9-]+)\/?$/);
     if (!result && auditReportMatch && env.DB) {

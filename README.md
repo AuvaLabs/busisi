@@ -86,6 +86,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_districts.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_senate.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_senate_monitor.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_source_monitor.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_coa.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_contract_evidence.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_release.py
@@ -111,6 +112,16 @@ The Senate catalogue monitor runs every six hours, preserves its bounded source
 responses as workflow evidence, and fails closed when records change or source
 acquisition becomes unreliable. It never updates the reviewed baseline
 automatically.
+
+The source drift monitor independently checks the BetterGov GAA, DPWH and
+PhilGEPS revisions, the DBM allotment-release catalogue, the district roster and
+the PCAB regular-license table every six hours. Changed source observations are
+archived and reported, but never replace a reviewed publication automatically.
+The public `/coverage/` page exposes the latest result and its known discovery
+limits. The local operational audit also verifies queue integrity, lease age,
+publication markers, timer health and the complete live production contract.
+COA catalogue discovery remains an explicit manual coverage limit because the
+official catalogue blocks unattended acquisition.
 
 The local acquisition retry timer runs one bounded batch daily. It accepts only
 registered official DPWH HTTPS origins, archives successful source bytes, uses

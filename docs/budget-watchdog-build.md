@@ -225,6 +225,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_contract_evidence.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_release.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_universe.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_retry.py --limit 10
+PYTHONPATH=. python3 ops/harness/budget_watchdog_source_monitor.py
 cd cloudflare/busisi
 npm test
 npm run check
@@ -278,6 +279,21 @@ queries, reviewed and quarantined dossier boundaries, redirects and assets.
 The credential-free GitHub production monitor runs this contract every six
 hours from `.github/workflows/busisi-production-monitor.yml`. Monitoring is
 read-only and cannot deploy or mutate D1.
+
+`.github/workflows/source-drift-monitor.yml` independently checks source
+revisions and catalogues every six hours and retains the archived responses and
+report for 30 days. `ops/systemd/busisi-operational-audit.timer` performs the
+same source check on the data host, publishes the status to the read-only public
+API, and then checks queue integrity, expired leases, publication markers,
+existing acquisition timers and the live production contract. A changed or
+unavailable source produces a nonzero result and is not published as replacement
+data. The monitored baseline is reviewed and versioned at
+`ops/harness/fixtures/source_monitor_baseline.json`.
+
+The public status endpoint is `/api/v1/source-monitor-status`; `/coverage/`
+renders the same status for readers. A passing status expires after eight hours
+in the live verifier. COA catalogue discovery is listed as a known limitation
+because its official catalogue currently blocks unattended acquisition.
 
 The first stable local baseline and its limitations are recorded in
 `docs/data-snapshots/2026-11-02-budget-watchdog.md`.

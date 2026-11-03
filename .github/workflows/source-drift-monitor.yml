@@ -1,0 +1,32 @@
+name: Source drift monitor
+
+on:
+  schedule:
+    - cron: "7 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install audit dependencies
+        run: pip install -r requirements.txt
+      - name: Check monitored source revisions and catalogues
+        run: PYTHONPATH=. python3 ops/harness/budget_watchdog_source_monitor.py --reset-output
+      - name: Retain source evidence and report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: source-drift-${{ github.run_id }}
+          path: data/budget_watchdog/source-monitor/
+          if-no-files-found: error
+          retention-days: 30

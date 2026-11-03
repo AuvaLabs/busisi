@@ -9,13 +9,13 @@ This release examines 56,887 DPWH delivery records for fiscal years 2024 to
 last-modified date of 2026-01-22.
 
 - Source artifact SHA-256: `5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123`
-- Integrity bundle manifest SHA-256: `672b668f29fbfc30a0740c9299b0d9411b7a67fccf2cdf5bb988605bfe6f9ea6`
-- Generated SQL chunks: 15
+- Integrity bundle manifest SHA-256: `3ea4adbcd0e87bea3b6d547ca864a640ab061a26b4c64ca2c3db04318c45b39e`
+- Generated SQL chunks: 44
 - Contractor identities: 4,297
 - Rule-specific review signals: 16,814
 - Contractor concentration groups: 737
-- PCAB regular-license rows: 18,868
-- PCAB snapshot SHA-256: `016bc9e3427b55e7744558f7726eb773f02f496f88279987c473546d6edb97d2`
+- PCAB regular-license rows: 18,853
+- PCAB snapshot SHA-256: `e3ed711707a5c2e52efe907148d59b39a028b78fa0458d840250dad977362fa1`
 - Legislative districts in the roster snapshot: 254
 - Mapped DPWH offices: 199
 - District snapshot SHA-256: `dc78c26838c81da134e2ae7523a45f0bd7792d2a01e06f6694fc351a25650e46`
@@ -62,9 +62,9 @@ share. A high count or budget total does not establish concentration abuse,
 poor performance or unlawful conduct.
 
 The PCAB check uses a 2026-11-03 snapshot of the official current regular-license
-table. Of the 4,297 contractor identities, 3,788 match a current regular license
+table. Of the 4,297 contractor identities, 3,789 match a current regular license
 marked for government infrastructure, 9 match a current regular license not so
-marked, 490 recorded PCAB identifiers are not found in that current table, and
+marked, 489 recorded PCAB identifiers are not found in that current table, and
 10 name-only identities cannot be checked. These are current lookup results,
 not historical license findings for the award date.
 

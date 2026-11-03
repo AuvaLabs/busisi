@@ -1,0 +1,68 @@
+{
+  "datasets": {
+    "delivery": {
+      "revision": "648ea96af4f7625d606fda0b78803917913a26b7"
+    },
+    "gaa": {
+      "revision": "84d0a6b87122fd6e8302cbc17c86feee7ef5d8b3"
+    },
+    "philgeps": {
+      "revision": "b98de579579e8c7e79bac2a22ac7491549db6d0d"
+    }
+  },
+  "dbm_next_releases": [],
+  "dbm_releases": [
+    {
+      "label": "January",
+      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=3858%3Astatus-of-allotment-releases-as-of-january-31-2026&view=article"
+    },
+    {
+      "label": "February",
+      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=3893%3Astatus-of-allotment-releases-as-of-february-28-2026&view=article"
+    },
+    {
+      "label": "March",
+      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=3947%3Astatus-of-allotment-releases-as-of-march-31-2026&view=article"
+    },
+    {
+      "label": "April",
+      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=3992&view=article"
+    },
+    {
+      "label": "May",
+      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=4050&view=article"
+    },
+    {
+      "label": "June",
+      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=4098&view=article"
+    },
+    {
+      "label": "July",
+      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=4150&view=article"
+    },
+    {
+      "label": "August",
+      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=4215%3Astatus-of-allotment-releases-as-of-august-31-2026&view=article"
+    },
+    {
+      "label": "September",
+      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=4331&view=article"
+    }
+  ],
+  "districts": {
+    "revision": "a0caa778442cdae5583f5a006ea7401dab00e5ac",
+    "total": 254
+  },
+  "known_discovery_limits": [
+    {
+      "effect": "New COA reports require separate discovery and cannot be auto-published from this monitor.",
+      "source": "Commission on Audit report catalogues",
+      "status": "official_source_blocks_unattended_acquisition"
+    }
+  ],
+  "pcab": {
+    "records": 18853,
+    "sha256": "e3ed711707a5c2e52efe907148d59b39a028b78fa0458d840250dad977362fa1"
+  },
+  "schema_version": 2
+}

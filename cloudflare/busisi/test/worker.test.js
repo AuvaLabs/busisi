@@ -15,6 +15,8 @@ import { getProjectContractEvidence } from '../src/contract-evidence-query.js';
 import { getProjectImageEvidence } from '../src/project-image-query.js';
 import { getAcquisitionCoverage } from '../src/acquisition-coverage-query.js';
 import { getCoverageStatus } from '../src/coverage-status-query.js';
+import { coverageStatusBody } from '../src/coverage-status-content.js';
+import { getSourceMonitorStatus } from '../src/source-monitor-query.js';
 import { parseContractIntelligenceQuery } from '../src/contract-intelligence-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseAllotmentReleaseQuery } from '../src/allotment-release-query.js';
@@ -94,6 +96,9 @@ const projectImageMigrationPath = fileURLToPath(
 const coverageAutomationMigrationPath = fileURLToPath(
   new URL('../migrations/0022_coverage_automation.sql', import.meta.url),
 );
+const sourceMonitorMigrationPath = fileURLToPath(
+  new URL('../migrations/0023_source_monitor_status.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -153,6 +158,7 @@ class LocalD1 {
     this.database.exec(readFileSync(allotmentReleaseMigrationPath, 'utf8'));
     this.database.exec(readFileSync(projectImageMigrationPath, 'utf8'));
     this.database.exec(readFileSync(coverageAutomationMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(sourceMonitorMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -394,6 +400,10 @@ class LocalD1 {
       INSERT INTO coverage_releases VALUES
         ('${'d'.repeat(64)}', '2026-11-04T01:00:00+00:00', '${'e'.repeat(64)}',
          36748, 6, 4, 1, 1, 3, 2, 36737, 5, 13);
+      INSERT INTO source_monitor_status VALUES
+        (1, '2026-11-04T01:30:00+00:00', 'unchanged', '[]',
+         '[{"source":"Commission on Audit report catalogues","effect":"Official source blocks unattended acquisition."}]',
+         '${'f'.repeat(64)}');
     `);
   }
 
@@ -2184,10 +2194,22 @@ test('serves gated coverage status through the API and public page', async (cont
   const status = await getCoverageStatus(database);
   assert.equal(status.universe_contracts, 36748);
   assert.equal(status.verified_images, 5);
+  const sourceStatus = await getSourceMonitorStatus(database);
+  assert.equal(sourceStatus.status, 'unchanged');
+  assert.equal(sourceStatus.limitations.length, 1);
 
   const api = await worker.fetch(request('/api/v1/coverage-status'), environment(database));
   assert.equal(api.status, 200);
   assert.equal((await api.json()).data.conflict_contracts, 1);
+
+  const sourceApi = await worker.fetch(
+    request('/api/v1/source-monitor-status'), environment(database),
+  );
+  assert.equal(sourceApi.status, 200);
+  const sourceBody = await sourceApi.json();
+  assert.equal(sourceBody.meta.review_scope, 'automated_source_revision_monitor');
+  assert.equal(sourceBody.data.status, 'unchanged');
+  assert.equal(sourceBody.data.observations_sha256, 'f'.repeat(64));
 
   const pageResponse = await siteWorker.fetch(request('/coverage/'), environment(database));
   assert.equal(pageResponse.status, 200);
@@ -2195,4 +2217,35 @@ test('serves gated coverage status through the API and public page', async (cont
   assert.match(pageDocument, /See what the evidence pipeline has verified/);
   assert.match(pageDocument, /36,748/);
   assert.match(pageDocument, /No model or generative system decides publication status/);
+  assert.match(pageDocument, /No monitored source drift/);
+  assert.match(pageDocument, /Commission on Audit report catalogues/);
+});
+
+test('renders unavailable and drifted source-monitor coverage states', () => {
+  assert.match(coverageStatusBody(null), /Coverage release is not available/);
+  const coverage = {
+    universe_contracts: 0,
+    completed_contracts: 0,
+    verified_exact_contracts: 0,
+    no_image_contracts: 0,
+    conflict_contracts: 0,
+    pending_contracts: 0,
+    retry_contracts: 0,
+    verified_images: 0,
+    quarantined_images: 0,
+    released_at: '2026-11-04T00:00:00+00:00',
+    release_id: 'release',
+    source_sha256: 'source',
+  };
+  assert.match(coverageStatusBody(coverage), /Status not yet published/);
+  const drifted = coverageStatusBody(coverage, {
+    status: 'drift_detected',
+    checked_at: '2026-11-04T00:00:00+00:00',
+    differences: ['PCAB table changed'],
+    limitations: [],
+    observations_sha256: 'fingerprint',
+  });
+  assert.match(drifted, /Source review required/);
+  assert.match(drifted, /1 change or acquisition issue requires review/);
+  assert.match(drifted, /No additional source-discovery limitation was reported/);
 });
