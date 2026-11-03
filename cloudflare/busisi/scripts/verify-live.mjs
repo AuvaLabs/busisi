@@ -238,6 +238,8 @@ const verifyPages = async () => {
   expectIncludes(procurementText, 'Procurement evidence desk', 'procurement desk heading');
   expectIncludes(procurementText, '3 of 6 reviewed dossiers', 'procurement desk coverage');
   expectIncludes(procurementText, 'Evidence gap, not a clean bill', 'procurement boundary');
+  expectIncludes(procurementText, 'Contract evidence acquisition ledger', 'acquisition ledger');
+  expectIncludes(procurementText, '3 acquisition checks queued', 'acquisition retry queue');
   expectIncludes(procurementText, 'Contract outcome cross-checks', 'contract outcome heading');
   expectIncludes(procurementText, 'Questions, not findings', 'contract outcome boundary');
 
@@ -269,7 +271,7 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v9.css',
+    '/assets/site-visual-v10.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-social-v1.png',
     '/assets/busisi-evidence-banner-v1.webp',
@@ -281,13 +283,14 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v9.css');
+  const css = await request('/assets/site-visual-v10.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
   for (const value of [
     'Source Sans 3', '--paper:#fff', '--ink:#111', '--accent:#111', '.home-ledger',
     '.explorer-shell', '.review-shell', '.integrity-shell', '.contractor-shell',
+    '.lifecycle-grid', '.lifecycle-item',
   ]) {
     expectIncludes(cssText, value, 'design CSS');
   }
@@ -449,6 +452,25 @@ const verifyData = async () => {
   if (amountMismatch?.amount_check.difference_centavos !== 22979
     || !amountMismatch.questions.some(({ code }) => code === 'completion_status_conflict')) {
     fail('contract outcomes: 24HI0131 amount or completion cross-check mismatch');
+  }
+  const contractEvidence = await readJson('/api/v1/contract-evidence');
+  if (contractEvidence.meta.total !== 27
+    || contractEvidence.meta.contracts !== 3
+    || contractEvidence.meta.retry_items !== 3
+    || contractEvidence.meta.review_scope !== 'contract_lifecycle_document_acquisition'
+    || contractEvidence.meta.statuses.verified_archived !== 1
+    || contractEvidence.meta.statuses.blocked !== 3
+    || contractEvidence.meta.statuses.secondary !== 3
+    || contractEvidence.meta.statuses.not_located !== 20) {
+    fail('contract evidence: count, scope or status controls mismatch');
+  }
+  const phaseOneNtp = contractEvidence.data.find(({ contract_id: id, stage }) => (
+    id === '24HI0148' && stage === 'notice_to_proceed'
+  ));
+  if (phaseOneNtp?.status !== 'not_located'
+    || phaseOneNtp.reported_date !== '2024-09-05'
+    || phaseOneNtp.date_kind !== 'actual') {
+    fail('contract evidence: reported event and missing-document boundary mismatch');
   }
   if (cycleDocuments.data.filter(({ acquisition_status }) => (
     acquisition_status === 'verified_archived'
@@ -621,6 +643,7 @@ const verifyBoundaries = async () => {
     'Identifiers and archived source fingerprints', 'Reader evidence links',
     'Procurement timeline', 'Notice of award', 'Page 6', '₱5,324.90',
     'Contract outcome pack', 'Payment evidence',
+    'Contract evidence checklist', 'Reported date, document missing', 'HTTP 403',
     'Awardee reported by the PhilGEPS mirror', 'LA PRUEBA CONSTRUCTION',
     'complete source file and official award page not archived',
   ]) expectIncludes(reviewedText, value, 'reviewed dossier detail');

@@ -4,6 +4,7 @@ import { getProjectCoaEvidence } from './coa-query.js';
 import { getProjectProcurementEvidence } from './procurement-query.js';
 import { buildContractOutcome } from './contract-outcome.js';
 import { getContractAwardMirror } from './outcome-query.js';
+import { getProjectContractEvidence } from './contract-evidence-query.js';
 
 const rows = (result) => result.results || [];
 
@@ -228,7 +229,7 @@ export const getContractorRecord = async (database, contractorKey) => {
 export const getEnhancedProject = async (database, slug) => {
   const record = await getProject(database, slug);
   if (!record) return null;
-  const [delivery, signals, related, budgets, deliveries, candidates, changes, publicMeta, integrityMeta, auditEvidence, procurementEvidence, awardMirror] = await Promise.all([
+  const [delivery, signals, related, budgets, deliveries, candidates, changes, publicMeta, integrityMeta, auditEvidence, procurementEvidence, awardMirror, contractEvidence] = await Promise.all([
     deliveryById(database, record.contract_id),
     database.prepare('SELECT * FROM integrity_signal_items WHERE contract_id = ? ORDER BY code ASC')
       .bind(record.contract_id).all(),
@@ -267,6 +268,7 @@ export const getEnhancedProject = async (database, slug) => {
     getProjectCoaEvidence(database, record.contract_id),
     getProjectProcurementEvidence(database, record.contract_id),
     getContractAwardMirror(database, record.contract_id),
+    getProjectContractEvidence(database, record.contract_id),
   ]);
   const signalRows = rows(signals);
   const deliveryRecord = withDistrict(delivery);
@@ -289,6 +291,7 @@ export const getEnhancedProject = async (database, slug) => {
     changes: rows(changes),
     auditEvidence,
     procurementEvidence,
+    contractEvidence,
     contractOutcome,
     provenance: Object.fromEntries(
       [...rows(publicMeta), ...rows(integrityMeta)].map((item) => [item.key, item.value]),

@@ -47,6 +47,14 @@ mirror rows support secondary awardee and amount cross-checks. Their source
 revision and row hashes are retained, while the complete source file and
 original official award pages remain explicitly unarchived.
 
+The contract evidence acquisition ledger makes the next documentary step
+visible for each of those contracts. It tracks nine lifecycle targets per
+contract and keeps source availability separate from evidentiary strength. The
+current 27 checks include one archived official artifact, three blocked
+official-source acquisitions, three secondary mirror rows and 20 documents not
+located. Missing inspection, acceptance or payment documents remain evidence
+gaps, not evidence that the event did or did not occur.
+
 Project and change records also show congressional district context when the
 listed DPWH office can be matched exactly. A single-district office names that
 district and its representative as recorded in the dated roster snapshot. Shared offices show every served
@@ -74,9 +82,10 @@ or evidence that a representative requested or controls the project.
 3. Refresh the FY2027 publication catalogue and extend the comparison ledger
    when stable Senate, bicameral and final GAA artifacts can be acquired and
    reconciled.
-4. Acquire PhilGEPS award notices, signed contracts, inspection records and COA
-   findings only when reproducible official artifacts can be retained and their
-   identifier limitations modeled.
+4. Retry the three blocked official acquisitions and acquire award notices,
+   signed contracts, completion certificates, inspection and acceptance
+   records, payment records and COA findings only when reproducible official
+   artifacts can be retained and their identifier limitations modeled.
 5. Register an authoritative, reusable administrative-boundary artifact before
    adding point-in-polygon coordinate validation. Until then, keep exact source
    coordinate checks visibly separate from geographic verification.

@@ -147,6 +147,12 @@ As of 2026-11-03:
   add secondary awardee and award-amount comparisons. Each row has a canonical
   SHA-256 and source revision. The complete mirror file and original PhilGEPS
   award pages are not archived and are not represented as official evidence.
+- The contract evidence ledger tracks nine lifecycle targets for each of the
+  three contracts, or 27 checks in total. One official source artifact is
+  archived and verified, three official-source acquisitions are blocked and
+  retryable, three rows are retained as secondary mirror evidence and 20 target
+  documents have not been located. Reported dates do not satisfy document
+  acquisition.
 - Source artifact hashes, row counts and monetary control totals reconcile
   exactly between the canonical SQLite store, the generated D1 bundle and the
   remote D1 database.
@@ -199,6 +205,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_agencies.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_public_value.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_coa.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_procurement.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_contract_evidence.py
 cd cloudflare/busisi
 npm test
 npm run check
@@ -219,7 +226,10 @@ official DBM BESF Tables A.1 and A.2 snapshot under
 `data/budget_watchdog/public-value-2027-snapshot/`. The reviewed COA evidence
 bundle is built under `data/budget_watchdog/coa-d1-bundle/`; it keeps report
 discovery, archived copies and project-level observation matches as separate
-states. `npm run check`
+states. The contract evidence bundle is built under
+`data/budget_watchdog/contract-evidence-d1-bundle/`; it validates complete
+nine-stage checklists and verifies the generated SQL in an isolated database.
+`npm run check`
 enforces at least 95
 percent Worker line and function coverage and at least 90 percent branch
 coverage, then performs Wrangler dry runs. Verify the production deployment

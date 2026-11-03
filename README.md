@@ -12,6 +12,11 @@ award, awardee, inspection and payment evidence states explicit. Three exact
 award rows from a version-pinned BetterGov PhilGEPS mirror add secondary
 awardee and amount context. The complete mirror file and original official
 award pages are not archived, so the rows are never labelled official proof.
+For three reviewed contracts, a separate acquisition ledger tracks nine target
+documents from procurement planning through payment. Each target is classified
+as archived official evidence, an indexed but unarchived source, a blocked
+acquisition, secondary mirror evidence or a document not located. A date
+reported in a monitoring row never substitutes for the underlying document.
 
 The public review desk ranks stage changes, groups monetary movement by region,
 office, program or dataset, identifies conservative cross-year project-family
@@ -70,6 +75,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_senate.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_senate_monitor.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_coa.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_contract_evidence.py
 cd cloudflare/busisi
 npm ci
 npm run check

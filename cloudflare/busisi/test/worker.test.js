@@ -11,6 +11,7 @@ import { buildContractOutcome } from '../src/contract-outcome.js';
 import { queryContractOutcomes } from '../src/outcome-query.js';
 import { procurementDeskBody } from '../src/procurement-content.js';
 import { getProjectProcurementEvidence } from '../src/procurement-query.js';
+import { getProjectContractEvidence } from '../src/contract-evidence-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
 import { parseReviewQuery } from '../src/review-query.js';
@@ -63,8 +64,14 @@ const procurementMigrationPath = fileURLToPath(
 const awardMirrorMigrationPath = fileURLToPath(
   new URL('../migrations/0014_contract_award_mirror.sql', import.meta.url),
 );
+const contractEvidenceMigrationPath = fileURLToPath(
+  new URL('../migrations/0015_contract_evidence.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
+);
+const contractEvidenceBundlePath = fileURLToPath(
+  new URL('../../../data/budget_watchdog/contract-evidence-d1-bundle/contract-evidence.sql', import.meta.url),
 );
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
@@ -108,7 +115,9 @@ class LocalD1 {
     this.database.exec(readFileSync(coaMigrationPath, 'utf8'));
     this.database.exec(readFileSync(procurementMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(contractEvidenceMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
+    this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -1146,6 +1155,60 @@ test('publishes contract outcome cross-checks without inventing award or payment
   assert.match(dossierDocument, /Delivery record contractor/);
   assert.match(dossierDocument, /Payment evidence/);
   assert.match(dossierDocument, /No project-specific payment record acquired/);
+});
+
+test('publishes complete contract evidence checklists and a bounded retry queue', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+
+  const response = await worker.fetch(
+    request('/api/v1/contract-evidence'), environment(database),
+  );
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.meta.total, 27);
+  assert.equal(payload.meta.contracts, 3);
+  assert.equal(payload.meta.retry_items, 3);
+  assert.deepEqual(payload.meta.statuses, {
+    blocked: 3,
+    not_located: 20,
+    secondary: 3,
+    verified_archived: 1,
+  });
+  const notice = payload.data.find((item) => (
+    item.contract_id === '24HI0148' && item.stage === 'notice_to_proceed'
+  ));
+  assert.equal(notice.status, 'not_located');
+  assert.equal(notice.reported_date, '2024-09-05');
+  assert.equal(notice.date_kind, 'actual');
+  const blocked = payload.data.find((item) => (
+    item.contract_id === '24HI0148' && item.stage === 'procurement_monitoring_report'
+  ));
+  assert.equal(blocked.http_status, 403);
+  assert.equal(blocked.retry_eligible, true);
+
+  const projectEvidence = await getProjectContractEvidence(database, '24HI0148');
+  assert.equal(projectEvidence.length, 9);
+  assert.equal(projectEvidence[0].stage, 'procurement_plan');
+
+  const desk = await siteWorker.fetch(request('/procurement/'), environment(database));
+  const deskDocument = await desk.text();
+  assert.match(deskDocument, /Contract evidence acquisition ledger/);
+  assert.match(deskDocument, /3 acquisition checks queued/);
+  assert.match(deskDocument, /Official source indexed, archive blocked/);
+  assert.match(deskDocument, /Secondary mirror evidence/);
+
+  const dossier = await siteWorker.fetch(
+    request('/projects/corazon-2024-phase-1/'), environment(database),
+  );
+  const dossierDocument = await dossier.text();
+  assert.match(dossierDocument, /Contract evidence checklist/);
+  assert.match(dossierDocument, /Reported date, document missing/);
+  assert.match(dossierDocument, /No project-specific voucher/);
+  assert.match(dossierDocument, /HTTP 403/);
+  assert.match(dossierDocument, /Try official source \(last returned HTTP 403\)/);
+  assert.match(dossierDocument, /Open date-reporting source/);
+  assert.match(dossierDocument, /Open secondary source/);
 });
 
 test('classifies contract amount, sequence, schedule and completion questions deterministically', () => {

@@ -20,7 +20,7 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<meta property="og:image:width" content="1200">/);
   assert.match(document, /<meta property="og:image:height" content="630">/);
   assert.match(document, /<meta name="twitter:card" content="summary_large_image">/);
-  assert.match(document, /href="\/assets\/site-visual-v9\.css"/);
+  assert.match(document, /href="\/assets\/site-visual-v10\.css"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
@@ -300,7 +300,7 @@ test('renders a reviewed evidence dossier when the publication database is bound
 });
 
 test('serves the monochrome editorial system and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v9.css');
+  const css = await fetchPath('/assets/site-visual-v10.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));

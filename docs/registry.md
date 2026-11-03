@@ -31,6 +31,7 @@ no deployment credentials.
 | `/api/v1/procurement-summary` | Procurement evidence and coverage summary |
 | `/api/v1/procurement-records` | Exact official procurement evidence records |
 | `/api/v1/contract-outcomes` | Deterministic procurement-to-delivery cross-checks |
+| `/api/v1/contract-evidence` | Contract lifecycle document-acquisition status |
 
 ## Published dataset contract
 
@@ -49,6 +50,12 @@ support secondary awardee-name and amount comparisons only. The complete
 Parquet file and original PhilGEPS award pages are not archived, so a delivery
 contractor is not presented as an officially verified awardee. Missing
 inspection and payment evidence remains unavailable.
+The contract evidence ledger adds 27 explicit lifecycle checks across the three
+contracts. Its current status distribution is one verified and archived
+official artifact, three blocked official-source acquisitions queued for
+retry, three version-pinned secondary mirror rows and 20 target documents not
+located. A PMR-reported signed-contract or Notice-to-Proceed date is retained as
+a reported event only and is not counted as acquisition of that document.
 
 The canonical ingestion database remains local and is never reachable through
 the Worker. D1 contains only publication records derived from reconciled source

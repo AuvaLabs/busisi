@@ -28,6 +28,10 @@ import { getCoaSummary, queryCoaReports } from './coa-query.js';
 import { getProcurementSummary, queryProcurementRecords } from './procurement-query.js';
 import { queryContractOutcomes } from './outcome-query.js';
 import {
+  getContractEvidenceSummary,
+  queryContractEvidenceItems,
+} from './contract-evidence-query.js';
+import {
   exportReviewCsv,
   getReviewSummary,
   parseReviewQuery,
@@ -162,6 +166,22 @@ const apiResponse = async (request, environment, url) => {
         review_scope: 'deterministic_cross_source_contract_outcomes',
       },
       data: outcomes,
+    });
+  }
+  if (url.pathname === '/api/v1/contract-evidence') {
+    const [summary, records] = await Promise.all([
+      getContractEvidenceSummary(environment.DB),
+      queryContractEvidenceItems(environment.DB),
+    ]);
+    return jsonResponse({
+      meta: {
+        total: records.length,
+        contracts: Number(summary.metadata.contract_count || 0),
+        retry_items: Number(summary.metadata.retry_item_count || 0),
+        statuses: summary.statuses,
+        review_scope: 'contract_lifecycle_document_acquisition',
+      },
+      data: records,
     });
   }
   if (url.pathname === '/api/v1/changes') {

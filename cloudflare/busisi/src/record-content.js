@@ -1,4 +1,5 @@
 import { gaaDocumentsUrl } from './source-presentation.js';
+import { contractEvidencePanel } from './contract-evidence-content.js';
 
 const html = (value) => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -233,16 +234,18 @@ const contractOutcomePanel = (outcome) => {
 
 export const enhancedProjectBody = ({
   record, delivery, signals: items, related, budgets, deliveries, contractors,
-  candidates, changes, provenance, auditEvidence, procurementEvidence, contractOutcome,
+  candidates, changes, provenance, auditEvidence, procurementEvidence, contractEvidence,
+  contractOutcome,
 }) => `${breadcrumb('Reviewed dossier', record.contract_id)}
 <article class="evidence-dossier">${heading({ badge: record.is_quarantined ? 'Quarantined project candidate' : 'Reviewed project evidence dossier', tone: record.is_quarantined ? 'candidate' : 'reviewed', kicker: `FY ${record.fiscal_year} · ${record.contract_id}`, title: record.title, summary: record.location })}
 ${record.is_quarantined ? boundary('This relationship remains quarantined and is not a confirmed cross-source link.') : ''}
 ${facts([['GAA appropriation', money(record.appropriation_centavos), 'Authority to spend'], ['DPWH project budget', money(record.contract_budget_centavos), 'Archived snapshot value'], ['Recorded difference', money(record.variance_centavos), 'Comparison only']])}
-<nav class="dossier-index" aria-label="Dossier sections"><span>Jump to</span><a href="#project-record">Project record</a><a href="#link-evidence">Link evidence</a><a href="#procurement-evidence">Procurement</a><a href="#contract-outcome">Outcome cross-check</a><a href="#contractors">Contractors</a><a href="#audit-evidence">COA audit</a><a href="#phases">Related phases</a><a href="#source-records">Source records</a><a href="#provenance">Provenance</a></nav>
+<nav class="dossier-index" aria-label="Dossier sections"><span>Jump to</span><a href="#project-record">Project record</a><a href="#link-evidence">Link evidence</a><a href="#procurement-evidence">Procurement</a><a href="#contract-evidence">Evidence status</a><a href="#contract-outcome">Outcome cross-check</a><a href="#contractors">Contractors</a><a href="#audit-evidence">COA audit</a><a href="#phases">Related phases</a><a href="#source-records">Source records</a><a href="#provenance">Provenance</a></nav>
 <section class="project-status-band"><div><span>Source status</span><strong>${html(delivery?.status || 'Not stated')}</strong></div><div><span>Reported progress</span><strong>${delivery?.progress ? `${html(delivery.progress)}%` : 'Not stated'}</strong></div><div><span>Recorded period</span><strong>${html(delivery?.start_date || 'Not stated')} to ${html(delivery?.completion_date || 'Not stated')}</strong></div><div><span>Category</span><strong>${html(delivery?.category || 'Not stated')}</strong></div></section>
 <div class="evidence-columns" id="project-record"><section class="evidence-panel"><p class="kicker">DPWH project record</p><h2>Recorded implementation details</h2>${projectDetails(delivery)}${delivery ? `<a class="evidence-action" href="${idPath('delivery', delivery.contract_id)}">Open complete delivery record</a>` : ''}</section>${delivery ? district(delivery.district_context) : district(null)}</div>
 <div class="evidence-columns" id="link-evidence"><section class="evidence-panel"><p class="kicker">Reviewed relationship</p><h2>Why the appropriation and delivery records may relate</h2><ul class="evidence-list">${record.match_signals.map((item) => `<li><strong>${html(item.replaceAll('_', ' '))}</strong></li>`).join('')}</ul><p class="evidence-limit">${html(record.match_limitations)}</p><dl class="evidence-details"><div><dt>Confidence</dt><dd>${html(record.confidence)} · score ${record.confidence_score}</dd></div><div><dt>Publication status</dt><dd>${html(record.status_label)}</dd></div></dl></section>${projectAvailability(delivery, procurementEvidence, auditEvidence)}</div>
 ${procurementEvidencePanel(procurementEvidence)}
+${contractEvidencePanel(contractEvidence)}
 ${contractOutcomePanel(contractOutcome)}
 <section class="evidence-section" id="contractors"><p class="kicker">Contractor identities</p><h2>Parties stated in the DPWH record</h2>${contractorCards(contractors)}</section>
 <section class="evidence-section"><p class="kicker">Integrity review</p><h2>Deterministic signals on this contract</h2>${signals(items)}</section>

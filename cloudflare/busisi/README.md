@@ -29,6 +29,15 @@ because the complete mirror file and original award pages are not archived. It
 does not infer inspection, payment, or audit results from a contractor name or
 status.
 
+The contract evidence endpoint publishes 27 lifecycle acquisition checks for
+three reviewed contracts. The checklist covers procurement plan, bid notice,
+procurement monitoring report, award notice, signed contract, Notice to
+Proceed, completion certificate, inspection and acceptance, and payment
+record. One original official artifact is archived and verified, three
+official-source acquisitions are blocked and retryable, three extracted rows
+are secondary evidence, and 20 target documents have not been located. Reported
+dates remain separate from document acquisition.
+
 ## Production verification
 
 ```bash
