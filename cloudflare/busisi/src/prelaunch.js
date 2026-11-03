@@ -1,4 +1,5 @@
 import {
+  changesBody,
   document,
   exploreBody,
   favicon,
@@ -59,6 +60,17 @@ const SIGNALS_SCHEMA = Object.freeze({
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
 });
 
+const CHANGES_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi FY2027 NEP to House budget change ledger',
+  url: `${SITE.origin}/changes/`,
+  description: 'Provisional project-level comparisons between the FY2027 NEP and House budget bill for four published programs.',
+  temporalCoverage: '2027',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+});
+
 const page = (html, status = 200) => response(html, {
   status,
   type: 'text/html; charset=utf-8',
@@ -106,6 +118,14 @@ const signals = () => page(document({
   schema: SIGNALS_SCHEMA,
 }));
 
+const changes = () => page(document({
+  title: 'FY2027 NEP to House budget changes | Busisi',
+  description: 'Inspect provisional project-level additions, removals and amount changes between the FY2027 NEP and House bill with page-level evidence.',
+  canonicalPath: '/changes/',
+  body: changesBody,
+  schema: CHANGES_SCHEMA,
+}));
+
 const project = (record) => page(document({
   title: `${record.title} | Busisi`,
   description: `Evidence dossier comparing the FY ${record.fiscal_year} appropriation with DPWH contract ${record.contract_id}.`,
@@ -143,6 +163,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${SITE.origin}/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/explore/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/changes/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/signals/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/corazon-2022-combined/</loc><lastmod>2026-11-03</lastmod></url>
@@ -165,6 +186,7 @@ Official source records are public. Cross-source candidate links remain explicit
 
 - Overview: ${SITE.origin}/
 - Explorer: ${SITE.origin}/explore/
+- FY2027 change ledger: ${SITE.origin}/changes/
 - Review signals: ${SITE.origin}/signals/
 - Methodology: ${SITE.origin}/methodology/
 
@@ -179,7 +201,7 @@ Official source records are public. Cross-source candidate links remain explicit
 `, { type: 'text/plain; charset=utf-8' });
 
 const assets = (path) => {
-  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css') {
+  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css') {
     return response(siteCss, { type: 'text/css; charset=utf-8', cache: 'public, max-age=604800, immutable' });
   }
   if (path === '/assets/favicon.svg') {
@@ -191,6 +213,7 @@ const assets = (path) => {
 const route = (path) => {
   if (path === '/') return home();
   if (path === '/explore' || path === '/explore/') return explore();
+  if (path === '/changes' || path === '/changes/') return changes();
   if (path === '/signals' || path === '/signals/') return signals();
   if (path === '/methodology' || path === '/methodology/') return methodology();
   if (path === '/watchlist' || path === '/watchlist/') {

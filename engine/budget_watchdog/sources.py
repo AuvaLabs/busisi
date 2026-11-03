@@ -119,6 +119,12 @@ def default_source_registry() -> SourceRegistry:
                 SourceAuthority.SECONDARY,
             ),
             SourceDefinition(
+                "bettergov-budget-assets",
+                "BetterGov Budget Document Mirror",
+                "https://budget-assets.bettergov.ph",
+                SourceAuthority.SECONDARY,
+            ),
+            SourceDefinition(
                 "bettergov-gaa-snapshot",
                 "BetterGov GAA Parquet Snapshot",
                 "https://huggingface.co",

@@ -15,7 +15,7 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<link rel="canonical" href="https:\/\/busisi\.org\/">/);
   assert.match(document, /<meta name="robots" content="index, follow, max-image-preview:large">/);
   assert.match(document, /<meta property="og:url" content="https:\/\/busisi\.org\/">/);
-  assert.match(document, /href="\/assets\/site-visual-v5\.css"/);
+  assert.match(document, /href="\/assets\/site-visual-v6\.css"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
@@ -65,9 +65,24 @@ test('publishes supported signals and names unavailable analyses', async () => {
   assert.match(document, /Review signals/);
   assert.match(document, /Repeated funding/);
   assert.match(document, /Zero downstream budget/);
-  assert.match(document, /Insertion analysis/);
-  assert.match(document, /Unavailable until budget-stage records are acquired/);
+  assert.match(document, /FY2027 stage changes/);
+  assert.match(document, /new-line candidates/i);
+  assert.match(document, /href="\/changes\/"/);
   assert.match(document, /Physical existence verification/);
+});
+
+test('publishes an interactive FY2027 budget change ledger with careful labels', async () => {
+  const response = await fetchPath('/changes/');
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /Trace what changed between the NEP and House bill/);
+  assert.match(document, /20,431/);
+  assert.match(document, /data-change-ledger/);
+  assert.match(document, /In the House bill only/);
+  assert.match(document, /Not a corruption finding/);
+  assert.match(document, /src="\/assets\/changes-v1\.js"/);
+  assert.doesNotMatch(document, /proves? (?:an )?insertion/i);
 });
 
 test('home uses the original Busisi identity and professional exploration panels', async () => {
@@ -112,6 +127,7 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/methodology\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/explore\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/signals\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/changes\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/projects\/corazon-2024-phase-1\/<\/loc>/);
   assert.doesNotMatch(sitemapText, /corazon-2026-completion/);
   assert.match(await llms.text(), /Evidence and publication rules/);
@@ -182,7 +198,7 @@ test('renders a reviewed evidence dossier when the publication database is bound
 });
 
 test('serves immutable assets and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v5.css');
+  const css = await fetchPath('/assets/site-visual-v6.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));

@@ -16,6 +16,7 @@ def test_default_registry_distinguishes_primary_and_secondary_sources() -> None:
     assert registry.get("dpwh-projects").authority is SourceAuthority.PRIMARY
     assert registry.get("bettergov-budget").authority is SourceAuthority.SECONDARY
     assert registry.get("bettergov-dpwh").authority is SourceAuthority.SECONDARY
+    assert registry.get("bettergov-budget-assets").authority is SourceAuthority.SECONDARY
     assert registry.get("bettergov-gaa-snapshot").authority is SourceAuthority.SECONDARY
     assert registry.get("bettergov-dpwh-snapshot").authority is SourceAuthority.SECONDARY
 

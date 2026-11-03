@@ -15,6 +15,12 @@ const expectedArtifacts = Object.freeze({
   budget_artifact_sha256: '6ed63d8db36e10280782ff2c9e5e1c32fe99ffbe2ff0accfe319a025203a48c4',
   delivery_artifact_sha256: '5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123',
 });
+const expectedChanges = Object.freeze({
+  record_count: 20_431,
+  quarantine_count: 426,
+  fiscal_year: 2027,
+  source_commit: 'a0caa778442cdae5583f5a006ea7401dab00e5ac',
+});
 const resolver = new Resolver();
 resolver.setServers((process.env.BUSISI_DNS_SERVERS ?? '1.1.1.1,8.8.8.8').split(','));
 
@@ -114,6 +120,12 @@ const verifyPages = async () => {
   expectIncludes(signalsText, 'Insertion analysis', 'signals evidence gaps');
   expectIncludes(signalsText, 'Physical existence verification', 'signals evidence gaps');
 
+  const changes = await request('/changes/');
+  expectStatus(changes, 200, '/changes/');
+  const changesText = await changes.text();
+  expectIncludes(changesText, 'Trace what changed between the NEP and House bill', 'changes heading');
+  expectIncludes(changesText, 'Not a corruption finding', 'changes warning');
+
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
   expectIncludes(await robots.text(), `Sitemap: ${origin}/sitemap.xml`, 'robots sitemap');
@@ -121,7 +133,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/explore/', '/signals/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/explore/', '/changes/', '/signals/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -134,7 +146,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/explore/', '/signals/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/explore/', '/changes/', '/signals/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -142,14 +154,14 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v5.css',
+    '/assets/site-visual-v6.css',
     '/assets/busisi-mark-v2.svg',
     '/assets/busisi-masthead.webp',
     'Illustrative view · not a project record',
   ]) expectIncludes(html, value, 'home design');
   if (/busisi-mark\.webp|auva\s*labs?/i.test(html)) fail('home design: retired branding is public');
 
-  const css = await request('/assets/site-visual-v5.css');
+  const css = await request('/assets/site-visual-v6.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
@@ -202,10 +214,24 @@ const verifyData = async () => {
   if (candidates.meta.total !== expectedCounts.candidate_links) fail('candidate query: count mismatch');
   if (candidates.meta.review_scope !== 'unreviewed_candidates') fail('candidate query: review scope missing');
 
+  const changeStats = (await readJson('/api/v1/change-stats')).data;
+  for (const [key, value] of Object.entries(expectedChanges)) {
+    if (changeStats[key] !== value) {
+      fail(`change stats: ${key} expected ${value}, received ${changeStats[key]}`);
+    }
+  }
+  const changes = await readJson('/api/v1/changes?change=house_only&limit=1');
+  if (changes.meta.total < 1 || changes.data.length !== 1) fail('change query: no House-only records');
+  if (changes.meta.review_scope !== 'provisional_stage_comparisons') {
+    fail('change query: review scope missing');
+  }
+  expectIncludes(changes.data[0].source_url, 'budget.bettergov.ph', 'change source URL');
+  if (!changes.data[0].house_pdf_url) fail('change query: House evidence link missing');
+
   const reviewed = await readJson('/api/v1/projects?status=reviewed&limit=1');
   if (reviewed.meta.total !== 5 || reviewed.data.length !== 1) fail('reviewed query: count mismatch');
 
-  return { ...expectedCounts, reviewed_public: reviewed.meta.total };
+  return { ...expectedCounts, stage_changes: changeStats.record_count, reviewed_public: reviewed.meta.total };
 };
 
 const verifyBoundaries = async () => {

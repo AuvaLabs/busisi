@@ -100,13 +100,16 @@ As of 2026-11-03:
   cursor pagination and reviewed dossier lookup. It publishes 68,608 positive
   GAA records, 56,887 DPWH delivery records and 385 explicitly unreviewed
   candidate links from archived FY2024 to FY2026 snapshots.
+- The FY2027 change ledger publishes 20,431 source comparisons across four
+  program datasets. All rows reconcile to dataset record and monetary control
+  totals. 426 held or scope-review DPWH rows remain visibly quarantined.
 - Source artifact hashes, row counts and monetary control totals reconcile
   exactly between the canonical SQLite store, the generated D1 bundle and the
   remote D1 database.
 - The public surface includes canonical URLs, page descriptions, Open Graph
   metadata, JSON-LD, `robots.txt`, `sitemap.xml` and `llms.txt`. It uses no
   model inference, model API, cookies or application analytics.
-- IndexNow submission includes the four canonical pages and five reviewed
+- IndexNow submission includes the five canonical pages and five reviewed
   dossiers. The quarantined dossier and public APIs are excluded from indexing.
 
 Run the reviewed-case harness with:
@@ -153,9 +156,12 @@ npm run check
 The reviewed seed and static assets are generated under the gitignored
 `data/budget_watchdog/cloudflare-preview/` directory. The source-record bundle
 is generated under `data/budget_watchdog/public-d1-bundle/`, verified in an
-in-memory database and split into manifest-hashed import chunks. `npm run check`
-enforces at least 80 percent Worker line, branch and function coverage and
-performs Wrangler dry runs. Verify the production deployment independently
+in-memory database and split into manifest-hashed import chunks. The stage
+comparison bundle is built under `data/budget_watchdog/hgab-d1-bundle/` and
+uses the same verification contract. `npm run check` enforces at least 95
+percent Worker line and function coverage and at least 90 percent branch
+coverage, then performs Wrangler dry runs. Verify the production deployment
+independently
 with:
 
 ```bash

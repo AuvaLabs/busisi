@@ -6,6 +6,7 @@ const keyLocation = `${origin}/${key}.txt`;
 const paths = [
   '/',
   '/explore/',
+  '/changes/',
   '/signals/',
   '/methodology/',
   '/projects/corazon-2022-combined/',

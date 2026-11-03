@@ -1,5 +1,6 @@
 import { SITE } from './prelaunch-config.js';
 import { dataCss } from './prelaunch-data-styles.js';
+import { changeCss } from './prelaunch-change-styles.js';
 import { siteCss as baseSiteCss } from './prelaunch-styles.js';
 import { typeCss } from './prelaunch-type-styles.js';
 import {
@@ -12,7 +13,7 @@ import {
 
 const navigation = (canonicalPath) => {
   const methodology = canonicalPath === '/methodology/';
-  const links = `<a href="/explore/"${canonicalPath === '/explore/' ? ' aria-current="page"' : ''}>Explore</a><a href="/signals/"${canonicalPath === '/signals/' ? ' aria-current="page"' : ''}>Signals</a><a href="/#mission">Mission</a>`;
+  const links = `<a href="/explore/"${canonicalPath === '/explore/' ? ' aria-current="page"' : ''}>Explore</a><a href="/changes/"${canonicalPath === '/changes/' ? ' aria-current="page"' : ''}>Changes</a><a href="/signals/"${canonicalPath === '/signals/' ? ' aria-current="page"' : ''}>Signals</a>`;
   return `<div class="header-inner">
     <a class="wordmark" href="/" aria-label="Busisi home"><img class="brand-mark" src="/assets/busisi-mark-v2.svg" width="44" height="44" alt=""><span>Busisi</span></a>
     <nav class="primary-nav" aria-label="Primary navigation">${links}<a class="method-link" href="/methodology/"${methodology ? ' aria-current="page"' : ''}>Methodology</a></nav>
@@ -21,12 +22,12 @@ const navigation = (canonicalPath) => {
 
 const utilityStrip = `<div class="utility-strip"><div class="utility-inner">
   <span>Independent Philippine budget evidence project</span>
-  <a href="/explore/"><i aria-hidden="true"></i>Public source snapshot: FY 2024–2026</a>
+  <a href="/changes/"><i aria-hidden="true"></i>FY2027 NEP to House change ledger</a>
 </div></div>`;
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent civic data initiative for traceable Philippine public budget records.</p></div>
-  <nav class="footer-nav" aria-label="Footer navigation"><a href="/explore/">Explore</a><a href="/signals/">Signals</a><a href="/methodology/">Methodology</a></nav>
+  <nav class="footer-nav" aria-label="Footer navigation"><a href="/explore/">Explore</a><a href="/changes/">Changes</a><a href="/signals/">Signals</a><a href="/methodology/">Methodology</a></nav>
   <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.</p>
 </div></footer>`;
 
@@ -50,11 +51,11 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${title}</title><meta name="description" content="${description}"><meta name="robots" content="${robots}">
-  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="/assets/busisi-masthead.webp" as="image" type="image/webp" fetchpriority="high"><link rel="stylesheet" href="/assets/site-visual-v5.css">
+  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="/assets/busisi-masthead.webp" as="image" type="image/webp" fetchpriority="high"><link rel="stylesheet" href="/assets/site-visual-v6.css">
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-masthead.webp"><meta property="og:image:width" content="1600"><meta property="og:image:height" content="666">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${description}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-masthead.webp">
-  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/explore/' ? '<script src="/assets/explorer-v1.js" defer></script>' : ''}
+  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/explore/' ? '<script src="/assets/explorer-v1.js" defer></script>' : ''}${canonicalPath === '/changes/' ? '<script src="/assets/changes-v1.js" defer></script>' : ''}
 </head><body>
   <a class="skip-link" href="#main-content">Skip to content</a>${utilityStrip}<header class="site-header">${navigation(canonicalPath)}</header>
   <main id="main-content">${body}</main>${footer}
@@ -76,16 +77,17 @@ export const homeBody = `
       <div class="eyebrow"><span></span> Official source records now available</div>
       <h1>Follow public money through the record.</h1>
       <p class="lede">Search Philippine appropriations and DPWH delivery records, inspect candidate links, and see exactly which conclusions remain unverified.</p>
-      <div class="actions"><a class="primary" href="/explore/">Explore the records</a><a class="secondary" href="/signals/">Review the signals</a></div>
+      <div class="actions"><a class="primary" href="/changes/">Inspect FY2027 changes</a><a class="secondary" href="/explore/">Explore source records</a></div>
     </div>
   </section>
 
   <section class="register-preview" aria-labelledby="register-preview-heading">
-    <div class="preview-heading"><p class="kicker">Explore the source record</p><h2 id="register-preview-heading">Three ways to inspect public money.</h2><p>Official records are published as source records. Cross-source relationships stay labelled as candidates until they pass human review.</p></div>
+    <div class="preview-heading"><p class="kicker">Explore the source record</p><h2 id="register-preview-heading">Four ways to inspect public money.</h2><p>Official records are published as source records. Cross-source relationships stay labelled as candidates until they pass human review.</p></div>
     <div class="preview-panels">
       <a href="/explore/?view=budgets"><span aria-hidden="true">01</span><div><h3>GAA appropriations</h3><p>Search 68,608 positive budget records across fiscal years 2024 to 2026.</p></div><small>Official source records</small></a>
       <a href="/explore/?view=delivery"><span aria-hidden="true">02</span><div><h3>DPWH delivery records</h3><p>Inspect 56,887 contracts with recorded budgets, locations, and funding sources.</p></div><small>Official source records</small></a>
       <a href="/explore/?view=candidates"><span aria-hidden="true">03</span><div><h3>Candidate links</h3><p>Review 385 explainable machine matches without treating them as confirmed identity.</p></div><small>Human review required</small></a>
+      <a href="/changes/"><span aria-hidden="true">04</span><div><h3>FY2027 stage changes</h3><p>Compare 20,431 project rows between the NEP and the House bill with document-page evidence.</p></div><small>Provisional comparisons</small></a>
     </div>
   </section>
 
@@ -124,9 +126,21 @@ export const exploreBody = `
   <section class="candidate-warning"><h2>Unreviewed candidates are not public findings.</h2><p>Candidate links are generated from year, description, amount, funding, and location signals. They may connect separate phases or unrelated records. Only records marked reviewed have passed the current human evidence check.</p></section>`;
 
 export const signalsBody = `
-  <section class="data-intro signal-intro"><div><p class="kicker">Evidence-led review</p><h1>Review signals, not accusations.</h1><p class="lede">Every signal states what triggered it, what evidence it used, and what it cannot establish.</p></div><aside class="snapshot-card"><span>Current coverage</span><strong>2 supported signal families</strong><p>Other analyses remain visibly unavailable instead of being approximated.</p></aside></section>
-  <section class="signal-catalog" aria-label="Available review signals"><article class="available"><span>Available</span><h2>Repeated funding</h2><p>Finds related project families with positive appropriations in at least two fiscal years.</p><dl><div><dt>Can show</dt><dd>Years, amounts, family identity, source records</dd></div><div><dt>Cannot show</dt><dd>Whether phases describe the same physical asset</dd></div></dl><a href="/explore/?view=reviewed">Inspect reviewed evidence</a></article><article class="available"><span>Available</span><h2>Zero downstream budget</h2><p>Finds a positive appropriation candidate linked to a DPWH record reporting a zero project budget.</p><dl><div><dt>Can show</dt><dd>The two source amounts and match evidence</dd></div><div><dt>Cannot show</dt><dd>Missing money or a nonexistent project</dd></div></dl><a href="/projects/corazon-2026-completion/">Inspect the quarantined example</a></article></section>
-  <section class="coverage-matrix" aria-labelledby="coverage-heading"><div><p class="kicker">Evidence gaps</p><h2 id="coverage-heading">Unavailable means unavailable.</h2><p>Busisi does not generate a label when the evidence required for that label has not been acquired.</p></div><div class="coverage-list"><article><span>Not available</span><h3>Insertion analysis</h3><p>Unavailable until budget-stage records are acquired for NEP, House, Senate, bicameral, and enacted GAA comparisons.</p></article><article><span>Not available</span><h3>Physical existence verification</h3><p>Requires implementation evidence such as geotagged progress, inspections, audit findings, or field verification. Budget data alone cannot establish physical existence.</p></article><article><span>Partial</span><h3>Procurement consistency</h3><p>ABC, award, status, and physical-progress checks require current DPWH detail and PhilGEPS records beyond the archived bulk snapshot.</p></article></div></section>`;
+  <section class="data-intro signal-intro"><div><p class="kicker">Evidence-led review</p><h1>Review signals, not accusations.</h1><p class="lede">Every signal states what triggered it, what evidence it used, and what it cannot establish.</p></div><aside class="snapshot-card"><span>Current coverage</span><strong>3 supported signal families</strong><p>Other analyses remain visibly unavailable instead of being approximated.</p></aside></section>
+  <section class="signal-catalog" aria-label="Available review signals"><article class="available"><span>Available</span><h2>FY2027 stage changes</h2><p>Compares named project rows between the NEP and House bill for four programs.</p><dl><div><dt>Can show</dt><dd>New-line candidates, removals, amount changes, source documents and pages</dd></div><div><dt>Cannot show</dt><dd>Political authorship, legality, corruption, or final enacted funding</dd></div></dl><a href="/changes/">Inspect the change ledger</a></article><article class="available"><span>Available</span><h2>Repeated funding</h2><p>Finds related project families with positive appropriations in at least two fiscal years.</p><dl><div><dt>Can show</dt><dd>Years, amounts, family identity, source records</dd></div><div><dt>Cannot show</dt><dd>Whether phases describe the same physical asset</dd></div></dl><a href="/explore/?view=reviewed">Inspect reviewed evidence</a></article><article class="available"><span>Available</span><h2>Zero downstream budget</h2><p>Finds a positive appropriation candidate linked to a DPWH record reporting a zero project budget.</p><dl><div><dt>Can show</dt><dd>The two source amounts and match evidence</dd></div><div><dt>Cannot show</dt><dd>Missing money or a nonexistent project</dd></div></dl><a href="/projects/corazon-2026-completion/">Inspect the quarantined example</a></article></section>
+  <section class="coverage-matrix" aria-labelledby="coverage-heading"><div><p class="kicker">Evidence gaps</p><h2 id="coverage-heading">Unavailable means unavailable.</h2><p>Busisi does not generate a label when the evidence required for that label has not been acquired.</p></div><div class="coverage-list"><article><span>Partial</span><h3>Full insertion analysis</h3><p>The FY2027 ledger covers four project-level programs from NEP to House. Senate, bicameral and enacted GAA stages remain unavailable.</p></article><article><span>Not available</span><h3>Physical existence verification</h3><p>Requires implementation evidence such as geotagged progress, inspections, audit findings, or field verification. Budget data alone cannot establish physical existence.</p></article><article><span>Partial</span><h3>Procurement consistency</h3><p>ABC, award, status, and physical-progress checks require current DPWH detail and PhilGEPS records beyond the archived bulk snapshot.</p></article></div></section>`;
+
+export const changesBody = `
+  <section class="data-intro change-intro"><div><p class="kicker">FY2027 budget change ledger</p><h1>Trace what changed between the NEP and House bill.</h1><p class="lede">Inspect project-level additions, removals and amount changes across DPWH infrastructure, farm-to-market roads, health facilities and irrigation.</p></div><aside class="snapshot-card"><span>Evidence boundary</span><strong>NEP → House</strong><p>Four project-level programs<br>House second or third reading</p><a href="/methodology/#source-policy">Read the source policy</a></aside></section>
+  <section class="change-disclaimer"><strong>Not a corruption finding.</strong> A new-line candidate means a House project row was not matched to a NEP row in this comparison. It may be new, renamed, split, merged or outside the matching evidence.</section>
+  <section class="change-summary" aria-label="Change-ledger totals"><article><strong>20,431</strong><span>reconciled comparison rows</span></article><article><strong>4</strong><span>project-level programs</span></article><article><strong>426</strong><span>quarantined or scope-review rows</span></article><article><strong>8</strong><span>hashed source documents</span></article></section>
+  <section class="change-shell" data-change-ledger>
+    <form class="change-controls" data-change-form role="search"><label>Search projects<input type="search" name="q" maxlength="200" placeholder="Project, program, office"></label><label>Program<select name="dataset"><option value="all">All four</option><option value="dpwh">DPWH</option><option value="fmr">Farm-to-market roads</option><option value="hfep">Health facilities</option><option value="nia">Irrigation</option></select></label><label>Change<select name="change"><option value="all">All changes</option><option value="house_only">In the House bill only</option><option value="nep_only">In the NEP only</option><option value="increased">Amount increased</option><option value="decreased">Amount decreased</option><option value="unchanged">Unchanged</option><option value="scope_review">Scope review</option></select></label><label>Review status<select name="review"><option value="all">All statuses</option><option value="candidate">Candidate</option><option value="quarantine">Quarantine</option></select></label><label>Sort<select name="sort"><option value="absolute_desc">Largest movement</option><option value="house_desc">Largest House amount</option><option value="increase_desc">Largest increase</option><option value="decrease_desc">Largest decrease</option><option value="title_asc">Project A to Z</option></select></label><button type="submit">Apply</button><button type="button" class="secondary-control" data-change-reset>Reset</button></form>
+    <div class="change-result-summary" aria-live="polite"><p><strong data-change-count>0</strong> of <span data-change-total>0</span> rows shown</p><p data-change-status>Loading reconciled comparisons…</p></div>
+    <div class="change-list" data-change-results></div><div class="change-actions"><button type="button" data-change-more hidden>Load more</button></div>
+    <noscript><p class="explorer-error">JavaScript is required for interactive filtering. The read-only JSON API remains available.</p></noscript>
+  </section>
+  <section class="change-scope"><div><p class="kicker">What this ledger covers</p><h2>Four programs, not the entire national budget.</h2></div><div><p>Rows are provisional comparisons derived from published NEP and House documents and independently reconciled to their program controls.</p><ul><li>DPWH national infrastructure</li><li>Department of Agriculture farm-to-market roads</li><li>DOH Health Facilities Enhancement Program</li><li>National Irrigation Administration projects</li></ul></div></section>`;
 
 export const projectDossierBody = (record) => {
   const signals = record.match_signals
@@ -181,6 +195,6 @@ export const methodologyBody = `
     <div class="section-heading"><p class="section-number">04 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#102f2a" stroke-width="2.5" stroke-linejoin="round"><path fill="#a7ddc3" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#fbf8ef" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fbf8ef" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#b83b27" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fbf8ef" stroke="#b83b27" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#102f2a"/><path fill="none" stroke="#f3efe4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/></svg>`;

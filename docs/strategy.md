@@ -11,8 +11,10 @@ the source evidence.
 
 The production explorer publishes official GAA and DPWH records, explicitly
 unreviewed candidate links, five reviewed dossiers and one quarantined example.
-The service has no model dependency. Deterministic rules generate review
-signals, and every public signal includes its inputs and limitations.
+It also publishes 20,431 provisional FY2027 comparisons between NEP and House
+bill project lists across DPWH, farm-to-market roads, health facilities and
+irrigation. The service has no model dependency. Deterministic rules generate
+review signals, and every public signal includes its inputs and limitations.
 
 ## Release gates
 
@@ -29,8 +31,8 @@ signals, and every public signal includes its inputs and limitations.
 ## Next practical work
 
 1. Expand the reviewed golden set from 6 to 100 cases.
-2. Add stage-by-stage NEP, House, Senate, bicameral and final GAA records when
-   stable official artifacts can be acquired and reconciled.
+2. Extend the FY2027 ledger to Senate, bicameral and final GAA stages when
+   stable source artifacts can be acquired and reconciled.
 3. Add PhilGEPS, PCAB and COA evidence only after their identifiers and source
    limitations are modeled explicitly.
 4. Publish agency and contractor views after normalization quality supports

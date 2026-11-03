@@ -2,7 +2,8 @@
 
 Busisi is an evidence-first explorer for Philippine public budget and delivery
 records. It publishes official source records, deterministic review signals,
-and a small reviewed dossier set without using a language model.
+an FY2027 NEP-to-House comparison ledger, and a small reviewed dossier set
+without using a language model.
 
 Production: [busisi.org](https://busisi.org)
 
@@ -40,6 +41,7 @@ golden set reaches the documented precision gate.
 python -m pip install -r requirements-dev.txt
 PYTHONPATH=. pytest engine/tests/budget_watchdog -q
 PYTHONPATH=. python3 ops/harness/budget_watchdog_golden.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_hgab.py
 cd cloudflare/busisi
 npm ci
 npm run check
