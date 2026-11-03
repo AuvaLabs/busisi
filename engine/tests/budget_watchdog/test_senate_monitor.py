@@ -92,7 +92,7 @@ def test_monitor_accepts_unchanged_secondary_catalogue(tmp_path) -> None:
     assert result.expected_document_count == 5
     assert result.observed_document_count == 5
     assert result.differences == ()
-    assert len(result.response_artifacts) == 7
+    assert len(result.response_artifacts) == 3
     assert (tmp_path / "report.json").is_file()
 
 
@@ -101,7 +101,9 @@ def test_monitor_quarantines_new_catalogue_records(tmp_path) -> None:
 
     assert result.changed is True
     assert result.observed_document_count == 6
-    assert result.differences == ("new source record 420: Senate Committee Report FY 2027",)
+    assert len(result.differences) == 1
+    assert result.differences[0].startswith("new source record unresolved:")
+    assert result.differences[0].endswith(": Senate Committee Report FY 2027")
 
 
 def test_monitor_reports_missing_or_changed_records(tmp_path) -> None:
@@ -117,19 +119,14 @@ def test_monitor_reports_missing_or_changed_records(tmp_path) -> None:
                 ),
                 "text/plain",
             )
-        if "offset=2" in url and headers.get("X-Return-Format") == "html":
-            return HttpPayload(
-                200,
-                url,
-                _row("386", "HB 10858 ALTERED TITLE", "9.16 KB"),
-                "text/html",
-            )
         return payload
 
     result = run_senate_monitor(_baseline(), tmp_path, fetch=fetch)
 
     assert result.changed is True
-    assert result.differences == ("title changed for source record 386",)
+    assert result.differences[0] == "missing source record 386"
+    assert result.differences[1].startswith("new source record unresolved:")
+    assert result.differences[1].endswith(": 3- HB 10858 ALTERED TITLE")
 
 
 def test_monitor_uses_official_catalogue_when_direct_access_works(tmp_path) -> None:
@@ -185,14 +182,14 @@ def test_monitor_records_forbidden_challenge_without_retry(monkeypatch) -> None:
     assert calls == 1
 
 
-def test_monitor_rejects_unreliable_secondary_representations(tmp_path) -> None:
+def test_monitor_rejects_empty_secondary_folder_listing(tmp_path) -> None:
     def fetch(url: str, headers: dict[str, str]) -> HttpPayload:
         payload = _fetcher()(url, headers)
-        if "offset=1" in url and headers.get("X-Return-Format") == "html":
-            return HttpPayload(200, url, _row("385", "Wrong title", "15 KB"), "text/html")
+        if "/index/file_card" in url:
+            return HttpPayload(200, url, b"Markdown Content: no documents", "text/plain")
         return payload
 
-    with pytest.raises(SenateMonitorError, match="representations disagree"):
+    with pytest.raises(SenateMonitorError, match="contains no documents"):
         run_senate_monitor(_baseline(), tmp_path, fetch=fetch)
 
 

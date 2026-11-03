@@ -18,6 +18,7 @@ from engine.budget_watchdog.safe_http import install_ssrf_guard
 from engine.budget_watchdog.senate_budget import (
     PortalRow,
     SenateCatalogError,
+    SenateDocument,
     load_senate_catalog,
     parse_portal_rows,
 )
@@ -71,9 +72,19 @@ class SenateMonitorResult:
     response_artifacts: tuple[ResponseArtifact, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class _MarkdownDocument:
+    title: str
+    publication_date: str | None
+
+
 def _canonical_title(value: str) -> str:
     normalized = re.sub(r"^\s*\d+\s*-\s*", "", value)
     return " ".join(normalized.casefold().split())
+
+
+def _record_sort_key(value: str) -> tuple[bool, int | str]:
+    return (not value.isdigit(), int(value) if value.isdigit() else value)
 
 
 def _challenge(payload: HttpPayload) -> bool:
@@ -157,18 +168,22 @@ def _proxy_url(target: str) -> str:
     return f"{READER_ORIGIN}/{target}"
 
 
-def _markdown_titles(payload: bytes) -> tuple[str, ...]:
+def _markdown_documents(payload: bytes) -> tuple[_MarkdownDocument, ...]:
     try:
         text = payload.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise SenateMonitorError("rendered folder listing is not UTF-8") from exc
     content = text.split("Markdown Content:", maxsplit=1)[-1]
-    titles = [
-        match.group("title").strip() for match in MARKDOWN_ROW.finditer(" ".join(content.split()))
-    ]
-    if not titles:
+    documents = []
+    for match in MARKDOWN_ROW.finditer(" ".join(content.split())):
+        raw_date = match.group("date")
+        publication_date = None
+        if raw_date not in {"-", "—"}:
+            publication_date = datetime.strptime(raw_date, "%B %d, %Y").date().isoformat()
+        documents.append(_MarkdownDocument(match.group("title").strip(), publication_date))
+    if not documents:
         raise SenateMonitorError("rendered folder listing contains no documents")
-    return tuple(titles)
+    return tuple(documents)
 
 
 class _ArtifactRecorder:
@@ -194,9 +209,15 @@ class _ArtifactRecorder:
 
 
 def _secondary_documents(
-    root: tuple[PortalRow, ...], fetch: Fetch, recorder: _ArtifactRecorder
+    root: tuple[PortalRow, ...],
+    expected: tuple[SenateDocument, ...],
+    fetch: Fetch,
+    recorder: _ArtifactRecorder,
 ) -> tuple[PortalRow, ...]:
     documents = [row for row in root if row.kind == "document"]
+    expected_by_title = {}
+    for document in expected:
+        expected_by_title.setdefault(_canonical_title(document.title), []).append(document)
     folders = [row for row in root if row.kind == "folder"]
     for folder in folders:
         markdown_url = _proxy_url(_folder_url(folder.record_id, 0).replace("limit=1", "limit=200"))
@@ -204,26 +225,25 @@ def _secondary_documents(
         if markdown.status_code != HTTP_OK:
             raise SenateMonitorError("secondary folder discovery failed")
         recorder.store(f"folder-{folder.record_id}-listing.md", markdown)
-        titles = _markdown_titles(markdown.content)
-        for offset, expected_title in enumerate(titles):
-            url = _proxy_url(_folder_url(folder.record_id, offset))
-            rendered = _fetch_checked(
-                fetch,
-                url,
-                {"X-Return-Format": "html"},
+        for item in _markdown_documents(markdown.content):
+            matches = expected_by_title.get(_canonical_title(item.title), [])
+            if len(matches) > 1:
+                raise SenateMonitorError("reviewed baseline contains an ambiguous title")
+            record_id = (
+                matches[0].source_record_id
+                if matches
+                else "unresolved:"
+                + hashlib.sha256(_canonical_title(item.title).encode()).hexdigest()[:12]
             )
-            if rendered.status_code != HTTP_OK:
-                raise SenateMonitorError("secondary folder row discovery failed")
-            recorder.store(f"folder-{folder.record_id}-{offset:03d}.html", rendered)
-            try:
-                rows = parse_portal_rows(rendered.content)
-            except SenateCatalogError as exc:
-                raise SenateMonitorError("secondary folder row is invalid") from exc
-            if len(rows) != 1 or rows[0].kind != "document":
-                raise SenateMonitorError("secondary folder offset is not one document")
-            if _canonical_title(rows[0].title) != _canonical_title(expected_title):
-                raise SenateMonitorError("secondary folder representations disagree")
-            documents.append(rows[0])
+            documents.append(
+                PortalRow(
+                    kind="document",
+                    record_id=record_id,
+                    title=item.title,
+                    size_label=None,
+                    publication_date=item.publication_date,
+                )
+            )
     return tuple(documents)
 
 
@@ -258,11 +278,11 @@ def _compare(expected, observed: tuple[PortalRow, ...]) -> tuple[str, ...]:
     if len(observed_by_id) != len(observed):
         raise SenateMonitorError("observed catalogue contains duplicate record identifiers")
     differences = []
-    for record_id in sorted(expected_by_id.keys() - observed_by_id.keys(), key=int):
+    for record_id in sorted(expected_by_id.keys() - observed_by_id.keys(), key=_record_sort_key):
         differences.append(f"missing source record {record_id}")
-    for record_id in sorted(observed_by_id.keys() - expected_by_id.keys(), key=int):
+    for record_id in sorted(observed_by_id.keys() - expected_by_id.keys(), key=_record_sort_key):
         differences.append(f"new source record {record_id}: {observed_by_id[record_id].title}")
-    for record_id in sorted(expected_by_id.keys() & observed_by_id.keys(), key=int):
+    for record_id in sorted(expected_by_id.keys() & observed_by_id.keys(), key=_record_sort_key):
         expected_record = expected_by_id[record_id]
         observed_record = observed_by_id[record_id]
         if _canonical_title(expected_record.title) != _canonical_title(observed_record.title):
@@ -308,7 +328,7 @@ def run_senate_monitor(
             root_rows = parse_portal_rows(rendered.content)
         except SenateCatalogError as exc:
             raise SenateMonitorError("secondary root response is invalid") from exc
-        observed = _secondary_documents(root_rows, fetch, recorder)
+        observed = _secondary_documents(root_rows, catalog.documents, fetch, recorder)
     differences = _compare(catalog.documents, observed)
     result = SenateMonitorResult(
         checked_at=datetime.now(UTC).isoformat(),
