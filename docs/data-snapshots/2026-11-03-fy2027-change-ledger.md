@@ -34,7 +34,7 @@ The release gate requires all of the following:
 
 The generated bundle contains one metadata file and 21 data chunks. Its
 manifest SHA-256 is
-`329b970f8b80daf8fb95e775bfe231e454b480f827e00ba8d0fa4d839eeb09bb`.
+`2cbeb9a0607d80302e28836ecdc5b18c44134ec234bfbd8df28f7074bb069ab0`.
 
 ## Limitations
 

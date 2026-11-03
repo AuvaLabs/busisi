@@ -100,6 +100,9 @@ def test_builds_reconciled_stage_change_d1_bundle(tmp_path) -> None:
     assert result.quarantine_count == 0
     assert result.sql_chunks == 3
     assert len(result.manifest_sha256) == 64
+    assert "INSERT OR REPLACE INTO stage_change_items" in (
+        output / "chunks" / "100-stage-changes-0001.sql"
+    ).read_text(encoding="utf-8")
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["record_count"] == "2"
     assert len(manifest["chunk_sha256"]) == 3

@@ -98,7 +98,7 @@ def _statement(record: StageChange) -> str:
         record.source_commit,
         record.artifact_sha256,
     )
-    return f"INSERT INTO stage_change_items VALUES ({_sql_values(values)});"  # noqa: S608
+    return f"INSERT OR REPLACE INTO stage_change_items VALUES ({_sql_values(values)});"  # noqa: S608
 
 
 def _overview_controls(overview: dict[str, Any]) -> dict[str, dict[str, int | str]]:
