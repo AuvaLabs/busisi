@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { parseChangeQuery } from '../src/change-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
 import { parseReviewQuery } from '../src/review-query.js';
+import { parseContractorQuery, parseIntegrityQuery } from '../src/integrity-query.js';
 import worker from '../src/index.js';
 
 const migrationPath = fileURLToPath(new URL('../migrations/0001_publication.sql', import.meta.url));
@@ -18,6 +19,9 @@ const changeMigrationPath = fileURLToPath(
 );
 const reviewMigrationPath = fileURLToPath(
   new URL('../migrations/0004_review_signals.sql', import.meta.url),
+);
+const integrityMigrationPath = fileURLToPath(
+  new URL('../migrations/0005_integrity.sql', import.meta.url),
 );
 const seedPath = fileURLToPath(
   new URL('../../../data/budget_watchdog/cloudflare-preview/reviewed-seed.sql', import.meta.url),
@@ -51,6 +55,7 @@ class LocalD1 {
     this.database.exec(readFileSync(explorerMigrationPath, 'utf8'));
     this.database.exec(readFileSync(changeMigrationPath, 'utf8'));
     this.database.exec(readFileSync(reviewMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(integrityMigrationPath, 'utf8'));
     this.database.exec(readFileSync(seedPath, 'utf8'));
     this.database.exec(`
       INSERT INTO public_metadata VALUES ('budget_records', '2'), ('delivery_records', '2'), ('candidate_links', '2');
@@ -71,6 +76,19 @@ class LocalD1 {
         ('hfep:2', 2027, 'hfep', 'Sample health center', 'HFEP', '', 'Region VII', 'DOH', 'house_only', 'In the House bill only', 'candidate', 0, 0, 0, 20000, 20000, 'https://budget.example/2', '', 'https://budget.example/house.pdf#page=3', NULL, 3, '${'a'.repeat(40)}', '${'c'.repeat(64)}', 'sample health center'),
         ('dpwh:3', 2027, 'dpwh', 'Held road match', 'Road Program', '', 'NCR', 'Central Office', 'scope_review', 'Different scope', 'quarantine', 1, 0, 30000, 35000, 5000, 'https://budget.example/3', 'https://budget.example/nep.pdf#page=4', 'https://budget.example/house.pdf#page=5', 4, 5, '${'a'.repeat(40)}', '${'d'.repeat(64)}', 'held road match'),
         ('dpwh:4', 2027, 'dpwh', 'Sample bridge Phase II', 'Network Development', 'Bridge Program', 'Region III', 'Sample DEO', 'house_only', 'In the House bill only', 'candidate', 0, 0, 0, 12000, 12000, 'https://budget.example/4', '', 'https://budget.example/house.pdf#page=6', NULL, 6, '${'a'.repeat(40)}', '${'e'.repeat(64)}', 'sample public bridge project');
+      INSERT INTO integrity_metadata VALUES
+        ('source_records', '3'), ('integrity_signals', '3'), ('contractors', '2'),
+        ('source_artifact_sha256', '${'f'.repeat(64)}'),
+        ('signal:status_progress_conflict', '1'),
+        ('signal:missing_coordinate', '1'),
+        ('signal:coordinate_location_conflict', '1');
+      INSERT INTO integrity_signal_items VALUES
+        ('25A:status_progress_conflict', '25A', 2025, 'status_progress_conflict', 'source_conflict', 'Ongoing with 100% progress', 'Construction of public market', 'ACME BUILDERS', '12345', 10000000, 'On-Going', '100', 'Manila 1st DEO', 'NCR', '14.5995', '120.9842', 'Status is On-Going; reported progress is 100%.', 'The status field may update later.', '${'f'.repeat(64)}'),
+        ('24B:missing_coordinate', '24B', 2024, 'missing_coordinate', 'coverage_gap', 'Coordinate not available', 'Repair of public hospital', 'ACME BUILDERS', '12345', 20000000, 'Completed', '100', 'Quezon 1st DEO', 'Region IV-A', '', '', 'No usable coordinate.', 'Missing coordinates do not indicate a missing project.', '${'f'.repeat(64)}'),
+        ('25C:coordinate_location_conflict', '25C', 2025, 'coordinate_location_conflict', 'source_conflict', 'Shared coordinate has conflicting location labels', 'Construction of road', 'SECOND BUILDERS', '67890', 30000000, 'Completed', '100', 'Cebu 1st DEO', 'Region VII', '10.3157', '123.8854', 'Coordinate appears under multiple labels.', 'Office labels can differ from boundaries.', '${'f'.repeat(64)}');
+      INSERT INTO contractor_rankings VALUES
+        ('pcab:12345', 'ACME BUILDERS', '12345', 2, 30000000, 1, 1, 0, 2024, 2025),
+        ('pcab:67890', 'SECOND BUILDERS', '67890', 1, 30000000, 1, 0, 0, 2025, 2025);
     `);
   }
 
@@ -94,6 +112,8 @@ const request = (path, init) => new Request(`https://busisi.test${path}`, init);
 const explorerUrl = (query = '') => new URL(`https://busisi.test/api/v1/budgets${query}`);
 const changeUrl = (query = '') => new URL(`https://busisi.test/api/v1/changes${query}`);
 const reviewUrl = (query = '') => new URL(`https://busisi.test/api/v1/review-rankings${query}`);
+const integrityUrl = (query = '') => new URL(`https://busisi.test/api/v1/integrity-signals${query}`);
+const contractorUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractors${query}`);
 
 test('validates every explorer query boundary and cursor contract', () => {
   const invalid = [
@@ -177,6 +197,58 @@ test('validates deterministic review filters', () => {
   assert.deepEqual(parseReviewQuery(reviewUrl('?dataset=dpwh&dimension=office&limit=1')), {
     signal: 'house_only', dataset: 'dpwh', dimension: 'office', limit: 1,
   });
+});
+
+test('validates project-integrity and contractor filters', () => {
+  for (const [query, message] of [
+    ['?signal=corruption', 'signal is invalid'],
+    ['?classification=accusation', 'classification is invalid'],
+    ['?year=not-a-year', 'year is invalid'],
+    ['?limit=101', 'limit is outside the supported range'],
+    [`?q=${'x'.repeat(201)}`, 'q is too long'],
+  ]) {
+    assert.throws(() => parseIntegrityQuery(integrityUrl(query)), {
+      name: 'QueryError', message,
+    });
+  }
+  assert.deepEqual(parseIntegrityQuery(integrityUrl()), {
+    q: '', signal: 'all', classification: 'all', year: null,
+    sort: 'budget_desc', limit: 25, offset: 0,
+  });
+  assert.throws(() => parseContractorQuery(contractorUrl('?sort=risk')), {
+    name: 'QueryError', message: 'sort is invalid',
+  });
+  assert.deepEqual(parseContractorQuery(contractorUrl('?sort=budget_desc&limit=10')), {
+    q: '', sort: 'budget_desc', limit: 10, offset: 0,
+  });
+
+  const integrityFingerprint = ['market', 'status_progress_conflict', 'source_conflict', 2025, 'year_desc'].join('|');
+  const integrityCursor = Buffer.from(JSON.stringify({
+    v: 1, offset: 1, fingerprint: integrityFingerprint,
+  })).toString('base64url');
+  assert.equal(parseIntegrityQuery(integrityUrl(
+    `?q=market&signal=status_progress_conflict&classification=source_conflict&year=2025&sort=year_desc&cursor=${integrityCursor}`,
+  )).offset, 1);
+
+  const contractorFingerprint = ['ACME', 'name_asc'].join('|');
+  const contractorCursor = Buffer.from(JSON.stringify({
+    v: 1, offset: 1, fingerprint: contractorFingerprint,
+  })).toString('base64url');
+  assert.equal(parseContractorQuery(contractorUrl(
+    `?q=ACME&sort=name_asc&cursor=${contractorCursor}`,
+  )).offset, 1);
+
+  for (const payload of [
+    { v: 2, offset: 1, fingerprint: integrityFingerprint },
+    { v: 1, offset: -1, fingerprint: integrityFingerprint },
+    { v: 1, offset: 1, fingerprint: 'wrong' },
+  ]) {
+    const invalidCursor = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    assert.throws(
+      () => parseIntegrityQuery(integrityUrl(`?q=market&signal=status_progress_conflict&classification=source_conflict&year=2025&sort=year_desc&cursor=${invalidCursor}`)),
+      { name: 'QueryError', message: 'cursor is invalid for this query' },
+    );
+  }
 });
 
 test('lists reviewed records with stable cursor pagination', async (context) => {
@@ -355,6 +427,51 @@ test('publishes ranked review candidates, concentrations and CSV evidence', asyn
   assert.equal((await decreased.json()).meta.total, 0);
   assert.equal(csv.headers.get('content-type'), 'text/csv; charset=utf-8');
   assert.match(await csv.text(), /"increased","dpwh","Sample bridge"/);
+});
+
+test('publishes delivery-integrity signals and contractor rankings', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const summary = await worker.fetch(
+    request('/api/v1/integrity-summary'), environment(database),
+  );
+  const conflicts = await worker.fetch(
+    request('/api/v1/integrity-signals?classification=source_conflict&year=2025'),
+    environment(database),
+  );
+  const contractorsByCount = await worker.fetch(
+    request('/api/v1/contractors?sort=count_desc'), environment(database),
+  );
+  const contractorsByBudget = await worker.fetch(
+    request('/api/v1/contractors?sort=budget_desc'), environment(database),
+  );
+  const contractorSearch = await worker.fetch(
+    request('/api/v1/contractors?q=67890&sort=name_asc'), environment(database),
+  );
+  const csv = await worker.fetch(
+    request('/api/v1/integrity.csv?signal=missing_coordinate'), environment(database),
+  );
+
+  assert.deepEqual((await summary.json()).data, {
+    source_records: 3,
+    integrity_signals: 3,
+    contractors: 2,
+    source_artifact_sha256: 'f'.repeat(64),
+    signals: [
+      { code: 'coordinate_location_conflict', count: 1 },
+      { code: 'missing_coordinate', count: 1 },
+      { code: 'status_progress_conflict', count: 1 },
+    ],
+  });
+  const conflictBody = await conflicts.json();
+  assert.equal(conflictBody.meta.total, 2);
+  assert.equal(conflictBody.meta.review_scope, 'deterministic_source_review');
+  assert.match(conflictBody.data[0].source_url, /api\.dpwh\.bettergov\.ph/);
+  assert.equal((await contractorsByCount.json()).data[0].contractor_name, 'ACME BUILDERS');
+  assert.equal((await contractorsByBudget.json()).data[0].total_budget_centavos, 30000000);
+  assert.equal((await contractorSearch.json()).data[0].contractor_name, 'SECOND BUILDERS');
+  assert.equal(csv.headers.get('content-type'), 'text/csv; charset=utf-8');
+  assert.match(await csv.text(), /"missing_coordinate","coverage_gap","24B"/);
 });
 
 test('rejects unsupported stage-change filters', async (context) => {

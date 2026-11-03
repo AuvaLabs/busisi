@@ -8,6 +8,7 @@ const paths = [
   '/explore/',
   '/changes/',
   '/signals/',
+  '/integrity/',
   '/methodology/',
   '/projects/corazon-2022-combined/',
   '/projects/agoncillo-2023/',

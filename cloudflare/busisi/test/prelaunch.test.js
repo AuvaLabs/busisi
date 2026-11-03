@@ -37,6 +37,7 @@ test('home provides direct navigation and substantive motion-led visuals', async
   assert.match(document, /href="\/#gate"/);
   assert.match(document, /href="\/explore\/"/);
   assert.match(document, /href="\/signals\/"/);
+  assert.match(document, /href="\/integrity\/"/);
   assert.match(document, /class="evidence-orbit"/);
   assert.match(document, /aria-label="Evidence moves from official source to reviewed publication"/);
   assert.match(document, /Illustrative sequence/);
@@ -70,6 +71,21 @@ test('publishes the deterministic review desk and names unavailable analyses', a
   assert.match(document, /Not a corruption score/);
   assert.match(document, /src="\/assets\/review-v1\.js"/);
   assert.match(document, /Physical existence verification/);
+});
+
+test('publishes the project-integrity desk and contractor leaderboard', async () => {
+  const response = await fetchPath('/integrity/');
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /Inspect contradictions in delivery records/);
+  assert.match(document, /data-integrity-desk/);
+  assert.match(document, /Contractors with the most projects/);
+  assert.match(document, /Rank by project count/);
+  assert.match(document, /Rank by total project budget/);
+  assert.match(document, /Not a corruption score/);
+  assert.match(document, /src="\/assets\/integrity-v1\.js"/);
+  assert.doesNotMatch(document, /proves? (?:fraud|corruption)/i);
 });
 
 test('publishes an interactive FY2027 budget change ledger with careful labels', async () => {
@@ -129,9 +145,12 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/explore\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/signals\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/changes\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/integrity\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/projects\/corazon-2024-phase-1\/<\/loc>/);
   assert.doesNotMatch(sitemapText, /corazon-2026-completion/);
-  assert.match(await llms.text(), /Evidence and publication rules/);
+  const llmsText = await llms.text();
+  assert.match(llmsText, /Evidence and publication rules/);
+  assert.match(llmsText, /Project integrity desk/);
   assert.match(llms.headers.get('content-type'), /^text\/plain/);
 });
 
@@ -215,6 +234,9 @@ test('serves immutable assets and safe method boundaries', async () => {
   assert.match(cssText, /body\{[^}]*font-size:var\(--text-md\)[^}]*line-height:1\.6/);
   assert.match(cssText, /body:before\{display:none/);
   assert.match(cssText, /@media\(prefers-contrast:more\)/);
+  assert.match(cssText, /\.integrity-shell/);
+  assert.match(cssText, /\.contractor-shell/);
+  assert.match(cssText, /\.primary-nav\{grid-template-columns:repeat\(3,1fr\)\}/);
   assert.match(await css.clone().text(), /@keyframes orbit-pulse/);
   assert.match(await css.text(), /prefers-reduced-motion:reduce/);
   assert.match(icon.headers.get('content-type'), /^image\/svg\+xml/);

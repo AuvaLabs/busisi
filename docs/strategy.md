@@ -20,6 +20,13 @@ rows, increases, decreases, removals, prior-year project families and similar
 FY2027 family labels. It also publishes regional, office, program and dataset
 concentrations and CSV evidence exports.
 
+The project-integrity desk adds deterministic review of the archived DPWH
+delivery snapshot. It publishes source-field contradictions, coverage gaps,
+coordinate reuse and source-location conflicts with the evidence and limitation
+beside each result. A separate contractor view ranks 4,274 recorded identities
+by project count or total project budget. Neither view produces a composite
+risk score or infers wrongdoing.
+
 ## Release gates
 
 | Area | Gate |
@@ -39,11 +46,14 @@ concentrations and CSV evidence exports.
 2. Expand the cross-source reviewed golden set from 6 to 100 cases.
 3. Extend the FY2027 ledger to Senate, bicameral and final GAA stages when
    stable source artifacts can be acquired and reconciled.
-4. Add PhilGEPS, PCAB and COA evidence only after their identifiers and source
-   limitations are modeled explicitly.
-5. Publish contractor views after normalization quality supports
-   reliable aggregation.
-6. Add alerts for source drift and publication mismatch without granting the
+4. Add PhilGEPS awards, PCAB registration status and COA findings only after
+   their identifiers and source limitations are modeled explicitly.
+5. Register an authoritative, reusable administrative-boundary artifact before
+   adding point-in-polygon coordinate validation. Until then, keep exact source
+   coordinate checks visibly separate from geographic verification.
+6. Review high-volume name-only contractor identities and quarantine ambiguous
+   mergers instead of collapsing similar business names.
+7. Add alerts for source drift and publication mismatch without granting the
    monitor deployment or database mutation credentials.
 
 ## Decision rules

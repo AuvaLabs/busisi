@@ -29,6 +29,22 @@ const expectedReviewCounts = Object.freeze({
   scope_review: 37,
   unchanged: 11_148,
 });
+const expectedIntegrity = Object.freeze({
+  source_records: 56_887,
+  integrity_signals: 16_810,
+  contractors: 4_274,
+  source_artifact_sha256: '5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123',
+});
+const expectedIntegritySignals = Object.freeze({
+  completed_progress_conflict: 7,
+  completed_without_satellite_image: 2_029,
+  coordinate_location_conflict: 5,
+  date_order_conflict: 1,
+  missing_coordinate: 7_771,
+  nonpositive_active_budget: 23,
+  reused_coordinate: 1_230,
+  status_progress_conflict: 5_744,
+});
 const resolver = new Resolver();
 resolver.setServers((process.env.BUSISI_DNS_SERVERS ?? '1.1.1.1,8.8.8.8').split(','));
 
@@ -130,6 +146,14 @@ const verifyPages = async () => {
   expectIncludes(signalsText, 'Full insertion analysis', 'signals evidence gaps');
   expectIncludes(signalsText, 'Physical existence verification', 'signals evidence gaps');
 
+  const integrity = await request('/integrity/');
+  expectStatus(integrity, 200, '/integrity/');
+  const integrityText = await integrity.text();
+  expectIncludes(integrityText, 'Inspect contradictions in delivery records', 'integrity heading');
+  expectIncludes(integrityText, '/assets/integrity-v1.js', 'integrity client');
+  expectIncludes(integrityText, 'Contractors with the most projects', 'contractor ranking');
+  expectIncludes(integrityText, 'Not a corruption score', 'integrity limitation');
+
   const changes = await request('/changes/');
   expectStatus(changes, 200, '/changes/');
   const changesText = await changes.text();
@@ -143,7 +167,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/explore/', '/changes/', '/signals/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/explore/', '/changes/', '/signals/', '/integrity/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -156,7 +180,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/explore/', '/changes/', '/signals/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/explore/', '/changes/', '/signals/', '/integrity/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -177,7 +201,7 @@ const verifyDesign = async () => {
   const cssText = await css.text();
   for (const value of [
     'Source Sans 3', '--paper:#fff', '--text-xs:.8125rem', '.hero-art-note',
-    '.explorer-shell', '.review-shell',
+    '.explorer-shell', '.review-shell', '.integrity-shell', '.contractor-shell',
   ]) {
     expectIncludes(cssText, value, 'design CSS');
   }
@@ -270,10 +294,57 @@ const verifyData = async () => {
   expectContentType(reviewCsv, 'text/csv', 'review CSV');
   expectIncludes(await reviewCsv.text(), 'comparison_record', 'review CSV');
 
+  const integritySummary = (await readJson('/api/v1/integrity-summary')).data;
+  for (const [key, value] of Object.entries(expectedIntegrity)) {
+    if (integritySummary[key] !== value) {
+      fail(`integrity summary: ${key} expected ${value}, received ${integritySummary[key]}`);
+    }
+  }
+  const integritySignalMap = Object.fromEntries(
+    integritySummary.signals.map((item) => [item.code, item.count]),
+  );
+  for (const [code, value] of Object.entries(expectedIntegritySignals)) {
+    if (integritySignalMap[code] !== value) {
+      fail(`integrity summary: ${code} expected ${value}, received ${integritySignalMap[code]}`);
+    }
+  }
+  const coordinateReview = await readJson(
+    '/api/v1/integrity-signals?signal=coordinate_location_conflict&limit=1',
+  );
+  if (coordinateReview.meta.total !== expectedIntegritySignals.coordinate_location_conflict) {
+    fail('integrity query: coordinate-location conflict count mismatch');
+  }
+  if (!coordinateReview.data[0]?.source_url || !coordinateReview.data[0]?.limitations) {
+    fail('integrity query: source evidence or limitation missing');
+  }
+  const contractorsByCount = await readJson('/api/v1/contractors?sort=count_desc&limit=1');
+  const contractorsByBudget = await readJson('/api/v1/contractors?sort=budget_desc&limit=1');
+  for (const [label, payload] of [
+    ['count', contractorsByCount],
+    ['budget', contractorsByBudget],
+  ]) {
+    if (payload.meta.total !== expectedIntegrity.contractors || payload.data.length !== 1) {
+      fail(`contractor query: ${label} ranking count mismatch`);
+    }
+    if (!payload.data[0].contractor_name || !payload.data[0].pcab_url) {
+      fail(`contractor query: ${label} ranking evidence missing`);
+    }
+  }
+  const integrityCsv = await request('/api/v1/integrity.csv?signal=date_order_conflict');
+  expectStatus(integrityCsv, 200, 'integrity CSV');
+  expectContentType(integrityCsv, 'text/csv', 'integrity CSV');
+  expectIncludes(await integrityCsv.text(), 'source_artifact_sha256', 'integrity CSV');
+
   const reviewed = await readJson('/api/v1/projects?status=reviewed&limit=1');
   if (reviewed.meta.total !== 5 || reviewed.data.length !== 1) fail('reviewed query: count mismatch');
 
-  return { ...expectedCounts, stage_changes: changeStats.record_count, reviewed_public: reviewed.meta.total };
+  return {
+    ...expectedCounts,
+    stage_changes: changeStats.record_count,
+    integrity_signals: integritySummary.integrity_signals,
+    contractors: integritySummary.contractors,
+    reviewed_public: reviewed.meta.total,
+  };
 };
 
 const verifyBoundaries = async () => {

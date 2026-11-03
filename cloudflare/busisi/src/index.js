@@ -18,6 +18,14 @@ import {
   queryReviewConcentrations,
   queryReviewRankings,
 } from './review-query.js';
+import {
+  exportIntegrityCsv,
+  getIntegritySummary,
+  parseContractorQuery,
+  parseIntegrityQuery,
+  queryContractors,
+  queryIntegritySignals,
+} from './integrity-query.js';
 
 const API_PREFIX = '/api/v1/projects';
 const MAX_SLUG_LENGTH = 160;
@@ -113,6 +121,47 @@ const apiResponse = async (request, environment, url) => {
         'Content-Disposition': 'attachment; filename=busisi-review-candidates.csv',
         'Content-Type': 'text/csv; charset=utf-8',
       },
+    });
+  }
+  if (url.pathname === '/api/v1/integrity-summary') {
+    return jsonResponse({ data: await getIntegritySummary(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/integrity-signals') {
+    const query = parseIntegrityQuery(url);
+    const page = await queryIntegritySignals(environment.DB, query);
+    return jsonResponse({
+      meta: {
+        total: page.total,
+        count: page.records.length,
+        limit: query.limit,
+        next_cursor: page.nextCursor,
+        review_scope: 'deterministic_source_review',
+      },
+      data: page.records,
+    });
+  }
+  if (url.pathname === '/api/v1/integrity.csv') {
+    const query = parseIntegrityQuery(url);
+    const document = await exportIntegrityCsv(environment.DB, query);
+    return new Response(document, {
+      headers: {
+        'Content-Disposition': 'attachment; filename=busisi-project-integrity-signals.csv',
+        'Content-Type': 'text/csv; charset=utf-8',
+      },
+    });
+  }
+  if (url.pathname === '/api/v1/contractors') {
+    const query = parseContractorQuery(url);
+    const page = await queryContractors(environment.DB, query);
+    return jsonResponse({
+      meta: {
+        total: page.total,
+        count: page.records.length,
+        limit: query.limit,
+        next_cursor: page.nextCursor,
+        review_scope: 'archived_dpwh_contract_aggregation',
+      },
+      data: page.records,
     });
   }
   const collection = EXPLORER_PATHS[url.pathname];

@@ -111,13 +111,24 @@ As of 2026-11-03:
 - Review queues provide source links, document links, exact centavo values,
   concentration aggregates and formula-safe CSV exports. No model produces a
   ranking, identity link or label.
+- The project-integrity desk publishes 16,810 rule-specific signals derived
+  from 56,887 archived DPWH delivery records. These include source-field
+  contradictions, amount questions, coordinate reuse and coverage gaps. They
+  are review leads, not findings of wrongdoing.
+- Contractor activity covers 4,274 source identities and provides separate
+  rankings by project count and total project budget. PCAB identifiers are
+  preferred for grouping when present; name-only identities are not silently
+  merged.
+- Coordinate checks currently cover missing values, broad Philippine bounds,
+  exact coordinate reuse and conflicting source location labels. They do not
+  claim point-in-polygon validation against administrative boundaries.
 - Source artifact hashes, row counts and monetary control totals reconcile
   exactly between the canonical SQLite store, the generated D1 bundle and the
   remote D1 database.
 - The public surface includes canonical URLs, page descriptions, Open Graph
   metadata, JSON-LD, `robots.txt`, `sitemap.xml` and `llms.txt`. It uses no
   model inference, model API, cookies or application analytics.
-- IndexNow submission includes the five canonical pages and five reviewed
+- IndexNow submission includes the six canonical pages and five reviewed
   dossiers. The quarantined dossier and public APIs are excluded from indexing.
 
 Run the reviewed-case harness with:
@@ -156,6 +167,7 @@ Build and verify the Cloudflare asset and D1 seed bundle with:
 ```bash
 PYTHONPATH=. python3 ops/harness/budget_watchdog_cloudflare.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_public_data.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 cd cloudflare/busisi
 npm test
 npm run check
@@ -166,7 +178,10 @@ The reviewed seed and static assets are generated under the gitignored
 is generated under `data/budget_watchdog/public-d1-bundle/`, verified in an
 in-memory database and split into manifest-hashed import chunks. The stage
 comparison bundle is built under `data/budget_watchdog/hgab-d1-bundle/` and
-uses the same verification contract. `npm run check` enforces at least 95
+uses the same verification contract. The delivery-integrity bundle is built
+under `data/budget_watchdog/integrity-d1-bundle/`, hashes every import chunk and
+verifies the generated SQL in an isolated SQLite database. `npm run check`
+enforces at least 95
 percent Worker line and function coverage and at least 90 percent branch
 coverage, then performs Wrangler dry runs. Verify the production deployment
 independently

@@ -9,6 +9,11 @@ The public review desk ranks stage changes, groups monetary movement by region,
 office, program or dataset, identifies conservative cross-year project-family
 candidates, and exports source-linked CSV evidence.
 
+The project-integrity desk publishes deterministic DPWH source contradictions,
+coordinate review signals and coverage gaps. Its contractor view separately
+ranks archived activity by project count and total project budget. Neither view
+uses a model or produces a corruption score.
+
 Production: [busisi.org](https://busisi.org)
 
 ## Accuracy contract
@@ -46,6 +51,7 @@ python -m pip install -r requirements-dev.txt
 PYTHONPATH=. pytest engine/tests/budget_watchdog -q
 PYTHONPATH=. python3 ops/harness/budget_watchdog_golden.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_hgab.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 cd cloudflare/busisi
 npm ci
 npm run check
