@@ -18,6 +18,7 @@ import { coaDeskBody, coaReportBody } from './coa-content.js';
 import { getCoaDesk, getCoaReport } from './coa-query.js';
 import { procurementDeskBody } from './procurement-content.js';
 import { getProcurementDesk } from './procurement-query.js';
+import { getContractAcquisition } from './contract-acquisition-query.js';
 import {
   budgetRecordBody,
   candidateRecordBody,
@@ -337,6 +338,19 @@ const recordPage = (kind, payload) => {
   }));
 };
 
+const contractPage = (payload) => {
+  const record = payload.record;
+  const path = `/contracts/${encodeURIComponent(record.contract_id)}/`;
+  const description = `DPWH contract ${record.contract_id}: delivery record, acquisition matching, provenance, limitations, and related public evidence.`;
+  return page(document({
+    title: `${record.description} | Busisi`,
+    description,
+    canonicalPath: path,
+    body: deliveryRecordBody(payload),
+    schema: evidenceSchema(record.description, description, path, record.fiscal_year),
+  }));
+};
+
 const contractor = (payload) => {
   const record = payload.record;
   const path = `/contractors/${encodeURIComponent(record.contractor_key)}/`;
@@ -443,6 +457,11 @@ const decodeRecordId = (value) => {
   }
 };
 
+const decodeContractId = (value) => {
+  const decoded = decodeRecordId(value)?.toUpperCase() || '';
+  return /^[A-Z0-9]{3,12}$/.test(decoded) ? decoded : null;
+};
+
 const getRecordPayload = (database, kind, id) => ({
   budget: getBudgetRecord,
   delivery: getDeliveryRecord,
@@ -502,6 +521,20 @@ export default {
     if (!result && auditReportMatch && env.DB) {
       const record = await getCoaReport(env.DB, auditReportMatch[1]);
       if (record) result = auditReport(record);
+    }
+    const formerDeliveryMatch = url.pathname.match(/^\/records\/delivery\/([^/]+)\/?$/);
+    if (!result && formerDeliveryMatch && env.DB) {
+      const id = decodeContractId(formerDeliveryMatch[1]);
+      const payload = id ? await getContractAcquisition(env.DB, id) : null;
+      if (payload) {
+        result = Response.redirect(`${SITE.origin}/contracts/${encodeURIComponent(id)}/`, 301);
+      }
+    }
+    const contractMatch = url.pathname.match(/^\/contracts\/([^/]+)\/?$/);
+    if (!result && contractMatch && env.DB) {
+      const id = decodeContractId(contractMatch[1]);
+      const payload = id ? await getContractAcquisition(env.DB, id) : null;
+      if (payload) result = contractPage(payload);
     }
     const recordMatch = url.pathname.match(/^\/records\/(budget|delivery|candidate|change|integrity)\/([^/]+)\/?$/);
     if (!result && recordMatch && env.DB) {

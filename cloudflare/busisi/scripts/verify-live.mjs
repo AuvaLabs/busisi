@@ -470,6 +470,31 @@ const verifyData = async () => {
     || acquisitionCoverage.data.queue.quarantined !== 161) {
     fail('acquisition coverage: state or queue controls mismatch');
   }
+  const exactContract = await readJson('/api/v1/contracts/24CM0078');
+  if (exactContract.meta.review_scope !== 'contract_acquisition_evidence'
+    || exactContract.data.acquisition.match_state !== 'structured_exact'
+    || exactContract.data.award_matches.length !== 1
+    || exactContract.data.metadata.award_sha256 !== expectedAcquisitionCoverage.award_sha256) {
+    fail('contract detail: exact acquisition evidence does not reconcile');
+  }
+  await verifyHtmlRecord('/contracts/24CM0078/', 'Contract acquisition evidence');
+
+  const conflictContract = await readJson('/api/v1/contracts/24CJ0309');
+  if (conflictContract.data.acquisition.match_state !== 'conflict_review'
+    || conflictContract.data.quarantine.length !== 3
+    || !conflictContract.data.quarantine.every((item) => item.candidates.length === 2)) {
+    fail('contract detail: quarantined conflict evidence does not reconcile');
+  }
+  const conflictPage = await request('/contracts/24CJ0309/');
+  expectStatus(conflictPage, 200, '/contracts/24CJ0309/');
+  const conflictText = await conflictPage.text();
+  expectIncludes(conflictText, 'Conflicting exact identifiers', 'contract conflict page');
+  expectIncludes(conflictText, 'not a finding of wrongdoing', 'contract conflict boundary');
+  const formerDelivery = await request('/records/delivery/24CM0078/');
+  expectStatus(formerDelivery, 301, 'former delivery route');
+  if (formerDelivery.headers.get('location') !== `${origin}/contracts/24CM0078/`) {
+    fail('former delivery route: unexpected redirect destination');
+  }
   const contractOutcomes = await readJson('/api/v1/contract-outcomes');
   if (contractOutcomes.meta.total !== 3
     || contractOutcomes.meta.review_scope !== 'deterministic_cross_source_contract_outcomes'

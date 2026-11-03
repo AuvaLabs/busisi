@@ -14,6 +14,7 @@
     "build:award-mirror": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_award_mirror.py",
     "build:contract-evidence": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_contract_evidence.py",
     "build:acquisition-release": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_acquisition_release.py",
+    "build:acquisition-universe": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_acquisition_universe.py",
     "test": "npm run build:data && npm run build:budget-cycle && npm run build:coa && npm run build:procurement && npm run build:award-mirror && npm run build:contract-evidence && npm run build:acquisition-release && node --disable-warning=ExperimentalWarning --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=90 --test-coverage-functions=95 --test-coverage-include='src/*.js' --test test/*.test.js",
     "check": "npm test && wrangler deploy --dry-run --outdir ../../data/budget_watchdog/worker-dry-run",
     "deploy:publication": "wrangler deploy --config wrangler.jsonc",

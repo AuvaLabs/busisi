@@ -137,6 +137,10 @@ def test_builds_complete_exact_match_universe_and_quarantines_conflicts(tmp_path
     ]
     assert snapshot.contracts[0].budget_centavos == 100_000_025
     assert snapshot.quarantine[0].candidate_contract_ids == ("24AA0001", "25CC0003")
+    assert snapshot.quarantine[0].reference_id == "24AA0001"
+    assert snapshot.quarantine[0].contract_no == "24AA0001"
+    assert snapshot.quarantine[0].award_title == "25CC0003"
+    assert snapshot.quarantine[0].notice_title == "Reviewed award row"
 
 
 def test_full_universe_snapshot_is_deterministic(tmp_path) -> None:

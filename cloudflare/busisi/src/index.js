@@ -27,6 +27,7 @@ import {
 import { getCoaSummary, queryCoaReports } from './coa-query.js';
 import { getProcurementSummary, queryProcurementRecords } from './procurement-query.js';
 import { getAcquisitionCoverage } from './acquisition-coverage-query.js';
+import { getContractAcquisition } from './contract-acquisition-query.js';
 import { queryContractOutcomes } from './outcome-query.js';
 import {
   getContractEvidenceSummary,
@@ -164,6 +165,25 @@ const apiResponse = async (request, environment, url) => {
       meta: { review_scope: 'full_contract_universe_acquisition' },
       data: await getAcquisitionCoverage(environment.DB),
     });
+  }
+  const contractMatch = url.pathname.match(/^\/api\/v1\/contracts\/([^/]+)$/);
+  if (contractMatch) {
+    let contractId = '';
+    try {
+      contractId = decodeURIComponent(contractMatch[1]).toUpperCase();
+    } catch {
+      return jsonResponse({ detail: 'contract not found' }, 404);
+    }
+    if (!/^[A-Z0-9]{3,12}$/.test(contractId)) {
+      return jsonResponse({ detail: 'contract not found' }, 404);
+    }
+    const contract = await getContractAcquisition(environment.DB, contractId);
+    return contract
+      ? jsonResponse({
+        meta: { review_scope: 'contract_acquisition_evidence' },
+        data: contract,
+      })
+      : jsonResponse({ detail: 'contract not found' }, 404);
   }
   if (url.pathname === '/api/v1/contract-outcomes') {
     const outcomes = await queryContractOutcomes(environment.DB);

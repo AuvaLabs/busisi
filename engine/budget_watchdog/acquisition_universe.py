@@ -23,12 +23,27 @@ CONTRACT_ID = re.compile(r"\d{2}[A-Z]{1,5}\d{3,6}")
 SHA256 = re.compile(r"[0-9a-f]{64}")
 REVISION = re.compile(r"[0-9a-f]{40}")
 DELIVERY_COLUMNS = (
-    "contractId", "description", "category", "status", "budget", "location", "infraYear",
+    "contractId",
+    "description",
+    "category",
+    "status",
+    "budget",
+    "location",
+    "infraYear",
 )
 AWARD_COLUMNS = (
-    "id", "reference_id", "contract_no", "award_title", "notice_title", "awardee_name",
-    "organization_name", "area_of_delivery", "business_category", "contract_amount",
-    "award_date", "award_status",
+    "id",
+    "reference_id",
+    "contract_no",
+    "award_title",
+    "notice_title",
+    "awardee_name",
+    "organization_name",
+    "area_of_delivery",
+    "business_category",
+    "contract_amount",
+    "award_date",
+    "award_status",
 )
 
 
@@ -78,6 +93,10 @@ class QuarantinedAwardRow:
     candidate_contract_ids: tuple[str, ...]
     reason: str
     row_sha256: str
+    reference_id: str | None
+    contract_no: str | None
+    award_title: str | None
+    notice_title: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,7 +228,9 @@ def _award_match(row: dict[str, Any], contract_id: str, basis: str) -> AwardMatc
             _text(row.get("business_category"), "business_category", optional=True) or ""
         ),
         contract_amount_centavos=amount,
-        award_date=award_date.date().isoformat() if isinstance(award_date, datetime) else award_date.isoformat(),
+        award_date=award_date.date().isoformat()
+        if isinstance(award_date, datetime)
+        else award_date.isoformat(),
         award_status=str(_text(row.get("award_status"), "award_status")),
         row_sha256=_row_digest(row),
     )
@@ -233,6 +254,10 @@ def _classify_award_row(
             candidate_contract_ids=tuple(sorted(candidates)),
             reason="conflicting_exact_identifiers",
             row_sha256=_row_digest(row),
+            reference_id=_text(row.get("reference_id"), "reference_id", optional=True),
+            contract_no=_text(row.get("contract_no"), "contract_no", optional=True),
+            award_title=_text(row.get("award_title"), "award_title", optional=True),
+            notice_title=str(_text(row.get("notice_title"), "notice_title", optional=True) or ""),
         )
     contract_id = next(iter(candidates))
     basis = "structured_exact" if contract_id in structured else "title_exact"
@@ -244,6 +269,10 @@ def _classify_award_row(
             candidate_contract_ids=(contract_id,),
             reason=f"invalid_matched_row:{exc}",
             row_sha256=_row_digest(row),
+            reference_id=(str(row["reference_id"]) if row.get("reference_id") else None),
+            contract_no=(str(row["contract_no"]) if row.get("contract_no") else None),
+            award_title=(str(row["award_title"]) if row.get("award_title") else None),
+            notice_title=str(row.get("notice_title") or ""),
         )
 
 
@@ -302,12 +331,14 @@ def _apply_states(
             state = "title_exact"
         else:
             state = "no_exact_row"
-        result.append(replace(
-            item,
-            match_state=state,
-            accepted_match_rows=count,
-            quarantined_match_rows=conflicts[item.contract_id],
-        ))
+        result.append(
+            replace(
+                item,
+                match_state=state,
+                accepted_match_rows=count,
+                quarantined_match_rows=conflicts[item.contract_id],
+            )
+        )
     return tuple(result)
 
 

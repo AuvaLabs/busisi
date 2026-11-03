@@ -13,7 +13,9 @@ const money = (centavos) => new Intl.NumberFormat('en-PH', {
   currency: 'PHP',
 }).format(Number(centavos || 0) / 100);
 
-const idPath = (kind, id) => `/records/${kind}/${encodeURIComponent(id)}/`;
+const idPath = (kind, id) => kind === 'delivery'
+  ? `/contracts/${encodeURIComponent(id)}/`
+  : `/records/${kind}/${encodeURIComponent(id)}/`;
 const contractorPath = (key) => `/contractors/${encodeURIComponent(key)}/`;
 
 const safeLink = (value) => {
@@ -88,6 +90,57 @@ const contractorCards = (items) => items.length ? `<div class="contractor-card-g
   return `<article><span>${item.pcab_id ? `PCAB ${html(item.pcab_id)}` : 'No PCAB ID stated'}</span><h3>${html(item.contractor_name)}</h3>${profile ? `<p>${profile.project_count} archived project associations · ${html(money(profile.total_budget_centavos))}</p><a href="${contractorPath(profile.contractor_key)}">Open contractor activity</a>` : '<p>No exact contractor aggregate is available.</p>'}</article>`;
 }).join('')}</div>` : empty('No contractor identity is stated in the acquired project-detail record.');
 
+const matchStateLabel = (state) => ({
+  structured_exact: 'Exact structured identifier',
+  title_exact: 'Exact title identifier',
+  multiple_exact_rows: 'Multiple exact source rows',
+  conflict_review: 'Conflicting exact identifiers',
+  no_exact_row: 'No exact secondary row located',
+  invalid_identifier: 'Invalid contract identifier',
+}[state] || state.replaceAll('_', ' '));
+
+const awardMatchCards = (items) => items.length ? `<div class="contractor-card-grid">${items.map((item) => `
+  <article><span>${html(item.match_basis.replaceAll('_', ' '))}</span>
+    <h3>${html(item.notice_title || item.award_title || item.contract_id)}</h3>
+    <p>${html(item.awardee_name)} · ${html(item.organization_name || 'Organization not stated')}</p>
+    <dl class="evidence-details"><div><dt>Contract amount</dt><dd>${html(money(item.contract_amount_centavos))}</dd></div>
+    <div><dt>Award date</dt><dd>${html(item.award_date || 'Not stated')}</dd></div>
+    <div><dt>Status</dt><dd>${html(item.award_status || 'Not stated')}</dd></div>
+    <div><dt>Source row SHA-256</dt><dd>${hash(item.row_sha256)}</dd></div></dl>
+  </article>`).join('')}</div>` : empty('No exact row for this contract was accepted from the archived secondary award mirror.');
+
+const quarantineCards = (items) => items.length ? items.map((item) => `
+  <article class="evidence-panel"><p class="kicker">Quarantined source row</p>
+    <h3>${html(item.notice_title || 'Conflicting archived row')}</h3>
+    <dl class="evidence-details"><div><dt>Reference ID</dt><dd>${html(item.reference_id || 'Not stated')}</dd></div>
+    <div><dt>Contract number</dt><dd>${html(item.contract_no || 'Not stated')}</dd></div>
+    <div><dt>Award title</dt><dd>${html(item.award_title || 'Not stated')}</dd></div>
+    <div><dt>Row SHA-256</dt><dd>${hash(item.row_sha256)}</dd></div></dl>
+    <p><strong>Candidate contracts:</strong></p><div class="contractor-card-grid">${item.candidates.map((candidate) => `
+      <article><span>FY ${html(candidate.fiscal_year || 'unknown')}</span><h3>${html(candidate.contract_id)}</h3>
+      <p>${html(candidate.description || 'Delivery record unavailable')}</p>
+      <a href="${idPath('delivery', candidate.contract_id)}">Inspect candidate contract</a></article>`).join('')}</div>
+  </article>`).join('') : '';
+
+const acquisitionEvidence = (payload) => {
+  if (!payload?.acquisition) return '';
+  const { acquisition, award_matches: matches, quarantine, metadata } = payload;
+  return `<section class="evidence-section" id="acquisition-evidence">
+    <p class="kicker">Contract acquisition evidence</p><h2>${html(matchStateLabel(acquisition.match_state))}</h2>
+    ${facts([
+    ['Accepted secondary rows', acquisition.accepted_match_rows],
+    ['Quarantined secondary rows', acquisition.quarantined_match_rows],
+    ['Last reconciled', metadata.checked_on || 'Not stated'],
+  ])}
+    ${boundary('Each row in this archived mirror is secondary discovery evidence, not an official notice of award. A match does not prove payment, implementation, completion, or wrongdoing.')}
+    ${awardMatchCards(matches)}${quarantineCards(quarantine)}
+    <dl class="evidence-details"><div><dt>Archived mirror SHA-256</dt><dd>${hash(metadata.award_sha256)}</dd></div>
+    <div><dt>Archived mirror revision</dt><dd>${hash(metadata.award_revision)}</dd></div>
+    <div><dt>DPWH universe SHA-256</dt><dd>${hash(metadata.delivery_sha256)}</dd></div></dl>
+    ${quarantine.length ? boundary('Conflicting identifiers remain quarantined. Quarantine requests documentary review and is not a finding of wrongdoing.') : ''}
+  </section>`;
+};
+
 const projectAvailability = (delivery, procurementEvidence, auditEvidence) => {
   const procurementAvailable = Boolean(procurementEvidence?.records?.length);
   const awardAvailable = procurementEvidence?.records?.some((item) => (
@@ -128,7 +181,7 @@ ${facts([['Appropriation', money(record.amount_centavos), 'Authority to spend, n
 <section class="evidence-section"><p class="kicker">Cross-source review</p><h2>${candidates.length} candidate link${candidates.length === 1 ? '' : 's'}</h2>${candidates.length ? candidates.map((item) => `<a class="candidate-callout" href="${idPath('candidate', item.candidate_id)}"><strong>${html(item.delivery_description)}</strong><span>Unreviewed · evidence score ${item.score}</span></a>`).join('') : empty('No candidate delivery link is associated with this budget line and fiscal year.')}${projects.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>${html(item.title)}</strong><span>${html(item.status_label)}</span></a>`).join('')}</section>
 ${boundary('This page reproduces an appropriation record and normalized relationships. It does not establish procurement, release, payment, construction, completion, benefit, or wrongdoing.')}</article>`;
 
-export const deliveryRecordBody = ({ record, related, budgets, candidates, projects, signals: items, contractors }) => `${breadcrumb('DPWH delivery', record.contract_id)}
+export const deliveryRecordBody = ({ record, related, budgets, candidates, projects, signals: items, contractors, ...acquisition }) => `${breadcrumb('DPWH contract', record.contract_id)}
 <article class="evidence-dossier">${heading({ badge: 'Official DPWH delivery record', kicker: `FY ${record.fiscal_year} · Contract ${record.contract_id}`, title: record.description, summary: record.location })}
 ${facts([['Recorded project budget', money(record.budget_centavos), 'Snapshot value, not proof of payment'], ['Status / progress', `${record.status || 'Not stated'} / ${record.progress ? `${record.progress}%` : 'Not stated'}`, 'Reported by the source record'], ['Integrity signals', items.length, 'Review leads, not findings']])}
 <div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Project details</p><h2>Fields in the archived DPWH record</h2>${projectDetails(record)}<dl class="evidence-details"><div><dt>Source of funds</dt><dd>${html(record.source_of_funds || 'Not stated')}</dd></div><div><dt>Normalized family</dt><dd>${html(record.project_family_id)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.detail_artifact_sha256 || record.artifact_sha256)}</dd></div></dl></section>${district(record.district_context)}</div>
@@ -136,6 +189,7 @@ ${facts([['Recorded project budget', money(record.budget_centavos), 'Snapshot va
 <section class="evidence-section"><p class="kicker">Deterministic review</p><h2>Published source-record signals</h2>${signals(items)}</section>
 <section class="evidence-section"><p class="kicker">Possible appropriation records</p><h2>Same normalized family</h2>${relatedBudgets(budgets)}${candidates.map((item) => `<a class="candidate-callout" href="${idPath('candidate', item.candidate_id)}"><strong>Compare candidate appropriation and delivery rows</strong><span>Unreviewed · evidence score ${item.score}</span></a>`).join('')}${projects.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>${html(item.title)}</strong><span>${html(item.status_label)}</span></a>`).join('')}</section>
 <section class="evidence-section"><p class="kicker">Related delivery history</p><h2>Other records sharing the family identity</h2>${relatedDeliveries(related)}</section>${availability()}
+${acquisitionEvidence(acquisition)}
 ${boundary('A DPWH delivery record is not by itself proof that work exists at the stated location, that payment occurred, that completion is accurate, or that the project produced public value.')}</article>`;
 
 export const candidateRecordBody = ({ record, budgets, delivery, projects }) => `${breadcrumb('Candidate comparison', record.candidate_id)}

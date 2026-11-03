@@ -22,8 +22,11 @@ The acquisition universe covers all 56,887 FY2024 to FY2026 DPWH delivery
 contracts. The deterministic scan found usable exact secondary rows for 47,071
 contracts, no exact mirror row for 9,655, and conflicting exact identifiers for
 161. It retained 62,129 exact rows, quarantined 83 conflicting source rows, and
-created 511,983 lifecycle tasks. The canonical queue stays local. Only
-reconciled counts, source identity and limitations are published to D1.
+created 511,983 lifecycle tasks. The canonical queue stays local. Read-only
+contract states, exact secondary rows, quarantined conflicts, reconciled
+counts, source identity and limitations are published to D1. Every contract
+has a human-readable drill-down. Review decisions and the mutable queue remain
+local.
 
 The public review desk ranks stage changes, groups monetary movement by region,
 office, program or dataset, identifies conservative cross-year project-family
@@ -84,6 +87,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_senate_monitor.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_coa.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_contract_evidence.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_release.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_universe.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_retry.py --limit 10
 cd cloudflare/busisi
 npm ci
@@ -98,7 +102,9 @@ Generated data and local publication bundles are written under
 
 The public service is a read-only Cloudflare Worker backed by an isolated D1
 publication database. The canonical acquisition database is never bound to a
-public request. Production monitoring is credential-free and read-only.
+public request. The publication database contains derived read-only evidence,
+never the local review queue or reviewer decisions. Production monitoring is
+credential-free and read-only.
 The Senate catalogue monitor runs every six hours, preserves its bounded source
 responses as workflow evidence, and fails closed when records change or source
 acquisition becomes unreliable. It never updates the reviewed baseline

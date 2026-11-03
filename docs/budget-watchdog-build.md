@@ -154,6 +154,13 @@ As of 2026-11-03:
   retryable, three rows are retained as secondary mirror evidence and 20 target
   documents have not been located. Reported dates do not satisfy document
   acquisition.
+- The full contract detail publication contains 56,887 contract states, 62,129
+  accepted exact secondary rows, 83 quarantined source rows and 166 candidate
+  relationships. Contract pages expose provenance and conflicts without
+  exposing the mutable acquisition queue or reviewer decisions.
+- The local quarantine review workspace contains a SQLite review ledger, CSV
+  export and responsive HTML desk. It begins with 83 unresolved cases and
+  requires archived evidence identity for any recorded decision.
 - Source artifact hashes, row counts and monetary control totals reconcile
   exactly between the canonical SQLite store, the generated D1 bundle and the
   remote D1 database.
@@ -208,6 +215,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_coa.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_procurement.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_contract_evidence.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_release.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_universe.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_retry.py --limit 10
 cd cloudflare/busisi
 npm test

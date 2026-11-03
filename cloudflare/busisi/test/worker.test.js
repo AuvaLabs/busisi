@@ -16,6 +16,7 @@ import { getAcquisitionCoverage } from '../src/acquisition-coverage-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
 import { parseReviewQuery } from '../src/review-query.js';
+import { deliveryRecordBody } from '../src/record-content.js';
 import { districtContext } from '../src/district-context.js';
 import {
   parseConcentrationQuery,
@@ -74,6 +75,9 @@ const acquisitionUniverseMigrationPath = fileURLToPath(
 const archivedAwardMirrorMigrationPath = fileURLToPath(
   new URL('../migrations/0017_archived_award_mirror.sql', import.meta.url),
 );
+const contractAcquisitionDetailMigrationPath = fileURLToPath(
+  new URL('../migrations/0018_contract_acquisition_detail.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -128,6 +132,7 @@ class LocalD1 {
     this.database.exec(readFileSync(contractEvidenceMigrationPath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseMigrationPath, 'utf8'));
     this.database.exec(readFileSync(archivedAwardMirrorMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(contractAcquisitionDetailMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -140,14 +145,17 @@ class LocalD1 {
         ('2026:bridge', '18-001|bridge', 2026, 'Sample public bridge project Phase I', 8000, 'family:bridge', 'sample public bridge project', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
       INSERT INTO delivery_items VALUES
         ('25O00113', 2025, 'Construction of San Andres Pumping Station', 37679270658, 'Manila 1st DEO, NCR', 'GAA 2025', 'family:pump', 'san andres pumping station', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
-        ('26ZERO01', 2026, 'Construction of Sample Health Center', 0, 'Cebu, Region VII', 'GAA 2026', 'family:health', 'sample health center', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+        ('26ZERO01', 2026, 'Construction of Sample Health Center', 0, 'Cebu, Region VII', 'GAA 2026', 'family:health', 'sample health center', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'),
+        ('24NO0001', 2024, 'Rehabilitation of Sample Road', 125000000, 'Quezon 1st DEO, Region IV-A', 'GAA 2024', 'family:no-match', 'rehabilitation sample road', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
       INSERT INTO delivery_project_details VALUES
         ('25O00113', 2025, 'Flood Control', 'On-Going', '62.5', 'ACME BUILDERS (12345)',
          '[{"contractor_key":"pcab:12345","contractor_name":"ACME BUILDERS","pcab_id":"12345"}]',
          '2025-01-15', '2025-12-20', 'Manila 1st DEO', 'NCR', '14.5995', '120.9842', 1,
          '${'b'.repeat(64)}'),
         ('26ZERO01', 2026, 'Buildings and Facilities', 'Not Yet Started', '0', '', '[]',
-         '', '', 'Cebu', 'Region VII', '', '', 0, '${'b'.repeat(64)}');
+         '', '', 'Cebu', 'Region VII', '', '', 0, '${'b'.repeat(64)}'),
+        ('24NO0001', 2024, 'Roads', 'On-Going', '', '', '[]',
+         '', '', 'Quezon 1st DEO', 'Region IV-A', '', '', 0, '${'b'.repeat(64)}');
       INSERT INTO coa_metadata VALUES
         ('checked_at', '2026-11-03T12:00:00+04:00'), ('report_count', '1'),
         ('archived_reports', '0'), ('checked_projects', '3'), ('project_matches', '1'),
@@ -303,6 +311,26 @@ class LocalD1 {
       INSERT INTO budget_cycle_documents VALUES
         ('senate-portal:385', 2027, '385', 'HB 10858 FOR 3RD READING VOL I-B', 'house_gab', 'House bill, third reading', 'Senate Budget Transparency Portal', 'I-B', '2026-10-13', 'https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027', 'https://budget-transparency-portal.senate.gov.ph/file_viewer?id=385&type=Documents', 'verified_archived', '${'4'.repeat(64)}', 15663076, 'https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-3r-vol-ib.pdf', 'Archived copy verified by SHA-256.'),
         ('senate-portal:417', 2027, '417', 'SEPO Budget Notes', 'supporting', 'Supporting fiscal analysis', 'Senate Budget Transparency Portal', NULL, NULL, 'https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027', 'https://budget-transparency-portal.senate.gov.ph/file_viewer?id=417&type=Documents', 'discovered', NULL, NULL, NULL, 'Catalogue discovery only.');
+      INSERT INTO contract_acquisition_metadata VALUES
+        ('award_revision', '${'c'.repeat(40)}'),
+        ('award_sha256', '${'a'.repeat(64)}'),
+        ('checked_on', '2026-11-03'),
+        ('delivery_sha256', '${'b'.repeat(64)}');
+      INSERT INTO contract_acquisition_details VALUES
+        ('25O00113', 2025, 'valid', 'aligned', 'structured_exact', 1, 0),
+        ('26ZERO01', 2026, 'valid', 'aligned', 'conflict_review', 0, 1),
+        ('24NO0001', 2024, 'valid', 'aligned', 'no_exact_row', 0, 0);
+      INSERT INTO contract_award_matches VALUES
+        ('award-row-1', '25O00113', 'structured_exact', '25O00113', '25O00113',
+         'Construction of San Andres Pumping Station', 'Award notice 25O00113',
+         'ACME BUILDERS', 'DPWH Test Office', 'Manila', 'Civil works', 37679270658,
+         '2025-02-04', 'Awarded', '${'1'.repeat(64)}');
+      INSERT INTO contract_quarantine_rows VALUES
+        ('award-row-conflict', 'conflicting_exact_identifiers', '${'2'.repeat(64)}',
+         '26ZERO01', '25O00113', 'Construction of Sample Health Center',
+         'Conflicting archived award mirror row');
+      INSERT INTO contract_quarantine_candidates VALUES
+        ('award-row-conflict', '25O00113'), ('award-row-conflict', '26ZERO01');
     `);
   }
 
@@ -615,10 +643,149 @@ test('publishes source collection statistics and separate record APIs', async (c
   assert.equal(deliveryBody.data[0].contract_id, '25O00113');
   assert.equal(
     deliveryBody.data[0].reader_source_url,
-    '/records/delivery/25O00113/',
+    '/contracts/25O00113/',
   );
   assert.equal(deliveryBody.data[0].district_context.classification, 'single_district');
   assert.equal(deliveryBody.data[0].district_context.districts[0].representative_name, 'Representative One');
+});
+
+test('publishes contract-level acquisition evidence without overstating the mirror', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+
+  const exact = await worker.fetch(
+    request('/api/v1/contracts/25O00113'),
+    environment(database),
+  );
+  const conflict = await worker.fetch(
+    request('/api/v1/contracts/26ZERO01'),
+    environment(database),
+  );
+  const absent = await worker.fetch(
+    request('/api/v1/contracts/24NO0001'),
+    environment(database),
+  );
+  const exactBody = await exact.json();
+  const conflictBody = await conflict.json();
+  const absentBody = await absent.json();
+
+  assert.equal(exact.status, 200);
+  assert.equal(exactBody.data.acquisition.match_state, 'structured_exact');
+  assert.equal(exactBody.data.award_matches[0].awardee_name, 'ACME BUILDERS');
+  assert.equal(exactBody.data.metadata.award_sha256, 'a'.repeat(64));
+  assert.equal(conflict.status, 200);
+  assert.equal(conflictBody.data.acquisition.match_state, 'conflict_review');
+  assert.equal(conflictBody.data.quarantine[0].reference_id, '26ZERO01');
+  assert.equal(conflictBody.data.quarantine[0].contract_no, '25O00113');
+  assert.deepEqual(
+    conflictBody.data.quarantine[0].candidates.map((item) => item.contract_id),
+    ['25O00113', '26ZERO01'],
+  );
+  assert.equal(absentBody.data.acquisition.match_state, 'no_exact_row');
+  assert.deepEqual(absentBody.data.award_matches, []);
+  assert.deepEqual(absentBody.data.quarantine, []);
+
+  for (const path of [
+    '/api/v1/contracts/not-valid!',
+    '/api/v1/contracts/%E0%A4%A',
+    '/api/v1/contracts/24MISSING',
+  ]) {
+    const missing = await worker.fetch(request(path), environment(database));
+    assert.equal(missing.status, 404, path);
+  }
+});
+
+test('renders safe contract drill-downs and redirects the former delivery route', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+
+  const exact = await siteWorker.fetch(
+    request('/contracts/25O00113/'),
+    environment(database),
+  );
+  const conflict = await siteWorker.fetch(
+    request('/contracts/26ZERO01/'),
+    environment(database),
+  );
+  const former = await siteWorker.fetch(
+    request('/records/delivery/25O00113/'),
+    environment(database),
+  );
+  const absent = await siteWorker.fetch(
+    request('/contracts/24NO0001/'),
+    environment(database),
+  );
+  const exactDocument = await exact.text();
+  const conflictDocument = await conflict.text();
+  const absentDocument = await absent.text();
+
+  assert.equal(exact.status, 200);
+  assert.match(exactDocument, /Contract acquisition evidence/);
+  assert.match(exactDocument, /ACME BUILDERS/);
+  assert.match(exactDocument, /not an official notice of award/i);
+  assert.match(exactDocument, /aaaaaaaaaaaaaaaa/);
+  assert.equal(conflict.status, 200);
+  assert.match(conflictDocument, /Conflicting exact identifiers/);
+  assert.match(conflictDocument, /26ZERO01/);
+  assert.match(conflictDocument, /25O00113/);
+  assert.match(conflictDocument, /not a finding of wrongdoing/i);
+  assert.equal(absent.status, 200);
+  assert.match(absentDocument, /No exact secondary row located/);
+  assert.match(absentDocument, /No exact row for this contract was accepted/);
+  assert.equal(former.status, 301);
+  assert.equal(former.headers.get('location'), 'https://busisi.org/contracts/25O00113/');
+});
+
+test('renders sparse contract acquisition fields without inventing evidence', () => {
+  const document = deliveryRecordBody({
+    record: {
+      contract_id: '24SP0001',
+      fiscal_year: 2024,
+      description: 'Sparse source record',
+      location: '',
+      budget_centavos: 0,
+      district_context: null,
+    },
+    related: [],
+    budgets: [],
+    candidates: [],
+    projects: [],
+    signals: [],
+    contractors: [],
+    acquisition: {
+      match_state: 'future_review_state',
+      accepted_match_rows: 1,
+      quarantined_match_rows: 1,
+    },
+    award_matches: [{
+      contract_id: '24SP0001',
+      match_basis: 'title_exact',
+      notice_title: '',
+      award_title: '',
+      awardee_name: 'PUBLIC BUILDER',
+      organization_name: '',
+      contract_amount_centavos: 0,
+      award_date: '',
+      award_status: '',
+      row_sha256: '',
+    }],
+    quarantine: [{
+      source_row_id: 'sparse-row',
+      notice_title: '',
+      reference_id: null,
+      contract_no: null,
+      award_title: null,
+      row_sha256: '',
+      candidates: [{ contract_id: '24SP0001' }],
+    }],
+    metadata: {},
+  });
+
+  assert.match(document, /future review state/);
+  assert.match(document, /Organization not stated/);
+  assert.match(document, /Delivery record unavailable/);
+  assert.match(document, /Not available/);
+  assert.match(document, /not a finding of wrongdoing/i);
 });
 
 test('bounds BetterGov source searches and scopes them to the record agency', async (context) => {
@@ -1006,7 +1173,7 @@ test('publishes evidence drilldowns without collapsing records into findings', a
   context.after(() => database.close());
   const paths = [
     ['/records/budget/2025%3Apump/', /Official GAA appropriation record/],
-    ['/records/delivery/25O00113/', /Official DPWH delivery record/],
+    ['/contracts/25O00113/', /Official DPWH delivery record/],
     ['/records/candidate/2025%3Apump%3A25O00113/', /Unreviewed candidate comparison/],
     ['/records/change/dpwh%3A1/', /Provisional stage comparison/],
     ['/records/integrity/25A%3Astatus_progress_conflict/', /Review signal, not a finding/],
@@ -1517,7 +1684,7 @@ test('renders unavailable, quarantined and alternate evidence states', async (co
   context.after(() => database.close());
   const cases = [
     ['/records/budget/2026%3Abridge/', /No candidate delivery link/],
-    ['/records/delivery/26ZERO01/', /No exact office attribution available/],
+    ['/contracts/26ZERO01/', /No exact office attribution available/],
     ['/records/change/hfep%3A2/', /NEP page not available/],
     ['/records/change/dpwh%3A3/', /No other FY2027 comparison row/],
     ['/records/integrity/24B%3Amissing_coordinate/', /Quezon, 1st District/],
@@ -1571,7 +1738,7 @@ test('renders enriched record relationships and tolerates malformed candidate me
   `);
 
   const paths = [
-    ['/records/delivery/25O00113/', /ACME BUILDERS/],
+    ['/contracts/25O00113/', /ACME BUILDERS/],
     ['/records/integrity/25O00113%3Amissing_coordinate/', /1 additional signal/],
     ['/records/candidate/2025%3Apump%3A25O00113/', /San Andres Pumping Station/],
     ['/records/candidate/missing-delivery/', /Matching delivery row is not available/],

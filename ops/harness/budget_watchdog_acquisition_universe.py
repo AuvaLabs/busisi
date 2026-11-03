@@ -7,6 +7,9 @@ import json
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+from engine.budget_watchdog.acquisition_detail_bundle import (
+    build_acquisition_detail_bundle,
+)
 from engine.budget_watchdog.acquisition_queue import (
     AcquisitionQueue,
     apply_reviewed_evidence,
@@ -16,11 +19,14 @@ from engine.budget_watchdog.acquisition_release import build_acquisition_release
 from engine.budget_watchdog.acquisition_universe import build_acquisition_universe
 from engine.budget_watchdog.archive import ArtifactArchive, FileAcquisition
 from engine.budget_watchdog.contract_evidence import load_contract_evidence_catalog
+from engine.budget_watchdog.quarantine_review import build_quarantine_review
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data" / "budget_watchdog"
 ARCHIVE = DATA / "archive"
 OUTPUT = DATA / "acquisition-universe"
+DETAIL_OUTPUT = DATA / "acquisition-detail-d1-bundle"
+QUARANTINE_OUTPUT = DATA / "quarantine-review"
 STAGING = DATA / "full-universe" / "staging" / "philgeps.parquet.partial"
 DELIVERY_SHA256 = "5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123"
 AWARD_SHA256 = "9bfa9e7cbf5041dc3b51a4c2742e60a43d1615f119955581d4b155bf3a6d4a8b"
@@ -49,15 +55,17 @@ def _archive_award_source() -> Path:
         return blob
     if not STAGING.is_file():
         raise ValueError("version-pinned PhilGEPS mirror has not been downloaded")
-    archived = ArtifactArchive(ARCHIVE).store_file(FileAcquisition(
-        source_id="bettergov-philgeps-snapshot",
-        source_url=AWARD_URL,
-        retrieved_at=RETRIEVED_AT,
-        media_type="application/vnd.apache.parquet",
-        path=STAGING,
-        source_version=AWARD_REVISION,
-        source_last_modified=datetime(2026, 1, 6, 8, 31, 6, tzinfo=UTC),
-    ))
+    archived = ArtifactArchive(ARCHIVE).store_file(
+        FileAcquisition(
+            source_id="bettergov-philgeps-snapshot",
+            source_url=AWARD_URL,
+            retrieved_at=RETRIEVED_AT,
+            media_type="application/vnd.apache.parquet",
+            path=STAGING,
+            source_version=AWARD_REVISION,
+            source_last_modified=datetime(2026, 1, 6, 8, 31, 6, tzinfo=UTC),
+        )
+    )
     if archived.sha256 != AWARD_SHA256 or archived.byte_size != AWARD_BYTES:
         raise ValueError("downloaded award mirror does not match its pinned fingerprint")
     return archived.blob_path
@@ -87,6 +95,8 @@ def main() -> int:
     )
     release_path = OUTPUT / "release.json"
     release_path.write_text(json.dumps(release, indent=2, sort_keys=True) + "\n")
+    detail = build_acquisition_detail_bundle(snapshot, DETAIL_OUTPUT)
+    quarantine = build_quarantine_review(snapshot, QUARANTINE_OUTPUT)
     result = {
         "passed": True,
         "queue": str(queue_path),
@@ -99,6 +109,17 @@ def main() -> int:
         "state_counts": dict(snapshot.summary.state_counts),
         "queue_status_counts": queue_summary.status_counts,
         "award_sha256": AWARD_SHA256,
+        "detail_bundle": {
+            "output_dir": str(detail.output_dir),
+            "sql_chunks": detail.sql_chunks,
+            "manifest_sha256": detail.manifest_sha256,
+        },
+        "quarantine_review": {
+            "output_dir": str(quarantine.output_dir),
+            "case_count": quarantine.case_count,
+            "candidate_count": quarantine.candidate_count,
+            "manifest_sha256": quarantine.manifest_sha256,
+        },
     }
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0
