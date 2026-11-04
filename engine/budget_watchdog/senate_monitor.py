@@ -168,6 +168,25 @@ def _proxy_url(target: str) -> str:
     return f"{READER_ORIGIN}/{target}"
 
 
+def _secondary_root_rows(
+    rendered: HttpPayload,
+    fetch: Fetch,
+    recorder: _ArtifactRecorder,
+) -> tuple[PortalRow, ...]:
+    try:
+        return parse_portal_rows(rendered.content)
+    except SenateCatalogError:
+        listing_url = _proxy_url(_folder_url("", 0).replace("limit=1", "limit=200"))
+        listing = _fetch_checked(fetch, listing_url, {"X-Return-Format": "html"})
+        if listing.status_code != HTTP_OK:
+            raise SenateMonitorError("secondary root listing discovery failed") from None
+        recorder.store("secondary-root-listing.html", listing)
+        try:
+            return parse_portal_rows(listing.content)
+        except SenateCatalogError as exc:
+            raise SenateMonitorError("secondary root response is invalid") from exc
+
+
 def _markdown_documents(payload: bytes) -> tuple[_MarkdownDocument, ...]:
     try:
         text = payload.decode("utf-8")
@@ -292,6 +311,27 @@ def _compare(expected, observed: tuple[PortalRow, ...]) -> tuple[str, ...]:
     return tuple(differences)
 
 
+def _expected_documents(
+    payload: bytes,
+    documents: tuple[SenateDocument, ...],
+) -> tuple[SenateDocument, ...]:
+    try:
+        root = json.loads(payload)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise SenateMonitorError("reviewed baseline is not valid JSON") from exc
+    excluded = root.get("monitor_excluded_source_record_ids", [])
+    if (
+        not isinstance(excluded, list)
+        or any(not isinstance(value, str) or not value.isdigit() for value in excluded)
+        or len(set(excluded)) != len(excluded)
+    ):
+        raise SenateMonitorError("reviewed monitor exclusions are invalid")
+    known = {document.source_record_id for document in documents}
+    if not set(excluded) <= known:
+        raise SenateMonitorError("reviewed monitor exclusions contain an unknown record")
+    return tuple(document for document in documents if document.source_record_id not in excluded)
+
+
 def run_senate_monitor(
     baseline_path: Path,
     output_dir: Path,
@@ -300,7 +340,9 @@ def run_senate_monitor(
 ) -> SenateMonitorResult:
     """Compare a fresh bounded catalogue discovery with the reviewed baseline."""
 
-    catalog = load_senate_catalog(baseline_path.read_bytes())
+    baseline_payload = baseline_path.read_bytes()
+    catalog = load_senate_catalog(baseline_payload)
+    expected = _expected_documents(baseline_payload, catalog.documents)
     output_dir.mkdir(parents=True, exist_ok=True)
     recorder = _ArtifactRecorder(output_dir)
     direct = _fetch_checked(fetch, PORTAL_URL, {})
@@ -324,18 +366,15 @@ def run_senate_monitor(
         if rendered.status_code != HTTP_OK:
             raise SenateMonitorError("secondary root discovery failed")
         recorder.store("secondary-root.html", rendered)
-        try:
-            root_rows = parse_portal_rows(rendered.content)
-        except SenateCatalogError as exc:
-            raise SenateMonitorError("secondary root response is invalid") from exc
-        observed = _secondary_documents(root_rows, catalog.documents, fetch, recorder)
-    differences = _compare(catalog.documents, observed)
+        root_rows = _secondary_root_rows(rendered, fetch, recorder)
+        observed = _secondary_documents(root_rows, expected, fetch, recorder)
+    differences = _compare(expected, observed)
     result = SenateMonitorResult(
         checked_at=datetime.now(UTC).isoformat(),
         changed=bool(differences),
         direct_status=direct_status,
         discovery_mode=discovery_mode,
-        expected_document_count=len(catalog.documents),
+        expected_document_count=len(expected),
         observed_document_count=len(observed),
         differences=differences,
         response_artifacts=tuple(recorder.artifacts),

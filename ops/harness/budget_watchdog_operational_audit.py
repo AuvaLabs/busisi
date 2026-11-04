@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import fcntl
 import json
 import sqlite3
 import subprocess
@@ -28,6 +29,7 @@ QUEUE = ROOT / "data" / "budget_watchdog" / "project-image-automation" / "covera
 IMAGE_MANIFEST = ROOT / "data" / "budget_watchdog" / "project-image-d1-bundle" / "manifest.json"
 PUBLICATIONS = ROOT / "data" / "budget_watchdog" / "project-image-publications"
 OUTPUT = ROOT / "data" / "budget_watchdog" / "operational-audit"
+PIPELINE_LOCK = ROOT / "data" / "budget_watchdog" / "project-image-automation" / "cycle.lock"
 TIMERS = (
     "busisi-project-image-coverage.timer",
     "busisi-acquisition-retry.timer",
@@ -141,25 +143,13 @@ def _write_report(now: datetime, report: dict[str, Any]) -> Path:
     return path
 
 
-def main() -> int:
+def _run_audit() -> int:
     now = datetime.now(UTC)
     source_report, source_code = run_monitor(DEFAULT_BASELINE, SOURCE_OUTPUT)
     source_sql, source_digest = build_source_status_sql(source_report)
     sql_path = Path(source_report["report_path"]).with_name("public-status.sql")
     sql_path.write_text(source_sql, encoding="utf-8")
 
-    migration = _run(
-        [
-            "npx",
-            "wrangler",
-            "d1",
-            "migrations",
-            "apply",
-            "busisi-publication",
-            "--remote",
-        ],
-        cwd=WORKER,
-    )
     publish = _run(
         [
             "npx",
@@ -191,8 +181,6 @@ def main() -> int:
     issues = list(audit_operational_facts(facts, now=now))
     if not queue_ok:
         issues.append("private coverage queue failed SQLite integrity check")
-    if migration["returncode"] != 0:
-        issues.append("source status migration failed")
     if publish["returncode"] != 0:
         issues.append("source status publication failed")
     if live["returncode"] != 0:
@@ -218,7 +206,6 @@ def main() -> int:
             for name, (state, next_run) in timers.items()
         },
         "commands": {
-            "migration": migration,
             "source_status_publication": publish,
             "live_verification": live,
             "timers": timer_commands,
@@ -227,6 +214,13 @@ def main() -> int:
     report["report_path"] = str(_write_report(now, report))
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0 if report["passed"] else 1
+
+
+def main() -> int:
+    PIPELINE_LOCK.parent.mkdir(parents=True, exist_ok=True)
+    with PIPELINE_LOCK.open("a+", encoding="utf-8") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        return _run_audit()
 
 
 if __name__ == "__main__":

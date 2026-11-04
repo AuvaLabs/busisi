@@ -1,5 +1,6 @@
 """Bounded, allowlisted acquisition for registered public sources."""
 
+import time
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from urllib.parse import urljoin, urlparse
@@ -13,6 +14,8 @@ from engine.budget_watchdog.sources import SourceRegistry
 DEFAULT_MAX_RESPONSE_BYTES = 64 * 1024 * 1024
 DEFAULT_TIMEOUT_SECONDS = (5, 30)
 DOWNLOAD_CHUNK_BYTES = 64 * 1024
+HTTP_TOO_MANY_REQUESTS = 429
+HTTP_SERVER_ERROR_MIN = 500
 
 
 class AcquisitionError(RuntimeError):
@@ -38,14 +41,20 @@ class SourceFetcher:
         max_response_bytes: int = DEFAULT_MAX_RESPONSE_BYTES,
         session: requests.Session | None = None,
         request_gate: Callable[[str], None] | None = None,
+        max_attempts: int = 1,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         if max_response_bytes <= 0:
             raise ValueError("max_response_bytes must be positive")
+        if max_attempts <= 0:
+            raise ValueError("max_attempts must be positive")
         install_ssrf_guard()
         self._registry = registry
         self._max_response_bytes = max_response_bytes
         self._session = session or requests.Session()
         self._request_gate = request_gate
+        self._max_attempts = max_attempts
+        self._sleep = sleep
         self._session.headers.update(
             {
                 "Accept": "application/json, application/octet-stream, */*",
@@ -67,6 +76,31 @@ class SourceFetcher:
         if timestamp.tzinfo is None:
             raise AcquisitionError("retrieved_at must be timezone-aware")
 
+        for attempt in range(self._max_attempts):
+            try:
+                return self._fetch_once(
+                    source_id,
+                    source.base_url,
+                    url,
+                    params=params,
+                    retrieved_at=timestamp,
+                )
+            except AcquisitionError as exc:
+                if attempt >= self._max_attempts - 1 or not self._retryable(exc):
+                    raise
+                delay = exc.retry_after_seconds or float(2**attempt)
+                self._sleep(min(float(delay), 30.0))
+        raise AssertionError("bounded acquisition retry loop did not return")
+
+    def _fetch_once(
+        self,
+        source_id: str,
+        base_url: str,
+        url: str,
+        *,
+        params: Mapping[str, str | int] | None,
+        retrieved_at: datetime,
+    ) -> Acquisition:
         try:
             if self._request_gate is not None:
                 self._request_gate(url)
@@ -78,7 +112,7 @@ class SourceFetcher:
                 allow_redirects=False,
             ) as response:
                 response.raise_for_status()
-                self._validate_final_url(source.base_url, response.url)
+                self._validate_final_url(base_url, response.url)
                 payload = self._read_bounded(response)
                 media_type = response.headers.get("Content-Type", "application/octet-stream").split(
                     ";", maxsplit=1
@@ -86,7 +120,7 @@ class SourceFetcher:
                 return Acquisition(
                     source_id=source_id,
                     source_url=response.url,
-                    retrieved_at=timestamp,
+                    retrieved_at=retrieved_at,
                     media_type=media_type.strip(),
                     payload=payload,
                 )
@@ -99,6 +133,13 @@ class SourceFetcher:
                 http_status=status,
                 retry_after_seconds=retry_after,
             ) from exc
+
+    @staticmethod
+    def _retryable(error: AcquisitionError) -> bool:
+        if not isinstance(error.__cause__, requests.RequestException):
+            return False
+        status = error.http_status
+        return status is None or status == HTTP_TOO_MANY_REQUESTS or status >= HTTP_SERVER_ERROR_MIN
 
     @staticmethod
     def _retry_after(response: requests.Response | None) -> int | None:

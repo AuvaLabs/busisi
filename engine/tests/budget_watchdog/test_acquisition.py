@@ -103,6 +103,25 @@ def test_fetcher_wraps_http_errors_without_leaking_response_details() -> None:
 
 
 @responses.activate
+def test_fetcher_retries_transient_requests() -> None:
+    url = "https://budget.bettergov.ph/transient"
+    responses.add(responses.GET, url, status=503)
+    responses.add(responses.GET, url, body=b"stable", status=200)
+    sleeps: list[float] = []
+    fetcher = SourceFetcher(
+        default_source_registry(),
+        max_attempts=3,
+        sleep=sleeps.append,
+    )
+
+    acquisition = fetcher.fetch("bettergov-budget", "/transient", retrieved_at=RETRIEVED_AT)
+
+    assert acquisition.payload == b"stable"
+    assert len(responses.calls) == 2
+    assert sleeps == [1.0]
+
+
+@responses.activate
 def test_fetcher_preserves_bounded_retry_after_for_rate_limits() -> None:
     responses.add(
         responses.GET,

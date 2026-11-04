@@ -73,7 +73,7 @@
       "artifact_sha256": null,
       "byte_size": null,
       "document_id": "senate-portal:417",
-      "evidence_note": "Discovered in the Senate portal catalogue through the disclosed secondary renderer. It is a supporting analysis, not a legislative budget stage.",
+      "evidence_note": "Discovered in the Senate portal catalogue on 2026-11-03 through the disclosed secondary renderer. The record left the active catalogue and its viewer returned 404 on 2026-11-04, so it is retained only as historical catalogue evidence.",
       "mirror_url": null,
       "publication_date": null,
       "publisher": "Senate Budget Transparency Portal",
@@ -87,11 +87,14 @@
     }
   ],
   "fiscal_year": 2027,
+  "monitor_excluded_source_record_ids": [
+    "417"
+  ],
   "schema_version": 1,
   "source": {
     "acquisition_status": "direct_blocked_secondary_discovery",
     "discovery_source_id": "jina-reader",
-    "retrieved_at": "2026-11-03T08:58:00+00:00",
+    "retrieved_at": "2026-11-04T07:04:09.145223+00:00",
     "source_id": "senate-budget-portal",
     "url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027"
   },

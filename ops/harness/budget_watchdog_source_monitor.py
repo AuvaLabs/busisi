@@ -74,7 +74,9 @@ def _observe(
     *, now: datetime, archive: ArtifactArchive
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     registry = default_source_registry()
-    metadata_fetcher = SourceFetcher(registry, max_response_bytes=MAX_METADATA_BYTES)
+    metadata_fetcher = SourceFetcher(
+        registry, max_response_bytes=MAX_METADATA_BYTES, max_attempts=3
+    )
     artifacts: list[dict[str, Any]] = []
     datasets: dict[str, Any] = {}
     for key, (source_id, dataset_id) in DATASETS.items():
@@ -91,7 +93,7 @@ def _observe(
             }
         )
 
-    catalogue = SourceFetcher(registry, max_response_bytes=MAX_CATALOG_BYTES).fetch(
+    catalogue = SourceFetcher(registry, max_response_bytes=MAX_CATALOG_BYTES, max_attempts=3).fetch(
         "dbm-saaodb", DBM_CATALOG_PATH, retrieved_at=now
     )
     catalogue_artifact = archive.store(catalogue)
@@ -120,7 +122,7 @@ def _observe(
     )
 
     pcab_artifact, pcab = acquire_pcab_regular_licenses(
-        SourceFetcher(registry), archive, retrieved_at=now
+        SourceFetcher(registry, max_attempts=3), archive, retrieved_at=now
     )
     artifacts.append(
         {

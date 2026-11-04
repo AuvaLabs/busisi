@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -15,12 +16,13 @@ ROOT_HTML = b"""
   <td class="portal-library-name">House Bill No. 10858</td>
   <td data-label="Type">Folder</td><td data-label="Size">-</td><td data-label="Date">-</td>
 </tr>
-<tr class="portal-library-row">
-  <td class="portal-library-name">SEPO Budget Notes: An Assessment of the Macroeconomic and Fiscal Assumptions of the Proposed 2027 National Budget</td>
-  <td data-label="Type">Document</td><td data-label="Size">988 B</td><td data-label="Date">-</td>
-  <td><a data-file-id="417"></a></td>
-</tr>
 </tbody></table>
+"""
+
+EMPTY_ROOT_HTML = b"""
+<html><body>
+<table><tbody id="court-documents" data-type="Documents" data-offset="0"></tbody></table>
+</body></html>
 """
 
 FOLDER_MARKDOWN = b"""Title:
@@ -89,18 +91,61 @@ def test_monitor_accepts_unchanged_secondary_catalogue(tmp_path) -> None:
     assert result.changed is False
     assert result.direct_status == "blocked"
     assert result.discovery_mode == "secondary_renderer"
-    assert result.expected_document_count == 5
-    assert result.observed_document_count == 5
+    assert result.expected_document_count == 4
+    assert result.observed_document_count == 4
     assert result.differences == ()
     assert len(result.response_artifacts) == 3
     assert (tmp_path / "report.json").is_file()
+
+
+def test_monitor_loads_async_root_listing_when_rendered_page_is_empty(tmp_path) -> None:
+    def fetch(url: str, _headers: dict[str, str]) -> HttpPayload:
+        if url.startswith("https://budget-transparency-portal.senate.gov.ph"):
+            return HttpPayload(403, url, b"blocked", "text/html")
+        if "/public/Documents" in url:
+            return HttpPayload(200, url, EMPTY_ROOT_HTML, "text/html")
+        if "folder=&" in url:
+            return HttpPayload(200, url, ROOT_HTML, "text/html")
+        return HttpPayload(200, url, FOLDER_MARKDOWN, "text/plain")
+
+    result = run_senate_monitor(_baseline(), tmp_path, fetch=fetch)
+
+    assert result.changed is False
+    assert result.observed_document_count == 4
+    assert [artifact.name for artifact in result.response_artifacts] == [
+        "direct-root.html",
+        "secondary-root.html",
+        "secondary-root-listing.html",
+        "folder-123-listing.md",
+    ]
+
+
+def test_monitor_retains_reviewed_historical_documents_without_expectation(
+    tmp_path,
+) -> None:
+    baseline = json.loads(_baseline().read_text(encoding="utf-8"))
+    baseline["monitor_excluded_source_record_ids"] = ["417"]
+    baseline_path = tmp_path / "catalog.json"
+    baseline_path.write_text(json.dumps(baseline), encoding="utf-8")
+
+    def fetch(url: str, headers: dict[str, str]) -> HttpPayload:
+        payload = _fetcher()(url, headers)
+        if "/public/Documents" in url and url.startswith("https://r.jina.ai"):
+            return HttpPayload(200, url, ROOT_HTML, "text/html")
+        return payload
+
+    result = run_senate_monitor(baseline_path, tmp_path / "output", fetch=fetch)
+
+    assert result.changed is False
+    assert result.expected_document_count == 4
+    assert result.observed_document_count == 4
 
 
 def test_monitor_quarantines_new_catalogue_records(tmp_path) -> None:
     result = run_senate_monitor(_baseline(), tmp_path, fetch=_fetcher(changed=True))
 
     assert result.changed is True
-    assert result.observed_document_count == 6
+    assert result.observed_document_count == 5
     assert len(result.differences) == 1
     assert result.differences[0].startswith("new source record unresolved:")
     assert result.differences[0].endswith(": Senate Committee Report FY 2027")
@@ -142,7 +187,7 @@ def test_monitor_uses_official_catalogue_when_direct_access_works(tmp_path) -> N
     assert result.changed is False
     assert result.direct_status == "available"
     assert result.discovery_mode == "official_direct"
-    assert result.observed_document_count == 5
+    assert result.observed_document_count == 4
     assert len(result.response_artifacts) == 6
 
 
