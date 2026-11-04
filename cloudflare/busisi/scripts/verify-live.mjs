@@ -95,6 +95,7 @@ const expectedIntegrity = Object.freeze({
   delivery_details: 56_887,
   integrity_signals: 16_814,
   contractors: 4_297,
+  contractor_associations: 53_201,
   concentrations: 737,
   pcab_records: 18_853,
   pcab_retrieved_on: '2026-11-03',
@@ -247,7 +248,7 @@ const verifyPages = async () => {
   expectStatus(contracts, 200, '/contracts/');
   const contractsText = await contracts.text();
   expectIncludes(contractsText, 'Contract intelligence explorer', 'contract explorer heading');
-  expectIncludes(contractsText, '/assets/contracts-v1.js?v=2', 'contract explorer client');
+  expectIncludes(contractsText, '/assets/contracts-v1.js?v=3', 'contract explorer client');
   expectIncludes(contractsText, 'Province or district office', 'contract province filter');
   expectIncludes(contractsText, 'Source patterns are review leads, not findings', 'contract explorer boundary');
 
@@ -847,6 +848,26 @@ const verifyData = async () => {
     `/contractors/${encodeURIComponent(contractorsByCount.data[0].contractor_key)}/`,
     'Archived contractor activity',
   );
+  const egbProjects = await readJson(
+    '/api/v1/contractors/pcab%3A13722/projects?relationship=joint&limit=100',
+  );
+  const egbJointProject = egbProjects.data.find(({ contract_id: contractId }) => (
+    contractId === '25D00208'
+  ));
+  if (egbProjects.meta.total !== 96
+    || egbProjects.meta.budget_boundary !== 'full_project_budget_not_party_share'
+    || egbJointProject?.party_position !== 2
+    || egbJointProject?.party_count !== 2
+    || egbJointProject?.contractor_parties?.[0]?.contractor_key !== 'pcab:42440'
+    || egbJointProject?.contractor_parties?.[1]?.contractor_key !== 'pcab:13722') {
+    fail('contractor projects: joint-party identity or budget boundary does not reconcile');
+  }
+  const egbPage = await request('/contractors/pcab%3A13722/');
+  expectStatus(egbPage, 200, 'EGB contractor activity');
+  const egbPageText = await egbPage.text();
+  expectIncludes(egbPageText, '245 archived project associations', 'EGB contractor activity');
+  expectIncludes(egbPageText, '96 joint-project associations', 'EGB contractor activity');
+  expectIncludes(egbPageText, '/assets/contractor-v1.js?v=1', 'contractor project client');
   const concentrations = await readJson(
     '/api/v1/contractor-concentrations?dimension=region&year=0',
   );

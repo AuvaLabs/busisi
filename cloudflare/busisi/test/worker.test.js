@@ -271,6 +271,7 @@ class LocalD1 {
         ('dpwh:4', 2027, 'dpwh', 'Sample bridge Phase II', 'Network Development', 'Bridge Program', 'Region III', 'Quezon 1st DEO', 'house_only', 'In the House bill only', 'candidate', 0, 0, 0, 12000, 12000, 'https://budget.example/4', '', 'https://budget.example/house.pdf#page=6', NULL, 6, '${'a'.repeat(40)}', '${'e'.repeat(64)}', 'sample public bridge project');
       INSERT INTO integrity_metadata VALUES
         ('source_records', '3'), ('delivery_details', '2'), ('integrity_signals', '3'), ('contractors', '2'),
+        ('contractor_associations', '1'),
         ('concentrations', '2'), ('pcab_records', '1'),
         ('pcab_retrieved_on', '2026-11-03'),
         ('pcab_source_sha256', '${'e'.repeat(64)}'),
@@ -1496,6 +1497,7 @@ test('publishes delivery-integrity signals and contractor rankings', async (cont
     delivery_details: 2,
     integrity_signals: 3,
     contractors: 2,
+    contractor_associations: 1,
     source_artifact_sha256: 'f'.repeat(64),
     concentrations: 2,
     pcab_records: 1,

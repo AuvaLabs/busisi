@@ -174,7 +174,7 @@ export const queryIntegritySignals = async (database, query) => {
 
 export const getIntegritySummary = async (database) => {
   const rows = await database.prepare(
-    "SELECT key, value FROM integrity_metadata WHERE key IN ('source_records', 'delivery_details', 'integrity_signals', 'contractors', 'concentrations', 'source_artifact_sha256', 'source_as_of', 'pcab_records', 'pcab_retrieved_on', 'pcab_source_sha256', 'district_count', 'district_offices', 'district_source_commit', 'district_source_built_at', 'district_source_retrieved_on', 'district_snapshot_sha256') OR key LIKE 'signal:%' OR key LIKE 'pcab_status:%' OR key LIKE 'district_coverage:%' ORDER BY key",
+    "SELECT key, value FROM integrity_metadata WHERE key IN ('source_records', 'delivery_details', 'integrity_signals', 'contractors', 'contractor_associations', 'concentrations', 'source_artifact_sha256', 'source_as_of', 'pcab_records', 'pcab_retrieved_on', 'pcab_source_sha256', 'district_count', 'district_offices', 'district_source_commit', 'district_source_built_at', 'district_source_retrieved_on', 'district_snapshot_sha256') OR key LIKE 'signal:%' OR key LIKE 'pcab_status:%' OR key LIKE 'district_coverage:%' ORDER BY key",
   ).all();
   const metadata = Object.fromEntries(rows.results.map((row) => [row.key, row.value]));
   const signals = rows.results
@@ -185,6 +185,7 @@ export const getIntegritySummary = async (database) => {
     delivery_details: Number(metadata.delivery_details || 0),
     integrity_signals: Number(metadata.integrity_signals),
     contractors: Number(metadata.contractors),
+    contractor_associations: Number(metadata.contractor_associations || 0),
     source_artifact_sha256: metadata.source_artifact_sha256,
     source_as_of: metadata.source_as_of,
     concentrations: Number(metadata.concentrations || 0),
