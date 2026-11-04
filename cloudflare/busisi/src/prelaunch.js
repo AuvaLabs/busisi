@@ -507,6 +507,7 @@ Allow: /
 Allow: /api/v1/questions
 Allow: /api/v1/public-services
 Allow: /api/v1/public-services-summary
+Allow: /api/v1/facility-registry-status
 Disallow: /api/
 Disallow: /watchlist/
 Sitemap: ${SITE.origin}/sitemap.xml
@@ -576,6 +577,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Evidence questions and scope states: ${SITE.origin}/api/v1/questions
 - Title-classified public services records: ${SITE.origin}/api/v1/public-services
 - Public services classification summary: ${SITE.origin}/api/v1/public-services-summary
+- Facility registry release-gate status: ${SITE.origin}/api/v1/facility-registry-status
 
 ## Evidence and publication rules
 

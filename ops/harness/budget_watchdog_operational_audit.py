@@ -15,6 +15,10 @@ from engine.budget_watchdog.operations_audit import (
     audit_operational_facts,
 )
 from engine.budget_watchdog.source_status_bundle import build_source_status_sql
+from ops.harness.budget_watchdog_facility_monitor import (
+    DEFAULT_OUTPUT as FACILITY_OUTPUT,
+)
+from ops.harness.budget_watchdog_facility_monitor import run_facility_monitor
 from ops.harness.budget_watchdog_source_monitor import (
     DEFAULT_BASELINE,
     run_monitor,
@@ -26,8 +30,8 @@ from ops.harness.budget_watchdog_source_monitor import (
 ROOT = Path(__file__).resolve().parents[2]
 WORKER = ROOT / "cloudflare" / "busisi"
 QUEUE = ROOT / "data" / "budget_watchdog" / "project-image-automation" / "coverage-queue.sqlite3"
-IMAGE_MANIFEST = ROOT / "data" / "budget_watchdog" / "project-image-d1-bundle" / "manifest.json"
 PUBLICATIONS = ROOT / "data" / "budget_watchdog" / "project-image-publications"
+RELEASES = ROOT / "data" / "budget_watchdog" / "project-image-releases"
 OUTPUT = ROOT / "data" / "budget_watchdog" / "operational-audit"
 PIPELINE_LOCK = ROOT / "data" / "budget_watchdog" / "project-image-automation" / "cycle.lock"
 TIMERS = (
@@ -85,14 +89,34 @@ def _queue_facts(now: datetime) -> tuple[dict[str, Any], bool]:
 
 
 def _release_facts() -> dict[str, Any]:
-    manifest = json.loads(IMAGE_MANIFEST.read_text(encoding="utf-8"))
-    release = manifest["coverage_release"]
-    release_id = release["release_id"]
+    published: list[tuple[datetime, dict[str, Any], Path, Path]] = []
+    for marker in sorted(PUBLICATIONS.glob("*.json")):
+        marker_document = json.loads(marker.read_text(encoding="utf-8"))
+        release_id = marker_document.get("release_id")
+        if release_id != marker.stem:
+            raise ValueError(f"published release marker identity mismatch: {marker.name}")
+        manifest_path = RELEASES / release_id / "manifest.json"
+        if not manifest_path.is_file():
+            raise ValueError(f"published release missing archived manifest: {release_id}")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        release = manifest.get("coverage_release")
+        if not isinstance(release, dict) or release.get("release_id") != release_id:
+            raise ValueError(f"archived release identity mismatch: {release_id}")
+        completed = release.get("completed_contracts")
+        released_at = _parse_time(release.get("released_at"))
+        if not isinstance(completed, int) or completed < 0 or released_at is None:
+            raise ValueError(f"archived release metadata is invalid: {release_id}")
+        published.append((released_at, release, marker, manifest_path))
+    if not published:
+        raise ValueError("no published project-image release evidence")
+    _, release, marker, manifest_path = max(published, key=lambda item: item[0])
     return {
-        "release_id": release_id,
+        "release_id": release["release_id"],
         "completed_contracts": release["completed_contracts"],
-        "publication_marker": str(PUBLICATIONS / f"{release_id}.json"),
-        "publication_marker_exists": (PUBLICATIONS / f"{release_id}.json").is_file(),
+        "released_at": release["released_at"],
+        "release_manifest": str(manifest_path),
+        "publication_marker": str(marker),
+        "publication_marker_exists": marker.is_file(),
     }
 
 
@@ -162,6 +186,19 @@ def _run_audit() -> int:
         ],
         cwd=WORKER,
     )
+    facility_report, facility_code = run_facility_monitor(FACILITY_OUTPUT)
+    facility_publish = _run(
+        [
+            "npx",
+            "wrangler",
+            "d1",
+            "execute",
+            "busisi-publication",
+            "--remote",
+            f"--file={FACILITY_OUTPUT / 'public-status.sql'}",
+        ],
+        cwd=WORKER,
+    )
     live = _run(["npm", "run", "verify:live"], cwd=WORKER)
 
     queue, queue_ok = _queue_facts(now)
@@ -183,6 +220,10 @@ def _run_audit() -> int:
         issues.append("private coverage queue failed SQLite integrity check")
     if publish["returncode"] != 0:
         issues.append("source status publication failed")
+    if facility_code != 0:
+        issues.append("facility source monitor requires review")
+    if facility_publish["returncode"] != 0:
+        issues.append("facility source status publication failed")
     if live["returncode"] != 0:
         issues.append("live production verification failed")
 
@@ -196,6 +237,13 @@ def _run_audit() -> int:
             "report_path": source_report["report_path"],
             "observations_sha256": source_digest,
         },
+        "facility_monitor": {
+            "code": facility_code,
+            "source_state": facility_report["source_state"],
+            "release_state": facility_report["release_state"],
+            "report_path": facility_report["report_path"],
+            "status_sha256": facility_report["status_sha256"],
+        },
         "queue": queue,
         "release": release,
         "timers": {
@@ -207,6 +255,7 @@ def _run_audit() -> int:
         },
         "commands": {
             "source_status_publication": publish,
+            "facility_status_publication": facility_publish,
             "live_verification": live,
             "timers": timer_commands,
         },

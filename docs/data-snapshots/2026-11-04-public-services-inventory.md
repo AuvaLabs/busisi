@@ -62,6 +62,18 @@ normalized official school name appears in the record title and one compatible
 municipality appears in the title or source location. It does not use fuzzy
 matching or choose among repeated names.
 
+The release gate is enforced inside the D1 bundle builder. A caller cannot
+publish inferred links merely by supplying matcher output. The exact candidate
+set and official source artifact must match a reviewed manifest with at least
+100 cases, 95 percent measured precision, 95 percent reviewer agreement and no
+critical reconciliation failures. Without a passing gate, official registry
+rows may be staged after validation, but published record links remain zero.
+
+The public `/api/v1/facility-registry-status` endpoint and the public-services
+desk show the latest acquisition and gate state. The scheduled check treats the
+known HTTP 403 response as blocked, not as empty data. HTTP 404 or 410, transport
+failure, validation failure and a failed review gate require investigation.
+
 ## Review flags
 
 Flags remain separated by evidence class:

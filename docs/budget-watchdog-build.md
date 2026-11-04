@@ -306,5 +306,14 @@ renders the same status for readers. A passing status expires after eight hours
 in the live verifier. COA catalogue discovery is listed as a known limitation
 because its official catalogue currently blocks unattended acquisition.
 
+The same six-hour source workflow checks the registered DepEd school workbook.
+It stores its report and any acquired original bytes separately from the general
+source monitor. The public `/api/v1/facility-registry-status` endpoint reports
+whether acquisition is blocked, validation passed, review is pending or the
+measured release gate passed. An expected HTTP 403 never becomes an empty school
+dataset. Inferred links require a manifest bound to the exact source digest and
+candidate-set digest with 100 reviewed cases, 95 percent precision, 95 percent
+reviewer agreement and zero critical reconciliation failures.
+
 The first stable local baseline and its limitations are recorded in
 `docs/data-snapshots/2026-11-02-budget-watchdog.md`.

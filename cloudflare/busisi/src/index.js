@@ -74,6 +74,7 @@ import {
   queryPublicServices,
 } from './public-services-query.js';
 import { getFacility } from './facility-query.js';
+import { getFacilityRegistryStatus } from './facility-status-query.js';
 
 const API_PREFIX = '/api/v1/projects';
 const MAX_SLUG_LENGTH = 160;
@@ -147,6 +148,12 @@ const apiResponse = async (request, environment, url) => {
     return jsonResponse({
       meta: { review_scope: 'title_classified_public_service_records' },
       data: await getPublicServicesSummary(environment.DB),
+    });
+  }
+  if (url.pathname === '/api/v1/facility-registry-status') {
+    return jsonResponse({
+      meta: { review_scope: 'official_facility_registry_release_gate' },
+      data: await getFacilityRegistryStatus(environment.DB),
     });
   }
   if (url.pathname === '/api/v1/public-services') {

@@ -118,6 +118,9 @@ const facilityIdentityMigrationPath = fileURLToPath(
 const facilityRegistryDetailsMigrationPath = fileURLToPath(
   new URL('../migrations/0027_facility_registry_details.sql', import.meta.url),
 );
+const facilityRegistryStatusMigrationPath = fileURLToPath(
+  new URL('../migrations/0028_facility_registry_status.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -182,6 +185,7 @@ class LocalD1 {
     this.database.exec(readFileSync(contractorAssociationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(facilityIdentityMigrationPath, 'utf8'));
     this.database.exec(readFileSync(facilityRegistryDetailsMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(facilityRegistryStatusMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -1487,6 +1491,11 @@ test('keeps the question catalogue explicit when optional releases are unavailab
 });
 
 const insertPublicServiceExamples = (database) => database.database.exec(`
+  INSERT INTO facility_registry_status VALUES
+    (1, '2026-11-04T14:00:00+00:00',
+     'https://www.deped.gov.ph/wp-content/uploads/List-of-PSIP-III-Sites.xlsx',
+     'blocked', 'source_blocked', 403, NULL, 1095, 0, 0, 0, NULL, NULL, 0,
+     'The official DepEd source blocked unattended acquisition.', '${'8'.repeat(64)}');
   INSERT INTO facility_registry_sources VALUES
     ('deped-ppp-2025', 'Department of Education', 'PPP indicative school list',
      'https://www.deped.gov.ph/example.pdf', '${'9'.repeat(64)}',
@@ -1571,6 +1580,23 @@ test('publishes a deterministic public-services inventory with separated review 
   assert.equal(summaryBody.data.work_types.unspecified, 1);
   assert.equal(summaryBody.data.classification_version, 'public-services-v2');
   assert.equal(summaryBody.data.identity_method_version, 'facility-identity-v1');
+  assert.deepEqual(summaryBody.data.registry_status, {
+    checked_at: '2026-11-04T14:00:00+00:00',
+    source_url: 'https://www.deped.gov.ph/wp-content/uploads/List-of-PSIP-III-Sites.xlsx',
+    source_state: 'blocked',
+    release_state: 'source_blocked',
+    http_status: 403,
+    source_artifact_sha256: null,
+    expected_facilities: 1095,
+    validated_facilities: 0,
+    candidate_links: 0,
+    reviewed_cases: 0,
+    precision_bps: null,
+    agreement_bps: null,
+    critical_failures: 0,
+    status_note: 'The official DepEd source blocked unattended acquisition.',
+    status_sha256: '8'.repeat(64),
+  });
   assert.match(summaryBody.data.limitation, /not unique facilities/i);
   assert.deepEqual(summaryBody.data.identity_coverage, {
     official_facilities: 1,
@@ -1730,6 +1756,25 @@ test('publishes an official facility dossier without converting records into bui
   assert.deepEqual(await missingApi.json(), { detail: 'facility not found' });
 });
 
+test('publishes the facility registry gate status without exposing a false release', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  insertPublicServiceExamples(database);
+
+  const response = await worker.fetch(
+    request('/api/v1/facility-registry-status'), environment(database),
+  );
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.meta.review_scope, 'official_facility_registry_release_gate');
+  assert.equal(body.data.source_state, 'blocked');
+  assert.equal(body.data.release_state, 'source_blocked');
+  assert.equal(body.data.validated_facilities, 0);
+  assert.equal(body.data.candidate_links, 0);
+  assert.equal(body.data.reviewed_cases, 0);
+});
+
 test('renders a sparse facility dossier without inventing coordinates or linked records', () => {
   const document = facilityBody({
     record: {
@@ -1773,7 +1818,7 @@ test('renders a sparse facility dossier without inventing coordinates or linked 
   assert.doesNotMatch(document, /<Sample School>/);
 });
 
-test('reuses the public-services summary briefly within one database binding', async (context) => {
+test('reuses the public-services and registry-status summary within one database binding', async (context) => {
   const database = new LocalD1();
   context.after(() => database.close());
   const preparedBeforeSummary = database.preparedSql.length;
@@ -1782,7 +1827,29 @@ test('reuses the public-services summary briefly within one database binding', a
   const second = await getPublicServicesSummary(database);
 
   assert.strictEqual(second, first);
-  assert.equal(database.preparedSql.length - preparedBeforeSummary, 1);
+  assert.equal(database.preparedSql.length - preparedBeforeSummary, 2);
+});
+
+test('explains every facility registry release state in plain language', () => {
+  const states = {
+    source_unavailable: 'The official school list needs checking',
+    awaiting_review: 'The school list passed, but links still need review',
+    gate_failed: 'The school-link review did not pass',
+    ready_for_publication: 'The checked school links are ready to publish',
+    published: 'The checked school links are published',
+    acquisition_failed: 'The official school-list check needs attention',
+  };
+  for (const [releaseState, heading] of Object.entries(states)) {
+    const document = publicServicesBody({
+      registry_status: {
+        release_state: releaseState,
+        status_note: 'Current checked state.',
+        checked_at: '2026-11-04T14:00:00+00:00',
+      },
+    });
+    assert.match(document, new RegExp(heading));
+  }
+  assert.match(publicServicesBody({}), /No official school-list check is available/);
 });
 
 test('validates public-services filters without exposing an accusation filter', async (context) => {
@@ -1885,6 +1952,8 @@ test('renders an interactive public-services desk with explicit red-flag boundar
   assert.match(document, /This does not mean the project is bad or illegal/);
   assert.match(document, /1 official facility identity linked/);
   assert.match(document, /1 possible facility group/);
+  assert.match(document, /Official school list is currently blocked/);
+  assert.match(document, /Last checked 2026-11-04T14:00:00\+00:00/);
   assert.match(document, /An official identity means the record was linked to a published facility ID/);
   assert.match(document, /data-public-services-desk/);
   assert.match(document, /\/assets\/public-services-v1\.js/);

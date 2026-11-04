@@ -25,6 +25,7 @@ monitor is read-only and holds no deployment credentials.
 | `/api/v1/stats` | Source counts and artifact identity |
 | `/api/v1/questions` | Evidence question catalogue with answerability, scope, current counts, and limitations |
 | `/api/v1/public-services-summary` | Reconciled title-classification controls for school and health-facility records |
+| `/api/v1/facility-registry-status` | Latest DepEd source check and measured facility-link release gate |
 | `/api/v1/public-services` | Filtered budget-stage rows and delivery contracts with facility, work-type, and evidence-flag classifications |
 | `/api/v1/budgets` | GAA source-record search |
 | `/api/v1/delivery` | DPWH delivery-record search |

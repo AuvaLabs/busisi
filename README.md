@@ -59,6 +59,14 @@ quarantined. The source currently blocks unattended acquisition, so no identity
 from this pilot is published until those controls pass. The pipeline does not
 turn a listed school or linked record into a building count.
 
+The DepEd source monitor runs every six hours. HTTP 403 is published as a known
+blocked state, while disappearance, transport failure, schema drift and control
+total failure require operational review. When the official workbook becomes
+available, the pipeline creates a complete candidate packet but withholds every
+inferred link until a manifest bound to that exact source and candidate set has
+at least 100 reviewed cases, at least 95 percent precision, at least 95 percent
+reviewer agreement and zero critical reconciliation failures.
+
 The project-integrity desk publishes deterministic DPWH source contradictions,
 coordinate review signals and coverage gaps. Its contractor view separately
 ranks archived activity by project count and total project budget. Neither view
@@ -153,6 +161,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_release.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_universe.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_retry.py --limit 10
 PYTHONPATH=. python3 ops/harness/budget_watchdog_facilities.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_facility_monitor.py --reset-output
 cd cloudflare/busisi
 npm ci
 npm run check

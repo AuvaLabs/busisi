@@ -1,5 +1,6 @@
 import { QueryError } from './query.js';
 import { reviewClassLanguage } from './reader-language.js';
+import { getFacilityRegistryStatus } from './facility-status-query.js';
 
 const MAX_TEXT = 200;
 const MAX_LIMIT = 100;
@@ -391,7 +392,8 @@ export const queryPublicServices = async (database, query) => {
 };
 
 const loadPublicServicesSummary = async (database) => {
-  const row = await database.prepare(`${NORMALIZED_CTE} SELECT COUNT(*) AS total,
+  const [row, registryStatus] = await Promise.all([
+    database.prepare(`${NORMALIZED_CTE} SELECT COUNT(*) AS total,
     SUM(source_type = 'budget') AS budget, SUM(source_type = 'delivery') AS delivery,
     SUM(flag_count > 0) AS flagged,
     SUM(facility_type = 'school') AS school,
@@ -414,7 +416,9 @@ const loadPublicServicesSummary = async (database) => {
     SUM(identity_state = 'group_only') AS grouped_records,
     SUM(identity_state = 'ambiguous') AS ambiguous_records,
     SUM(identity_state = 'unlinked') AS unlinked_records
-    FROM eligible`).first();
+    FROM eligible`).first(),
+    getFacilityRegistryStatus(database),
+  ]);
   return Object.freeze({
     records: {
       total: Number(row.total || 0),
@@ -438,6 +442,7 @@ const loadPublicServicesSummary = async (database) => {
     ].map((classification) => ({ classification, count: Number(row[classification] || 0) })),
     classification_version: 'public-services-v2',
     identity_method_version: 'facility-identity-v1',
+    registry_status: registryStatus,
     limitation: 'Counts are records matched by words in the project title, not unique facilities. Budget rows and delivery contracts remain separate and do not prove physical construction, completion, payment, quality, or public benefit.',
   });
 };

@@ -22,11 +22,16 @@ jobs:
         run: pip install -r requirements.txt
       - name: Check monitored source revisions and catalogues
         run: PYTHONPATH=. python3 ops/harness/budget_watchdog_source_monitor.py --reset-output
+      - name: Check DepEd facility registry availability
+        if: always()
+        run: PYTHONPATH=. python3 ops/harness/budget_watchdog_facility_monitor.py --reset-output
       - name: Retain source evidence and report
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: source-drift-${{ github.run_id }}
-          path: data/budget_watchdog/source-monitor/
+          path: |
+            data/budget_watchdog/source-monitor/
+            data/budget_watchdog/facility-source-monitor/
           if-no-files-found: error
           retention-days: 30

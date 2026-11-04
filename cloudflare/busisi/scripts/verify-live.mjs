@@ -78,6 +78,7 @@ const expectedImageCoverage = Object.freeze({
 });
 const coverageReleaseMaxAgeMs = 8 * 60 * 60 * 1000;
 const sourceMonitorMaxAgeMs = 8 * 60 * 60 * 1000;
+const facilityMonitorMaxAgeMs = 8 * 60 * 60 * 1000;
 const expectedContractStates = Object.freeze({
   conflict_review: 161,
   multiple_exact_rows: 2_077,
@@ -378,6 +379,9 @@ const verifyPages = async () => {
   expectIncludes(publicServicesText, '/assets/public-services-v1.js', 'public services client');
   expectIncludes(publicServicesText, 'These are records, not separate buildings', 'public services counting boundary');
   expectIncludes(publicServicesText, 'Separate known facilities from possible groups', 'public services identity boundary');
+  if (!/(?:Official school list is currently blocked|The school list passed, but links still need review|The school-link review did not pass|The checked school links are ready to publish|The checked school links are published)/.test(publicServicesText)) {
+    fail('facility registry source status: safe reader state is missing');
+  }
   expectIncludes(publicServicesText, 'Things that need checking', 'public services flag boundary');
 
   const robots = await request('/robots.txt');
@@ -386,6 +390,7 @@ const verifyPages = async () => {
   expectIncludes(robotsText, `Sitemap: ${publicOrigin}/sitemap.xml`, 'robots sitemap');
   expectIncludes(robotsText, 'Allow: /api/v1/questions', 'robots question API');
   expectIncludes(robotsText, 'Allow: /api/v1/public-services', 'robots public services API');
+  expectIncludes(robotsText, 'Allow: /api/v1/facility-registry-status', 'robots facility status API');
 
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
@@ -405,6 +410,7 @@ const verifyPages = async () => {
   expectIncludes(llmsText, '/api/v1/questions', 'llms question API');
   expectIncludes(llmsText, 'Public services inventory', 'llms public services desk');
   expectIncludes(llmsText, '/api/v1/public-services', 'llms public services API');
+  expectIncludes(llmsText, '/api/v1/facility-registry-status', 'llms facility status API');
 
   const indexNow = await request(`/${indexNowKey}.txt`);
   expectStatus(indexNow, 200, 'IndexNow key');
@@ -636,6 +642,39 @@ const verifyData = async () => {
       + publicServices.identity_coverage.ambiguous_records
       + publicServices.identity_coverage.unlinked_records !== publicServices.records.total) {
     fail('public services: classification identity or control totals do not reconcile');
+  }
+  const facilityStatus = (await readJson('/api/v1/facility-registry-status')).data;
+  const facilityCheckedAt = Date.parse(facilityStatus?.checked_at ?? '');
+  const facilityBlocked = facilityStatus?.source_state === 'blocked'
+    && facilityStatus.release_state === 'source_blocked'
+    && facilityStatus.http_status === 403
+    && facilityStatus.validated_facilities === 0
+    && facilityStatus.candidate_links === 0
+    && facilityStatus.reviewed_cases === 0
+    && facilityStatus.source_artifact_sha256 === null;
+  const facilityValidated = facilityStatus?.source_state === 'validated'
+    && ['awaiting_review', 'gate_failed', 'ready_for_publication', 'published']
+      .includes(facilityStatus.release_state)
+    && facilityStatus.validated_facilities === 1_095
+    && /^[a-f0-9]{64}$/.test(facilityStatus.source_artifact_sha256 ?? '')
+    && facilityStatus.candidate_links >= 0
+    && facilityStatus.reviewed_cases >= 0;
+  const gatePassed = ['ready_for_publication', 'published'].includes(
+    facilityStatus?.release_state,
+  );
+  if (!facilityStatus
+    || !Number.isFinite(facilityCheckedAt)
+    || Date.now() - facilityCheckedAt > facilityMonitorMaxAgeMs
+    || facilityStatus.expected_facilities !== 1_095
+    || (!facilityBlocked && !facilityValidated)
+    || (gatePassed && (
+      facilityStatus.reviewed_cases < 100
+      || facilityStatus.precision_bps < 9_500
+      || facilityStatus.agreement_bps < 9_500
+      || facilityStatus.critical_failures !== 0
+    ))
+    || !/^[a-f0-9]{64}$/.test(facilityStatus.status_sha256 ?? '')) {
+    fail('facility registry: current blocked source or release-gate status does not reconcile');
   }
   const schoolServices = await readJson('/api/v1/public-services?facility=school&limit=1');
   if (schoolServices.meta.total !== expectedPublicServices.school
