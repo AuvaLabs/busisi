@@ -20,6 +20,7 @@ const paths = [
   '/audit/reports/coa-cpa-capiz-fmr-2015-01/',
   '/signals/',
   '/integrity/',
+  '/questions/',
   '/methodology/',
   '/contracts/24CM0078/',
   '/contracts/24CJ0309/',

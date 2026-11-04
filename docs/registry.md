@@ -23,6 +23,7 @@ monitor is read-only and holds no deployment credentials.
 |---|---|
 | `/healthz` | Read-only service health |
 | `/api/v1/stats` | Source counts and artifact identity |
+| `/api/v1/questions` | Evidence question catalogue with answerability, scope, current counts, and limitations |
 | `/api/v1/budgets` | GAA source-record search |
 | `/api/v1/delivery` | DPWH delivery-record search |
 | `/api/v1/candidates` | Explicitly unreviewed candidate search |
@@ -36,6 +37,8 @@ monitor is read-only and holds no deployment credentials.
 | `/api/v1/contract-outcomes` | Deterministic procurement-to-delivery cross-checks |
 | `/api/v1/contract-evidence` | Contract lifecycle document-acquisition status |
 | `/api/v1/acquisition-coverage` | Reconciled full-contract-universe acquisition controls |
+| `/api/v1/coverage-status` | Latest gated project-image coverage release |
+| `/api/v1/source-monitor-status` | Latest deterministic source-revision monitor result |
 
 ## Published dataset contract
 
@@ -70,6 +73,11 @@ SQLite queue. D1 receives only reconciled aggregate controls and provenance.
 The canonical ingestion database remains local and is never reachable through
 the Worker. D1 contains only publication records derived from reconciled source
 artifacts.
+
+The public question catalogue derives its counts and dates from those same D1
+release controls. It separates answerable questions, incomplete coverage, and
+unsupported claims. Reader actions lead to explanatory evidence desks, while
+the JSON endpoint exposes the catalogue as a machine-readable evidence contract.
 
 Project-image coverage begins with the reviewed dossier baseline and expands
 through a resumable evidence queue. Each contract is checked against the

@@ -12,6 +12,7 @@ import { editorialCss } from './prelaunch-editorial-styles.js';
 import { recordCss } from './prelaunch-record-styles.js';
 import { contractsCss } from './prelaunch-contracts-styles.js';
 import { releaseCss } from './prelaunch-release-styles.js';
+import { questionsCss } from './questions-styles.js';
 import { methodDiagram } from './prelaunch-visuals.js';
 
 const icon = (name, className = 'section-icon') => (
@@ -37,7 +38,7 @@ const navigation = (canonicalPath) => {
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Nonpartisan civic data initiative helping Filipino citizens examine traceable public budget records.</p></div>
-  <nav class="footer-nav" aria-label="Footer navigation"><a href="/sulit/">Sulit Ba?</a><a href="/releases/">Releases</a><a href="/contracts/">Contracts</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/coverage/">Coverage</a><a href="/methodology/">Method</a></nav>
+  <nav class="footer-nav" aria-label="Footer navigation"><a href="/questions/">Questions</a><a href="/sulit/">Sulit Ba?</a><a href="/releases/">Releases</a><a href="/contracts/">Contracts</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/coverage/">Coverage</a><a href="/methodology/">Method</a></nav>
   <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.<br><small>Built and maintained by <a href="https://auvalabs.com/" target="_blank" rel="noopener noreferrer">Auva Labs</a>. Questions and corrections: <a href="mailto:dev@auvalabs.com">dev@auvalabs.com</a></small></p>
 </div></footer>`;
 
@@ -63,7 +64,7 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${safeTitle}</title><meta name="description" content="${safeDescription}"><meta name="robots" content="${robots}">
-  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v17.css">
+  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v18.css">
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${safeTitle}"><meta property="og:description" content="${safeDescription}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow public money from proposal to project">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta name="twitter:image:alt" content="Busisi: Follow public money from proposal to project">
@@ -122,14 +123,14 @@ export const homeBody = `
   </section>
 
   <section class="home-questions" aria-labelledby="home-questions-heading">
-    <header><p class="kicker">Questions Busisi can answer</p><h2 id="home-questions-heading">Move from a headline to the evidence.</h2></header>
+    <header><p class="kicker">Questions Busisi can answer from current evidence</p><h2 id="home-questions-heading">Move from a headline to the evidence.</h2><p><a href="/questions/">See every supported question and limitation</a></p></header>
     <div>
-      <a href="/agencies/"><span>${icon('budget')}Budget</span><strong>Which agencies gained or lost funding in the House bill?</strong><b aria-hidden="true">→</b></a>
-      <a href="/releases/"><span>${icon('budget')}Releases</span><strong>How much allotment had DBM released to each agency by September?</strong><b aria-hidden="true">→</b></a>
+      <a href="/agencies/"><span>${icon('budget')}Budget</span><strong>Which national appropriation heads and Congress institutions gained or lost funding in the House bill?</strong><b aria-hidden="true">→</b></a>
+      <a href="/releases/"><span>${icon('budget')}Releases</span><strong>How much did the official DBM allotment releases report by department, attached agency, subunit, or Special Purpose Fund?</strong><b aria-hidden="true">→</b></a>
       <a href="/integrity/"><span>${icon('investigate')}Delivery</span><strong>Which project records contain contradictions or missing fields?</strong><b aria-hidden="true">→</b></a>
-      <a href="/procurement/"><span>${icon('sources')}Procurement</span><strong>Which contracts have exact bid, plan, or monitoring evidence?</strong><b aria-hidden="true">→</b></a>
-      <a href="/integrity/#contractors"><span>${icon('contractors')}Contractors</span><strong>Which contractors are associated with the most projects and budget?</strong><b aria-hidden="true">→</b></a>
-      <a href="/audit/"><span>${icon('sources')}Audit</span><strong>Did COA publish a report or observation that can be linked to this project?</strong><b aria-hidden="true">→</b></a>
+      <a href="/contracts/"><span>${icon('sources')}Contracts</span><strong>Which contracts have exact rows in the archived secondary award mirror?</strong><b aria-hidden="true">→</b></a>
+      <a href="/integrity/#contractors"><span>${icon('contractors')}Contractors</span><strong>Which recorded contractor identities are associated with the most projects and project budget?</strong><b aria-hidden="true">→</b></a>
+      <a href="/budget-trail/"><span>${icon('sources')}Sources</span><strong>Which FY2027 budget-stage documents are verified, discovered, or still unavailable?</strong><b aria-hidden="true">→</b></a>
     </div>
   </section>
 
@@ -225,7 +226,7 @@ export const integrityBody = `
     <div class="integrity-actions"><button type="button" data-integrity-more hidden>Load more signals</button></div>
     <noscript><p class="explorer-error">JavaScript is required for interactive filtering. The read-only JSON and CSV APIs remain available.</p></noscript>
   </section>
-  <section class="contractor-section" aria-labelledby="contractor-heading"><div class="contractor-heading"><div><p class="kicker">Archived DPWH activity</p><h2 id="contractor-heading">Contractors with the most projects.</h2></div><p>Explicit slash-delimited joint ventures are split into their recorded parties. Associated project budget is repeated for every listed party because the source does not state each party's award share. Current PCAB-table status is a present-day verification, not status on the award date.</p></div>
+  <section class="contractor-section" id="contractors" aria-labelledby="contractor-heading"><div class="contractor-heading"><div><p class="kicker">Archived DPWH activity</p><h2 id="contractor-heading">Contractors with the most projects.</h2></div><p>Explicit slash-delimited joint ventures are split into their recorded parties. Associated project budget is repeated for every listed party because the source does not state each party's award share. Current PCAB-table status is a present-day verification, not status on the award date.</p></div>
     <div class="contractor-shell" data-contractor-desk><form class="contractor-controls" data-contractor-form role="search"><label>Find contractor<input type="search" name="q" maxlength="200" placeholder="Contractor name or PCAB ID"></label><label>Ranking<select name="sort"><option value="count_desc">Rank by project count</option><option value="budget_desc">Rank by associated project budget</option><option value="name_asc">Contractor name A to Z</option></select></label><button type="submit">Apply ranking</button></form><div class="contractor-toolbar" aria-live="polite"><p><strong data-contractor-count>0</strong> of <span data-contractor-total>0</span> contractor identities shown</p><p data-contractor-status>Loading contractor activity...</p></div><div class="contractor-list" data-contractor-results></div><div class="contractor-actions"><button type="button" data-contractor-more hidden>Load more contractors</button></div></div>
   </section>
   <section class="concentration-section" data-concentration-desk aria-labelledby="concentration-heading"><div class="contractor-heading"><div><p class="kicker">Transparent concentration</p><h2 id="concentration-heading">Where one contractor appears often.</h2></div><p>This view ranks groups with at least 20 projects. Its denominator is contractor-party associations, so every explicitly listed joint-venture party is counted once. It is a screening measure, not evidence of bid coordination or wrongdoing.</p></div><form class="concentration-controls" data-concentration-form><label>Group by<select name="dimension"><option value="region">Region label</option><option value="province">Province or district-office label</option><option value="category">Project category</option></select></label><label>Fiscal year<select name="year"><option value="0">All years</option><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select></label><button type="submit">Compare groups</button></form><p class="concentration-status" data-concentration-status aria-live="polite">Loading concentration analysis...</p><div class="concentration-list" data-concentration-results></div></section>
@@ -353,6 +354,6 @@ export const methodologyBody = `
     <div class="standards-grid"><article class="standard-panel"><h3>Same rules for every record</h3><p>Every agency, district, contractor, project, and public official is evaluated under the same published evidence rules. Names, offices, locations, and amounts do not change a threshold or turn a review signal into a finding.</p></article><article class="standard-panel"><h3>Data before interpretation</h3><p>Official records, derived comparisons, review signals, and verified findings remain separate. Busisi does not infer political motive from an amount or association, and it publishes coverage limits and correction history so readers can examine possible sources of bias.</p></article><article class="standard-panel"><h3>Ownership and contact</h3><p>Auva Labs is responsible for Busisi's software, data pipeline, methodology, presentation, and publication decisions. Data-source organizations do not control Busisi's classifications or conclusions. Questions, corrections, and source-backed challenges are welcome at <a href="mailto:dev@auvalabs.com">dev@auvalabs.com</a>.</p></article></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}\n${questionsCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#15191d" stroke-width="2.5" stroke-linejoin="round"><path fill="#d2d9de" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#e9f0f4" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fff" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#17415f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#17415f"/><path fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/><circle cx="18" cy="44" r="1.2" fill="#8a4600"/></svg>`;

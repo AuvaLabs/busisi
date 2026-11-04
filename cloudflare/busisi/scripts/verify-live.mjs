@@ -332,14 +332,25 @@ const verifyPages = async () => {
   expectIncludes(procurementText, 'Questions, not findings', 'contract outcome boundary');
   expectIncludes(procurementText, 'class="record-title-link"', 'procurement dossier drill-down');
 
+  const questions = await request('/questions/');
+  expectStatus(questions, 200, '/questions/');
+  const questionsText = await questions.text();
+  expectIncludes(questionsText, 'Questions Busisi can answer from current evidence', 'questions heading');
+  expectIncludes(questionsText, 'Partially answerable', 'questions partial state');
+  expectIncludes(questionsText, 'What Busisi cannot establish', 'questions evidence boundary');
+  expectIncludes(questionsText, 'Who inserted, sponsored, or politically motivated a line item', 'questions authorship boundary');
+  if (/href="\/api\/v1\//.test(questionsText)) fail('questions: reader action exposes raw API');
+
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
-  expectIncludes(await robots.text(), `Sitemap: ${origin}/sitemap.xml`, 'robots sitemap');
+  const robotsText = await robots.text();
+  expectIncludes(robotsText, `Sitemap: ${origin}/sitemap.xml`, 'robots sitemap');
+  expectIncludes(robotsText, 'Allow: /api/v1/questions', 'robots question API');
 
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/questions/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -350,12 +361,14 @@ const verifyPages = async () => {
   expectIncludes(llmsText, 'Evidence and publication rules', 'llms evidence policy');
   expectIncludes(llmsText, 'nonpartisan and politically unaffiliated', 'llms independence policy');
   expectIncludes(llmsText, 'Built and maintained by Auva Labs', 'llms ownership');
+  expectIncludes(llmsText, 'Evidence question catalogue', 'llms question catalogue');
+  expectIncludes(llmsText, '/api/v1/questions', 'llms question API');
 
   const indexNow = await request(`/${indexNowKey}.txt`);
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/questions/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -363,19 +376,20 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v17.css',
+    '/assets/site-visual-v18.css',
     '/assets/busisi-mark-v3.svg',
     '/assets/busisi-social-v2.png',
     '/assets/busisi-evidence-banner-v2.webp',
     '/assets/busisi-icons-v1.svg#appropriations',
     'class="home-ledger"',
     'Current FY2027 budget evidence',
+    'Questions Busisi can answer from current evidence',
   ]) expectIncludes(html, value, 'home design');
   if (/busisi-mark\.webp|busisi-masthead\.webp/i.test(html)) {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v17.css');
+  const css = await request('/assets/site-visual-v18.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
@@ -384,7 +398,7 @@ const verifyDesign = async () => {
     '--review:#8a4600', '--signal-red:#982b25', '--verified:#1f6547', '.home-ledger',
     '.explorer-shell', '.review-shell', '.integrity-shell', '.contractor-shell',
     '.lifecycle-grid', '.lifecycle-item', '.contract-explorer', '.contract-card',
-    '.release-shell', '.release-card',
+    '.release-shell', '.release-card', '.questions-hero', '.question-grid',
   ]) {
     expectIncludes(cssText, value, 'design CSS');
   }
@@ -544,6 +558,24 @@ const verifyData = async () => {
     || releaseRows.data[0]?.balance_centavos !== 226_960_100_000
     || releaseRows.data[0]?.source_reader_url !== '/releases/#source') {
     fail('allotment releases: DPWH row or evidence boundary does not reconcile');
+  }
+
+  const questionCatalogue = await readJson('/api/v1/questions');
+  if (questionCatalogue.meta.review_scope !== 'evidence_question_catalogue'
+    || questionCatalogue.meta.total !== 21
+    || questionCatalogue.meta.states?.answerable !== 10
+    || questionCatalogue.meta.states?.partially_answerable !== 4
+    || questionCatalogue.meta.states?.not_supported !== 7
+    || new Set(questionCatalogue.data.map(({ id }) => id)).size !== 21) {
+    fail('question catalogue: identity or state controls do not reconcile');
+  }
+  const questionsById = Object.fromEntries(questionCatalogue.data.map((item) => [item.id, item]));
+  if (questionsById['fy2027-project-stage-changes']?.scope_count !== changeStats.record_count
+    || questionsById['dbm-allotment-releases']?.scope_count !== releaseSummary.record_count
+    || questionsById['project-image-coverage']?.scope_count !== imageCoverage.universe_contracts
+    || questionsById['actual-project-payment']?.answer_url !== null
+    || questionCatalogue.data.some(({ answer_url: answerUrl }) => answerUrl?.startsWith('/api/'))) {
+    fail('question catalogue: live counts or reader-safe answer links do not reconcile');
   }
 
   const budgetCycle = (await readJson('/api/v1/budget-cycle')).data;

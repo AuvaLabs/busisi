@@ -67,6 +67,7 @@ import {
   parseContractorProjectQuery,
   queryContractorProjects,
 } from './contractor-activity-query.js';
+import { getQuestionCatalogue, summarizeQuestionStates } from './questions-query.js';
 
 const API_PREFIX = '/api/v1/projects';
 const MAX_SLUG_LENGTH = 160;
@@ -114,6 +115,17 @@ const apiResponse = async (request, environment, url) => {
   }
   if (url.pathname === '/api/v1/stats') {
     return jsonResponse({ data: await getExplorerStats(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/questions') {
+    const records = await getQuestionCatalogue(environment.DB);
+    return jsonResponse({
+      meta: {
+        total: records.length,
+        states: summarizeQuestionStates(records),
+        review_scope: 'evidence_question_catalogue',
+      },
+      data: records,
+    });
   }
   if (url.pathname === '/api/v1/change-stats') {
     return jsonResponse({ data: await getChangeStats(environment.DB) });

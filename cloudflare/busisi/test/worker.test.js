@@ -17,6 +17,7 @@ import { getAcquisitionCoverage } from '../src/acquisition-coverage-query.js';
 import { getCoverageStatus } from '../src/coverage-status-query.js';
 import { coverageStatusBody } from '../src/coverage-status-content.js';
 import { getSourceMonitorStatus } from '../src/source-monitor-query.js';
+import { buildQuestionCatalogue } from '../src/questions-query.js';
 import { parseContractIntelligenceQuery } from '../src/contract-intelligence-query.js';
 import { parseContractorProjectQuery } from '../src/contractor-activity-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
@@ -1365,6 +1366,106 @@ test('publishes official FY2026 allotment releases with attached-agency filters'
     environment(database),
   );
   assert.equal((await secondPage.json()).data.length, 1);
+});
+
+test('publishes a deterministic catalogue of answerable and unsupported questions', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+
+  const response = await worker.fetch(
+    request('/api/v1/questions'), environment(database),
+  );
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(body.meta, {
+    total: 21,
+    states: { answerable: 10, partially_answerable: 4, not_supported: 7 },
+    review_scope: 'evidence_question_catalogue',
+  });
+  assert.equal(new Set(body.data.map(({ id }) => id)).size, body.data.length);
+  assert.ok(body.data.every(({ state }) => [
+    'answerable', 'partially_answerable', 'not_supported',
+  ].includes(state)));
+
+  const changes = body.data.find(({ id }) => id === 'fy2027-project-stage-changes');
+  assert.equal(changes.state, 'answerable');
+  assert.equal(changes.scope_count, 4);
+  assert.equal(changes.as_of, 'FY2027');
+  assert.equal(changes.answer_url, '/changes/');
+  assert.match(changes.limitation, /four acquired programs/i);
+
+  const releases = body.data.find(({ id }) => id === 'dbm-allotment-releases');
+  assert.equal(releases.scope_count, 3);
+  assert.equal(releases.as_of, '2026-09-30');
+  assert.match(releases.limitation, /not payment or spending/i);
+
+  const procurement = body.data.find(({ id }) => id === 'official-procurement-evidence');
+  assert.equal(procurement.state, 'partially_answerable');
+  assert.equal(procurement.scope_count, 2);
+  assert.match(procurement.limitation, /reviewed pilot/i);
+
+  const payment = body.data.find(({ id }) => id === 'actual-project-payment');
+  assert.equal(payment.state, 'not_supported');
+  assert.equal(payment.answer_url, null);
+  assert.equal(payment.scope_count, 0);
+  assert.match(payment.limitation, /voucher|receipt|payment confirmation/i);
+
+  for (const item of body.data) {
+    assert.equal(typeof item.question, 'string');
+    assert.equal(typeof item.scope_label, 'string');
+    assert.equal(typeof item.evidence_level, 'string');
+    assert.equal(typeof item.answer_summary, 'string');
+    assert.equal(typeof item.limitation, 'string');
+    assert.equal(item.answer_url !== null && item.answer_url.startsWith('/api/'), false);
+  }
+});
+
+test('renders the evidence question catalogue with current counts and hard boundaries', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+
+  const response = await siteWorker.fetch(request('/questions/'), environment(database));
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /Questions Busisi can answer from current evidence/);
+  assert.match(document, /Answerable/);
+  assert.match(document, /Partially answerable/);
+  assert.match(document, /Not yet supported/);
+  assert.match(document, /What Busisi cannot establish/);
+  assert.match(document, /4 compared project rows/);
+  assert.match(document, /3 official DBM release rows/);
+  assert.match(document, /36,748 contracts in the latest coverage release/);
+  assert.match(document, /Deterministic comparison/);
+  assert.match(document, /Acquired FY2027 NEP and House bill pages/);
+  assert.match(document, /Was this project actually paid/);
+  assert.match(document, /Who inserted, sponsored, or politically motivated a line item/);
+  assert.match(document, /href="\/changes\/"/);
+  assert.match(document, /href="\/methodology\/"/);
+  assert.doesNotMatch(document, /establishes (?:fraud|corruption)|confirmed ghost project/i);
+  assert.doesNotMatch(document, /href="\/api\/v1\//);
+});
+
+test('keeps the question catalogue explicit when optional releases are unavailable', () => {
+  const records = buildQuestionCatalogue({
+    change: {}, review: {}, agency: {}, release: {}, integrity: {}, contracts: {},
+    cycle: { metadata: {} }, publicValue: {}, source: null,
+    acquisition: { summary: {}, states: {} }, coverage: null,
+    procurement: { metadata: {} }, coa: { metadata: {} },
+  });
+
+  assert.equal(records.length, 21);
+  assert.equal(records.find(({ id }) => id === 'fy2027-project-stage-changes').as_of, 'FY2027');
+  assert.match(
+    records.find(({ id }) => id === 'project-image-coverage').answer_summary,
+    /No gated coverage release is available/,
+  );
+  assert.match(
+    records.find(({ id }) => id === 'monitored-source-revisions').scope_label,
+    /No monitor release available/,
+  );
+  assert.ok(records.every(({ scope_count }) => Number.isSafeInteger(scope_count)));
 });
 
 test('publishes sourced public-value indicators without a composite score', async (context) => {

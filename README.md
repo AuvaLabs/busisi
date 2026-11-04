@@ -36,6 +36,12 @@ The public review desk ranks stage changes, groups monetary movement by region,
 office, program or dataset, identifies conservative cross-year project-family
 candidates, and exports source-linked CSV evidence.
 
+The public evidence question catalogue states what the current publication can
+answer, what remains only partially answerable, and what cannot yet be
+established. Its counts and dates are derived from the same D1 release controls,
+and every supported question links to a reader-facing evidence desk with an
+explicit limitation. The catalogue is also available at `/api/v1/questions`.
+
 The project-integrity desk publishes deterministic DPWH source contradictions,
 coordinate review signals and coverage gaps. Its contractor view separately
 ranks archived activity by project count and total project budget. Neither view
