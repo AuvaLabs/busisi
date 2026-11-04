@@ -175,6 +175,8 @@ const NORMALIZED_CTE = `WITH raw AS (
   FROM classified WHERE facility_type <> ''
 )`;
 
+const FILTERED_CTE = NORMALIZED_CTE.replace('eligible AS MATERIALIZED', 'eligible AS');
+
 const filters = (query) => {
   const clauses = [];
   const bindings = [];
@@ -294,9 +296,9 @@ export const queryPublicServices = async (database, query) => {
   const { where, bindings } = filters(query);
   const [field, direction] = SORTS[query.sort];
   const [countRow, result] = await Promise.all([
-    database.prepare(`${NORMALIZED_CTE} SELECT COUNT(*) AS total FROM eligible ${where}`)
+    database.prepare(`${FILTERED_CTE} SELECT COUNT(*) AS total FROM eligible ${where}`)
       .bind(...bindings).first(),
-    database.prepare(`${NORMALIZED_CTE}
+    database.prepare(`${FILTERED_CTE}
       SELECT * FROM eligible ${where}
       ORDER BY ${field} ${direction}, record_id ASC LIMIT ? OFFSET ?`)
       .bind(...bindings, query.limit, query.offset).all(),
