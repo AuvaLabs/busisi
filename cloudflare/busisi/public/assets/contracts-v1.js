@@ -58,6 +58,34 @@
     parent.append(block);
   };
 
+  const contractorIdentityBlock = (parent, record) => {
+    const block = document.createElement('div');
+    appendText(block, 'span', record.contractor_parties.length > 1
+      ? 'Recorded contractor parties'
+      : 'Recorded contractor');
+    const active = String(new FormData(form).get('contractor') || '').trim().toLocaleLowerCase('en');
+    if (!record.contractor_parties.length) {
+      appendText(block, 'strong', record.contractor_name || 'Not stated');
+    } else {
+      record.contractor_parties.forEach((party) => {
+        const link = appendLink(
+          block,
+          party.contractor_name,
+          `/contractors/${encodeURIComponent(party.contractor_key)}/`,
+        );
+        link.className = 'contractor-party-link';
+        if (active && (
+          party.contractor_name.toLocaleLowerCase('en').includes(active)
+          || String(party.pcab_id || '').includes(active)
+        )) {
+          link.classList.add('matched-party');
+          link.setAttribute('aria-label', `${party.contractor_name}, matches contractor filter`);
+        }
+      });
+    }
+    parent.append(block);
+  };
+
   const renderComparison = () => {
     const records = [...selected.values()];
     compare.hidden = records.length < 2;
@@ -133,7 +161,7 @@
       record.status || 'Status not stated',
     ]) appendText(meta, 'span', value);
     const identities = appendText(main, 'div', '', 'contract-identities');
-    identityBlock(identities, 'Recorded contractor', record.contractor_name);
+    contractorIdentityBlock(identities, record);
     identityBlock(identities, 'Secondary mirror awardee', record.awardee_names || 'No accepted exact row');
     const side = document.createElement('div');
     side.className = 'contract-card-side';
@@ -145,10 +173,11 @@
     if (record.signal_count) {
       appendLink(links, 'Inspect signals', `/integrity/?q=${encodeURIComponent(record.contract_id)}`);
     }
-    const contractor = record.contractor_parties?.find((item) => item.contractor_key);
-    if (contractor) {
-      appendLink(links, 'Contractor activity', `/contractors/${encodeURIComponent(contractor.contractor_key)}/`);
-    }
+    record.contractor_parties.forEach((party) => appendLink(
+      links,
+      `Activity: ${party.contractor_name}`,
+      `/contractors/${encodeURIComponent(party.contractor_key)}/`,
+    ));
     card.append(main, side);
     return card;
   };
@@ -158,7 +187,7 @@
     const params = new URLSearchParams();
     for (const name of [
       'q', 'year', 'state', 'budget', 'signal', 'region', 'province', 'category', 'status',
-      'contractor', 'sort',
+      'contractor', 'awardee', 'sort',
     ]) {
       const value = String(data.get(name) || '').trim();
       if (value && value !== 'all') params.set(name, value);
@@ -278,7 +307,7 @@
   const initial = new URLSearchParams(location.search);
   for (const name of [
     'q', 'year', 'state', 'budget', 'signal', 'region', 'province', 'category', 'status',
-    'contractor', 'sort',
+    'contractor', 'awardee', 'sort',
   ]) {
     if (initial.has(name) && form.elements[name]) form.elements[name].value = initial.get(name);
   }

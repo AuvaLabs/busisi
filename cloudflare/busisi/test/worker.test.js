@@ -18,6 +18,7 @@ import { getCoverageStatus } from '../src/coverage-status-query.js';
 import { coverageStatusBody } from '../src/coverage-status-content.js';
 import { getSourceMonitorStatus } from '../src/source-monitor-query.js';
 import { parseContractIntelligenceQuery } from '../src/contract-intelligence-query.js';
+import { parseContractorProjectQuery } from '../src/contractor-activity-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseAllotmentReleaseQuery } from '../src/allotment-release-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
@@ -99,6 +100,9 @@ const coverageAutomationMigrationPath = fileURLToPath(
 const sourceMonitorMigrationPath = fileURLToPath(
   new URL('../migrations/0023_source_monitor_status.sql', import.meta.url),
 );
+const contractorAssociationMigrationPath = fileURLToPath(
+  new URL('../migrations/0024_contractor_project_associations.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -159,6 +163,7 @@ class LocalD1 {
     this.database.exec(readFileSync(projectImageMigrationPath, 'utf8'));
     this.database.exec(readFileSync(coverageAutomationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(sourceMonitorMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(contractorAssociationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -290,6 +295,8 @@ class LocalD1 {
       INSERT INTO contractor_rankings VALUES
         ('pcab:12345', 'ACME BUILDERS', '12345', 2, 30000000, 1, 1, 0, 2024, 2025, 1, 'current_regular', 'ACME BUILDERS, INC.', 'AAA', '2027-12-31', 1, '${'e'.repeat(64)}'),
         ('pcab:67890', 'SECOND BUILDERS', '67890', 1, 30000000, 1, 0, 0, 2025, 2025, 0, 'not_found_current_regular', '', '', '', -1, '${'e'.repeat(64)}');
+      INSERT INTO contractor_project_associations VALUES
+        ('pcab:12345', '25O00113', 1, 1, 'sole');
       INSERT INTO contractor_concentrations VALUES
         ('region', 'NCR', 0, 10, 9, 10, 4, 'pcab:12345', 'ACME BUILDERS', '12345', 4, 4000, 90000000),
         ('region', 'Region VII', 0, 12, 12, 12, 6, 'pcab:67890', 'SECOND BUILDERS', '67890', 3, 2500, 50000000);
@@ -429,11 +436,45 @@ const environment = (database, allowed = true) => ({
 
 const request = (path, init) => new Request(`https://busisi.test${path}`, init);
 
+const insertJointContract = (database) => database.database.exec(`
+  INSERT INTO delivery_items VALUES
+    ('25JOINT1', 2025, 'Construction of Joint Public Market', 5000000000,
+     'Manila 1st DEO, NCR', 'GAA 2025', 'family:joint-market',
+     'construction joint public market', '${'b'.repeat(64)}');
+  INSERT INTO delivery_project_details VALUES
+    ('25JOINT1', 2025, 'Buildings and Facilities', 'On-Going', '55',
+     'WRC BUILDERS (11111) / EGB BUILDERS (22222)',
+     '[{"contractor_key":"pcab:11111","contractor_name":"WRC BUILDERS","pcab_id":"11111"},{"contractor_key":"pcab:22222","contractor_name":"EGB BUILDERS","pcab_id":"22222"}]',
+     '2025-01-01', '2025-12-31', 'Manila 1st DEO', 'NCR', '', '', 0,
+     '${'b'.repeat(64)}');
+  INSERT INTO contractor_rankings VALUES
+    ('pcab:11111', 'WRC BUILDERS', '11111', 1, 5000000000, 0, 1, 0,
+     2025, 2025, 1, 'current_regular', 'WRC BUILDERS', 'A', '2027-01-01', 1,
+     '${'e'.repeat(64)}'),
+    ('pcab:22222', 'EGB BUILDERS', '22222', 1, 5000000000, 0, 1, 0,
+     2025, 2025, 1, 'current_regular', 'EGB BUILDERS', 'AAAA', '2027-01-01', 1,
+     '${'e'.repeat(64)}');
+  INSERT INTO contractor_project_associations VALUES
+    ('pcab:11111', '25JOINT1', 1, 2, 'joint'),
+    ('pcab:22222', '25JOINT1', 2, 2, 'joint');
+  INSERT INTO integrity_signal_items VALUES
+    ('25JOINT1:missing_coordinate', '25JOINT1', 2025, 'missing_coordinate',
+     'coverage_gap', 'Coordinate not available', 'Construction of Joint Public Market',
+     'WRC BUILDERS (11111) / EGB BUILDERS (22222)', '11111,22222', 5000000000,
+     'On-Going', '55', 'Manila 1st DEO', 'NCR', '', '', 'No usable coordinate.',
+     'Missing coordinates do not indicate a missing project.', '${'f'.repeat(64)}');
+  INSERT INTO contract_acquisition_details VALUES
+    ('25JOINT1', 2025, 'valid', 'aligned', 'no_exact_row', 0, 0);
+`);
+
 const explorerUrl = (query = '') => new URL(`https://busisi.test/api/v1/budgets${query}`);
 const changeUrl = (query = '') => new URL(`https://busisi.test/api/v1/changes${query}`);
 const reviewUrl = (query = '') => new URL(`https://busisi.test/api/v1/review-rankings${query}`);
 const integrityUrl = (query = '') => new URL(`https://busisi.test/api/v1/integrity-signals${query}`);
 const contractorUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractors${query}`);
+const contractorProjectUrl = (query = '') => new URL(
+  `https://busisi.test/api/v1/contractors/pcab%3A22222/projects${query}`,
+);
 const concentrationUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractor-concentrations${query}`);
 const agencyUrl = (query = '') => new URL(`https://busisi.test/api/v1/agency-budgets${query}`);
 const releaseUrl = (query = '') => new URL(`https://busisi.test/api/v1/allotment-releases${query}`);
@@ -631,6 +672,31 @@ test('validates project-integrity and contractor filters', () => {
   assert.deepEqual(parseContractorQuery(contractorUrl('?sort=budget_desc&limit=10')), {
     q: '', sort: 'budget_desc', limit: 10, offset: 0,
   });
+  assert.deepEqual(parseContractorProjectQuery(contractorProjectUrl(
+    '?year=2025&relationship=joint&status=On-Going&signal=with_signals&sort=year_desc&limit=10',
+  )), {
+    year: 2025,
+    relationship: 'joint',
+    status: 'On-Going',
+    signal: 'with_signals',
+    sort: 'year_desc',
+    limit: 10,
+    offset: 0,
+  });
+  for (const [query, message] of [
+    ['?relationship=partner', 'relationship is invalid'],
+    ['?signal=risky', 'signal is invalid'],
+    ['?sort=random', 'sort is invalid'],
+    ['?year=not-a-year', 'year is invalid'],
+    ['?year=1999', 'year is outside the supported range'],
+    [`?status=${'x'.repeat(201)}`, 'status is too long'],
+    ['?limit=101', 'limit is outside the supported range'],
+    ['?cursor=broken', 'cursor is invalid for this query'],
+  ]) {
+    assert.throws(() => parseContractorProjectQuery(contractorProjectUrl(query)), {
+      name: 'QueryError', message,
+    });
+  }
   assert.deepEqual(parseConcentrationQuery(concentrationUrl('?dimension=region&year=0')), {
     dimension: 'region', year: 0,
   });
@@ -985,7 +1051,7 @@ test('renders sparse contract acquisition fields without inventing evidence', ()
 });
 
 test('validates contract intelligence filters and cursor scope', () => {
-  const url = new URL('https://busisi.test/api/v1/contracts?q=pump&year=2025&state=structured_exact&category=Flood%20Control&region=NCR&province=Manila%201st%20DEO&status=On-Going&contractor=ACME&signal=without_signals&budget=100m_500m&sort=contract_asc&limit=10');
+  const url = new URL('https://busisi.test/api/v1/contracts?q=pump&year=2025&state=structured_exact&category=Flood%20Control&region=NCR&province=Manila%201st%20DEO&status=On-Going&contractor=ACME&awardee=ACME&signal=without_signals&budget=100m_500m&sort=contract_asc&limit=10');
   assert.deepEqual(parseContractIntelligenceQuery(url), {
     q: 'pump',
     year: 2025,
@@ -995,6 +1061,7 @@ test('validates contract intelligence filters and cursor scope', () => {
     province: 'Manila 1st DEO',
     status: 'On-Going',
     contractor: 'ACME',
+    awardee: 'ACME',
     signal: 'without_signals',
     budget: '100m_500m',
     sort: 'contract_asc',
@@ -1016,6 +1083,7 @@ test('validates contract intelligence filters and cursor scope', () => {
     `?province=${'x'.repeat(121)}`,
     `?status=${'x'.repeat(121)}`,
     `?contractor=${'x'.repeat(201)}`,
+    `?awardee=${'x'.repeat(201)}`,
     '?cursor=not-a-cursor',
   ]) {
     assert.throws(
@@ -1135,7 +1203,7 @@ test('publishes the contract intelligence explorer and client', async (context) 
   assert.match(document, /Compare selected contracts/);
   assert.match(document, /Province/);
   assert.match(document, /Download filtered CSV, up to 10,000 rows/);
-  assert.match(document, /\/assets\/contracts-v1\.js\?v=2/);
+  assert.match(document, /\/assets\/contracts-v1\.js\?v=3/);
   assert.match(document, /Source patterns are review leads, not findings/);
 });
 
@@ -1471,6 +1539,128 @@ test('publishes delivery-integrity signals and contractor rankings', async (cont
   assert.equal(concentrationPayload.data[0].top_share_basis_points, 4000);
   assert.equal(csv.headers.get('content-type'), 'text/csv; charset=utf-8');
   assert.match(await csv.text(), /"missing_coordinate","coverage_gap","24B"/);
+});
+
+test('keeps every joint contractor independently drillable and reconciled', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  insertJointContract(database);
+
+  const contracts = await worker.fetch(
+    request('/api/v1/contracts?contractor=EGB%20BUILDERS'), environment(database),
+  );
+  const projects = await worker.fetch(
+    request('/api/v1/contractors/pcab%3A22222/projects?relationship=joint'),
+    environment(database),
+  );
+  const profile = await siteWorker.fetch(
+    request('/contractors/pcab%3A22222/'), environment(database),
+  );
+  const signal = await siteWorker.fetch(
+    request('/records/integrity/25JOINT1%3Amissing_coordinate/'), environment(database),
+  );
+
+  const contractPayload = await contracts.json();
+  assert.equal(contractPayload.meta.total, 1);
+  assert.deepEqual(
+    contractPayload.data[0].contractor_parties.map((party) => party.contractor_key),
+    ['pcab:11111', 'pcab:22222'],
+  );
+  const projectPayload = await projects.json();
+  assert.equal(projectPayload.meta.total, 1);
+  assert.equal(projectPayload.data[0].contract_id, '25JOINT1');
+  assert.equal(projectPayload.data[0].relationship, 'joint');
+  assert.equal(projectPayload.data[0].party_position, 2);
+  assert.equal(projectPayload.data[0].signal_count, 1);
+
+  const profileDocument = await profile.text();
+  assert.match(profileDocument, /1 joint-project association/);
+  assert.match(profileDocument, /Projects associated with this recorded identity/);
+  assert.match(profileDocument, /data-contractor-key="pcab:22222"/);
+  assert.match(profileDocument, /\/assets\/contractor-v1\.js\?v=1/);
+  const signalDocument = await signal.text();
+  assert.match(signalDocument, /WRC BUILDERS/);
+  assert.match(signalDocument, /EGB BUILDERS/);
+  assert.match(signalDocument, /contractors\/pcab%3A11111/);
+  assert.match(signalDocument, /contractors\/pcab%3A22222/);
+});
+
+test('treats contractor searches literally and separates recorded parties from awardees', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  insertJointContract(database);
+
+  const wildcard = await worker.fetch(
+    request('/api/v1/contractors?q=%25'), environment(database),
+  );
+  const recorded = await worker.fetch(
+    request('/api/v1/contracts?contractor=EGB%20BUILDERS'), environment(database),
+  );
+  const awardee = await worker.fetch(
+    request('/api/v1/contracts?awardee=ACME%20BUILDERS'), environment(database),
+  );
+
+  assert.equal((await wildcard.json()).meta.total, 0);
+  assert.equal((await recorded.json()).meta.total, 1);
+  assert.equal((await awardee.json()).meta.total, 1);
+
+  const client = readFileSync(
+    fileURLToPath(new URL('../public/assets/contracts-v1.js', import.meta.url)),
+    'utf8',
+  );
+  assert.doesNotMatch(client, /contractor_parties\?\.find/);
+  assert.match(client, /contractor_parties.*forEach/s);
+});
+
+test('paginates and filters structured contractor project associations', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  insertJointContract(database);
+  database.database.exec(`
+    INSERT INTO delivery_items VALUES
+      ('25SOLE01', 2025, 'Construction of Sole Public Market', 2000000000,
+       'Manila 1st DEO, NCR', 'GAA 2025', 'family:sole-market',
+       'construction sole public market', '${'b'.repeat(64)}');
+    INSERT INTO delivery_project_details VALUES
+      ('25SOLE01', 2025, 'Buildings and Facilities', 'Completed', '100',
+       'EGB BUILDERS (22222)',
+       '[{"contractor_key":"pcab:22222","contractor_name":"EGB BUILDERS","pcab_id":"22222"}]',
+       '2025-01-01', '2025-12-31', 'Manila 1st DEO', 'NCR', '', '', 0,
+       '${'b'.repeat(64)}');
+    INSERT INTO contractor_project_associations VALUES
+      ('pcab:22222', '25SOLE01', 1, 1, 'sole');
+  `);
+
+  const first = await worker.fetch(
+    request('/api/v1/contractors/pcab%3A22222/projects?sort=contract_asc&limit=1'),
+    environment(database),
+  );
+  const firstPayload = await first.json();
+  const second = await worker.fetch(
+    request(`/api/v1/contractors/pcab%3A22222/projects?sort=contract_asc&limit=1&cursor=${firstPayload.meta.next_cursor}`),
+    environment(database),
+  );
+  const sole = await worker.fetch(
+    request('/api/v1/contractors/pcab%3A22222/projects?relationship=sole&status=Completed&signal=without_signals'),
+    environment(database),
+  );
+  const missing = await worker.fetch(
+    request('/api/v1/contractors/pcab%3A99999/projects'), environment(database),
+  );
+  const malformed = await worker.fetch(
+    request('/api/v1/contractors/wrong-key/projects'), environment(database),
+  );
+
+  assert.equal(firstPayload.meta.total, 2);
+  assert.equal(firstPayload.data[0].contract_id, '25JOINT1');
+  assert.ok(firstPayload.meta.next_cursor);
+  assert.equal((await second.json()).data[0].contract_id, '25SOLE01');
+  const solePayload = await sole.json();
+  assert.equal(solePayload.meta.total, 1);
+  assert.equal(solePayload.data[0].relationship, 'sole');
+  assert.equal(solePayload.data[0].signal_count, 0);
+  assert.equal(missing.status, 404);
+  assert.equal(malformed.status, 404);
 });
 
 test('rejects unsupported stage-change filters', async (context) => {

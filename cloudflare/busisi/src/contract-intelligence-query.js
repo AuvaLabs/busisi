@@ -45,7 +45,7 @@ const boundedText = (params, name, maximum = MAX_FACET_TEXT) => {
 
 const fingerprint = (query) => [
   query.q, query.year, query.state, query.category, query.region, query.province, query.status,
-  query.contractor, query.signal, query.budget, query.sort,
+  query.contractor, query.awardee, query.signal, query.budget, query.sort,
 ].join('|');
 
 const encodeCursor = (query, offset) => btoa(JSON.stringify({
@@ -77,6 +77,7 @@ export const parseContractIntelligenceQuery = (url) => {
   const province = boundedText(params, 'province');
   const status = boundedText(params, 'status');
   const contractor = boundedText(params, 'contractor', MAX_TEXT);
+  const awardee = boundedText(params, 'awardee', MAX_TEXT);
   const signal = params.get('signal') || 'all';
   const budget = params.get('budget') || 'all';
   const sort = params.get('sort') || 'budget_desc';
@@ -86,7 +87,7 @@ export const parseContractIntelligenceQuery = (url) => {
   if (!BUDGETS.has(budget)) throw new QueryError('budget is invalid');
   if (!Object.hasOwn(SORTS, sort)) throw new QueryError('sort is invalid');
   const query = {
-    q, year, state, category, region, province, status, contractor, signal, budget,
+    q, year, state, category, region, province, status, contractor, awardee, signal, budget,
     sort, limit, offset: 0,
   };
   const cursor = params.get('cursor');
@@ -98,17 +99,18 @@ const filters = (query) => {
   const clauses = [];
   const bindings = [];
   if (query.q) {
-    const search = `%${query.q.toLocaleLowerCase('en')}%`;
     clauses.push(`(
-      LOWER(a.contract_id) LIKE ? OR LOWER(d.description) LIKE ?
-      OR LOWER(d.location) LIKE ? OR LOWER(detail.contractor_name) LIKE ?
+      INSTR(LOWER(a.contract_id), LOWER(?)) > 0
+      OR INSTR(LOWER(d.description), LOWER(?)) > 0
+      OR INSTR(LOWER(d.location), LOWER(?)) > 0
+      OR INSTR(LOWER(detail.contractor_name), LOWER(?)) > 0
       OR EXISTS (
         SELECT 1 FROM contract_award_matches search_award
         WHERE search_award.contract_id = a.contract_id
-          AND LOWER(search_award.awardee_name) LIKE ?
+          AND INSTR(LOWER(search_award.awardee_name), LOWER(?)) > 0
       )
     )`);
-    bindings.push(search, search, search, search, search);
+    bindings.push(query.q, query.q, query.q, query.q, query.q);
   }
   if (query.year !== null) {
     clauses.push('a.fiscal_year = ?');
@@ -125,15 +127,16 @@ const filters = (query) => {
     }
   }
   if (query.contractor) {
-    const search = `%${query.contractor.toLocaleLowerCase('en')}%`;
-    clauses.push(`(
-      LOWER(detail.contractor_name) LIKE ? OR EXISTS (
-        SELECT 1 FROM contract_award_matches contractor_award
-        WHERE contractor_award.contract_id = a.contract_id
-          AND LOWER(contractor_award.awardee_name) LIKE ?
-      )
+    clauses.push('INSTR(LOWER(detail.contractor_name), LOWER(?)) > 0');
+    bindings.push(query.contractor);
+  }
+  if (query.awardee) {
+    clauses.push(`EXISTS (
+      SELECT 1 FROM contract_award_matches contractor_award
+      WHERE contractor_award.contract_id = a.contract_id
+        AND INSTR(LOWER(contractor_award.awardee_name), LOWER(?)) > 0
     )`);
-    bindings.push(search, search);
+    bindings.push(query.awardee);
   }
   if (query.signal !== 'all') {
     const operator = query.signal === 'with_signals' ? 'EXISTS' : 'NOT EXISTS';

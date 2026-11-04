@@ -6,6 +6,7 @@ import { buildContractOutcome } from './contract-outcome.js';
 import { getContractAwardMirror } from './outcome-query.js';
 import { getProjectContractEvidence } from './contract-evidence-query.js';
 import { getProjectImageEvidence } from './project-image-query.js';
+import { getContractorAssociationSummary } from './contractor-activity-query.js';
 
 const rows = (result) => result.results || [];
 
@@ -70,13 +71,6 @@ const deliveryById = (database, contractId) => database.prepare(`
   ${districtOfficeJoin("CASE WHEN INSTR(d.location, ',') > 0 THEN SUBSTR(d.location, 1, INSTR(d.location, ',') - 1) ELSE d.location END")}
   WHERE d.contract_id = ?
 `).bind(contractId).first();
-
-const contractorForIdentity = (database, pcabId, name) => database.prepare(`
-  SELECT * FROM contractor_rankings
-  WHERE (? <> '' AND pcab_id = ?) OR LOWER(contractor_name) = LOWER(?)
-  ORDER BY CASE WHEN pcab_id = ? THEN 0 ELSE 1 END, project_count DESC
-  LIMIT 1
-`).bind(pcabId || '', pcabId || '', name || '', pcabId || '').first();
 
 export const getBudgetRecord = async (database, recordId) => {
   const record = await budgetById(database, recordId);
@@ -192,18 +186,18 @@ export const getIntegrityRecord = async (database, signalId) => {
     WHERE i.signal_id = ?
   `).bind(signalId).first());
   if (!record) return null;
-  const [delivery, contractor, related] = await Promise.all([
+  const [delivery, related] = await Promise.all([
     deliveryById(database, record.contract_id),
-    contractorForIdentity(database, record.pcab_id, record.contractor_name),
     database.prepare(`
       SELECT signal_id, code, label, classification FROM integrity_signal_items
       WHERE contract_id = ? AND signal_id <> ? ORDER BY classification ASC, code ASC
     `).bind(record.contract_id, signalId).all(),
   ]);
+  const contractors = await contractorsForDelivery(database, delivery);
   return {
     record,
     delivery: withDistrict(delivery),
-    contractor: contractorRecord(contractor),
+    contractors,
     related: rows(related),
   };
 };
@@ -213,20 +207,46 @@ export const getContractorRecord = async (database, contractorKey) => {
     'SELECT * FROM contractor_rankings WHERE contractor_key = ?',
   ).bind(contractorKey).first());
   if (!record) return null;
-  const [signals, concentrations] = await Promise.all([
+  const [signals, concentrations, associationSummary, statuses, years] = await Promise.all([
     database.prepare(`
-      SELECT signal_id, contract_id, fiscal_year, code, classification, label, description,
-        budget_centavos, status, progress, province, region
-      FROM integrity_signal_items
-      WHERE (? <> '' AND pcab_id = ?) OR LOWER(contractor_name) = LOWER(?)
-      ORDER BY fiscal_year DESC, budget_centavos DESC, signal_id ASC LIMIT 100
-    `).bind(record.pcab_id, record.pcab_id, record.contractor_name).all(),
+      SELECT signal.signal_id, signal.contract_id, signal.fiscal_year, signal.code,
+        signal.classification, signal.label, signal.description, signal.budget_centavos,
+        signal.status, signal.progress, signal.province, signal.region
+      FROM integrity_signal_items signal
+      JOIN contractor_project_associations association
+        ON association.contract_id = signal.contract_id
+      WHERE association.contractor_key = ?
+      ORDER BY signal.fiscal_year DESC, signal.budget_centavos DESC, signal.signal_id ASC
+      LIMIT 100
+    `).bind(contractorKey).all(),
     database.prepare(`
       SELECT * FROM contractor_concentrations WHERE top_contractor_key = ?
       ORDER BY fiscal_year DESC, top_share_basis_points DESC LIMIT 50
     `).bind(contractorKey).all(),
+    getContractorAssociationSummary(database, contractorKey),
+    database.prepare(`
+      SELECT detail.status, COUNT(*) AS count
+      FROM contractor_project_associations association
+      JOIN delivery_project_details detail ON detail.contract_id = association.contract_id
+      WHERE association.contractor_key = ? AND detail.status <> ''
+      GROUP BY detail.status ORDER BY count DESC, detail.status ASC
+    `).bind(contractorKey).all(),
+    database.prepare(`
+      SELECT detail.fiscal_year, COUNT(*) AS count
+      FROM contractor_project_associations association
+      JOIN delivery_project_details detail ON detail.contract_id = association.contract_id
+      WHERE association.contractor_key = ?
+      GROUP BY detail.fiscal_year ORDER BY detail.fiscal_year DESC
+    `).bind(contractorKey).all(),
   ]);
-  return { record, signals: rows(signals), concentrations: rows(concentrations) };
+  return {
+    record,
+    signals: rows(signals),
+    concentrations: rows(concentrations),
+    associationSummary,
+    statuses: rows(statuses),
+    years: rows(years),
+  };
 };
 
 export const getEnhancedProject = async (database, slug) => {

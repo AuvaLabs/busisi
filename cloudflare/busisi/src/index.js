@@ -63,6 +63,10 @@ import {
   queryContractorConcentrations,
   queryIntegritySignals,
 } from './integrity-query.js';
+import {
+  parseContractorProjectQuery,
+  queryContractorProjects,
+} from './contractor-activity-query.js';
 
 const API_PREFIX = '/api/v1/projects';
 const MAX_SLUG_LENGTH = 160;
@@ -363,6 +367,37 @@ const apiResponse = async (request, environment, url) => {
         limit: query.limit,
         next_cursor: page.nextCursor,
         review_scope: 'archived_dpwh_contract_aggregation',
+      },
+      data: page.records,
+    });
+  }
+  const contractorProjectsMatch = url.pathname.match(
+    /^\/api\/v1\/contractors\/([^/]+)\/projects$/,
+  );
+  if (contractorProjectsMatch) {
+    let contractorKey = '';
+    try {
+      contractorKey = decodeURIComponent(contractorProjectsMatch[1]);
+    } catch {
+      return jsonResponse({ detail: 'contractor not found' }, 404);
+    }
+    if (!/^(?:pcab:\d+|name:[a-f0-9]{64})$/.test(contractorKey)) {
+      return jsonResponse({ detail: 'contractor not found' }, 404);
+    }
+    const exists = await environment.DB.prepare(
+      'SELECT contractor_key FROM contractor_rankings WHERE contractor_key = ?',
+    ).bind(contractorKey).first();
+    if (!exists) return jsonResponse({ detail: 'contractor not found' }, 404);
+    const query = parseContractorProjectQuery(url);
+    const page = await queryContractorProjects(environment.DB, contractorKey, query);
+    return jsonResponse({
+      meta: {
+        total: page.total,
+        count: page.records.length,
+        limit: query.limit,
+        next_cursor: page.nextCursor,
+        review_scope: 'structured_contractor_project_associations',
+        budget_boundary: 'full_project_budget_not_party_share',
       },
       data: page.records,
     });

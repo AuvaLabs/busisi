@@ -110,9 +110,14 @@ const integrityWhere = (query) => {
   const clauses = [];
   const bindings = [];
   if (query.q) {
-    clauses.push('(i.contract_id LIKE ? OR i.description LIKE ? OR i.contractor_name LIKE ? OR i.province LIKE ? OR i.region LIKE ?)');
-    const pattern = `%${query.q}%`;
-    bindings.push(pattern, pattern, pattern, pattern, pattern);
+    clauses.push(`(
+      INSTR(LOWER(i.contract_id), LOWER(?)) > 0
+      OR INSTR(LOWER(i.description), LOWER(?)) > 0
+      OR INSTR(LOWER(i.contractor_name), LOWER(?)) > 0
+      OR INSTR(LOWER(i.province), LOWER(?)) > 0
+      OR INSTR(LOWER(i.region), LOWER(?)) > 0
+    )`);
+    bindings.push(query.q, query.q, query.q, query.q, query.q);
   }
   if (query.signal !== 'all') {
     clauses.push('i.code = ?');
@@ -204,10 +209,11 @@ export const getIntegritySummary = async (database) => {
 
 const contractorWhere = (query) => {
   if (!query.q) return { sql: '', bindings: [] };
-  const pattern = `%${query.q}%`;
   return {
-    sql: ' WHERE contractor_name LIKE ? OR pcab_name LIKE ? OR pcab_id LIKE ?',
-    bindings: [pattern, pattern, pattern],
+    sql: ` WHERE INSTR(LOWER(contractor_name), LOWER(?)) > 0
+      OR INSTR(LOWER(pcab_name), LOWER(?)) > 0
+      OR INSTR(pcab_id, ?) > 0`,
+    bindings: [query.q, query.q, query.q],
   };
 };
 

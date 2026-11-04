@@ -163,6 +163,28 @@ def _district_snapshots(first: Path, second: Path) -> None:
     second.write_text(json.dumps(pages[1]))
 
 
+def _assert_contractor_associations(connection: sqlite3.Connection) -> None:
+    associations = connection.execute(
+        "SELECT contractor_key, contract_id, party_position, party_count, relationship "
+        "FROM contractor_project_associations ORDER BY contract_id"
+    ).fetchall()
+    assert associations == [
+        ("pcab:12345", "24B", 1, 1, "sole"),
+        ("pcab:12345", "25A", 1, 1, "sole"),
+    ]
+
+
+def _apply_integrity_migrations(connection: sqlite3.Connection, migration: Path) -> None:
+    for name in (
+        "0005_integrity.sql",
+        "0006_contractor_verification.sql",
+        "0007_district_attribution.sql",
+        "0011_delivery_details.sql",
+        "0024_contractor_project_associations.sql",
+    ):
+        connection.executescript(migration.with_name(name).read_text())
+
+
 def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) -> None:
     snapshot = tmp_path / "dpwh.parquet"
     output = tmp_path / "bundle"
@@ -189,6 +211,7 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
     assert first.source_records == 2
     assert first.integrity_signals == 4
     assert first.contractors == 1
+    assert first.contractor_associations == 2
     assert first.concentrations == 11
     assert first.district_offices == 2
     assert first.manifest_sha256 == second.manifest_sha256
@@ -207,13 +230,7 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
             / "migrations"
             / "0005_integrity.sql"
         )
-        connection.executescript(migration.read_text())
-        migration_0006 = migration.with_name("0006_contractor_verification.sql")
-        connection.executescript(migration_0006.read_text())
-        migration_0007 = migration.with_name("0007_district_attribution.sql")
-        connection.executescript(migration_0007.read_text())
-        migration_0011 = migration.with_name("0011_delivery_details.sql")
-        connection.executescript(migration_0011.read_text())
+        _apply_integrity_migrations(connection, migration)
         for chunk in sorted((output / "chunks").glob("*.sql")):
             connection.executescript(chunk.read_text())
         assert connection.execute("SELECT COUNT(*) FROM integrity_signal_items").fetchone()[0] == 4
@@ -224,13 +241,28 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
         ).fetchall()
         assert details == [
             (
-                "24B", "Buildings and Facilities", "Completed", "0.0",
-                "ACME BUILDERS (12345)", "2024-01-01", "2024-12-01", "", "", 0,
+                "24B",
+                "Buildings and Facilities",
+                "Completed",
+                "0.0",
+                "ACME BUILDERS (12345)",
+                "2024-01-01",
+                "2024-12-01",
+                "",
+                "",
+                0,
             ),
             (
-                "25A", "Buildings and Facilities", "On-Going", "100.0",
-                "ACME BUILDERS (12345)", "2025-01-01", "2025-12-01",
-                "14.5995", "120.9842", 1,
+                "25A",
+                "Buildings and Facilities",
+                "On-Going",
+                "100.0",
+                "ACME BUILDERS (12345)",
+                "2025-01-01",
+                "2025-12-01",
+                "14.5995",
+                "120.9842",
+                1,
             ),
         ]
         parties = connection.execute(
@@ -243,6 +275,7 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
             "SELECT project_count, total_budget_centavos FROM contractor_rankings"
         ).fetchone()
         assert contractor == (2, 30_000_075)
+        _assert_contractor_associations(connection)
         verification = connection.execute(
             "SELECT pcab_status, pcab_name, pcab_gov_infra FROM contractor_rankings"
         ).fetchone()

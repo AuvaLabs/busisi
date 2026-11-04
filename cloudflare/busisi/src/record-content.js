@@ -221,19 +221,49 @@ ${boundary('This row compares acquired proposal and House bill evidence. It does
 <section class="evidence-section"><p class="kicker">Prior-year context</p><h2>Appropriations sharing the normalized family label</h2>${relatedBudgets(prior)}</section>
 <section class="evidence-section"><p class="kicker">FY2027 related rows</p><h2>Other rows in the same normalized family</h2>${related.length ? related.map((item) => `<a class="candidate-callout" href="${idPath('change', item.record_id)}"><strong>${html(item.title)}</strong><span>${html(item.change_type.replaceAll('_', ' '))} · ${html(money(item.difference_centavos))}</span></a>`).join('') : empty('No other FY2027 comparison row shares this family label.')}</section></article>`;
 
-export const integrityRecordBody = ({ record, delivery, contractor, related }) => `${breadcrumb('Integrity review signal', record.signal_id)}
+export const integrityRecordBody = ({ record, delivery, contractors, related }) => `${breadcrumb('Integrity review signal', record.signal_id)}
 <article class="evidence-dossier">${heading({ badge: 'Review signal, not a finding', tone: 'signal', kicker: `${record.classification.replaceAll('_', ' ')} · Contract ${record.contract_id}`, title: record.label, summary: record.description })}
 ${boundary('This deterministic rule identifies a source-record pattern for verification. It does not prove fraud, corruption, a ghost project, non-performance, or wrongdoing.')}
 ${facts([['Recorded project budget', money(record.budget_centavos)], ['Status / progress', `${record.status || 'Not stated'} / ${record.progress || 'Not stated'}%`], ['Location', [record.province, record.region].filter(Boolean).join(', ') || 'Not stated']])}
 <div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Rule evidence</p><h2>Why this record was surfaced</h2><p>${html(record.evidence)}</p><p class="evidence-limit"><strong>Known limit:</strong> ${html(record.limitations)}</p><dl class="evidence-details"><div><dt>Rule code</dt><dd>${html(record.code)}</dd></div><div><dt>Snapshot fingerprint</dt><dd>${hash(record.source_artifact_sha256)}</dd></div></dl>${delivery ? `<a class="evidence-action" href="${idPath('delivery', delivery.contract_id)}">Open underlying delivery record</a>` : ''}</section>${district(record.district_context)}</div>
-${contractor ? `<section class="evidence-panel"><p class="kicker">Recorded contractor identity</p><h2>${html(contractor.contractor_name)}</h2><p>${contractor.project_count} archived project associations · ${html(money(contractor.total_budget_centavos))}</p><a class="evidence-action" href="${contractorPath(contractor.contractor_key)}">Open contractor activity</a></section>` : ''}
+<section class="evidence-section"><p class="kicker">Recorded contractor identities</p><h2>Every party stated in the project record</h2>${contractorCards(contractors)}</section>
 <section class="evidence-section"><p class="kicker">Other rules on this contract</p><h2>${related.length} additional signal${related.length === 1 ? '' : 's'}</h2>${signals(related)}</section></article>`;
 
-export const contractorRecordBody = ({ record, signals: items, concentrations }) => `${breadcrumb('Contractor activity', record.contractor_key)}
+const associationCount = (count, label) => `${count} ${label}${count === 1 ? '' : 's'}`;
+
+export const contractorRecordBody = ({
+  record,
+  signals: items,
+  concentrations,
+  associationSummary,
+  statuses,
+  years,
+}) => `${breadcrumb('Contractor activity', record.contractor_key)}
 <article class="evidence-dossier">${heading({ badge: 'Archived contractor activity', kicker: record.pcab_id ? `Recorded PCAB ID ${record.pcab_id}` : 'No PCAB ID in source identity', title: record.contractor_name, summary: `Project associations in the acquired DPWH snapshot, FY ${record.first_year} to FY ${record.last_year}.` })}
 ${facts([['Project associations', record.project_count, 'Associations, not necessarily unique completed works'], ['Associated project budget', money(record.total_budget_centavos), 'Not revenue, payment, or contract value received'], ['Joint-project associations', record.joint_project_count]])}
 ${boundary('These counts describe archived project-record associations. They do not prove beneficial ownership, payment, performance quality, political connection, market misconduct, or wrongdoing.')}
 <div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Recorded status mix</p><h2>Projects by source status</h2>${facts([['Completed', record.completed_count], ['Ongoing', record.ongoing_count], ['Terminated', record.terminated_count]])}</section><section class="evidence-panel"><p class="kicker">PCAB verification snapshot</p><h2>${html(record.pcab_status.replaceAll('_', ' '))}</h2><dl class="evidence-details"><div><dt>Listed name</dt><dd>${html(record.pcab_name || 'Not available')}</dd></div><div><dt>Category</dt><dd>${html(record.pcab_category || 'Not available')}</dd></div><div><dt>Valid to</dt><dd>${html(record.pcab_valid_to || 'Not available')}</dd></div></dl>${record.pcab_id ? `<a class="evidence-action" href="${html(record.pcab_url)}" target="_blank" rel="noopener noreferrer">Verify in the current PCAB table</a>` : ''}</section></div>
+<section class="evidence-section contractor-project-ledger" data-contractor-activity data-contractor-key="${html(record.contractor_key)}">
+  <p class="kicker">Recorded project ledger</p><h2>Projects associated with this recorded identity</h2>
+  <p><strong>${html(associationCount(associationSummary.sole_project_count, 'sole-project association'))}</strong> and <strong>${html(associationCount(associationSummary.joint_project_count, 'joint-project association'))}</strong>. ${html(associationCount(associationSummary.projects_with_signals, 'project association'))} currently ${associationSummary.projects_with_signals === 1 ? 'has' : 'have'} at least one deterministic review signal.</p>
+  ${facts([
+    ['Sole-project associated budget', money(associationSummary.sole_budget_centavos), 'Full project values for records naming only this party'],
+    ['Joint-project associated budget', money(associationSummary.joint_budget_centavos), 'Full project values, not an allocation to this party'],
+  ])}
+  <aside class="evidence-boundary"><strong>Joint-project budget boundary</strong><p>The full recorded project budget appears for every named joint party because the acquired source does not state each party's contractual share. Never sum contractor-profile budgets into a national total.</p></aside>
+  <form class="contractor-project-controls" data-contractor-project-form>
+    <label>Fiscal year<select name="year"><option value="">All years</option>${years.map((item) => `<option value="${item.fiscal_year}">${item.fiscal_year} (${item.count})</option>`).join('')}</select></label>
+    <label>Relationship<select name="relationship"><option value="all">Sole and joint</option><option value="sole">Sole projects</option><option value="joint">Joint projects</option></select></label>
+    <label>Source status<select name="status"><option value="">All statuses</option>${statuses.map((item) => `<option value="${html(item.status)}">${html(item.status)} (${item.count})</option>`).join('')}</select></label>
+    <label>Review signals<select name="signal"><option value="all">Any coverage</option><option value="with_signals">Has signals</option><option value="without_signals">No signals</option></select></label>
+    <label>Sort<select name="sort"><option value="budget_desc">Largest project budget</option><option value="year_desc">Newest fiscal year</option><option value="contract_asc">Contract number</option></select></label>
+    <button type="submit">Apply filters</button>
+  </form>
+  <p class="contractor-project-status" data-contractor-project-status aria-live="polite">Loading structured project associations...</p>
+  <div class="contractor-project-list" data-contractor-project-results></div>
+  <div class="contractor-project-actions"><button type="button" data-contractor-project-more hidden>Load more projects</button></div>
+  <noscript><p class="evidence-empty">JavaScript is required for the paginated project ledger. The read-only project-association API remains available.</p></noscript>
+</section>
 <section class="evidence-section"><p class="kicker">Review leads</p><h2>Signals associated with this contractor identity</h2>${signals(items)}</section>
 <section class="evidence-section"><p class="kicker">Concentration context</p><h2>Groups where this was the leading recorded party</h2>${concentrations.length ? concentrations.map((item) => `<div class="candidate-callout"><strong>${html(item.group_label)}</strong><span>${(Number(item.top_share_basis_points) / 100).toFixed(1)}% of contractor-party associations · FY ${item.fiscal_year || 'all years'}</span></div>`).join('') : empty('No published concentration group lists this contractor as the leading recorded party.')}</section></article>`;
 

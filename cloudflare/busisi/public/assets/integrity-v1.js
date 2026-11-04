@@ -107,6 +107,25 @@ const contractorParams = () => {
   return params;
 };
 
+const syncIntegrityUrl = () => {
+  const current = new URLSearchParams(location.search);
+  for (const name of ['q', 'signal', 'classification', 'year', 'sort']) current.delete(name);
+  for (const [name, value] of integrityParams()) current.set(name, value);
+  history.replaceState(null, '', `${location.pathname}?${current}`);
+};
+
+const syncContractorUrl = () => {
+  const current = new URLSearchParams(location.search);
+  const values = new FormData(contractorForm);
+  const query = String(values.get('q') || '').trim();
+  const sort = String(values.get('sort') || 'count_desc');
+  if (query) current.set('contractor_q', query);
+  else current.delete('contractor_q');
+  if (sort !== 'count_desc') current.set('contractor_sort', sort);
+  else current.delete('contractor_sort');
+  history.replaceState(null, '', `${location.pathname}?${current}`);
+};
+
 const renderSummary = (payload) => {
   const coordinateSignals = payload.signals
     .filter((item) => item.code.includes('coordinate'))
@@ -298,7 +317,7 @@ const loadIntegrity = async ({ append = false } = {}) => {
     integrityStatus.textContent = payload.meta.total
       ? 'Signals are evidence-led questions, not findings of wrongdoing.'
       : 'No source records match these filters.';
-    if (!append) history.replaceState(null, '', `${location.pathname}?${integrityParams()}`);
+    if (!append) syncIntegrityUrl();
   } catch (error) {
     if (error.name === 'AbortError') return;
     if (!append) integrityResults.replaceChildren();
@@ -330,6 +349,7 @@ const loadContractors = async ({ append = false } = {}) => {
     contractorStatus.textContent = payload.meta.total
       ? 'Activity is aggregated from the archived snapshot, not procurement performance.'
       : 'No contractor identities match this search.';
+    if (!append) syncContractorUrl();
   } catch (error) {
     if (error.name === 'AbortError') return;
     if (!append) contractorResults.replaceChildren();
@@ -360,6 +380,10 @@ for (const name of ['q', 'signal', 'classification', 'year', 'sort']) {
   if (initial.has(name) && integrityForm.elements[name]) {
     integrityForm.elements[name].value = initial.get(name);
   }
+}
+if (initial.has('contractor_q')) contractorForm.elements.q.value = initial.get('contractor_q');
+if (initial.has('contractor_sort')) {
+  contractorForm.elements.sort.value = initial.get('contractor_sort');
 }
 
 loadSummary().catch(() => {

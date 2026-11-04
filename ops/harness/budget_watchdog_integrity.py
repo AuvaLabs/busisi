@@ -38,6 +38,7 @@ def main() -> None:
                 "source_records": result.source_records,
                 "integrity_signals": result.integrity_signals,
                 "contractors": result.contractors,
+                "contractor_associations": result.contractor_associations,
                 "concentrations": result.concentrations,
                 "district_offices": result.district_offices,
                 "sql_chunks": result.sql_chunks,

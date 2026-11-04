@@ -40,6 +40,7 @@ MIGRATION_PATHS = (
     MIGRATION_DIRECTORY / "0006_contractor_verification.sql",
     MIGRATION_DIRECTORY / "0007_district_attribution.sql",
     MIGRATION_DIRECTORY / "0011_delivery_details.sql",
+    MIGRATION_DIRECTORY / "0024_contractor_project_associations.sql",
 )
 SNAPSHOT_COLUMNS = (
     "contractId",
@@ -65,6 +66,7 @@ class IntegrityBundleResult:
     source_records: int
     integrity_signals: int
     contractors: int
+    contractor_associations: int
     concentrations: int
     district_offices: int
     sql_chunks: int
@@ -230,6 +232,19 @@ def _contractor_statement(contractor: ContractorSummary) -> str:
     return f"INSERT INTO contractor_rankings VALUES ({_sql_values(values)});"  # noqa: S608
 
 
+def _association_statements(record: DeliveryIntegrityRecord) -> Iterator[str]:
+    identities = contractor_identities(record.contractor)
+    party_count = len(identities)
+    relationship = "joint" if party_count > 1 else "sole"
+    for position, identity in enumerate(identities, start=1):
+        values = (identity.key, record.contract_id, position, party_count, relationship)
+        statement = (
+            "INSERT INTO contractor_project_associations VALUES "  # noqa: S608
+            f"({_sql_values(values)});"
+        )
+        yield statement
+
+
 def _concentration_statement(item: ContractorConcentration) -> str:
     values = (
         item.dimension,
@@ -306,6 +321,7 @@ def _write_chunks(
 
 def _metadata_sql(metadata: dict[str, str]) -> str:
     lines = [
+        "DELETE FROM contractor_project_associations;",
         "DELETE FROM delivery_project_details;",
         "DELETE FROM integrity_signal_items;",
         "DELETE FROM contractor_rankings;",
@@ -320,7 +336,7 @@ def _metadata_sql(metadata: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int, int, int]) -> None:
+def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int, int, int, int]) -> None:
     connection = sqlite3.connect(":memory:")
     try:
         for migration in MIGRATION_PATHS:
@@ -331,13 +347,55 @@ def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int, int, i
             connection.execute("SELECT COUNT(*) FROM delivery_project_details").fetchone()[0],
             connection.execute("SELECT COUNT(*) FROM integrity_signal_items").fetchone()[0],
             connection.execute("SELECT COUNT(*) FROM contractor_rankings").fetchone()[0],
+            connection.execute("SELECT COUNT(*) FROM contractor_project_associations").fetchone()[
+                0
+            ],
             connection.execute("SELECT COUNT(*) FROM contractor_concentrations").fetchone()[0],
             connection.execute("SELECT COUNT(*) FROM district_office_attributions").fetchone()[0],
         )
+        missing_associations = connection.execute(
+            """
+            SELECT COUNT(*) FROM delivery_project_details detail,
+              json_each(detail.contractor_parties_json) party
+            LEFT JOIN contractor_project_associations association
+              ON association.contract_id = detail.contract_id
+             AND association.contractor_key = json_extract(party.value, '$.contractor_key')
+            WHERE association.contractor_key IS NULL
+            """
+        ).fetchone()[0]
+        extra_associations = connection.execute(
+            """
+            SELECT COUNT(*) FROM contractor_project_associations association
+            JOIN delivery_project_details detail ON detail.contract_id = association.contract_id
+            WHERE NOT EXISTS (
+              SELECT 1 FROM json_each(detail.contractor_parties_json) party
+              WHERE json_extract(party.value, '$.contractor_key') = association.contractor_key
+                AND CAST(party.key AS INTEGER) + 1 = association.party_position
+            )
+            """
+        ).fetchone()[0]
+        ranking_mismatches = connection.execute(
+            """
+            SELECT COUNT(*) FROM contractor_rankings ranking
+            JOIN (
+              SELECT contractor_key, COUNT(*) AS project_count,
+                SUM(relationship = 'joint') AS joint_project_count
+              FROM contractor_project_associations GROUP BY contractor_key
+            ) association USING (contractor_key)
+            WHERE ranking.project_count <> association.project_count
+               OR ranking.joint_project_count <> association.joint_project_count
+            """
+        ).fetchone()[0]
         integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
     finally:
         connection.close()
-    if actual != expected or integrity != "ok":
+    if (
+        actual != expected
+        or missing_associations
+        or extra_associations
+        or ranking_mismatches
+        or integrity != "ok"
+    ):
         raise ValueError("integrity bundle verification failed")
 
 
@@ -410,6 +468,7 @@ def build_integrity_bundle(
             source_sha256=pcab_digest,
         )
     snapshot = build_integrity_snapshot(records, pcab=pcab, as_of=source_as_of)
+    association_count = sum(len(contractor_identities(record.contractor)) for record in records)
     concentrations = contractor_concentrations(
         records,
         minimum_projects=minimum_concentration_projects,
@@ -422,11 +481,12 @@ def build_integrity_bundle(
     pcab_status_counts = Counter(item.pcab_status for item in snapshot.contractors)
     metadata = {
         "contractors": str(len(snapshot.contractors)),
+        "contractor_associations": str(association_count),
         "delivery_details": str(len(records)),
         "fiscal_years": ",".join(str(year) for year in fiscal_years),
         "integrity_signals": str(len(snapshot.signals)),
         "concentrations": str(len(concentrations)),
-        "schema_version": "3",
+        "schema_version": "4",
         "source_artifact_sha256": source_digest,
         "source_records": str(len(records)),
         **{f"signal:{code}": str(count) for code, count in sorted(signal_counts.items())},
@@ -481,6 +541,14 @@ def build_integrity_bundle(
     chunks.extend(
         _write_chunks(
             chunks_dir,
+            "250-contractor-associations",
+            (statement for record in records for statement in _association_statements(record)),
+            chunk_rows,
+        )
+    )
+    chunks.extend(
+        _write_chunks(
+            chunks_dir,
             "300-concentrations",
             (_concentration_statement(item) for item in concentrations),
             chunk_rows,
@@ -505,6 +573,7 @@ def build_integrity_bundle(
             len(records),
             len(snapshot.signals),
             len(snapshot.contractors),
+            association_count,
             len(concentrations),
             district_offices,
         ),
@@ -528,6 +597,7 @@ def build_integrity_bundle(
         source_records=len(records),
         integrity_signals=len(snapshot.signals),
         contractors=len(snapshot.contractors),
+        contractor_associations=association_count,
         concentrations=len(concentrations),
         district_offices=district_offices,
         sql_chunks=len(chunks),
