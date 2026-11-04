@@ -24,7 +24,8 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
-  assert.doesNotMatch(document, /Auva Labs|auvalabs/i);
+  assert.match(document, /A public-interest project by <a href="https:\/\/auvalabs\.com\//);
+  assert.match(document, /href="mailto:hello@auvalabs\.com"/);
   assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
   assert.match(
     response.headers.get('content-security-policy'),
@@ -179,7 +180,7 @@ test('publishes the Sulit Ba public-value desk as the primary civic question', a
   assert.match(document, /Motive cannot be inferred/);
   assert.match(document, /not enacted appropriations, releases, payments, or outcomes/i);
   assert.match(document, /src="\/assets\/public-value-v1\.js\?v=2"/);
-  assert.doesNotMatch(document, /overall score|AI score|Auva Labs/i);
+  assert.doesNotMatch(document, /overall score|AI score/i);
 });
 
 test('home uses the restrained-color Busisi identity and direct evidence desks', async () => {
@@ -212,7 +213,7 @@ test('methodology is canonical and explains the publication gate', async () => {
   assert.match(document, /Congressional district context/);
   assert.match(document, /Machine-readable provenance stays in the JSON API/);
   assert.match(document, /not a coordinate or boundary-polygon determination/);
-  assert.doesNotMatch(document, /Auva Labs|auvalabs/i);
+  assert.match(document, /A public-interest project by/);
 });
 
 test('publishes machine-readable discovery files', async () => {

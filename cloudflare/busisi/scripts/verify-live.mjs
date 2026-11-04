@@ -210,6 +210,8 @@ const verifyPages = async () => {
   expectIncludes(homeText, `<link rel="canonical" href="${origin}/">`, 'home canonical');
   expectIncludes(homeText, '"@type":"WebSite"', 'home structured data');
   expectIncludes(homeText, 'index, follow, max-image-preview:large', 'home robots');
+  expectIncludes(homeText, 'https://auvalabs.com/', 'Auva Labs project credit');
+  expectIncludes(homeText, 'mailto:hello@auvalabs.com', 'project contact');
   const csp = home.headers.get('content-security-policy') ?? '';
   expectIncludes(csp, "default-src 'self'", 'home CSP');
   expectIncludes(csp, "connect-src 'self'", 'home CSP');
@@ -349,7 +351,7 @@ const verifyDesign = async () => {
     'class="home-ledger"',
     'Current FY2027 budget evidence',
   ]) expectIncludes(html, value, 'home design');
-  if (/busisi-mark\.webp|busisi-masthead\.webp|auva\s*labs?/i.test(html)) {
+  if (/busisi-mark\.webp|busisi-masthead\.webp/i.test(html)) {
     fail('home design: retired branding or illustration is public');
   }
 

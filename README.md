@@ -45,6 +45,21 @@ not imply project sponsorship, control or responsibility.
 
 Production: [busisi.org](https://busisi.org)
 
+## Project and data attribution
+
+Busisi is a public-interest project by [Auva Labs](https://auvalabs.com/).
+Questions, corrections and collaboration enquiries can be sent to
+[hello@auvalabs.com](mailto:hello@auvalabs.com).
+
+Busisi uses public datasets and API endpoints maintained by
+[BetterGov.ph](https://bettergov.ph/) and the
+[bettergovph GitHub organization](https://github.com/bettergovph), including
+GAA, DPWH delivery and version-pinned PhilGEPS mirror inputs. Busisi preserves
+the acquired source bytes and fingerprints, performs its own deterministic
+validation and reconciliation, and keeps BetterGov-derived records distinct
+from original agency publications. BetterGov does not operate Busisi and is not
+responsible for Busisi review signals, interpretations or publication choices.
+
 ## Accuracy contract
 
 The publication pipeline follows this order:

@@ -38,7 +38,7 @@ const navigation = (canonicalPath) => {
 const footer = `<footer class="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent civic data initiative for traceable Philippine public budget records.</p></div>
   <nav class="footer-nav" aria-label="Footer navigation"><a href="/sulit/">Sulit Ba?</a><a href="/releases/">Releases</a><a href="/contracts/">Contracts</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/coverage/">Coverage</a><a href="/methodology/">Method</a></nav>
-  <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.</p>
+  <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.<br><small>A public-interest project by <a href="https://auvalabs.com/" target="_blank" rel="noopener noreferrer">Auva Labs</a> · <a href="mailto:hello@auvalabs.com">hello@auvalabs.com</a></small></p>
 </div></footer>`;
 
 const escapeJson = (value) => JSON.stringify(value).replaceAll('<', '\\u003c');
