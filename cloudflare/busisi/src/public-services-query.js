@@ -2,6 +2,8 @@ import { QueryError } from './query.js';
 
 const MAX_TEXT = 200;
 const MAX_LIMIT = 100;
+const SUMMARY_CACHE_TTL_MS = 60_000;
+const summaryCache = new WeakMap();
 const SOURCES = new Set(['all', 'budget', 'delivery']);
 const FACILITIES = new Set(['all', 'school', 'hospital', 'health_center']);
 const WORK_TYPES = new Set([
@@ -296,18 +298,20 @@ const mapRecord = (record, signals) => {
 export const queryPublicServices = async (database, query) => {
   const { where, bindings } = filters(query);
   const [field, direction] = SORTS[query.sort];
-  const [countRow, result] = await Promise.all([
-    database.prepare(`${FILTERED_CTE} SELECT COUNT(*) AS total FROM eligible ${where}`)
-      .bind(...bindings).first(),
-    database.prepare(`${FILTERED_CTE}
-      SELECT * FROM eligible ${where}
-      ORDER BY ${field} ${direction}, record_id ASC LIMIT ? OFFSET ?`)
-      .bind(...bindings, query.limit, query.offset).all(),
-  ]);
+  const result = await database.prepare(`${FILTERED_CTE}
+    SELECT *, COUNT(*) OVER () AS filtered_total FROM eligible ${where}
+    ORDER BY ${field} ${direction}, record_id ASC LIMIT ? OFFSET ?`)
+    .bind(...bindings, query.limit, query.offset).all();
   const raw = result.results || [];
   const signals = await signalMap(database, raw);
   const records = raw.map((record) => mapRecord(record, signals));
-  const total = Number(countRow.total || 0);
+  let total = Number(raw[0]?.filtered_total || 0);
+  if (!raw.length && query.offset > 0) {
+    const countRow = await database.prepare(
+      `${FILTERED_CTE} SELECT COUNT(*) AS total FROM eligible ${where}`,
+    ).bind(...bindings).first();
+    total = Number(countRow.total || 0);
+  }
   const nextOffset = query.offset + records.length;
   return Object.freeze({
     records,
@@ -316,7 +320,7 @@ export const queryPublicServices = async (database, query) => {
   });
 };
 
-export const getPublicServicesSummary = async (database) => {
+const loadPublicServicesSummary = async (database) => {
   const row = await database.prepare(`${NORMALIZED_CTE} SELECT COUNT(*) AS total,
     SUM(source_type = 'budget') AS budget, SUM(source_type = 'delivery') AS delivery,
     SUM(flag_count > 0) AS flagged,
@@ -352,4 +356,18 @@ export const getPublicServicesSummary = async (database) => {
     classification_version: 'public-services-v1',
     limitation: 'Counts are title-classified records, not unique facilities. Budget rows and delivery contracts remain separate and do not prove physical construction, completion, payment, quality, or public benefit.',
   });
+};
+
+export const getPublicServicesSummary = async (database) => {
+  const now = Date.now();
+  const cached = summaryCache.get(database);
+  if (cached && cached.expiresAt > now) return cached.value;
+  const pending = loadPublicServicesSummary(database);
+  summaryCache.set(database, { expiresAt: now + SUMMARY_CACHE_TTL_MS, value: pending });
+  try {
+    return await pending;
+  } catch (error) {
+    summaryCache.delete(database);
+    throw error;
+  }
 };

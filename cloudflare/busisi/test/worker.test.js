@@ -19,7 +19,11 @@ import { coverageStatusBody } from '../src/coverage-status-content.js';
 import { getSourceMonitorStatus } from '../src/source-monitor-query.js';
 import { buildQuestionCatalogue } from '../src/questions-query.js';
 import { publicServicesBody } from '../src/public-services-content.js';
-import { parsePublicServicesQuery, queryPublicServices } from '../src/public-services-query.js';
+import {
+  getPublicServicesSummary,
+  parsePublicServicesQuery,
+  queryPublicServices,
+} from '../src/public-services-query.js';
 import { parseContractIntelligenceQuery } from '../src/contract-intelligence-query.js';
 import { parseContractorProjectQuery } from '../src/contractor-activity-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
@@ -142,6 +146,7 @@ class LocalStatement {
 
 class LocalD1 {
   constructor() {
+    this.preparedSql = [];
     this.database = new DatabaseSync(':memory:');
     this.database.exec(readFileSync(migrationPath, 'utf8'));
     this.database.exec(readFileSync(explorerMigrationPath, 'utf8'));
@@ -419,6 +424,7 @@ class LocalD1 {
   }
 
   prepare(sql) {
+    this.preparedSql.push(sql);
     return new LocalStatement(this.database.prepare(sql));
   }
 
@@ -1567,6 +1573,18 @@ test('publishes a deterministic public-services inventory with separated review 
   assert.equal(rehabilitationBody.data[0].reader_url, '/contracts/25HOSP01/');
 });
 
+test('reuses the public-services summary briefly within one database binding', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const preparedBeforeSummary = database.preparedSql.length;
+
+  const first = await getPublicServicesSummary(database);
+  const second = await getPublicServicesSummary(database);
+
+  assert.strictEqual(second, first);
+  assert.equal(database.preparedSql.length - preparedBeforeSummary, 1);
+});
+
 test('validates public-services filters without exposing an accusation filter', async (context) => {
   const database = new LocalD1();
   context.after(() => database.close());
@@ -1586,7 +1604,9 @@ test('validates public-services pagination, combined filters and sparse renderin
   const firstQuery = parsePublicServicesQuery(new URL(
     'https://busisi.test/api/v1/public-services?source=budget&limit=1&sort=title_asc',
   ));
+  const preparedBeforeFirstPage = database.preparedSql.length;
   const first = await queryPublicServices(database, firstQuery);
+  assert.equal(database.preparedSql.length - preparedBeforeFirstPage, 1);
   assert.equal(first.total, 2);
   assert.equal(first.records.length, 1);
   assert.ok(first.nextCursor);
