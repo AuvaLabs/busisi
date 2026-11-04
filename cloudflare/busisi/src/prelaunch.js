@@ -30,6 +30,12 @@ import { publicServicesBody } from './public-services-content.js';
 import { getPublicServicesSummary } from './public-services-query.js';
 import { facilityBody } from './facility-content.js';
 import { getFacility } from './facility-query.js';
+import {
+  contractorDirectoryBody,
+  placesBody,
+  sourcesBody,
+  watchBody,
+} from './ecosystem-content.js';
 import { accountabilityBody } from './accountability-content.js';
 import {
   getAccountabilitySummary,
@@ -267,11 +273,54 @@ const response = (body, { status = 200, type, cache = 'public, max-age=3600' }) 
 });
 
 const home = () => page(document({
-  title: 'Busisi | Philippine public budget records',
+  title: 'Busisi | Philippine public project evidence',
   description: SITE.description,
   canonicalPath: '/',
   body: homeBody,
   schema: HOME_SCHEMA,
+}));
+
+const collectionSchema = (name, description, path) => ({
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name,
+  description,
+  url: `${SITE.origin}${path}`,
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
+const contractorDirectory = () => page(document({
+  title: 'Philippine public project contractor directory | Busisi',
+  description: 'Search contractor identities recorded in acquired Philippine public project records and open source-linked activity profiles.',
+  canonicalPath: '/contractors/',
+  body: contractorDirectoryBody,
+  schema: collectionSchema('Busisi contractor directory', 'Recorded contractor identities and associated Philippine public project evidence.', '/contractors/'),
+}));
+
+const places = () => page(document({
+  title: 'Philippine public projects by recorded place | Busisi',
+  description: 'Browse province, district-office, and region labels stated in acquired Philippine public project records.',
+  canonicalPath: '/places/',
+  body: placesBody,
+  schema: collectionSchema('Busisi place directory', 'Philippine public projects grouped by recorded source place labels.', '/places/'),
+}));
+
+const sources = () => page(document({
+  title: 'Philippine public project source guide | Busisi',
+  description: 'Understand the original publishers, access routes, processing, evidence desks, and source limitations behind Busisi records.',
+  canonicalPath: '/sources/',
+  body: sourcesBody,
+  schema: collectionSchema('Busisi source guide', 'Source roles and evidence desks for Philippine public project records.', '/sources/'),
+}));
+
+const watch = (coverageRecord = null, sourceStatus = null) => page(document({
+  title: 'Public project source watch | Busisi',
+  description: 'See monitored source revisions, the latest gated evidence coverage, and known acquisition limits.',
+  canonicalPath: '/watch/',
+  body: watchBody(coverageRecord, sourceStatus),
+  schema: collectionSchema('Busisi source watch', 'Monitoring status and publication coverage for Busisi public project evidence.', '/watch/'),
 }));
 
 const methodology = () => page(document({
@@ -533,6 +582,8 @@ Allow: /api/v1/questions
 Allow: /api/v1/public-services
 Allow: /api/v1/public-services-summary
 Allow: /api/v1/facility-registry-status
+Allow: /api/v1
+Allow: /api/v1/places
 Disallow: /api/
 Disallow: /watchlist/
 Sitemap: ${SITE.origin}/sitemap.xml
@@ -544,6 +595,10 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/sulit/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/explore/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/contracts/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/contractors/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>${SITE.origin}/places/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>${SITE.origin}/sources/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>${SITE.origin}/watch/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/changes/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/agencies/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/releases/</loc><lastmod>2026-11-03</lastmod></url>
@@ -571,7 +626,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
 
 const llms = () => response(`# Busisi
 
-Busisi is a nonpartisan and politically unaffiliated public-interest project helping Filipino citizens examine Philippine public budget records.
+Busisi is an independent, nonpartisan, and politically unaffiliated evidence desk helping Filipino citizens follow the records behind Philippine public projects.
 
 Built and maintained by Auva Labs. Official publishers and data-access providers are credited separately and do not control Busisi methodology or publication decisions.
 
@@ -585,6 +640,10 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Public value desk: ${SITE.origin}/sulit/
 - Explorer: ${SITE.origin}/explore/
 - Contract intelligence: ${SITE.origin}/contracts/
+- Contractor directory: ${SITE.origin}/contractors/
+- Place directory: ${SITE.origin}/places/
+- Source guide: ${SITE.origin}/sources/
+- Source watch: ${SITE.origin}/watch/
 - FY2027 change ledger: ${SITE.origin}/changes/
 - Appropriation heads: ${SITE.origin}/agencies/
 - FY2026 allotment releases: ${SITE.origin}/releases/
@@ -605,6 +664,8 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Title-classified public services records: ${SITE.origin}/api/v1/public-services
 - Public services classification summary: ${SITE.origin}/api/v1/public-services-summary
 - Facility registry release-gate status: ${SITE.origin}/api/v1/facility-registry-status
+- Public API catalogue: ${SITE.origin}/api/v1
+- Projects grouped by recorded place: ${SITE.origin}/api/v1/places
 
 ## Evidence and publication rules
 
@@ -624,7 +685,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 `, { type: 'text/plain; charset=utf-8' });
 
 const assets = (path) => {
-  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css' || path === '/assets/site-visual-v8.css' || path === '/assets/site-visual-v9.css' || path === '/assets/site-visual-v10.css' || path === '/assets/site-visual-v11.css' || path === '/assets/site-visual-v12.css' || path === '/assets/site-visual-v13.css' || path === '/assets/site-visual-v14.css' || path === '/assets/site-visual-v15.css' || path === '/assets/site-visual-v16.css' || path === '/assets/site-visual-v17.css' || path === '/assets/site-visual-v18.css' || path === '/assets/site-visual-v19.css') {
+  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css' || path === '/assets/site-visual-v8.css' || path === '/assets/site-visual-v9.css' || path === '/assets/site-visual-v10.css' || path === '/assets/site-visual-v11.css' || path === '/assets/site-visual-v12.css' || path === '/assets/site-visual-v13.css' || path === '/assets/site-visual-v14.css' || path === '/assets/site-visual-v15.css' || path === '/assets/site-visual-v16.css' || path === '/assets/site-visual-v17.css' || path === '/assets/site-visual-v18.css' || path === '/assets/site-visual-v19.css' || path === '/assets/site-visual-v20.css') {
     return response(siteCss, { type: 'text/css; charset=utf-8', cache: 'public, max-age=604800, immutable' });
   }
   if (path === '/assets/favicon.svg') {
@@ -680,6 +741,10 @@ const route = (path) => {
   if (path === '/sulit' || path === '/sulit/') return sulit();
   if (path === '/explore' || path === '/explore/') return explore();
   if (path === '/contracts' || path === '/contracts/') return contracts();
+  if (path === '/contractors' || path === '/contractors/') return contractorDirectory();
+  if (path === '/places' || path === '/places/') return places();
+  if (path === '/sources' || path === '/sources/') return sources();
+  if (path === '/watch' || path === '/watch/') return watch();
   if (path === '/changes' || path === '/changes/') return changes();
   if (path === '/agencies' || path === '/agencies/') return agencies();
   if (path === '/releases' || path === '/releases/') return releases();
@@ -740,6 +805,12 @@ export default {
         getCoverageStatus(env.DB), getSourceMonitorStatus(env.DB),
       ]);
       result = coverage(coverageStatus, sourceStatus);
+    }
+    if (!result && (url.pathname === '/watch' || url.pathname === '/watch/') && env.DB) {
+      const [coverageStatus, sourceStatus] = await Promise.all([
+        getCoverageStatus(env.DB), getSourceMonitorStatus(env.DB),
+      ]);
+      result = watch(coverageStatus, sourceStatus);
     }
     if (!result && (url.pathname === '/questions' || url.pathname === '/questions/') && env.DB) {
       result = questions(await getQuestionCatalogue(env.DB));

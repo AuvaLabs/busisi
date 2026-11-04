@@ -163,7 +163,9 @@ const acquisitionEvidence = (payload) => {
   </section>`;
 };
 
-const projectAvailability = (delivery, procurementEvidence, auditEvidence) => {
+const projectAvailability = (
+  delivery, procurementEvidence, auditEvidence, appropriationAvailable = true,
+) => {
   const procurementAvailable = Boolean(procurementEvidence?.records?.length);
   const awardAvailable = procurementEvidence?.records?.some((item) => (
     item.procurement_status.toLowerCase().includes('awarded')
@@ -175,7 +177,7 @@ const projectAvailability = (delivery, procurementEvidence, auditEvidence) => {
   const auditAvailable = Boolean(auditEvidence) && !['not_covered', 'agency_report_available', 'program_audit_available'].includes(auditEvidence.status);
   return `<section class="evidence-panel evidence-availability">
   <p class="kicker">Traceability</p><h2>Evidence by public-money stage</h2><ol>
-    <li class="available"><b>01</b><span><strong>Appropriation</strong><small>Reviewed GAA source row available</small></span></li>
+    <li class="${appropriationAvailable ? 'available' : ''}"><b>01</b><span><strong>Appropriation</strong><small>${appropriationAvailable ? 'Related GAA source row available' : 'No exact appropriation link established'}</small></span></li>
     <li class="${procurementAvailable ? 'available' : ''}"><b>02</b><span><strong>Procurement</strong><small>${procurementAvailable ? 'Exact contract evidence available' : 'No exact artifact located'}</small></span></li>
     <li class="${awardAvailable ? 'available' : ''}"><b>03</b><span><strong>Award</strong><small>${awardAvailable ? 'Award status or actual award date reported' : 'Not established by acquired evidence'}</small></span></li>
     <li class="${delivery ? 'available' : ''}"><b>04</b><span><strong>Implementation</strong><small>DPWH delivery record ${delivery ? 'available' : 'not acquired'}</small></span></li>
@@ -205,16 +207,27 @@ ${facts([['Appropriation', money(record.amount_centavos), 'Authority to spend, n
 <section class="evidence-section"><p class="kicker">Cross-source review</p><h2>${candidates.length} candidate link${candidates.length === 1 ? '' : 's'}</h2>${candidates.length ? candidates.map((item) => `<a class="candidate-callout" href="${idPath('candidate', item.candidate_id)}"><strong>${html(item.delivery_description)}</strong><span>Unreviewed · evidence score ${item.score}</span></a>`).join('') : empty('No candidate delivery link is associated with this budget line and fiscal year.')}${projects.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>${html(item.title)}</strong><span>${html(item.status_label)}</span></a>`).join('')}</section>
 ${boundary('This page reproduces an appropriation record and normalized relationships. It does not establish procurement, release, payment, construction, completion, benefit, or wrongdoing.')}</article>`;
 
-export const deliveryRecordBody = ({ record, related, budgets, candidates, projects, signals: items, contractors, imageEvidence, ...acquisition }) => `${breadcrumb('DPWH contract', record.contract_id)}
+export const deliveryRecordBody = ({
+  record, related = [], budgets = [], candidates = [], projects = [], signals: items = [],
+  contractors = [], imageEvidence, auditEvidence, procurementEvidence,
+  contractEvidence = [], contractOutcome, ...acquisition
+}) => `${breadcrumb('DPWH contract', record.contract_id)}
 <article class="evidence-dossier">${heading({ badge: 'Official DPWH delivery record', kicker: `FY ${record.fiscal_year} · Contract ${record.contract_id}`, title: record.description, summary: record.location })}
 ${facts([['Recorded project budget', money(record.budget_centavos), 'Snapshot value, not proof of payment'], ['Status / progress', `${record.status || 'Not stated'} / ${record.progress ? `${record.progress}%` : 'Not stated'}`, 'Reported by the source record'], ['Things to check', items.length, 'Questions to verify, not findings']])}
-<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Project details</p><h2>Fields in the archived DPWH record</h2>${sourceRoles({ publisher: 'Department of Public Works and Highways', access: 'BetterGov DPWH dataset and API' })}${projectDetails(record)}<dl class="evidence-details"><div><dt>Source of funds</dt><dd>${html(record.source_of_funds || 'Not stated')}</dd></div><div><dt>Normalized family</dt><dd>${html(record.project_family_id)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.detail_artifact_sha256 || record.artifact_sha256)}</dd></div></dl></section>${district(record.district_context)}</div>
+<nav class="dossier-index" aria-label="Dossier sections"><span>Jump to</span><a href="#project-record">Project record</a><a href="#project-images">Images</a><a href="#procurement-evidence">Procurement</a><a href="#contract-evidence">Evidence status</a><a href="#contract-outcome">Outcome cross-check</a><a href="#contractors">Contractors</a><a href="#audit-evidence">COA audit</a><a href="#related-records">Related records</a><a href="#provenance">Provenance</a></nav>
+<div class="evidence-columns" id="project-record"><section class="evidence-panel"><p class="kicker">Project details</p><h2>Fields in the archived DPWH record</h2>${sourceRoles({ publisher: 'Department of Public Works and Highways', access: 'BetterGov DPWH dataset and API' })}${projectDetails(record)}<dl class="evidence-details"><div><dt>Source of funds</dt><dd>${html(record.source_of_funds || 'Not stated')}</dd></div><div><dt>Normalized family</dt><dd>${html(record.project_family_id)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.detail_artifact_sha256 || record.artifact_sha256)}</dd></div></dl></section>${district(record.district_context)}</div>
 ${projectImageEvidencePanel(imageEvidence)}
-<section class="evidence-section"><p class="kicker">Contractor identities</p><h2>Parties stated in the project record</h2>${contractorCards(contractors)}</section>
+${projectAvailability(record, procurementEvidence, auditEvidence, budgets.length > 0)}
+${procurementEvidencePanel(procurementEvidence)}
+${contractEvidencePanel(contractEvidence)}
+${contractOutcomePanel(contractOutcome)}
+<section class="evidence-section" id="contractors"><p class="kicker">Contractor identities</p><h2>Parties stated in the project record</h2>${contractorCards(contractors)}</section>
 <section class="evidence-section"><p class="kicker">Things that need checking</p><h2>Questions raised by this record</h2>${signals(items)}</section>
-<section class="evidence-section"><p class="kicker">Possible appropriation records</p><h2>Same normalized family</h2>${relatedBudgets(budgets)}${candidates.map((item) => `<a class="candidate-callout" href="${idPath('candidate', item.candidate_id)}"><strong>Compare candidate appropriation and delivery rows</strong><span>Unreviewed · evidence score ${item.score}</span></a>`).join('')}${projects.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>${html(item.title)}</strong><span>${html(item.status_label)}</span></a>`).join('')}</section>
-<section class="evidence-section"><p class="kicker">Related delivery history</p><h2>Other records sharing the family identity</h2>${relatedDeliveries(related)}</section>${availability()}
+${auditEvidencePanel(auditEvidence)}
+<section class="evidence-section" id="related-records"><p class="kicker">Possible appropriation records</p><h2>Same normalized family</h2>${relatedBudgets(budgets)}${candidates.map((item) => `<a class="candidate-callout" href="${idPath('candidate', item.candidate_id)}"><strong>Compare candidate appropriation and delivery rows</strong><span>Unreviewed · evidence score ${item.score}</span></a>`).join('')}${projects.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>${html(item.title)}</strong><span>${html(item.status_label)}</span></a>`).join('')}</section>
+<section class="evidence-section"><p class="kicker">Related delivery history</p><h2>Other records sharing the family identity</h2>${relatedDeliveries(related)}</section>
 ${acquisitionEvidence(acquisition)}
+<section class="evidence-section" id="provenance"><p class="kicker">Provenance</p><h2>Identifiers and archived source fingerprints</h2><dl class="provenance-grid"><div><dt>Original publisher</dt><dd>Department of Public Works and Highways</dd></div><div><dt>Accessed through</dt><dd>BetterGov public datasets and APIs</dd></div><div><dt>Contract ID</dt><dd>${html(record.contract_id)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.detail_artifact_sha256 || record.artifact_sha256)}</dd></div></dl></section>
 ${boundary('A DPWH delivery record is not by itself proof that work exists at the stated location, that payment occurred, that completion is accurate, or that the project produced public value.')}</article>`;
 
 export const candidateRecordBody = ({ record, budgets, delivery, projects }) => `${breadcrumb('Candidate comparison', record.candidate_id)}

@@ -20,10 +20,11 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<meta property="og:image:width" content="1200">/);
   assert.match(document, /<meta property="og:image:height" content="630">/);
   assert.match(document, /<meta name="twitter:card" content="summary_large_image">/);
-  assert.match(document, /href="\/assets\/site-visual-v19\.css"/);
+  assert.match(document, /href="\/assets\/site-visual-v20\.css"/);
   assert.match(document, /"@type":"WebSite"/);
-  assert.match(document, /Philippine public budget records/);
-  assert.match(document, /Busisi is a nonpartisan public-interest data platform for Filipinos/);
+  assert.match(document, /Philippine public project evidence/);
+  assert.match(document, /independent, nonpartisan evidence desk for Philippine public projects/);
+  assert.match(document, /budget, procurement, contractor, delivery, audit, and payment records/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
   assert.match(document, /Built and maintained by <a href="https:\/\/auvalabs\.com\//);
   assert.match(document, /href="mailto:dev@auvalabs\.com"/);
@@ -40,24 +41,53 @@ test('home provides task-led navigation and a data-led editorial masthead', asyn
   const response = await fetchPath('/');
   const document = await response.text();
 
-  assert.match(document, /href="\/explore\/"/);
+  assert.match(document, /Follow the evidence behind public projects/);
+  assert.match(document, /href="\/contractors\/"/);
+  assert.match(document, /href="\/places\/"/);
   assert.match(document, /href="\/signals\/"/);
-  assert.match(document, /href="\/sulit\/"/);
+  assert.match(document, /href="\/sources\/"/);
+  assert.match(document, /href="\/watch\/"/);
   assert.match(document, /class="home-ledger"/);
   assert.match(document, /aria-label="Current FY2027 budget evidence"/);
-  assert.match(document, /20,431 project rows/);
+  assert.match(document, /Project rows compared<\/dt><dd>20,431/);
   assert.match(document, /DPWH delivery records/);
   assert.match(document, /56,887/);
-  assert.match(document, /NEP published/);
-  assert.match(document, /House partially acquired/);
+  assert.match(document, /Budget authority/);
+  assert.match(document, /Payment and outcome/);
   assert.match(document, /src="\/assets\/busisi-evidence-banner-v2\.webp"/);
-  assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#appropriations"/);
   assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#delivery"/);
-  assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#candidate-links"/);
-  assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#compare"/);
+  assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#contractors"/);
+  assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#investigate"/);
   assert.doesNotMatch(document, /busisi-masthead\.webp|Illustrative view/);
   assert.doesNotMatch(document, /class="utility-strip"/);
-  assert.equal((document.match(/data-nav-group=/g) ?? []).length, 5);
+  assert.equal((document.match(/data-nav-group=/g) ?? []).length, 6);
+});
+
+test('publishes the ecosystem hubs while preserving established evidence pages', async () => {
+  const cases = [
+    ['/contractors/', /data-contractor-directory/],
+    ['/places/', /data-place-directory/],
+    ['/sources/', /Original publisher/],
+    ['/watch/', /What Busisi is watching/],
+  ];
+
+  for (const [path, expected] of cases) {
+    const response = await fetchPath(path);
+    const document = await response.text();
+    assert.equal(response.status, 200, path);
+    assert.match(document, expected, path);
+  }
+
+  const contractors = await (await fetchPath('/contractors/')).text();
+  const places = await (await fetchPath('/places/')).text();
+  const sources = await (await fetchPath('/sources/')).text();
+  assert.match(contractors, /src="\/assets\/contractors-v1\.js\?v=1"/);
+  assert.match(places, /src="\/assets\/places-v1\.js\?v=1"/);
+  assert.match(sources, /href="\/budget-trail\/"/);
+  assert.match(sources, /href="\/procurement\/"/);
+  assert.match(sources, /href="\/audit\/"/);
+  assert.match(sources, /Access route/);
+  assert.match(sources, /Busisi processing/);
 });
 
 test('home scopes its public questions to evidence Busisi currently holds', async () => {
@@ -219,12 +249,12 @@ test('home uses the restrained-color Busisi identity and direct evidence desks',
   assert.match(document, /src="\/assets\/busisi-mark-v3\.svg"/);
   assert.doesNotMatch(document, /src="\/assets\/busisi-mark\.webp"/);
   assert.doesNotMatch(document, /busisi-masthead\.webp/);
-  assert.match(document, /Philippine budget evidence/);
+  assert.match(document, /Philippine public project evidence/);
   assert.match(document, /Start with the public record/);
-  assert.match(document, /GAA appropriations/);
-  assert.match(document, /DPWH delivery records/);
-  assert.match(document, /Candidate links/);
-  assert.match(document, /Human review required/);
+  assert.match(document, /Project-centered evidence/);
+  assert.match(document, /Association, not attribution/);
+  assert.match(document, /Source labels, not map claims/);
+  assert.match(document, /Review lead, not accusation/);
   assert.match(document, /Where the evidence stops/);
 });
 
@@ -278,6 +308,10 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/sulit\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/questions\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/public-services\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/contractors\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/places\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/sources\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/watch\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/projects\/corazon-2024-phase-1\/<\/loc>/);
   assert.doesNotMatch(sitemapText, /corazon-2026-completion/);
   const llmsText = await llms.text();
@@ -287,9 +321,13 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(llmsText, /Public value desk/);
   assert.match(llmsText, /Evidence question catalogue/);
   assert.match(llmsText, /Public services inventory/);
+  assert.match(llmsText, /Contractor directory/);
+  assert.match(llmsText, /Place directory/);
+  assert.match(llmsText, /Source guide/);
+  assert.match(llmsText, /Source watch/);
   assert.match(llmsText, /\/api\/v1\/public-services/);
   assert.match(llmsText, /\/api\/v1\/questions/);
-  assert.match(llmsText, /nonpartisan and politically unaffiliated/);
+  assert.match(llmsText, /nonpartisan, and politically unaffiliated/);
   assert.match(llmsText, /Built and maintained by Auva Labs/);
   assert.match(llms.headers.get('content-type'), /^text\/plain/);
 });
@@ -310,6 +348,10 @@ test('submits the allotment-release desk for search discovery', () => {
   assert.match(source, /'\/releases\/'/);
   assert.match(source, /'\/questions\/'/);
   assert.match(source, /'\/public-services\/'/);
+  assert.match(source, /'\/contractors\/'/);
+  assert.match(source, /'\/places\/'/);
+  assert.match(source, /'\/sources\/'/);
+  assert.match(source, /'\/watch\/'/);
 });
 
 test('public-services client renders API data without injecting HTML', () => {
@@ -321,6 +363,15 @@ test('public-services client renders API data without injecting HTML', () => {
   assert.match(source, /textContent/);
   assert.match(source, /encodeURIComponent/);
   assert.doesNotMatch(source, /innerHTML|insertAdjacentHTML|risk score/i);
+});
+
+test('ecosystem clients render API data without injecting HTML', () => {
+  for (const name of ['contractors-v1.js', 'places-v1.js']) {
+    const source = readFileSync(new URL(`../public/assets/${name}`, import.meta.url), 'utf8');
+    assert.match(source, /textContent/);
+    assert.match(source, /encodeURIComponent|reader_url/);
+    assert.doesNotMatch(source, /innerHTML|insertAdjacentHTML/);
+  }
 });
 
 test('redirects www and returns a useful 404', async () => {
@@ -347,7 +398,7 @@ test('keeps the workers.dev monitor origin private', async () => {
   assert.equal(missing.status, 404);
   assert.equal(incorrect.status, 404);
   assert.equal(allowed.status, 200);
-  assert.match(await allowed.text(), /Philippine public budget records/);
+  assert.match(await allowed.text(), /Philippine public project evidence/);
 });
 
 test('keeps the unreleased register and API unavailable', async () => {
@@ -405,7 +456,7 @@ test('renders a reviewed evidence dossier when the publication database is bound
 });
 
 test('serves the accessible civic color system and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v19.css');
+  const css = await fetchPath('/assets/site-visual-v20.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));
@@ -448,7 +499,7 @@ test('serves the accessible civic color system and safe method boundaries', asyn
 });
 
 test('keeps semantic text colors at WCAG AA contrast on white', async () => {
-  const cssText = await (await fetchPath('/assets/site-visual-v19.css')).text();
+  const cssText = await (await fetchPath('/assets/site-visual-v20.css')).text();
   const token = (name) => cssText.match(new RegExp(`--${name}:(#[0-9a-f]{6})`))?.[1];
   const luminance = (hex) => {
     const channels = [1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
@@ -531,7 +582,7 @@ test('places the decorative budget evidence banner on the release ledger', async
   assert.match(document, /busisi-budget-evidence-banner-v2\.webp/);
   assert.match(document, /class="release-editorial-banner" aria-hidden="true"/);
   assert.match(document, /width="1600" height="534" alt=""/);
-  assert.match(document, /site-visual-v19\.css/);
+  assert.match(document, /site-visual-v20\.css/);
 });
 
 test('reader actions use human-readable evidence instead of raw JSON endpoints', () => {

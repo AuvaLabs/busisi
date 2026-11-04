@@ -314,6 +314,33 @@ const verifyPages = async () => {
   expectIncludes(contractsText, 'Province or district office', 'contract province filter');
   expectIncludes(contractsText, 'Source patterns are review leads, not findings', 'contract explorer boundary');
 
+  const contractors = await request('/contractors/');
+  expectStatus(contractors, 200, '/contractors/');
+  const contractorsText = await contractors.text();
+  expectIncludes(contractorsText, 'See who appears on public project records', 'contractor directory heading');
+  expectIncludes(contractorsText, '/assets/contractors-v1.js?v=1', 'contractor directory client');
+  expectIncludes(contractorsText, 'Association, not attribution', 'contractor directory boundary');
+
+  const places = await request('/places/');
+  expectStatus(places, 200, '/places/');
+  const placesText = await places.text();
+  expectIncludes(placesText, 'Follow projects by the place named in the source', 'place directory heading');
+  expectIncludes(placesText, '/assets/places-v1.js?v=1', 'place directory client');
+  expectIncludes(placesText, 'Source label only', 'place directory boundary');
+
+  const sources = await request('/sources/');
+  expectStatus(sources, 200, '/sources/');
+  const sourcesText = await sources.text();
+  expectIncludes(sourcesText, 'See where each claim begins', 'source guide heading');
+  expectIncludes(sourcesText, 'Original publisher', 'source role');
+  expectIncludes(sourcesText, 'Busisi processing', 'source role');
+
+  const watch = await request('/watch/');
+  expectStatus(watch, 200, '/watch/');
+  const watchText = await watch.text();
+  expectIncludes(watchText, 'What Busisi is watching', 'source watch heading');
+  expectIncludes(watchText, 'What monitoring does not mean', 'source watch boundary');
+
   const signals = await request('/signals/');
   expectStatus(signals, 200, '/signals/');
   const signalsText = await signals.text();
@@ -414,7 +441,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${publicOrigin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -423,7 +450,7 @@ const verifyPages = async () => {
   expectStatus(llms, 200, '/llms.txt');
   const llmsText = await llms.text();
   expectIncludes(llmsText, 'Evidence and publication rules', 'llms evidence policy');
-  expectIncludes(llmsText, 'nonpartisan and politically unaffiliated', 'llms independence policy');
+  expectIncludes(llmsText, 'nonpartisan, and politically unaffiliated', 'llms independence policy');
   expectIncludes(llmsText, 'Built and maintained by Auva Labs', 'llms ownership');
   expectIncludes(llmsText, 'Evidence question catalogue', 'llms question catalogue');
   expectIncludes(llmsText, '/api/v1/questions', 'llms question API');
@@ -435,7 +462,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -443,11 +470,11 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v19.css',
+    '/assets/site-visual-v20.css',
     '/assets/busisi-mark-v3.svg',
     '/assets/busisi-social-v2.png',
     '/assets/busisi-evidence-banner-v2.webp',
-    '/assets/busisi-icons-v1.svg#appropriations',
+    '/assets/busisi-icons-v1.svg#delivery',
     'class="home-ledger"',
     'Current FY2027 budget evidence',
     'Questions Busisi can answer from current evidence',
@@ -456,7 +483,7 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v19.css');
+  const css = await request('/assets/site-visual-v20.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
@@ -467,6 +494,7 @@ const verifyDesign = async () => {
     '.lifecycle-grid', '.lifecycle-item', '.contract-explorer', '.contract-card',
     '.release-shell', '.release-card', '.questions-hero', '.question-grid',
     '.services-hero', '.services-desk', '.services-card',
+    '.place-shell', '.source-role-grid', '.watch-grid',
   ]) {
     expectIncludes(cssText, value, 'design CSS');
   }
@@ -525,6 +553,18 @@ const verifyDesign = async () => {
 };
 
 const verifyData = async () => {
+  const catalogue = await readJson('/api/v1');
+  if (catalogue.name !== 'Busisi public evidence API'
+    || catalogue.read_only !== true
+    || !catalogue.endpoints?.some((item) => item.path === '/api/v1/places')) {
+    fail('public API catalogue: identity or place endpoint is missing');
+  }
+  const placeDirectory = await readJson('/api/v1/places?level=region&limit=5');
+  if (placeDirectory.meta?.review_scope !== 'recorded_dpwh_place_labels'
+    || !Array.isArray(placeDirectory.data)
+    || !placeDirectory.data.length) {
+    fail('place directory: no bounded region aggregation was published');
+  }
   const stats = (await readJson('/api/v1/stats')).data;
   for (const [key, value] of Object.entries(expectedCounts)) {
     if (stats[key] !== value) fail(`stats: ${key} expected ${value}, received ${stats[key]}`);

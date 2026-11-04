@@ -1,14 +1,18 @@
 # Busisi
 
-*Follow public money. Check the evidence.*
+*Follow the evidence behind public projects.*
 
-Busisi is a nonpartisan public-interest data platform that helps Filipinos
-follow public money from proposal to project delivery. It publishes official
-source records, deterministic review signals,
+Busisi is an independent, nonpartisan evidence desk that helps Filipinos
+follow the records behind Philippine public projects. It connects budget,
+procurement, contractor, delivery, audit and payment evidence while keeping
+unsupported stages visible as gaps. Its public ecosystem is organized around
+projects, contractors, recorded places, questions that need checking, sources
+and source monitoring. It publishes official source records, deterministic
+review signals,
 an FY2027 NEP-to-House project ledger, a national appropriation-head ledger,
 an FY2027 source-separated budget publication trail, a reconciled FY2026
-allotment-release ledger, and a small reviewed dossier set
-without using a language model. A separate COA evidence layer records which official
+allotment-release ledger, complete delivery-record dossiers and a smaller set
+of reviewed cross-source project links. A separate COA evidence layer records which official
 audit catalogues were checked, whether source bytes were acquired, and whether a
 project-level observation was actually matched. Contract outcome cross-checks
 compare exact procurement records with the DPWH delivery snapshot while keeping
@@ -70,7 +74,7 @@ reviewer agreement and zero critical reconciliation failures.
 The project-integrity desk publishes deterministic DPWH source contradictions,
 coordinate review signals and coverage gaps. Its contractor view separately
 ranks archived activity by project count and total project budget. Neither view
-uses a model or produces a corruption score.
+produces a corruption score.
 
 The contractor-accountability desk links official GPPB restriction records only
 when the normalized DPWH name and current PCAB name agree on one identity. It

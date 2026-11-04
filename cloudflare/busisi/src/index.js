@@ -75,6 +75,7 @@ import {
 } from './public-services-query.js';
 import { getFacility } from './facility-query.js';
 import { getFacilityRegistryStatus } from './facility-status-query.js';
+import { parsePlaceQuery, queryPlaces } from './place-query.js';
 import {
   getAccountabilitySummary,
   getContractorAccountability,
@@ -88,6 +89,17 @@ const EXPLORER_PATHS = Object.freeze({
   '/api/v1/delivery': 'delivery',
   '/api/v1/candidates': 'candidates',
 });
+
+const API_CATALOGUE = Object.freeze([
+  { path: '/api/v1/contracts', description: 'Contract and project evidence' },
+  { path: '/api/v1/contractors', description: 'Recorded contractor activity' },
+  { path: '/api/v1/places', description: 'Projects grouped by recorded place label' },
+  { path: '/api/v1/integrity-signals', description: 'Deterministic questions to check' },
+  { path: '/api/v1/changes', description: 'FY2027 budget-stage comparisons' },
+  { path: '/api/v1/agency-budgets', description: 'Appropriation-head comparisons' },
+  { path: '/api/v1/allotment-releases', description: 'Official DBM allotment releases' },
+  { path: '/api/v1/questions', description: 'Supported public evidence questions' },
+]);
 
 const jsonResponse = (body, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -134,6 +146,28 @@ const apiResponse = async (request, environment, url) => {
   }
   if (url.pathname === '/healthz') {
     return jsonResponse({ ok: true, service: 'busisi-publication', read_only: true });
+  }
+  if (url.pathname === '/api/v1') {
+    return jsonResponse({
+      name: 'Busisi public evidence API',
+      read_only: true,
+      endpoints: API_CATALOGUE,
+      evidence_boundary: 'A signal or comparison is a review lead, not proof of wrongdoing.',
+      documentation: '/sources/',
+    });
+  }
+  if (url.pathname === '/api/v1/places') {
+    const query = parsePlaceQuery(url);
+    const records = await queryPlaces(environment.DB, query);
+    return jsonResponse({
+      meta: {
+        count: records.length,
+        level: query.level,
+        review_scope: 'recorded_dpwh_place_labels',
+        boundary: 'Source labels are not verified geographic boundaries.',
+      },
+      data: records,
+    });
   }
   if (url.pathname === '/api/v1/stats') {
     return jsonResponse({ data: await getExplorerStats(environment.DB) });

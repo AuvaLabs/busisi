@@ -20,6 +20,7 @@ import { getSourceMonitorStatus } from '../src/source-monitor-query.js';
 import { buildQuestionCatalogue } from '../src/questions-query.js';
 import { facilityBody } from '../src/facility-content.js';
 import { publicServicesBody } from '../src/public-services-content.js';
+import { watchBody } from '../src/ecosystem-content.js';
 import { getFacility } from '../src/facility-query.js';
 import {
   getPublicServicesSummary,
@@ -28,6 +29,7 @@ import {
 } from '../src/public-services-query.js';
 import { parseContractIntelligenceQuery } from '../src/contract-intelligence-query.js';
 import { parseContractorProjectQuery } from '../src/contractor-activity-query.js';
+import { parsePlaceQuery, queryPlaces } from '../src/place-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseAllotmentReleaseQuery } from '../src/allotment-release-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
@@ -500,6 +502,7 @@ const changeUrl = (query = '') => new URL(`https://busisi.test/api/v1/changes${q
 const reviewUrl = (query = '') => new URL(`https://busisi.test/api/v1/review-rankings${query}`);
 const integrityUrl = (query = '') => new URL(`https://busisi.test/api/v1/integrity-signals${query}`);
 const contractorUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractors${query}`);
+const placeUrl = (query = '') => new URL(`https://busisi.test/api/v1/places${query}`);
 const contractorProjectUrl = (query = '') => new URL(
   `https://busisi.test/api/v1/contractors/pcab%3A22222/projects${query}`,
 );
@@ -2147,6 +2150,64 @@ test('publishes delivery-integrity signals and contractor rankings', async (cont
   assert.match(await csv.text(), /"missing_coordinate","coverage_gap","24B"/);
 });
 
+test('publishes a bounded place directory from recorded source labels', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const query = parsePlaceQuery(placeUrl('?level=province&q=Quezon&limit=20'));
+  const direct = await queryPlaces(database, query);
+  const response = await worker.fetch(
+    request('/api/v1/places?level=province&q=Quezon&limit=20'), environment(database),
+  );
+  const payload = await response.json();
+
+  assert.deepEqual(query, { level: 'province', q: 'Quezon', limit: 20 });
+  assert.equal(response.status, 200);
+  assert.equal(payload.meta.review_scope, 'recorded_dpwh_place_labels');
+  assert.equal(payload.meta.boundary, 'Source labels are not verified geographic boundaries.');
+  assert.equal(payload.data[0].place_name, 'Quezon 1st DEO');
+  assert.equal(payload.data[0].project_count, direct[0].project_count);
+  assert.match(payload.data[0].reader_url, /^\/contracts\/\?province=/);
+  assert.throws(() => parsePlaceQuery(placeUrl('?level=barangay')), /level is invalid/);
+  assert.throws(() => parsePlaceQuery(placeUrl('?limit=none')), /limit is invalid/);
+  assert.throws(() => parsePlaceQuery(placeUrl('?limit=101')), /supported range/);
+  assert.throws(() => parsePlaceQuery(placeUrl(`?q=${'x'.repeat(201)}`)), /q is too long/);
+  assert.deepEqual(parsePlaceQuery(placeUrl()), { level: 'province', q: '', limit: 50 });
+});
+
+test('renders source-watch states without trusting source text as markup', () => {
+  const unchanged = watchBody(
+    { completed_contracts: 7, universe_contracts: 56890 },
+    {
+      checked_at: '<script>alert(1)</script>', status: 'unchanged',
+      differences: [], limitations: [],
+    },
+  );
+  const changed = watchBody(
+    { completed_contracts: 9, universe_contracts: 56890 },
+    { checked_at: '2026-11-04', status: 'changed', differences: ['one'], limitations: ['two'] },
+  );
+
+  assert.match(unchanged, /No source change detected/);
+  assert.match(unchanged, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.doesNotMatch(unchanged, /<script>/);
+  assert.match(changed, /source change or access problem needs checking/i);
+  assert.match(changed, />1<\/h2>/);
+});
+
+test('publishes a public API catalogue', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const response = await worker.fetch(request('/api/v1'), environment(database));
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.name, 'Busisi public evidence API');
+  assert.equal(payload.read_only, true);
+  assert.ok(payload.endpoints.some((item) => item.path === '/api/v1/places'));
+  assert.ok(payload.endpoints.some((item) => item.path === '/api/v1/contracts'));
+  assert.match(payload.evidence_boundary, /review lead/i);
+});
+
 test('keeps every joint contractor independently drillable and reconciled', async (context) => {
   const database = new LocalD1();
   context.after(() => database.close());
@@ -2165,6 +2226,9 @@ test('keeps every joint contractor independently drillable and reconciled', asyn
   const signal = await siteWorker.fetch(
     request('/records/integrity/25JOINT1%3Amissing_coordinate/'), environment(database),
   );
+  const places = await worker.fetch(
+    request('/api/v1/places?level=region&q=NCR'), environment(database),
+  );
 
   const contractPayload = await contracts.json();
   assert.equal(contractPayload.meta.total, 1);
@@ -2178,6 +2242,10 @@ test('keeps every joint contractor independently drillable and reconciled', asyn
   assert.equal(projectPayload.data[0].relationship, 'joint');
   assert.equal(projectPayload.data[0].party_position, 2);
   assert.equal(projectPayload.data[0].signal_count, 1);
+  const place = (await places.json()).data.find((item) => item.place_name === 'NCR');
+  assert.equal(place.project_count, 2);
+  assert.equal(place.contractor_count, 3);
+  assert.equal(place.total_budget_centavos, 42679270658);
 
   const profileDocument = await profile.text();
   assert.match(profileDocument, /1 joint-project association/);
@@ -2461,6 +2529,12 @@ test('publishes evidence drilldowns without collapsing records into findings', a
   const deliveryDocument = await delivery.text();
   assert.match(deliveryDocument, /Department of Public Works and Highways/);
   assert.match(deliveryDocument, /BetterGov DPWH dataset and API/);
+  assert.match(deliveryDocument, /aria-label="Dossier sections"/);
+  assert.match(deliveryDocument, /Procurement timeline/);
+  assert.match(deliveryDocument, /Contract evidence checklist/);
+  assert.match(deliveryDocument, /Contract outcome pack/);
+  assert.match(deliveryDocument, /COA audit evidence/);
+  assert.match(deliveryDocument, /Identifiers and archived source fingerprints/);
 });
 
 test('expands reviewed project dossiers with phase history and evidence boundaries', async (context) => {

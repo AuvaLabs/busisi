@@ -102,7 +102,10 @@ export const getBudgetRecord = async (database, recordId) => {
 export const getDeliveryRecord = async (database, contractId) => {
   const record = withDistrict(await deliveryById(database, contractId));
   if (!record) return null;
-  const [related, budgets, candidates, projects, signals, imageEvidence] = await Promise.all([
+  const [
+    related, budgets, candidates, projects, signals, imageEvidence, auditEvidence,
+    procurementEvidence, awardMirror, contractEvidence,
+  ] = await Promise.all([
     database.prepare(`
       SELECT contract_id, fiscal_year, description, budget_centavos, location
       FROM delivery_items WHERE project_family_id = ? AND contract_id <> ?
@@ -124,9 +127,19 @@ export const getDeliveryRecord = async (database, contractId) => {
       ORDER BY classification ASC, code ASC
     `).bind(contractId).all(),
     getProjectImageEvidence(database, contractId),
+    getProjectCoaEvidence(database, contractId),
+    getProjectProcurementEvidence(database, contractId),
+    getContractAwardMirror(database, contractId),
+    getProjectContractEvidence(database, contractId),
   ]);
   const signalRows = rows(signals);
   const contractors = await contractorsForDelivery(database, record);
+  const contractOutcome = procurementEvidence?.records?.length ? buildContractOutcome({
+    coverage: procurementEvidence.coverage,
+    procurementRecords: procurementEvidence.records,
+    delivery: record,
+    awardMirror,
+  }) : null;
   return {
     record,
     related: rows(related),
@@ -136,6 +149,10 @@ export const getDeliveryRecord = async (database, contractId) => {
     signals: signalRows,
     contractors,
     imageEvidence,
+    auditEvidence,
+    procurementEvidence,
+    contractEvidence,
+    contractOutcome,
   };
 };
 

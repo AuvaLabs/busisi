@@ -14,6 +14,7 @@ import { contractsCss } from './prelaunch-contracts-styles.js';
 import { releaseCss } from './prelaunch-release-styles.js';
 import { questionsCss } from './questions-styles.js';
 import { publicServicesCss } from './public-services-styles.js';
+import { ecosystemCss } from './ecosystem-styles.js';
 import { methodDiagram } from './prelaunch-visuals.js';
 
 const icon = (name, className = 'section-icon') => (
@@ -22,14 +23,15 @@ const icon = (name, className = 'section-icon') => (
 
 const navigation = (canonicalPath) => {
   const groups = [
-    { label: 'Budget', icon: 'budget', href: '/sulit/', paths: ['/sulit/', '/agencies/', '/changes/', '/releases/'] },
-    { label: 'Projects', icon: 'projects', href: '/contracts/', paths: ['/contracts/', '/public-services/'] },
-    { label: 'Investigate', icon: 'investigate', href: '/signals/', paths: ['/signals/', '/integrity/', '/accountability/'] },
-    { label: 'Sources', icon: 'sources', href: '/budget-trail/', paths: ['/budget-trail/', '/audit/', '/procurement/'] },
-    { label: 'Search', icon: 'search', href: '/contracts/#contract-search', paths: [] },
+    { label: 'Projects', icon: 'projects', href: '/contracts/', paths: ['/contracts/', '/projects/', '/public-services/'] },
+    { label: 'Contractors', icon: 'contractors', href: '/contractors/', paths: ['/contractors/'] },
+    { label: 'Places', icon: 'projects', href: '/places/', paths: ['/places/'] },
+    { label: 'Needs checking', icon: 'investigate', href: '/signals/', paths: ['/signals/', '/integrity/', '/accountability/'] },
+    { label: 'Sources', icon: 'sources', href: '/sources/', paths: ['/sources/', '/budget-trail/', '/audit/', '/procurement/', '/methodology/'] },
+    { label: 'Watch', icon: 'search', href: '/watch/', paths: ['/watch/', '/coverage/'] },
   ];
   const links = groups.map(({ label, icon: iconName, href, paths }) => (
-    `<a data-nav-group="${label.toLowerCase()}" href="${href}"${paths.includes(canonicalPath) ? ' aria-current="page"' : ''}>${icon(iconName, 'nav-icon')}<span>${label}</span></a>`
+    `<a data-nav-group="${label.toLowerCase().replace(' ', '-')}" href="${href}"${paths.some((path) => canonicalPath === path || canonicalPath.startsWith(path)) ? ' aria-current="page"' : ''}>${icon(iconName, 'nav-icon')}<span>${label}</span></a>`
   )).join('');
   return `<div class="header-inner">
     <a class="wordmark" href="/" aria-label="Busisi home"><img class="brand-mark" src="/assets/busisi-mark-v3.svg" width="44" height="44" alt=""><span>Busisi</span></a>
@@ -38,8 +40,8 @@ const navigation = (canonicalPath) => {
 };
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
-  <div class="footer-brand"><strong>Busisi</strong><p>Nonpartisan civic data initiative helping Filipino citizens examine traceable public budget records.</p></div>
-  <nav class="footer-nav" aria-label="Footer navigation"><a href="/questions/">Questions</a><a href="/public-services/">Public services</a><a href="/sulit/">Sulit Ba?</a><a href="/releases/">Releases</a><a href="/contracts/">Contracts</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/accountability/">Contractor accountability</a><a href="/coverage/">Coverage</a><a href="/methodology/">Method</a></nav>
+  <div class="footer-brand"><strong>Busisi</strong><p>Independent, nonpartisan evidence desk helping Filipino citizens examine public projects and the records behind them.</p></div>
+  <nav class="footer-nav" aria-label="Footer navigation"><a href="/contracts/">Projects</a><a href="/contractors/">Contractors</a><a href="/places/">Places</a><a href="/signals/">Needs checking</a><a href="/sources/">Sources</a><a href="/watch/">Watch</a><a href="/questions/">Questions</a><a href="/public-services/">Public services</a><a href="/sulit/">Sulit Ba?</a><a href="/releases/">Releases</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/integrity/">Integrity</a><a href="/accountability/">Contractor accountability</a><a href="/coverage/">Coverage</a><a href="/methodology/">Method</a></nav>
   <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.<br><small>Built and maintained by <a href="https://auvalabs.com/" target="_blank" rel="noopener noreferrer">Auva Labs</a>. Questions and corrections: <a href="mailto:dev@auvalabs.com">dev@auvalabs.com</a></small></p>
 </div></footer>`;
 
@@ -65,11 +67,11 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${safeTitle}</title><meta name="description" content="${safeDescription}"><meta name="robots" content="${robots}">
-  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v19.css">
+  <link rel="canonical" href="${canonical}"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v20.css">
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${safeTitle}"><meta property="og:description" content="${safeDescription}"><meta property="og:url" content="${canonical}">
-  <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow public money from proposal to project">
-  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta name="twitter:image:alt" content="Busisi: Follow public money from proposal to project">
-  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js?v=2"></script>' : ''}${canonicalPath === '/contracts/' ? '<script type="module" src="/assets/contracts-v1.js?v=3"></script>' : ''}${canonicalPath === '/public-services/' ? '<script type="module" src="/assets/public-services-v1.js?v=3"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js?v=2"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/releases/' ? '<script type="module" src="/assets/releases-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js?v=2"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js?v=3"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js?v=3"></script>' : ''}${canonicalPath.startsWith('/contractors/') ? '<script type="module" src="/assets/contractor-v1.js?v=1"></script>' : ''}
+  <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow the evidence behind public projects">
+  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta name="twitter:image:alt" content="Busisi: Follow the evidence behind public projects">
+  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js?v=2"></script>' : ''}${canonicalPath === '/contracts/' ? '<script type="module" src="/assets/contracts-v1.js?v=3"></script>' : ''}${canonicalPath === '/contractors/' ? '<script type="module" src="/assets/contractors-v1.js?v=1"></script>' : ''}${canonicalPath === '/places/' ? '<script type="module" src="/assets/places-v1.js?v=1"></script>' : ''}${canonicalPath === '/public-services/' ? '<script type="module" src="/assets/public-services-v1.js?v=3"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js?v=2"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/releases/' ? '<script type="module" src="/assets/releases-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js?v=2"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js?v=3"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js?v=3"></script>' : ''}${canonicalPath.startsWith('/contractors/') && canonicalPath !== '/contractors/' ? '<script type="module" src="/assets/contractor-v1.js?v=1"></script>' : ''}
 </head><body>
   <a class="skip-link" href="#main-content">Skip to content</a><header class="site-header">${navigation(canonicalPath)}</header>
   <main id="main-content">${body}</main>${footer}
@@ -79,9 +81,9 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 export const homeBody = `
   <section class="hero editorial-hero">
     <div class="hero-copy">
-      <p class="eyebrow">Philippine budget evidence · FY2027</p>
-      <h1>Follow public money from proposal to project.</h1>
-      <p class="lede">Busisi is a nonpartisan public-interest data platform for Filipinos. Follow official records, compare what changed, inspect delivery evidence, and see where the public trail ends.</p>
+      <p class="eyebrow">Philippine public project evidence</p>
+      <h1>Follow the evidence behind public projects.</h1>
+      <p class="lede">Busisi is an independent, nonpartisan evidence desk for Philippine public projects. It connects budget, procurement, contractor, delivery, audit, and payment records so citizens can see what is supported, what needs checking, and where the public trail ends.</p>
       <form class="home-search" action="/contracts/" method="get">
         <label for="home-query">Search a project, place, agency, or contractor</label>
         <div><input id="home-query" name="q" type="search" maxlength="200" placeholder="DPWH, Cebu, flood control…"><button type="submit">Search records</button></div>
@@ -95,31 +97,31 @@ export const homeBody = `
         <div><dt>DPWH delivery records</dt><dd>56,887</dd></div>
         <div><dt>Integrity review signals</dt><dd>16,814</dd></div>
       </dl>
-      <a href="/sulit/">Read the national budget overview <span aria-hidden="true">→</span></a>
+      <a href="/contracts/">Explore public project evidence <span aria-hidden="true">→</span></a>
     </aside>
   </section>
 
   <div class="editorial-banner" aria-hidden="true"><img src="/assets/busisi-evidence-banner-v2.webp" width="1600" height="520" alt="" loading="lazy" decoding="async"></div>
 
   <section class="budget-stage-line" aria-labelledby="budget-stage-heading">
-    <header><p class="kicker">FY2027 publication trail</p><h2 id="budget-stage-heading">What is available now</h2></header>
+    <header><p class="kicker">Evidence chain</p><h2 id="budget-stage-heading">What can be followed now</h2></header>
     <ol>
-      <li class="complete"><span>01</span><strong>NEP published</strong><small>Executive proposal</small></li>
-      <li class="partial"><span>02</span><strong>House partially acquired</strong><small>Four bill volumes listed</small></li>
-      <li><span>03</span><strong>Senate pending</strong><small>No comparable stage acquired</small></li>
-      <li><span>04</span><strong>Bicam pending</strong><small>No report acquired</small></li>
-      <li><span>05</span><strong>GAA pending</strong><small>No enacted FY2027 law acquired</small></li>
+      <li class="complete"><span>01</span><strong>Budget authority</strong><small>Appropriations and stage changes</small></li>
+      <li class="partial"><span>02</span><strong>Procurement</strong><small>Exact contract evidence where acquired</small></li>
+      <li class="complete"><span>03</span><strong>Delivery</strong><small>Archived project records and images</small></li>
+      <li class="partial"><span>04</span><strong>Audit</strong><small>Reviewed COA coverage and citations</small></li>
+      <li><span>05</span><strong>Payment and outcome</strong><small>Shown only when supported</small></li>
     </ol>
-    <a href="/budget-trail/">Open the document trail <span aria-hidden="true">→</span></a>
+    <a href="/sources/">See every evidence source <span aria-hidden="true">→</span></a>
   </section>
 
   <section class="register-preview" aria-labelledby="register-preview-heading">
-    <div class="preview-heading"><p class="kicker">Start with the public record</p><h2 id="register-preview-heading">Choose what you want to examine.</h2><p>Each desk keeps official records, derived comparisons, and unreviewed candidates visibly separate.</p></div>
+    <div class="preview-heading"><p class="kicker">Start with the public record</p><h2 id="register-preview-heading">Choose how you want to investigate.</h2><p>Each path leads back to project evidence while keeping official records, derived comparisons, and review questions visibly separate.</p></div>
     <div class="preview-panels">
-      <a href="/explore/?view=budgets"><span class="panel-index" aria-hidden="true"><b>01</b>${icon('appropriations')}</span><div><h3>GAA appropriations</h3><p>Search 68,608 positive budget records across fiscal years 2024 to 2026.</p></div><small>Official source records</small></a>
-      <a href="/contracts/"><span class="panel-index" aria-hidden="true"><b>02</b>${icon('delivery')}</span><div><h3>Contract intelligence</h3><p>Filter 56,887 contracts by evidence state, contractor, location, budget, and review signals.</p></div><small>Traceable contract evidence</small></a>
-      <a href="/explore/?view=candidates"><span class="panel-index" aria-hidden="true"><b>03</b>${icon('candidate-links')}</span><div><h3>Candidate links</h3><p>Review 385 explainable machine matches without treating them as confirmed identity.</p></div><small>Human review required</small></a>
-      <a href="/changes/"><span class="panel-index" aria-hidden="true"><b>04</b>${icon('compare')}</span><div><h3>FY2027 stage changes</h3><p>Compare 20,431 project rows between the NEP and the House bill with document-page evidence.</p></div><small>Provisional comparisons</small></a>
+      <a href="/contracts/"><span class="panel-index" aria-hidden="true"><b>01</b>${icon('delivery')}</span><div><h3>Projects</h3><p>Filter 56,887 contracts and open a structured evidence dossier for each current record.</p></div><small>Project-centered evidence</small></a>
+      <a href="/contractors/"><span class="panel-index" aria-hidden="true"><b>02</b>${icon('contractors')}</span><div><h3>Contractors</h3><p>Compare recorded project activity, joint-venture roles, identity evidence, and accountability records.</p></div><small>Association, not attribution</small></a>
+      <a href="/places/"><span class="panel-index" aria-hidden="true"><b>03</b>${icon('projects')}</span><div><h3>Places</h3><p>Browse the province, district-office, and region labels stated in acquired project records.</p></div><small>Source labels, not map claims</small></a>
+      <a href="/signals/"><span class="panel-index" aria-hidden="true"><b>04</b>${icon('investigate')}</span><div><h3>Needs checking</h3><p>Review transparent questions raised by budget movements, contradictions, and evidence gaps.</p></div><small>Review lead, not accusation</small></a>
     </div>
   </section>
 
@@ -361,6 +363,6 @@ export const methodologyBody = `
     <div class="standards-grid"><article class="standard-panel"><h3>Same rules for every record</h3><p>Every agency, district, contractor, project, and public official is evaluated under the same published evidence rules. Names, offices, locations, and amounts do not change a threshold or turn a review signal into a finding.</p></article><article class="standard-panel"><h3>Data before interpretation</h3><p>Official records, derived comparisons, review signals, and verified findings remain separate. Busisi does not infer political motive from an amount or association, and it publishes coverage limits and correction history so readers can examine possible sources of bias.</p></article><article class="standard-panel"><h3>Ownership and contact</h3><p>Auva Labs is responsible for Busisi's software, data pipeline, methodology, presentation, and publication decisions. Data-source organizations do not control Busisi's classifications or conclusions. Questions, corrections, and source-backed challenges are welcome at <a href="mailto:dev@auvalabs.com">dev@auvalabs.com</a>.</p></article></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}\n${questionsCss}\n${publicServicesCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}\n${questionsCss}\n${publicServicesCss}\n${ecosystemCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#15191d" stroke-width="2.5" stroke-linejoin="round"><path fill="#d2d9de" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#e9f0f4" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fff" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#17415f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#17415f"/><path fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/><circle cx="18" cy="44" r="1.2" fill="#8a4600"/></svg>`;
