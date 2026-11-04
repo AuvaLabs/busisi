@@ -256,7 +256,7 @@ const verifyPages = async () => {
   expectIncludes(homeText, 'index, follow, max-image-preview:large', 'home robots');
   expectIncludes(
     homeText,
-    'Busisi is a nonpartisan public-interest data platform for Filipinos',
+    'Busisi is an independent, nonpartisan evidence desk for Philippine public projects',
     'home positioning',
   );
   expectIncludes(homeText, 'https://auvalabs.com/', 'Auva Labs project credit');
@@ -494,7 +494,7 @@ const verifyDesign = async () => {
     '.lifecycle-grid', '.lifecycle-item', '.contract-explorer', '.contract-card',
     '.release-shell', '.release-card', '.questions-hero', '.question-grid',
     '.services-hero', '.services-desk', '.services-card',
-    '.place-shell', '.source-role-grid', '.watch-grid',
+    '.place-controls', '.source-role-grid', '.watch-grid',
   ]) {
     expectIncludes(cssText, value, 'design CSS');
   }
