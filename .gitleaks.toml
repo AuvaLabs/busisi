@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public IndexNow ownership key served by the site"
+regexes = [
+  '''4754cd4a99b473376bef19b5bbf858f0''',
+]

@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   pytest:
     runs-on: ubuntu-24.04
@@ -16,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Reject AI contributor attribution
+      - name: Validate contributor attribution
         shell: bash
         run: |
           identity_pattern='claude|codex|chatgpt|openai|anthropic|copilot'

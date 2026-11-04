@@ -1,0 +1,33 @@
+name: Source update
+description: Report a changed, unavailable, or newly published official source.
+title: "source: "
+labels:
+  - source-update
+body:
+  - type: input
+    id: publisher
+    attributes:
+      label: Original publisher
+    validations:
+      required: true
+  - type: input
+    id: source_url
+    attributes:
+      label: Official source URL
+      placeholder: https://...
+    validations:
+      required: true
+  - type: textarea
+    id: observation
+    attributes:
+      label: Observed change
+      description: Include the observation date and any visible version or document identifier.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Possible Busisi impact
+      description: Identify affected pages or records without claiming an unverified conclusion.
+    validations:
+      required: true

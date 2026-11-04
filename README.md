@@ -178,4 +178,13 @@ configured attempt limit for review.
 
 ## License
 
-Proprietary.
+Busisi source code and project documentation are licensed under the
+[Apache License 2.0](LICENSE), unless a file states otherwise. The license does
+not relicense government records, third-party datasets, source media, fonts, or
+trademarks. See [NOTICE](NOTICE), [DATA_AND_MEDIA.md](DATA_AND_MEDIA.md), and
+[third-party notices](cloudflare/busisi/THIRD_PARTY_NOTICES.md).
+
+Public corrections and software contributions are welcome under
+[CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately using
+[SECURITY.md](SECURITY.md). Questions can be sent to
+[dev@auvalabs.com](mailto:dev@auvalabs.com).

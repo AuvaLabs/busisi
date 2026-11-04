@@ -1,0 +1,37 @@
+name: Software defect
+description: Report a reproducible problem in the public interface or repository.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: input
+    id: url
+    attributes:
+      label: Affected URL or component
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: This report contains no credential, private information, or destructive reproduction step.
+          required: true

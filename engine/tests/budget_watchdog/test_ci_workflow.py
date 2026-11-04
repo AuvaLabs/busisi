@@ -4,6 +4,20 @@ ROOT = Path(__file__).resolve().parents[3]
 WORKFLOW = ROOT / ".github" / "workflows" / "busisi-production-monitor.yml"
 TEST_WORKFLOW = ROOT / ".github" / "workflows" / "test.yml"
 TEST_REQUIREMENTS = ROOT / "requirements-dev.txt"
+PUBLIC_RELEASE_FILES = (
+    ROOT / "LICENSE",
+    ROOT / "NOTICE",
+    ROOT / "DATA_AND_MEDIA.md",
+    ROOT / "SECURITY.md",
+    ROOT / "CONTRIBUTING.md",
+    ROOT / "CODE_OF_CONDUCT.md",
+    ROOT / ".gitleaks.toml",
+    ROOT / ".github" / "CODEOWNERS",
+    ROOT / ".github" / "dependabot.yml",
+    ROOT / ".github" / "ISSUE_TEMPLATE" / "data-correction.yml",
+    ROOT / ".github" / "ISSUE_TEMPLATE" / "source-update.yml",
+    ROOT / ".github" / "ISSUE_TEMPLATE" / "software-bug.yml",
+)
 
 
 def test_busisi_production_monitor_is_scheduled_and_credential_free() -> None:
@@ -37,11 +51,29 @@ def test_workflows_use_current_action_runtimes() -> None:
     assert "actions/setup-python@v7" in tests
 
 
-def test_test_workflow_rejects_ai_contributor_attribution() -> None:
+def test_test_workflow_validates_contributor_attribution() -> None:
     document = TEST_WORKFLOW.read_text(encoding="utf-8")
 
     assert "fetch-depth: 0" in document
-    assert "Reject AI contributor attribution" in document
+    assert "Validate contributor attribution" in document
     assert "co-authored-by:" in document.lower()
     for identity in ("claude", "codex", "chatgpt", "openai", "anthropic", "copilot"):
         assert identity in document.lower()
+
+
+def test_public_release_governance_is_explicit() -> None:
+    for path in PUBLIC_RELEASE_FILES:
+        assert path.is_file(), path
+        assert path.stat().st_size > 0, path
+
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    data_terms = (ROOT / "DATA_AND_MEDIA.md").read_text(encoding="utf-8")
+    security = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
+    scanner = (ROOT / ".gitleaks.toml").read_text(encoding="utf-8")
+
+    assert "Apache License 2.0" in readme
+    assert "Proprietary" not in readme
+    assert "does not relicense third-party material" in data_terms
+    assert "dev@auvalabs.com" in security
+    assert "useDefault = true" in scanner
+    assert "Public IndexNow ownership key" in scanner

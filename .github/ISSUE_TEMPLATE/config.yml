@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report
+    url: https://github.com/AuvaLabs/busisi/security/policy
+    about: Review the private reporting instructions before disclosing a vulnerability.
+  - name: Busisi methodology
+    url: https://busisi.org/methodology/
+    about: Read the evidence, review, and publication rules.

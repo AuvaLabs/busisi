@@ -1,0 +1,44 @@
+name: Data correction
+description: Challenge a published value or relationship using source evidence.
+title: "correction: "
+labels:
+  - data-correction
+body:
+  - type: markdown
+    attributes:
+      value: Do not include private information. Security reports must follow SECURITY.md.
+  - type: input
+    id: busisi_url
+    attributes:
+      label: Busisi URL or record ID
+      placeholder: https://busisi.org/...
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current presentation
+      description: State the exact value, relationship, or label being challenged.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: Proposed correction
+      description: Explain what should change without inferring motive or wrongdoing.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Original source evidence
+      description: Link the original publisher and provide dates or identifiers.
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Evidence boundaries
+      options:
+        - label: I have not included credentials, private information, or unsupported allegations.
+          required: true
