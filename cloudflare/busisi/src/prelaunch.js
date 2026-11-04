@@ -474,7 +474,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
 
 const llms = () => response(`# Busisi
 
-Busisi is an independent public-interest project examining Philippine public budget records.
+Busisi is a nonpartisan and politically unaffiliated public-interest project helping Filipino citizens examine Philippine public budget records.
 
 ## Current status
 
@@ -505,6 +505,13 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Quarantine weak, conflicting, or failed records.
 - Treat anomaly signals as questions for review, not proof of wrongdoing.
 - Publish inferred links as reviewed only after the documented human-review gate passes.
+
+## Editorial independence
+
+- No affiliation with any politician, political party, candidate, or government faction.
+- No endorsements and no inferred political motive.
+- Apply the same published evidence rules to every agency, district, contractor, project, and public official.
+- Publish coverage limits and correction history so possible sources of bias remain inspectable.
 `, { type: 'text/plain; charset=utf-8' });
 
 const assets = (path) => {

@@ -35,3 +35,13 @@ def test_workflows_use_current_action_runtimes() -> None:
         assert "actions/setup-node@v7" in document
         assert "runs-on: ubuntu-24.04" in document
     assert "actions/setup-python@v7" in tests
+
+
+def test_test_workflow_rejects_ai_contributor_attribution() -> None:
+    document = TEST_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "fetch-depth: 0" in document
+    assert "Reject AI contributor attribution" in document
+    assert "co-authored-by:" in document.lower()
+    for identity in ("claude", "codex", "chatgpt", "openai", "anthropic", "copilot"):
+        assert identity in document.lower()

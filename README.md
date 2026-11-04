@@ -45,6 +45,21 @@ not imply project sponsorship, control or responsibility.
 
 Production: [busisi.org](https://busisi.org)
 
+## Mission and editorial independence
+
+Busisi exists to help Filipino citizens understand how public money is
+proposed, changed, released, procured and implemented. It is nonpartisan and
+has no affiliation with any politician, political party, candidate or
+government faction. It does not endorse or oppose candidates, parties or
+public officials.
+
+Every agency, district, contractor and public official is evaluated under the
+same published evidence rules. Busisi does not infer motive from a budget
+amount, project location, contractor identity or political name. Records,
+derived comparisons, review signals and verified findings remain visibly
+separate. Coverage limitations and corrections are published so readers can
+inspect where the data ends and challenge an error using source evidence.
+
 ## Project and data attribution
 
 Busisi is a public-interest project by [Auva Labs](https://auvalabs.com/).

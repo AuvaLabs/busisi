@@ -36,7 +36,7 @@ const navigation = (canonicalPath) => {
 };
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
-  <div class="footer-brand"><strong>Busisi</strong><p>Independent civic data initiative for traceable Philippine public budget records.</p></div>
+  <div class="footer-brand"><strong>Busisi</strong><p>Nonpartisan civic data initiative helping Filipino citizens examine traceable public budget records.</p></div>
   <nav class="footer-nav" aria-label="Footer navigation"><a href="/sulit/">Sulit Ba?</a><a href="/releases/">Releases</a><a href="/contracts/">Contracts</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/signals/">Red flags</a><a href="/integrity/">Integrity</a><a href="/coverage/">Coverage</a><a href="/methodology/">Method</a></nav>
   <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.<br><small>A public-interest project by <a href="https://auvalabs.com/" target="_blank" rel="noopener noreferrer">Auva Labs</a> · <a href="mailto:hello@auvalabs.com">hello@auvalabs.com</a></small></p>
 </div></footer>`;
@@ -290,7 +290,7 @@ const pipeline = `
 
 export const methodologyBody = `
   <section class="page-intro"><div><p class="kicker">Methodology</p><h1>Every public link needs a source trail.</h1></div><div><p class="lede">Collection, normalization, matching, review, and publication are separated so that a plausible relationship cannot quietly become a public claim.</p>${methodDiagram}</div></section>
-  <nav class="local-nav" aria-label="Methodology sections"><span>Jump to</span><a href="#pipeline">Pipeline</a><a href="#source-policy">Source policy</a><a href="#coverage-automation">Coverage automation</a><a href="#agency-ledger">Agency ledger</a><a href="#allotment-releases">Allotment releases</a><a href="#budget-cycle">Budget trail</a><a href="#procurement">Procurement</a><a href="#public-value">Public value</a><a href="#release-standard">Release standard</a><a href="#corrections">Corrections</a></nav>
+  <nav class="local-nav" aria-label="Methodology sections"><span>Jump to</span><a href="#pipeline">Pipeline</a><a href="#source-policy">Source policy</a><a href="#coverage-automation">Coverage automation</a><a href="#agency-ledger">Agency ledger</a><a href="#allotment-releases">Allotment releases</a><a href="#budget-cycle">Budget trail</a><a href="#procurement">Procurement</a><a href="#public-value">Public value</a><a href="#release-standard">Release standard</a><a href="#corrections">Corrections</a><a href="#editorial-independence">Independence</a></nav>
 
   <section class="narrative-section" id="pipeline" aria-labelledby="pipeline-heading">
     <div class="section-heading"><p class="section-number">01 / Pipeline</p><div><h2 id="pipeline-heading">Ten controls. Four evidence stages.</h2><p class="section-intro">A failure at any stage prevents publication. Quarantine is an intended outcome, not an exception.</p></div></div>${pipeline}
@@ -344,6 +344,11 @@ export const methodologyBody = `
 
   <section class="narrative-section" id="corrections" aria-labelledby="corrections-heading">
     <div class="section-heading"><p class="section-number">10 / Corrections</p><div><h2 id="corrections-heading">Corrections keep their history.</h2><p class="section-intro">A correction preserves the prior version, records what changed, and identifies the evidence behind the decision. A record that loses support returns to quarantine.</p></div></div>
+  </section>
+
+  <section class="narrative-section" id="editorial-independence" aria-labelledby="editorial-independence-heading">
+    <div class="section-heading"><p class="section-number">11 / Editorial independence</p><div><h2 id="editorial-independence-heading">Nonpartisan by policy.</h2><p class="section-intro">Busisi exists to help Filipino citizens examine public money. It has no affiliation with any politician, political party, candidate, or government faction and does not endorse or oppose them.</p></div></div>
+    <div class="standards-grid"><article class="standard-panel"><h3>Same rules for every record</h3><p>Every agency, district, contractor, project, and public official is evaluated under the same published evidence rules. Names, offices, locations, and amounts do not change a threshold or turn a review signal into a finding.</p></article><article class="standard-panel"><h3>Data before interpretation</h3><p>Official records, derived comparisons, review signals, and verified findings remain separate. Busisi does not infer political motive from an amount or association, and it publishes coverage limits and correction history so readers can examine possible sources of bias.</p></article><article class="standard-panel"><h3>Ownership and contact</h3><p>Busisi is a public-interest project maintained by Auva Labs. Ownership does not alter the evidence rules. Questions, corrections, and source-backed challenges are welcome at <a href="mailto:hello@auvalabs.com">hello@auvalabs.com</a>.</p></article></div>
   </section>`;
 
 export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}`;

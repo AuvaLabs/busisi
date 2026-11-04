@@ -224,6 +224,12 @@ const verifyPages = async () => {
   expectIncludes(methodologyText, '100 reviewed linkage cases', 'methodology gate');
   expectIncludes(methodologyText, 'Congressional district context', 'methodology district boundary');
   expectIncludes(methodologyText, 'Discovery can be automatic', 'methodology automation boundary');
+  expectIncludes(methodologyText, 'Nonpartisan by policy', 'methodology independence');
+  expectIncludes(
+    methodologyText,
+    'no affiliation with any politician, political party, candidate',
+    'methodology political boundary',
+  );
 
   const coverage = await request('/coverage/');
   expectStatus(coverage, 200, '/coverage/');
@@ -329,7 +335,9 @@ const verifyPages = async () => {
 
   const llms = await request('/llms.txt');
   expectStatus(llms, 200, '/llms.txt');
-  expectIncludes(await llms.text(), 'Evidence and publication rules', 'llms evidence policy');
+  const llmsText = await llms.text();
+  expectIncludes(llmsText, 'Evidence and publication rules', 'llms evidence policy');
+  expectIncludes(llmsText, 'nonpartisan and politically unaffiliated', 'llms independence policy');
 
   const indexNow = await request(`/${indexNowKey}.txt`);
   expectStatus(indexNow, 200, 'IndexNow key');

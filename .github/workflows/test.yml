@@ -13,6 +13,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Reject AI contributor attribution
+        shell: bash
+        run: |
+          identity_pattern='claude|codex|chatgpt|openai|anthropic|copilot'
+          if git log --format='%an <%ae>' | grep -Eiq "$identity_pattern"; then
+            echo "Contributor history contains a prohibited automated identity."
+            exit 1
+          fi
+          if git log --format='%B' | grep -Eiq "^co-authored-by:.*($identity_pattern)"; then
+            echo "Commit history contains a prohibited automated co-author trailer."
+            exit 1
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v7

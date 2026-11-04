@@ -214,6 +214,9 @@ test('methodology is canonical and explains the publication gate', async () => {
   assert.match(document, /Machine-readable provenance stays in the JSON API/);
   assert.match(document, /not a coordinate or boundary-polygon determination/);
   assert.match(document, /A public-interest project by/);
+  assert.match(document, /id="editorial-independence"/);
+  assert.match(document, /no affiliation with any politician, political party, candidate/);
+  assert.match(document, /same published evidence rules/);
 });
 
 test('publishes machine-readable discovery files', async () => {
@@ -242,6 +245,7 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(llmsText, /Project integrity desk/);
   assert.match(llmsText, /Appropriation heads/);
   assert.match(llmsText, /Public value desk/);
+  assert.match(llmsText, /nonpartisan and politically unaffiliated/);
   assert.match(llms.headers.get('content-type'), /^text\/plain/);
 });
 
