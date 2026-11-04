@@ -110,6 +110,9 @@ const sourceMonitorMigrationPath = fileURLToPath(
 const contractorAssociationMigrationPath = fileURLToPath(
   new URL('../migrations/0024_contractor_project_associations.sql', import.meta.url),
 );
+const facilityIdentityMigrationPath = fileURLToPath(
+  new URL('../migrations/0026_facility_identity.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -172,6 +175,7 @@ class LocalD1 {
     this.database.exec(readFileSync(coverageAutomationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(sourceMonitorMigrationPath, 'utf8'));
     this.database.exec(readFileSync(contractorAssociationMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(facilityIdentityMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -1477,6 +1481,28 @@ test('keeps the question catalogue explicit when optional releases are unavailab
 });
 
 const insertPublicServiceExamples = (database) => database.database.exec(`
+  INSERT INTO facility_registry_sources VALUES
+    ('deped-ppp-2025', 'Department of Education', 'PPP indicative school list',
+     'https://www.deped.gov.ph/example.pdf', '${'9'.repeat(64)}',
+     '2026-11-04T00:00:00+00:00', 'Preliminary school list, not a complete national registry.', 'partial');
+  INSERT INTO facility_identities VALUES
+    ('deped:136505', 'school', '136505', 'San Antonio Elementary School',
+     'Quezon City', 'Metro Manila', 'NCR', 14650000, 121050000, 'deped-ppp-2025');
+  INSERT INTO facility_record_links VALUES
+    ('budget', 'dpwh:school', 'official_exact', 'deped:136505',
+     'school:san-antonio-es:quezon-city', 'San Antonio Elementary School',
+     'official_id_and_place', 100, '["official_id","place_match"]',
+     'The source list is preliminary and does not cover every Philippine school.',
+     '2026-11-04T00:00:00+00:00'),
+    ('delivery', '25HOSP01', 'group_only', NULL,
+     'hospital:district-hospital:cebu', 'District Hospital',
+     'normalized_name_and_place', 70, '["name_match","place_match"]',
+     'This groups similar record labels. It is not an official facility identity.',
+     '2026-11-04T00:00:00+00:00'),
+    ('delivery', '26ZERO01', 'ambiguous', NULL, NULL, 'Sample Health Center',
+     'multiple_registry_candidates', 0, '["multiple_candidates"]',
+     'More than one facility could fit the name and place, so no identity was selected.',
+     '2026-11-04T00:00:00+00:00');
   INSERT INTO stage_change_items VALUES
     ('dpwh:school', 2027, 'dpwh', 'Construction of Four-Storey School Building',
      'Basic Education Facilities', 'School Building Program', 'Region VII',
@@ -1535,8 +1561,17 @@ test('publishes a deterministic public-services inventory with separated review 
   assert.equal(summaryBody.data.work_types.new_build, 2);
   assert.equal(summaryBody.data.work_types.rehabilitation, 1);
   assert.equal(summaryBody.data.work_types.unspecified, 1);
-  assert.equal(summaryBody.data.classification_version, 'public-services-v1');
+  assert.equal(summaryBody.data.classification_version, 'public-services-v2');
+  assert.equal(summaryBody.data.identity_method_version, 'facility-identity-v1');
   assert.match(summaryBody.data.limitation, /not unique facilities/i);
+  assert.deepEqual(summaryBody.data.identity_coverage, {
+    official_facilities: 1,
+    official_linked_records: 1,
+    record_groups: 1,
+    grouped_records: 1,
+    ambiguous_records: 1,
+    unlinked_records: 1,
+  });
 
   const schools = await worker.fetch(
     request('/api/v1/public-services?facility=school'), environment(database),
@@ -1547,6 +1582,10 @@ test('publishes a deterministic public-services inventory with separated review 
   assert.equal(schoolBody.data[0].record_id, 'dpwh:school');
   assert.equal(schoolBody.data[0].facility_type, 'school');
   assert.equal(schoolBody.data[0].work_type, 'new_build');
+  assert.equal(schoolBody.data[0].facility_identity.state, 'official_exact');
+  assert.equal(schoolBody.data[0].facility_identity.official_id, '136505');
+  assert.equal(schoolBody.data[0].facility_identity.name, 'San Antonio Elementary School');
+  assert.match(schoolBody.data[0].facility_identity.explanation, /official school ID/i);
   assert.deepEqual(schoolBody.data[0].flags, []);
   assert.match(schoolBody.data[0].reader_url, /^\/records\/change\//);
 
@@ -1574,10 +1613,39 @@ test('publishes a deterministic public-services inventory with separated review 
   assert.equal(rehabilitationBody.meta.total, 1);
   assert.equal(rehabilitationBody.data[0].record_id, '25HOSP01');
   assert.equal(rehabilitationBody.data[0].source_type, 'delivery');
+  assert.equal(rehabilitationBody.data[0].facility_identity.state, 'group_only');
+  assert.equal(rehabilitationBody.data[0].facility_identity.name, 'District Hospital');
+  assert.match(rehabilitationBody.data[0].facility_identity.explanation, /not an official identity/i);
   assert.ok(rehabilitationBody.data[0].flags.some(({ code }) => code === 'missing_coordinate'));
   assert.ok(rehabilitationBody.data[0].flags.some(({ code }) => code === 'no_exact_secondary_row'));
   assert.ok(rehabilitationBody.data[0].flags.some(({ code }) => code === 'source_image_gap'));
   assert.equal(rehabilitationBody.data[0].reader_url, '/contracts/25HOSP01/');
+});
+
+test('filters public-service records by explainable facility identity state', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  insertPublicServiceExamples(database);
+
+  const official = await worker.fetch(
+    request('/api/v1/public-services?identity=official_exact'), environment(database),
+  );
+  const officialBody = await official.json();
+  assert.equal(official.status, 200);
+  assert.equal(officialBody.meta.total, 1);
+  assert.equal(officialBody.data[0].record_id, 'dpwh:school');
+
+  const ambiguous = await worker.fetch(
+    request('/api/v1/public-services?identity=ambiguous'), environment(database),
+  );
+  const ambiguousBody = await ambiguous.json();
+  assert.equal(ambiguousBody.meta.total, 1);
+  assert.equal(ambiguousBody.data[0].record_id, '26ZERO01');
+  assert.match(ambiguousBody.data[0].facility_identity.explanation, /more than one/i);
+
+  assert.throws(() => parsePublicServicesQuery(new URL(
+    'https://busisi.test/api/v1/public-services?identity=confirmed',
+  )), /identity is invalid/);
 });
 
 test('reuses the public-services summary briefly within one database binding', async (context) => {
@@ -1690,6 +1758,9 @@ test('renders an interactive public-services desk with explicit red-flag boundar
   assert.match(document, /The project ID may point to different records/);
   assert.match(document, /Some information is missing/);
   assert.match(document, /This does not mean the project is bad or illegal/);
+  assert.match(document, /1 official facility identity linked/);
+  assert.match(document, /1 possible facility group/);
+  assert.match(document, /An official identity means the record was linked to a published facility ID/);
   assert.match(document, /data-public-services-desk/);
   assert.match(document, /\/assets\/public-services-v1\.js/);
   assert.doesNotMatch(document, /risk score|proves? (?:fraud|corruption)/i);

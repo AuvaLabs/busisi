@@ -22,12 +22,17 @@ export const publicServicesBody = (summary) => {
   const records = summary?.records || {};
   const facilities = summary?.facilities || {};
   const work = summary?.work_types || {};
+  const identity = summary?.identity_coverage || {};
   return `
   <section class="services-hero">
     <div><p class="eyebrow">Schools and health services</p><h1>Schools and health facilities in the public record.</h1><p class="lede">Search records that name a school, hospital, or health center. See the amount, place, type of work, and anything that needs checking.</p></div>
     <aside aria-label="Current public-services scope"><span>Records found</span><strong>${number(records.total)} records that name a facility</strong><dl><div><dt>Budget records</dt><dd>${number(records.budget)}</dd></div><div><dt>Project contracts</dt><dd>${number(records.delivery)}</dd></div><div><dt>Needs checking</dt><dd>${number(records.flagged)} records with things to check</dd></div></dl></aside>
   </section>
   <section class="services-boundary"><strong>What this count means</strong><p>These are records, not separate buildings. One facility can have several budget records or contracts. A record also does not prove that work started or finished.</p></section>
+  <section class="services-identity" aria-labelledby="facility-identity-heading">
+    <div><p class="kicker">Facility identity</p><h2 id="facility-identity-heading">Separate known facilities from possible groups.</h2><p>An official identity means the record was linked to a published facility ID. A possible facility group only means records share a carefully normalized name and place. It is not a count of buildings.</p></div>
+    <dl><div><dt>Official facilities linked</dt><dd>${number(identity.official_facilities)}</dd><small>${number(identity.official_linked_records)} official facility identity linked record${Number(identity.official_linked_records) === 1 ? '' : 's'}</small></div><div><dt>Possible facility groups</dt><dd>${number(identity.record_groups)}</dd><small>${number(identity.record_groups)} possible facility group${Number(identity.record_groups) === 1 ? '' : 's'} across ${number(identity.grouped_records)} record${Number(identity.grouped_records) === 1 ? '' : 's'}</small></div><div><dt>Held for identity review</dt><dd>${number(identity.ambiguous_records)}</dd><small>More than one identity may fit</small></div><div><dt>Not linked yet</dt><dd>${number(identity.unlinked_records)}</dd><small>No safe identity selected</small></div></dl>
+  </section>
   <section class="services-snapshot" aria-label="Title classification summary">
     <article><span>School records</span><strong>${number(facilities.school)}</strong><small>School or classroom explicitly named</small></article>
     <article><span>Hospital records</span><strong>${number(facilities.hospital)}</strong><small>Hospital or medical center explicitly named</small></article>
@@ -45,6 +50,7 @@ export const publicServicesBody = (summary) => {
       <label>Source<select name="source">${option('all', 'All record sources')}${option('budget', 'Budget-stage rows')}${option('delivery', 'Delivery contracts')}</select></label>
       <label>Facility<select name="facility">${option('all', 'All facilities')}${option('school', 'Schools')}${option('hospital', 'Hospitals')}${option('health_center', 'Health centers')}</select></label>
       <label>Work type<select name="work">${option('all', 'All work types')}${option('new_build', 'New build')}${option('rehabilitation', 'Rehabilitation')}${option('expansion', 'Expansion')}${option('equipment', 'Equipment')}${option('continuation', 'Continuation or phase')}${option('unspecified', 'Unspecified')}</select></label>
+      <label>Facility identity<select name="identity">${option('all', 'All identity states')}${option('official_exact', 'Linked to official ID')}${option('group_only', 'Possible facility group')}${option('ambiguous', 'Held for identity review')}${option('unlinked', 'Not linked yet')}</select></label>
       <label>Things to check<select name="flag">${option('all', 'All records')}${option('with_flags', 'Has something to check')}${option('without_flags', 'Nothing flagged')}${option('stage_change', 'Budget entry changed')}${option('record_contradiction', 'Record says different things')}${option('location_review', 'Place needs checking')}${option('identity_conflict', 'Project ID needs checking')}${option('coverage_gap', 'Information is missing')}${option('repeat_family', 'Similar project appears again')}</select></label>
       <label>Sort<select name="sort">${option('amount_desc', 'Largest amount')}${option('year_desc', 'Newest fiscal year')}${option('flags_desc', 'Most things to check')}${option('title_asc', 'Title A to Z')}</select></label>
       <button type="submit">Apply filters</button><button type="button" class="secondary-control" data-services-reset>Reset</button>

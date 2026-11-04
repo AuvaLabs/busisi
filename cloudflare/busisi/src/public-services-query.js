@@ -7,6 +7,9 @@ const SUMMARY_CACHE_TTL_MS = 60_000;
 const summaryCache = new WeakMap();
 const SOURCES = new Set(['all', 'budget', 'delivery']);
 const FACILITIES = new Set(['all', 'school', 'hospital', 'health_center']);
+const IDENTITY_STATES = new Set([
+  'all', 'official_exact', 'group_only', 'ambiguous', 'unlinked',
+]);
 const WORK_TYPES = new Set([
   'all', 'new_build', 'rehabilitation', 'expansion', 'equipment', 'continuation', 'unspecified',
 ]);
@@ -41,7 +44,8 @@ const integer = (value, fallback, minimum, maximum, name) => {
 };
 
 const fingerprint = (query) => [
-  query.q, query.source, query.facility, query.work, query.flag, query.year, query.sort,
+  query.q, query.source, query.facility, query.work, query.identity,
+  query.flag, query.year, query.sort,
 ].join('|');
 
 const encodeCursor = (query, offset) => btoa(JSON.stringify({
@@ -67,6 +71,7 @@ export const parsePublicServicesQuery = (url) => {
   const source = params.get('source') || 'all';
   const facility = params.get('facility') || 'all';
   const work = params.get('work') || 'all';
+  const identity = params.get('identity') || 'all';
   const flag = params.get('flag') || 'all';
   const year = integer(params.get('year'), null, 2000, 2100, 'year');
   const sort = params.get('sort') || 'amount_desc';
@@ -75,9 +80,12 @@ export const parsePublicServicesQuery = (url) => {
   if (!SOURCES.has(source)) throw new QueryError('source is invalid');
   if (!FACILITIES.has(facility)) throw new QueryError('facility is invalid');
   if (!WORK_TYPES.has(work)) throw new QueryError('work is invalid');
+  if (!IDENTITY_STATES.has(identity)) throw new QueryError('identity is invalid');
   if (!FLAG_FILTERS.has(flag)) throw new QueryError('flag is invalid');
   if (!Object.hasOwn(SORTS, sort)) throw new QueryError('sort is invalid');
-  const query = { q, source, facility, work, flag, year, sort, limit, offset: 0 };
+  const query = {
+    q, source, facility, work, identity, flag, year, sort, limit, offset: 0,
+  };
   const cursor = params.get('cursor');
   if (cursor) query.offset = decodeCursor(cursor, query);
   return Object.freeze(query);
@@ -171,8 +179,22 @@ const NORMALIZED_CTE = `WITH raw AS (
   LEFT JOIN contract_acquisition_details acquisition ON acquisition.contract_id = d.contract_id
   LEFT JOIN project_image_coverage images ON images.contract_id = d.contract_id
 ), classified AS (
-  SELECT raw.*, ${FACILITY_CASE} AS facility_type, ${WORK_CASE} AS work_type
+  SELECT raw.*, ${FACILITY_CASE} AS facility_type, ${WORK_CASE} AS work_type,
+    COALESCE(link.match_state, 'unlinked') AS identity_state,
+    link.record_group_key, link.record_group_label, link.match_method,
+    link.confidence AS identity_confidence, link.signals_json AS identity_signals_json,
+    link.limitation AS identity_limitation, link.reviewed_at AS identity_reviewed_at,
+    registry.facility_id, registry.official_id, registry.official_name,
+    registry.municipality AS identity_municipality,
+    registry.province AS identity_province, registry.region AS identity_region,
+    source.source_id AS registry_source_id, source.publisher AS registry_publisher,
+    source.dataset_name AS registry_dataset, source.source_url AS registry_source_url,
+    source.scope_note AS registry_scope_note, source.status AS registry_status
   FROM raw
+  LEFT JOIN facility_record_links link
+    ON link.source_type = raw.source_type AND link.record_id = raw.record_id
+  LEFT JOIN facility_identities registry ON registry.facility_id = link.facility_id
+  LEFT JOIN facility_registry_sources source ON source.source_id = registry.source_id
 ), eligible AS MATERIALIZED (
   SELECT *, (stage_change + CASE WHEN source_type = 'budget' THEN repeat_family ELSE 0 END
     + source_signal_count + generated_flag_count) AS flag_count
@@ -190,7 +212,8 @@ const filters = (query) => {
     bindings.push(query.q, query.q, query.q, query.q);
   }
   for (const [value, field] of [
-    [query.source, 'source_type'], [query.facility, 'facility_type'], [query.work, 'work_type'],
+    [query.source, 'source_type'], [query.facility, 'facility_type'],
+    [query.work, 'work_type'], [query.identity, 'identity_state'],
   ]) {
     if (value !== 'all') {
       clauses.push(`${field} = ?`);
@@ -279,6 +302,44 @@ const signalMap = async (database, records) => {
 
 const mapRecord = (record, signals) => {
   const flags = flagsFor(record, signals.get(record.record_id) || []);
+  const identity = (() => {
+    if (record.identity_state === 'official_exact') return {
+      state: record.identity_state,
+      name: record.official_name,
+      official_id: record.official_id,
+      source: record.registry_dataset,
+      source_url: record.registry_source_url,
+      explanation: `Linked to official ${record.facility_type === 'school' ? 'school' : 'facility'} ID ${record.official_id} in ${record.registry_dataset}, published by ${record.registry_publisher}.`,
+      limitation: record.identity_limitation || record.registry_scope_note,
+    };
+    if (record.identity_state === 'group_only') return {
+      state: record.identity_state,
+      name: record.record_group_label,
+      official_id: null,
+      source: null,
+      source_url: null,
+      explanation: 'Similar record labels were grouped by normalized facility name and place. This is not an official identity or a count of buildings.',
+      limitation: record.identity_limitation,
+    };
+    if (record.identity_state === 'ambiguous') return {
+      state: record.identity_state,
+      name: record.record_group_label || null,
+      official_id: null,
+      source: null,
+      source_url: null,
+      explanation: record.identity_limitation || 'More than one facility could fit this record, so Busisi did not select one.',
+      limitation: record.identity_limitation,
+    };
+    return {
+      state: 'unlinked',
+      name: null,
+      official_id: null,
+      source: null,
+      source_url: null,
+      explanation: 'No official facility identity or reliable record group has been linked to this record yet.',
+      limitation: 'An unlinked record is not evidence that the named facility does not exist.',
+    };
+  })();
   return Object.freeze({
     record_id: record.record_id,
     source_type: record.source_type,
@@ -291,6 +352,7 @@ const mapRecord = (record, signals) => {
     office: record.office,
     program: record.program,
     status: record.status,
+    facility_identity: Object.freeze(identity),
     flags,
     flag_count: flags.length,
     reader_url: record.source_type === 'budget'
@@ -339,7 +401,16 @@ const loadPublicServicesSummary = async (database) => {
     SUM(work_type = 'unspecified') AS unspecified,
     SUM(stage_change) AS stage_change, SUM(record_contradiction) AS record_contradiction,
     SUM(location_review) AS location_review, SUM(identity_conflict) AS identity_conflict,
-    SUM(coverage_gap) AS coverage_gap, SUM(repeat_family) AS repeat_family FROM eligible`).first();
+    SUM(coverage_gap) AS coverage_gap, SUM(repeat_family) AS repeat_family,
+    COUNT(DISTINCT CASE WHEN identity_state = 'official_exact' THEN facility_id END)
+      AS official_facilities,
+    SUM(identity_state = 'official_exact') AS official_linked_records,
+    COUNT(DISTINCT CASE WHEN identity_state = 'group_only' THEN record_group_key END)
+      AS record_groups,
+    SUM(identity_state = 'group_only') AS grouped_records,
+    SUM(identity_state = 'ambiguous') AS ambiguous_records,
+    SUM(identity_state = 'unlinked') AS unlinked_records
+    FROM eligible`).first();
   return Object.freeze({
     records: {
       total: Number(row.total || 0),
@@ -353,11 +424,16 @@ const loadPublicServicesSummary = async (database) => {
     work_types: Object.fromEntries([
       'new_build', 'rehabilitation', 'expansion', 'equipment', 'continuation', 'unspecified',
     ].map((key) => [key, Number(row[key] || 0)])),
+    identity_coverage: Object.fromEntries([
+      'official_facilities', 'official_linked_records', 'record_groups', 'grouped_records',
+      'ambiguous_records', 'unlinked_records',
+    ].map((key) => [key, Number(row[key] || 0)])),
     flag_counts: [
       'stage_change', 'record_contradiction', 'location_review', 'identity_conflict',
       'coverage_gap', 'repeat_family',
     ].map((classification) => ({ classification, count: Number(row[classification] || 0) })),
-    classification_version: 'public-services-v1',
+    classification_version: 'public-services-v2',
+    identity_method_version: 'facility-identity-v1',
     limitation: 'Counts are records matched by words in the project title, not unique facilities. Budget rows and delivery contracts remain separate and do not prove physical construction, completion, payment, quality, or public benefit.',
   });
 };

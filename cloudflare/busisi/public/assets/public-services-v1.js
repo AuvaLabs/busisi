@@ -34,6 +34,15 @@
     appendText(header, 'span', record.source_type === 'budget' ? 'Budget-stage row' : 'Delivery contract', `services-tag ${record.source_type}`);
     appendText(header, 'span', label(record.facility_type), 'services-tag');
     appendText(header, 'span', label(record.work_type), 'services-tag');
+    const identity = record.facility_identity || { state: 'unlinked' };
+    const identityLabels = {
+      official_exact: 'Official facility ID linked',
+      group_only: 'Possible facility group',
+      ambiguous: 'Facility identity needs review',
+      unlinked: 'Facility not linked yet',
+    };
+    appendText(header, 'span', identityLabels[identity.state] || 'Facility not linked yet',
+      `services-tag identity ${identity.state || 'unlinked'}`);
     if (record.flag_count) appendText(header, 'span', `${record.flag_count} thing${record.flag_count === 1 ? '' : 's'} to check`, 'services-tag flag');
     main.append(header);
     const heading = appendText(main, 'h3', '');
@@ -58,6 +67,10 @@
         appendText(item, 'small', `Technical tag: ${label(flag.classification)}`);
       });
     }
+    const identityNote = appendText(main, 'div', '', 'services-identity-note');
+    appendText(identityNote, 'b', identity.name || identityLabels[identity.state] || 'Facility identity');
+    appendText(identityNote, 'p', identity.explanation || 'No facility identity explanation is available.');
+    if (identity.official_id) appendText(identityNote, 'small', `Official ID: ${identity.official_id}`);
     const side = document.createElement('div');
     side.className = 'services-card-side';
     appendText(side, 'strong', peso.format(Number(record.amount_centavos || 0) / 100));
