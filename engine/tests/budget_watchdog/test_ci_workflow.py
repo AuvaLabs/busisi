@@ -21,7 +21,7 @@ PUBLIC_RELEASE_FILES = (
 )
 
 
-def test_busisi_production_monitor_is_scheduled_and_credential_free() -> None:
+def test_busisi_production_monitor_is_scheduled_and_uses_a_scoped_secret() -> None:
     document = WORKFLOW.read_text(encoding="utf-8")
 
     assert "schedule:" in document
@@ -32,7 +32,8 @@ def test_busisi_production_monitor_is_scheduled_and_credential_free() -> None:
     assert "actions/setup-node@v7" in document
     assert "npm ci" in document
     assert "npm run verify:live" in document
-    assert "secrets." not in document
+    assert "BUSISI_ORIGIN: https://busisi-publication.nicholai-imbong.workers.dev" in document
+    assert "BUSISI_MONITOR_TOKEN: ${{ secrets.BUSISI_MONITOR_TOKEN }}" in document
 
 
 def test_live_monitor_rejects_stale_coverage_releases() -> None:
