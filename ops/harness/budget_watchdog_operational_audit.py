@@ -162,6 +162,7 @@ def _write_report(now: datetime, report: dict[str, Any]) -> Path:
     run_dir = OUTPUT / "runs" / stamp
     run_dir.mkdir(parents=True, exist_ok=False)
     path = run_dir / "report.json"
+    report["report_path"] = str(path)
     document = json.dumps(report, indent=2, sort_keys=True) + "\n"
     path.write_text(document, encoding="utf-8")
     OUTPUT.mkdir(parents=True, exist_ok=True)

@@ -63,8 +63,9 @@ def _write_report(cadence: str, now: datetime, report: dict[str, Any]) -> Path:
     directory = OUTPUT / cadence
     run_directory = directory / "runs" / now.strftime("%Y%m%dT%H%M%SZ")
     run_directory.mkdir(parents=True, exist_ok=False)
-    document = json.dumps(report, indent=2, sort_keys=True) + "\n"
     path = run_directory / "report.json"
+    report["report_path"] = str(path)
+    document = json.dumps(report, indent=2, sort_keys=True) + "\n"
     path.write_text(document, encoding="utf-8")
     temporary = directory / ".latest.json.building"
     temporary.write_text(document, encoding="utf-8")
