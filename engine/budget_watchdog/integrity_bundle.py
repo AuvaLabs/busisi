@@ -27,8 +27,8 @@ from engine.budget_watchdog.integrity import (
     DeliveryIntegrityRecord,
     IntegritySignal,
     build_integrity_snapshot,
-    contractor_identities,
     contractor_concentrations,
+    contractor_identities,
 )
 from engine.budget_watchdog.models import validate_fiscal_year
 from engine.budget_watchdog.money import parse_centavos

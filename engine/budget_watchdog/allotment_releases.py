@@ -5,11 +5,13 @@ from __future__ import annotations
 import re
 import zipfile
 from dataclasses import dataclass
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from io import BytesIO
 from pathlib import PurePosixPath
 from urllib.parse import urlparse
-from xml.etree import ElementTree
+
+from defusedxml import ElementTree
+from defusedxml.common import DefusedXmlException
 
 FISCAL_YEAR = 2026
 AS_OF_DATE = "2026-09-30"
@@ -25,6 +27,12 @@ RELATIONSHIP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relatio
 PACKAGE_RELATIONSHIP_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 MAX_XLSX_ENTRIES = 128
 MAX_XLSX_UNCOMPRESSED_BYTES = 64 * 1024 * 1024
+DEPARTMENT_ROWS = range(9, 56)
+ATTACHED_AGENCY_ROWS = range(56, 93)
+FORCED_SUBUNIT_ROWS = range(72, 78)
+SPECIAL_PURPOSE_FUND_ROWS = range(94, 107)
+PUBLISHABLE_ROWS = range(9, 107)
+SECTION_HEADER_ROW = 93
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,14 +126,10 @@ def extract_xlsx_rows(payload: bytes, sheet_name: str) -> tuple[dict[str, str], 
             if sum(entry.file_size for entry in entries) > MAX_XLSX_UNCOMPRESSED_BYTES:
                 raise ValueError("XLSX archive exceeds the uncompressed size limit")
             workbook = ElementTree.fromstring(archive.read("xl/workbook.xml"))
-            relationships = ElementTree.fromstring(
-                archive.read("xl/_rels/workbook.xml.rels")
-            )
+            relationships = ElementTree.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
             targets = {
                 relation.attrib["Id"]: relation.attrib["Target"]
-                for relation in relationships.findall(
-                    f"{{{PACKAGE_RELATIONSHIP_NS}}}Relationship"
-                )
+                for relation in relationships.findall(f"{{{PACKAGE_RELATIONSHIP_NS}}}Relationship")
             }
             selected = next(
                 (
@@ -150,7 +154,7 @@ def extract_xlsx_rows(payload: bytes, sheet_name: str) -> tuple[dict[str, str], 
                     "".join(text.text or "" for text in item.iter(f"{{{SPREADSHEET_NS}}}t"))
                     for item in shared_root.findall(f"{{{SPREADSHEET_NS}}}si")
                 ]
-    except (KeyError, zipfile.BadZipFile, ElementTree.ParseError) as exc:
+    except (DefusedXmlException, KeyError, zipfile.BadZipFile, ElementTree.ParseError) as exc:
         raise ValueError("XLSX workbook structure is invalid") from exc
 
     rows: list[dict[str, str]] = []
@@ -234,19 +238,21 @@ def _validate_controls(rows: tuple[dict[str, str], ...]) -> AllotmentReleaseCont
         TOTAL_BALANCE_THOUSAND_PESOS,
     ):
         raise ValueError("all-source release control does not reconcile")
-    return AllotmentReleaseControls(*(_centavos(value) for value in (*current_values, *total_values)))
+    return AllotmentReleaseControls(
+        *(_centavos(value) for value in (*current_values, *total_values))
+    )
 
 
 def _record_scope(row_number: int, raw_label: str) -> tuple[str, str | None]:
-    if 9 <= row_number <= 55:
+    if row_number in DEPARTMENT_ROWS:
         if raw_label != raw_label.lstrip():
             return "subunit", None
         return "department", None
-    if 56 <= row_number <= 92:
-        if raw_label != raw_label.lstrip() or 72 <= row_number <= 77:
+    if row_number in ATTACHED_AGENCY_ROWS:
+        if raw_label != raw_label.lstrip() or row_number in FORCED_SUBUNIT_ROWS:
             return "subunit", None
         return "attached_agency", "release:oeos"
-    if 94 <= row_number <= 106:
+    if row_number in SPECIAL_PURPOSE_FUND_ROWS:
         return "special_purpose_fund", None
     raise ValueError("row is outside the publishable release scope")
 
@@ -264,7 +270,7 @@ def parse_release_rows(
     used_ids: set[str] = set()
     for row in rows:
         row_number = int(row.get("row", 0))
-        if not (9 <= row_number <= 106) or row_number == 93:
+        if row_number not in PUBLISHABLE_ROWS or row_number == SECTION_HEADER_ROW:
             continue
         raw_label = str(row.get("A", ""))
         label = " ".join(raw_label.split())
@@ -283,7 +289,9 @@ def parse_release_rows(
             current_attached = record_id
             parent_id = fixed_parent
         elif level == "subunit":
-            parent_id = current_attached if 56 <= row_number <= 92 else current_department
+            parent_id = (
+                current_attached if row_number in ATTACHED_AGENCY_ROWS else current_department
+            )
             if parent_id is None:
                 raise ValueError(f"source row {row_number} has no parent release record")
             record_id = f"{parent_id}:{_slug(code)}"

@@ -10,7 +10,6 @@ import pytest
 from engine.budget_watchdog.allotment_release_bundle import build_allotment_release_bundle
 from engine.budget_watchdog.allotment_releases import extract_xlsx_rows, parse_release_rows
 
-
 SOURCE_URL = (
     "https://www.dbm.gov.ph/wp-content/uploads/e-Fund_Releases/"
     "Status-of-Allotment-Releases/2026/September/"
@@ -57,20 +56,117 @@ def test_extracts_the_named_xlsx_sheet_without_spreadsheet_dependencies() -> Non
         extract_xlsx_rows(_minimal_xlsx(), "Missing")
 
 
+def test_rejects_xlsx_with_xml_entity_declarations() -> None:
+    source = zipfile.ZipFile(io.BytesIO(_minimal_xlsx()))
+    output = io.BytesIO()
+    with source, zipfile.ZipFile(output, "w") as archive:
+        for item in source.infolist():
+            content = source.read(item.filename)
+            if item.filename == "xl/workbook.xml":
+                content = content.replace(
+                    b'<?xml version="1.0"?>',
+                    b'<?xml version="1.0"?><!DOCTYPE workbook [<!ENTITY unsafe "entity">]>',
+                ).replace(b"<sheets>", b"&unsafe;<sheets>")
+            archive.writestr(item, content)
+
+    with pytest.raises(ValueError, match="workbook structure is invalid"):
+        extract_xlsx_rows(output.getvalue(), "By Dept")
+
+
 def _source_rows() -> tuple[dict[str, str], ...]:
     return (
-        {"row": "7", "A": "A. FY 2026 GAA, RA NO. 12314", "D": "4391044969", "H": "4072227740", "I": "318817229"},
+        {
+            "row": "7",
+            "A": "A. FY 2026 GAA, RA NO. 12314",
+            "D": "4391044969",
+            "H": "4072227740",
+            "I": "318817229",
+        },
         {"row": "8", "A": "DEPARTMENTS", "D": "3671970347", "H": "3501002619", "I": "170967728"},
-        {"row": "9", "A": "COP", "B": "38600212", "C": "0", "D": "38600212", "H": "38600212", "I": "0"},
-        {"row": "15", "A": "DepEd", "B": "961323626", "C": "-185960", "D": "961137666", "H": "906410125", "I": "54727541"},
-        {"row": "16", "A": "         Central Office", "B": "212063108", "C": "7166215", "D": "219229323", "H": "182760884", "I": "36468439"},
-        {"row": "55", "A": "OEOs", "B": "79750974", "C": "107713", "D": "79858687", "H": "73314030", "I": "6544657"},
-        {"row": "56", "A": "AMLC", "B": "333102", "C": "0", "D": "333102", "H": "170161", "I": "162941"},
-        {"row": "93", "A": "SPECIAL PURPOSE FUNDS", "D": "719074622", "H": "571225121", "I": "147849501"},
-        {"row": "94", "A": "Budgetary Support to Government Corporations", "B": "264819717", "C": "10443782", "D": "275263499", "H": "251745782", "I": "23517717"},
-        {"row": "106", "A": "Revised AFP Modernization Program", "B": "40000000", "C": "0", "D": "40000000", "H": "33794326", "I": "6205674"},
-        {"row": "108", "A": "B. AUTOMATIC APPROPRIATIONS", "D": "2402117031", "H": "2159201387", "I": "242915644"},
-        {"row": "121", "A": " ORIGINAL PROGRAM", "D": "6793162000", "H": "6231429127", "I": "561732873"},
+        {
+            "row": "9",
+            "A": "COP",
+            "B": "38600212",
+            "C": "0",
+            "D": "38600212",
+            "H": "38600212",
+            "I": "0",
+        },
+        {
+            "row": "15",
+            "A": "DepEd",
+            "B": "961323626",
+            "C": "-185960",
+            "D": "961137666",
+            "H": "906410125",
+            "I": "54727541",
+        },
+        {
+            "row": "16",
+            "A": "         Central Office",
+            "B": "212063108",
+            "C": "7166215",
+            "D": "219229323",
+            "H": "182760884",
+            "I": "36468439",
+        },
+        {
+            "row": "55",
+            "A": "OEOs",
+            "B": "79750974",
+            "C": "107713",
+            "D": "79858687",
+            "H": "73314030",
+            "I": "6544657",
+        },
+        {
+            "row": "56",
+            "A": "AMLC",
+            "B": "333102",
+            "C": "0",
+            "D": "333102",
+            "H": "170161",
+            "I": "162941",
+        },
+        {
+            "row": "93",
+            "A": "SPECIAL PURPOSE FUNDS",
+            "D": "719074622",
+            "H": "571225121",
+            "I": "147849501",
+        },
+        {
+            "row": "94",
+            "A": "Budgetary Support to Government Corporations",
+            "B": "264819717",
+            "C": "10443782",
+            "D": "275263499",
+            "H": "251745782",
+            "I": "23517717",
+        },
+        {
+            "row": "106",
+            "A": "Revised AFP Modernization Program",
+            "B": "40000000",
+            "C": "0",
+            "D": "40000000",
+            "H": "33794326",
+            "I": "6205674",
+        },
+        {
+            "row": "108",
+            "A": "B. AUTOMATIC APPROPRIATIONS",
+            "D": "2402117031",
+            "H": "2159201387",
+            "I": "242915644",
+        },
+        {
+            "row": "121",
+            "A": " ORIGINAL PROGRAM",
+            "D": "6793162000",
+            "H": "6231429127",
+            "I": "561732873",
+        },
         {"row": "264", "A": "TOTAL", "D": "6793162000", "H": "6532951466", "I": "260210534"},
     )
 
