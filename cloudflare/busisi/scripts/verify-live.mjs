@@ -141,6 +141,14 @@ const expectedPublicServices = Object.freeze({
   continuation: 703,
   unspecified: 906,
 });
+const expectedFacilityIdentity = Object.freeze({
+  official_facilities: 0,
+  official_linked_records: 0,
+  record_groups: 0,
+  grouped_records: 0,
+  ambiguous_records: 0,
+  unlinked_records: 6_050,
+});
 const resolver = new Resolver();
 resolver.setServers((process.env.BUSISI_DNS_SERVERS ?? '1.1.1.1,8.8.8.8').split(','));
 
@@ -369,6 +377,7 @@ const verifyPages = async () => {
   expectIncludes(publicServicesText, 'Schools and health facilities in the public record', 'public services heading');
   expectIncludes(publicServicesText, '/assets/public-services-v1.js', 'public services client');
   expectIncludes(publicServicesText, 'These are records, not separate buildings', 'public services counting boundary');
+  expectIncludes(publicServicesText, 'Separate known facilities from possible groups', 'public services identity boundary');
   expectIncludes(publicServicesText, 'Things that need checking', 'public services flag boundary');
 
   const robots = await request('/robots.txt');
@@ -609,13 +618,23 @@ const verifyData = async () => {
       fail(`public services: ${key} expected ${expected}, received ${publicServiceControls[key]}`);
     }
   }
-  if (publicServices.classification_version !== 'public-services-v1'
+  for (const [key, expected] of Object.entries(expectedFacilityIdentity)) {
+    if (publicServices.identity_coverage?.[key] !== expected) {
+      fail(`facility identity: ${key} expected ${expected}, received ${publicServices.identity_coverage?.[key]}`);
+    }
+  }
+  if (publicServices.classification_version !== 'public-services-v2'
+    || publicServices.identity_method_version !== 'facility-identity-v1'
     || publicServices.records.flagged < 0
     || publicServices.records.flagged > publicServices.records.total
     || publicServices.facilities.school + publicServices.facilities.hospital
       + publicServices.facilities.health_center !== publicServices.records.total
     || Object.values(publicServices.work_types).reduce((sum, value) => sum + value, 0)
-      !== publicServices.records.total) {
+      !== publicServices.records.total
+    || publicServices.identity_coverage.official_linked_records
+      + publicServices.identity_coverage.grouped_records
+      + publicServices.identity_coverage.ambiguous_records
+      + publicServices.identity_coverage.unlinked_records !== publicServices.records.total) {
     fail('public services: classification identity or control totals do not reconcile');
   }
   const schoolServices = await readJson('/api/v1/public-services?facility=school&limit=1');
@@ -623,6 +642,7 @@ const verifyData = async () => {
     || schoolServices.meta.review_scope !== 'title_classified_public_service_records'
     || schoolServices.data.length !== 1
     || schoolServices.data[0].facility_type !== 'school'
+    || schoolServices.data[0].facility_identity?.state !== 'unlinked'
     || schoolServices.data[0].reader_url?.startsWith('/api/')) {
     fail('public services: school filter or reader-safe evidence link does not reconcile');
   }
