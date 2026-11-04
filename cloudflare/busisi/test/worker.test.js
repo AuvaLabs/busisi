@@ -1496,7 +1496,14 @@ const insertPublicServiceExamples = (database) => database.database.exec(`
      'coverage_gap', 'Coordinate not available', 'Rehabilitation of District Hospital',
      'HEALTH BUILDERS', '54321', 9800000000, 'On-Going', '40', 'Cebu 1st DEO',
      'Region VII', '', '', 'No usable coordinate.',
-     'Missing coordinates do not indicate a missing project.', '${'f'.repeat(64)}');
+     'Missing coordinates do not indicate a missing project.', '${'f'.repeat(64)}'),
+    ('25HOSP01:same_site_repeat_family', '25HOSP01', 2025, 'same_site_repeat_family',
+     'identity_review', 'Same site and project family across fiscal years',
+     'Rehabilitation of District Hospital', 'HEALTH BUILDERS', '54321', 9800000000,
+     'On-Going', '40', 'Cebu 1st DEO', 'Region VII', '', '',
+     'The project family appears at the same recorded site in another year.',
+     'The records can describe legitimate phases or continuing works at one site.',
+     '${'f'.repeat(64)}');
   INSERT INTO project_image_coverage VALUES
     ('25HOSP01', 0, 0, 0, 'no_images', '${'7'.repeat(64)}', '${'8'.repeat(64)}',
      '2026-11-04T02:00:00+00:00', 'Both source representations report no images.');
@@ -1612,6 +1619,18 @@ test('validates public-services pagination, combined filters and sparse renderin
   );
   assert.equal(unflagged.total, 1);
   assert.deepEqual(unflagged.records[0].flags, []);
+
+  const repeated = await queryPublicServices(
+    database,
+    parsePublicServicesQuery(new URL(
+      'https://busisi.test/api/v1/public-services?flag=repeat_family',
+    )),
+  );
+  assert.equal(repeated.total, 1);
+  assert.equal(repeated.records[0].record_id, '25HOSP01');
+  assert.ok(repeated.records[0].flags.some(({ classification }) => (
+    classification === 'repeat_family'
+  )));
 
   for (const query of [
     `?q=${'x'.repeat(201)}`, '?year=word', '?year=1900', '?limit=0', '?limit=101',

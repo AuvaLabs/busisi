@@ -143,6 +143,7 @@ const NORMALIZED_CTE = `WITH raw AS (
       SELECT 1 FROM integrity_signal_items signal
       WHERE signal.contract_id = d.contract_id AND signal.classification = 'identity_review'
         AND signal.code NOT LIKE '%coordinate%'
+        AND signal.code <> 'same_site_repeat_family'
     ) THEN 1 ELSE 0 END AS identity_conflict,
     CASE WHEN acquisition.match_state IN ('no_exact_row', 'invalid_identifier')
       OR images.state IN ('no_images', 'count_conflict', 'acquisition_failed')
