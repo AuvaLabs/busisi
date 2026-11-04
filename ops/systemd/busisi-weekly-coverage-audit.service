@@ -1,0 +1,16 @@
+[Unit]
+Description=Build the weekly Busisi coverage and source audit report
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/data/auvalabs/busisi
+Environment=PYTHONPATH=/srv/data/auvalabs/busisi
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 ops/harness/budget_watchdog_scheduled_audit.py --cadence weekly
+TimeoutStartSec=4h
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/data/auvalabs/busisi/data/budget_watchdog

@@ -138,11 +138,61 @@ def _expected_metadata(seeds: tuple[ImageCoverageSeed, ...], source_sha256: str)
     if _SHA256.fullmatch(source_sha256) is None:
         raise ValueError("source snapshot digest must be SHA-256")
     return {
-        "schema_version": "1",
+        "schema_version": "2",
         "seed_count": str(len(seeds)),
         "seed_sha256": _seed_digest(seeds),
         "source_sha256": source_sha256,
     }
+
+
+def _refresh_priorities(
+    path: Path,
+    seeds: tuple[ImageCoverageSeed, ...],
+    metadata: dict[str, str],
+) -> None:
+    connection = sqlite3.connect(path)
+    try:
+        observed = dict(connection.execute("SELECT key, value FROM queue_metadata"))
+        if (
+            observed.get("source_sha256") != metadata["source_sha256"]
+            or observed.get("seed_count") != metadata["seed_count"]
+        ):
+            raise ValueError("existing image queue belongs to a different source snapshot")
+        existing = tuple(
+            connection.execute(
+                "SELECT contract_id, fiscal_year, source_image_hint "
+                "FROM image_tasks ORDER BY contract_id"
+            )
+        )
+        expected = tuple(
+            sorted(
+                (
+                    seed.contract_id,
+                    seed.fiscal_year,
+                    int(seed.source_image_hint),
+                )
+                for seed in seeds
+            )
+        )
+        if existing != expected:
+            raise ValueError("existing image queue belongs to a different source snapshot")
+        connection.execute("BEGIN IMMEDIATE")
+        connection.executemany(
+            "UPDATE image_tasks SET priority = ? WHERE contract_id = ?",
+            [(seed.priority, seed.contract_id) for seed in seeds],
+        )
+        connection.execute("DELETE FROM queue_metadata")
+        connection.executemany(
+            "INSERT INTO queue_metadata VALUES (?, ?)", sorted(metadata.items())
+        )
+        if connection.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+            raise ValueError("image coverage queue integrity check failed")
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
 
 def create_image_coverage_queue(
@@ -161,7 +211,7 @@ def create_image_coverage_queue(
         finally:
             connection.close()
         if observed != metadata:
-            raise ValueError("existing image queue belongs to a different source snapshot")
+            _refresh_priorities(path, validated, metadata)
         return
 
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -212,7 +262,7 @@ def _task(row: sqlite3.Row) -> ImageCoverageTask:
 def _selection_key(row: sqlite3.Row) -> tuple[int, int, bytes]:
     identity = f"{row['fiscal_year']}:{row['source_image_hint']}:{row['contract_id']}".encode()
     return (
-        0 if row["priority"] == 0 else 1,
+        row["priority"],
         0 if row["status"] == "retry" else 1,
         hashlib.sha256(identity).digest(),
     )

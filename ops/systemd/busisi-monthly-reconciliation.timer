@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Busisi full reconciliation and release checks each month
+
+[Timer]
+OnCalendar=*-*-01 05:17:00 Asia/Dubai
+Persistent=true
+RandomizedDelaySec=30m
+Unit=busisi-monthly-reconciliation.service
+
+[Install]
+WantedBy=timers.target

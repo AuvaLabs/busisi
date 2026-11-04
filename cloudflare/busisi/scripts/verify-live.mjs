@@ -339,7 +339,16 @@ const verifyPages = async () => {
   expectStatus(watch, 200, '/watch/');
   const watchText = await watch.text();
   expectIncludes(watchText, 'What Busisi is watching', 'source watch heading');
+  expectIncludes(watchText, 'Subscribe with RSS', 'source watch RSS link');
+  expectIncludes(watchText, '/api/v1/alerts', 'source watch JSON link');
   expectIncludes(watchText, 'What monitoring does not mean', 'source watch boundary');
+
+  const feed = await request('/feeds/updates.xml');
+  expectStatus(feed, 200, '/feeds/updates.xml');
+  expectContentType(feed, 'application/rss+xml', 'evidence update feed');
+  const feedText = await feed.text();
+  expectIncludes(feedText, '<title>Busisi evidence updates</title>', 'evidence update feed');
+  expectIncludes(feedText, 'A review question is not a finding of wrongdoing', 'feed boundary');
 
   const signals = await request('/signals/');
   expectStatus(signals, 200, '/signals/');
@@ -564,6 +573,15 @@ const verifyData = async () => {
     || !Array.isArray(placeDirectory.data)
     || !placeDirectory.data.length) {
     fail('place directory: no bounded region aggregation was published');
+  }
+  const alerts = await readJson('/api/v1/alerts');
+  if (alerts.meta?.review_scope !== 'bounded_public_evidence_updates'
+    || alerts.meta?.rss !== '/feeds/updates.xml'
+    || !Array.isArray(alerts.data)
+    || alerts.data.length < 2
+    || alerts.data.length > 30
+    || alerts.data.some((item) => !item.boundary || !item.published_at)) {
+    fail('evidence updates: feed is missing, unbounded, or lacks evidence boundaries');
   }
   const stats = (await readJson('/api/v1/stats')).data;
   for (const [key, value] of Object.entries(expectedCounts)) {

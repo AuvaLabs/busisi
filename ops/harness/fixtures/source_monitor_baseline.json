@@ -61,7 +61,18 @@
     }
   ],
   "pcab": {
-    "minimum_records": 18943
+    "minimum_records": 18924,
+    "reviewed_transition": {
+      "added_records": 1,
+      "changed_retained_records": 0,
+      "observed_on": "2026-11-04",
+      "observed_records": 18925,
+      "observed_sha256": "b1e9a03d956ae1bd31e650f4f2b03e58c392a5813dc8f9d72bd759f86fefb908",
+      "removed_active_records": 0,
+      "removed_expired_records": 41,
+      "reviewed_records": 18965,
+      "reviewed_sha256": "089144b6450c0d511562f02044a2989dc48322dfe3b5f0c02a9ed35cba0e4f39"
+    }
   },
   "schema_version": 3
 }

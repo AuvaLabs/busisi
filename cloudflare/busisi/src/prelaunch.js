@@ -41,6 +41,8 @@ import {
   getAccountabilitySummary,
   queryAccountabilityEvents,
 } from './accountability-query.js';
+import { alertsRss } from './alerts-feed.js';
+import { getAlertFeed } from './alerts-query.js';
 import {
   budgetRecordBody,
   candidateRecordBody,
@@ -582,8 +584,10 @@ Allow: /api/v1/questions
 Allow: /api/v1/public-services
 Allow: /api/v1/public-services-summary
 Allow: /api/v1/facility-registry-status
+Allow: /api/v1/alerts
 Allow: /api/v1
 Allow: /api/v1/places
+Allow: /feeds/updates.xml
 Disallow: /api/
 Disallow: /watchlist/
 Sitemap: ${SITE.origin}/sitemap.xml
@@ -644,6 +648,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Place directory: ${SITE.origin}/places/
 - Source guide: ${SITE.origin}/sources/
 - Source watch: ${SITE.origin}/watch/
+- Evidence update feed: ${SITE.origin}/feeds/updates.xml
 - FY2027 change ledger: ${SITE.origin}/changes/
 - Appropriation heads: ${SITE.origin}/agencies/
 - FY2026 allotment releases: ${SITE.origin}/releases/
@@ -666,6 +671,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Facility registry release-gate status: ${SITE.origin}/api/v1/facility-registry-status
 - Public API catalogue: ${SITE.origin}/api/v1
 - Projects grouped by recorded place: ${SITE.origin}/api/v1/places
+- Bounded evidence updates: ${SITE.origin}/api/v1/alerts
 
 ## Evidence and publication rules
 
@@ -811,6 +817,12 @@ export default {
         getCoverageStatus(env.DB), getSourceMonitorStatus(env.DB),
       ]);
       result = watch(coverageStatus, sourceStatus);
+    }
+    if (!result && url.pathname === '/feeds/updates.xml' && env.DB) {
+      result = response(alertsRss(await getAlertFeed(env.DB)), {
+        type: 'application/rss+xml; charset=utf-8',
+        cache: 'public, max-age=300',
+      });
     }
     if (!result && (url.pathname === '/questions' || url.pathname === '/questions/') && env.DB) {
       result = questions(await getQuestionCatalogue(env.DB));

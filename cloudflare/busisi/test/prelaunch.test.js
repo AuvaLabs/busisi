@@ -295,6 +295,8 @@ test('publishes machine-readable discovery files', async () => {
   const robotsText = await robots.text();
   assert.match(robotsText, /Sitemap: https:\/\/busisi\.org\/sitemap\.xml/);
   assert.match(robotsText, /Allow: \/api\/v1\/questions/);
+  assert.match(robotsText, /Allow: \/api\/v1\/alerts/);
+  assert.match(robotsText, /Allow: \/feeds\/updates\.xml/);
   assert.doesNotMatch(robotsText, /Disallow: \/projects\//);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/methodology\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/explore\/<\/loc>/);
@@ -325,6 +327,8 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(llmsText, /Place directory/);
   assert.match(llmsText, /Source guide/);
   assert.match(llmsText, /Source watch/);
+  assert.match(llmsText, /Evidence update feed/);
+  assert.match(llmsText, /\/api\/v1\/alerts/);
   assert.match(llmsText, /\/api\/v1\/public-services/);
   assert.match(llmsText, /\/api\/v1\/questions/);
   assert.match(llmsText, /nonpartisan, and politically unaffiliated/);

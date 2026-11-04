@@ -1,0 +1,11 @@
+[Unit]
+Description=Retain a Busisi coverage and source audit report each week
+
+[Timer]
+OnCalendar=Mon *-*-* 04:37:00 Asia/Dubai
+Persistent=true
+RandomizedDelaySec=20m
+Unit=busisi-weekly-coverage-audit.service
+
+[Install]
+WantedBy=timers.target

@@ -81,6 +81,7 @@ import {
   getContractorAccountability,
   queryAccountabilityEvents,
 } from './accountability-query.js';
+import { getAlertFeed } from './alerts-query.js';
 
 const API_PREFIX = '/api/v1/projects';
 const MAX_SLUG_LENGTH = 160;
@@ -99,6 +100,7 @@ const API_CATALOGUE = Object.freeze([
   { path: '/api/v1/agency-budgets', description: 'Appropriation-head comparisons' },
   { path: '/api/v1/allotment-releases', description: 'Official DBM allotment releases' },
   { path: '/api/v1/questions', description: 'Supported public evidence questions' },
+  { path: '/api/v1/alerts', description: 'Bounded evidence update feed' },
 ]);
 
 const jsonResponse = (body, status = 200) => new Response(JSON.stringify(body), {
@@ -179,6 +181,17 @@ const apiResponse = async (request, environment, url) => {
         total: records.length,
         states: summarizeQuestionStates(records),
         review_scope: 'evidence_question_catalogue',
+      },
+      data: records,
+    });
+  }
+  if (url.pathname === '/api/v1/alerts') {
+    const records = await getAlertFeed(environment.DB);
+    return jsonResponse({
+      meta: {
+        total: records.length,
+        review_scope: 'bounded_public_evidence_updates',
+        rss: '/feeds/updates.xml',
       },
       data: records,
     });

@@ -9,7 +9,68 @@ from engine.budget_watchdog.source_monitor import (
     compare_observations,
     parse_dbm_release_catalog,
     parse_huggingface_metadata,
+    review_pcab_transition,
 )
+
+
+def _pcab_document(rows: list[list[str]]) -> bytes:
+    return json.dumps({
+        "page": 1,
+        "total": 1,
+        "records": len(rows),
+        "rows": [{"id": row[0], "cell": row} for row in rows],
+    }).encode()
+
+
+def test_reviews_pcab_expiry_churn_without_hiding_changed_active_rows() -> None:
+    reviewed = _pcab_document([
+        ["1", "EXPIRED BUILDER", "100", "AMO", "D", "2026-11-04", "1"],
+        ["2", "ACTIVE BUILDER", "200", "AMO", "A", "2027-01-01", "1"],
+    ])
+    observed = _pcab_document([
+        ["2", "ACTIVE BUILDER", "200", "AMO", "A", "2027-01-01", "1"],
+        ["3", "NEW BUILDER", "300", "AMO", "B", "2028-01-01", "1"],
+    ])
+
+    result = review_pcab_transition(
+        reviewed,
+        observed,
+        reviewed_sha256="a" * 64,
+        observed_sha256="b" * 64,
+        observed_on="2026-11-04",
+    )
+
+    assert result["passed"] is True
+    assert result["reviewed_records"] == 2
+    assert result["observed_records"] == 2
+    assert result["removed_expired_records"] == 1
+    assert result["removed_active_records"] == 0
+    assert result["added_records"] == 1
+    assert result["changed_retained_records"] == 0
+    assert result["recommended_floor"] == 1
+
+
+def test_rejects_pcab_transition_with_active_removal_or_changed_row() -> None:
+    reviewed = _pcab_document([
+        ["1", "ACTIVE BUILDER", "100", "AMO", "D", "2027-01-01", "1"],
+        ["2", "STABLE BUILDER", "200", "AMO", "A", "2027-01-01", "1"],
+    ])
+    observed = _pcab_document([
+        ["2", "RENAMED BUILDER", "200", "AMO", "A", "2027-01-01", "1"],
+    ])
+
+    result = review_pcab_transition(
+        reviewed,
+        observed,
+        reviewed_sha256="a" * 64,
+        observed_sha256="b" * 64,
+        observed_on="2026-11-04",
+    )
+
+    assert result["passed"] is False
+    assert result["removed_active_records"] == 1
+    assert result["changed_retained_records"] == 1
+    assert result["recommended_floor"] is None
 
 
 def test_parses_huggingface_revision_metadata() -> None:

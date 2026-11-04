@@ -23,6 +23,8 @@ def _facts(**updates: object) -> OperationalFacts:
         "timer_states": {
             "busisi-project-image-coverage.timer": ("active", NOW + timedelta(hours=3)),
             "busisi-acquisition-retry.timer": ("active", NOW + timedelta(hours=4)),
+            "busisi-weekly-coverage-audit.timer": ("active", NOW + timedelta(days=5)),
+            "busisi-monthly-reconciliation.timer": ("active", NOW + timedelta(days=20)),
         },
     }
     values.update(updates)
@@ -45,6 +47,8 @@ def test_reports_each_fail_closed_operational_gap() -> None:
         timer_states={
             "busisi-project-image-coverage.timer": ("failed", None),
             "busisi-acquisition-retry.timer": ("active", NOW + timedelta(hours=30)),
+            "busisi-weekly-coverage-audit.timer": ("missing", None),
+            "busisi-monthly-reconciliation.timer": ("active", NOW + timedelta(days=40)),
         },
     )
 
@@ -59,3 +63,5 @@ def test_reports_each_fail_closed_operational_gap() -> None:
     assert "source monitor evidence is older than 8 hours" in issues
     assert any("project-image-coverage.timer is not active" in item for item in issues)
     assert any("acquisition-retry.timer next run is too far away" in item for item in issues)
+    assert any("weekly-coverage-audit.timer is not active" in item for item in issues)
+    assert any("monthly-reconciliation.timer next run is too far away" in item for item in issues)

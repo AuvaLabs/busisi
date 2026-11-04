@@ -46,6 +46,11 @@ established. Its counts and dates are derived from the same D1 release controls,
 and every supported question links to a reader-facing evidence desk with an
 explicit limitation. The catalogue is also available at `/api/v1/questions`.
 
+The public update feed at `/feeds/updates.xml` and `/api/v1/alerts` reports
+checked source status, gated coverage releases, newly checked contract evidence
+and deterministic review questions. Every item includes an evidence boundary.
+The feed is bounded to 30 items and never exposes the private acquisition queue.
+
 The public-services inventory separately classifies acquired budget-stage rows
 and DPWH delivery contracts whose titles explicitly name schools, hospitals or
 health facilities. It labels work wording and deterministic review flags, but
@@ -166,6 +171,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_integrity.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_senate.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_senate_monitor.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_source_monitor.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_pcab_transition.py --help
 PYTHONPATH=. python3 ops/harness/budget_watchdog_coa.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_contract_evidence.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_release.py
@@ -175,6 +181,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_facilities.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_facility_monitor.py --reset-output
 PYTHONPATH=. python3 ops/harness/budget_watchdog_accountability.py --source-only --reset-output
 PYTHONPATH=. python3 ops/harness/budget_watchdog_accountability.py --reset-output
+PYTHONPATH=. python3 ops/harness/budget_watchdog_scheduled_audit.py --cadence weekly
 cd cloudflare/busisi
 npm ci
 npm run check
@@ -206,12 +213,24 @@ publication markers, timer health and the complete live production contract.
 COA catalogue discovery remains an explicit manual coverage limit because the
 official catalogue blocks unattended acquisition.
 
+PCAB record-count reductions require a row-level transition review between two
+archived, hash-verified official snapshots. The review permits removal only for
+licenses whose stated validity date has passed, rejects changed retained rows
+or removed active rows, and records the reviewed hashes and control totals
+before the floor can be changed.
+
 The project-image evidence queue runs every six hours. Each cycle starts with a
 25-contract canary, continues in 100-contract chunks and processes at most
 1,000 contracts with four workers paced to two requests per second per source
 host. Eight healthy cycles raise the limit to 2,000. Repeated rate limits or a
 retryable failure ratio above 10 percent stop the cycle and reduce its next
 workload.
+Pending work is ordered by disclosed priority factors: an existing reviewed
+dossier, source image availability, project value, a stated joint venture,
+repeated contractor activity, deterministic evidence questions and qualifying
+COA evidence. Lower priority scores run first. Priority refreshes preserve all
+existing task states and require the same source hash, seed count, identifiers,
+years and image hints.
 Every successful record still requires archived source bytes, detail-to-list
 count reconciliation, JPEG inspection and a gated D1 release. The bulk project
 feed is used only for discovery because it does not provide the exact image-list
@@ -221,6 +240,12 @@ The local acquisition retry timer runs one bounded batch daily. It accepts only
 registered official DPWH HTTPS origins, archives successful source bytes, uses
 exponential backoff for retryable HTTP failures, and blocks a task after the
 configured attempt limit for review.
+
+The six-hour operational audit satisfies the daily freshness requirement. A
+weekly timer retains a coverage and source audit report. A monthly timer runs
+the operational audit, the complete Python test suite, the Worker tests, every
+data-bundle control and a Cloudflare deployment dry run. Any failed or timed-out
+check makes the scheduled report fail closed.
 
 ## License
 

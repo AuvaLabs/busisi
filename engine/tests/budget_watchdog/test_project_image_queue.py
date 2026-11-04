@@ -139,6 +139,27 @@ def test_existing_queue_must_match_source_identity(tmp_path: Path) -> None:
         create_image_coverage_queue(path, seeds, source_sha256="b" * 64)
 
 
+def test_existing_queue_safely_refreshes_priorities_for_same_source_identity(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "queue.sqlite3"
+    original = (
+        ImageCoverageSeed("24HI0148", 2024, True, 50),
+        ImageCoverageSeed("25HI0028", 2025, True, 50),
+    )
+    refreshed = (
+        ImageCoverageSeed("24HI0148", 2024, True, 40),
+        ImageCoverageSeed("25HI0028", 2025, True, 10),
+    )
+    create_image_coverage_queue(path, original, source_sha256="a" * 64)
+
+    create_image_coverage_queue(path, refreshed, source_sha256="a" * 64)
+
+    queue = ImageCoverageQueue(path)
+    selected = queue.claim_batch(limit=1, now=NOW, lease_seconds=60)
+    assert selected[0].contract_id == "25HI0028"
+
+
 def test_queue_selection_is_deterministic_and_mixes_year_and_image_strata(
     tmp_path: Path,
 ) -> None:
@@ -163,3 +184,28 @@ def test_queue_selection_is_deterministic_and_mixes_year_and_image_strata(
     assert selected[0] == selected[1]
     assert {year for _, year, _ in selected[0]} == {2024, 2025, 2026}
     assert {hint for _, _, hint in selected[0]} == {False, True}
+
+
+def test_queue_honors_every_priority_band_before_stable_stratification(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "priority.sqlite3"
+    create_image_coverage_queue(
+        path,
+        (
+            ImageCoverageSeed("24TEST001", 2024, True, 60),
+            ImageCoverageSeed("25TEST001", 2025, False, 20),
+            ImageCoverageSeed("26TEST001", 2026, True, 40),
+        ),
+        source_sha256="f" * 64,
+    )
+
+    selected = ImageCoverageQueue(path).claim_batch(
+        limit=3, now=NOW, lease_seconds=60
+    )
+
+    assert [task.contract_id for task in selected] == [
+        "25TEST001",
+        "26TEST001",
+        "24TEST001",
+    ]

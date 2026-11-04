@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
+from datetime import date, datetime
 from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
+
+from engine.budget_watchdog.pcab import parse_pcab_regular_licenses
 
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _DBM_ORIGIN = "https://www.dbm.gov.ph"
@@ -15,6 +17,78 @@ _DBM_ORIGIN = "https://www.dbm.gov.ph"
 
 class SourceMonitorError(ValueError):
     """Raised when a monitored source cannot support a safe comparison."""
+
+
+def review_pcab_transition(
+    reviewed_payload: bytes,
+    observed_payload: bytes,
+    *,
+    reviewed_sha256: str,
+    observed_sha256: str,
+    observed_on: str,
+) -> dict[str, Any]:
+    """Classify a PCAB count drop using two fully validated archived snapshots."""
+    try:
+        comparison_date = date.fromisoformat(observed_on)
+    except ValueError as exc:
+        raise SourceMonitorError("PCAB transition date must use ISO format") from exc
+    reviewed = parse_pcab_regular_licenses(
+        reviewed_payload,
+        retrieved_on=comparison_date,
+        source_sha256=reviewed_sha256,
+    )
+    observed = parse_pcab_regular_licenses(
+        observed_payload,
+        retrieved_on=comparison_date,
+        source_sha256=observed_sha256,
+    )
+
+    def by_record(snapshot: Any) -> dict[str, tuple[Any, ...]]:
+        return {
+            item.record_id: (
+                item.firm_name,
+                item.license_number,
+                item.amo,
+                item.category,
+                item.valid_to,
+                item.gov_infra,
+            )
+            for licenses in snapshot.licenses_by_number.values()
+            for item in licenses
+        }
+
+    reviewed_rows = by_record(reviewed)
+    observed_rows = by_record(observed)
+    removed_ids = sorted(reviewed_rows.keys() - observed_rows.keys())
+    added_ids = sorted(observed_rows.keys() - reviewed_rows.keys())
+    retained_ids = reviewed_rows.keys() & observed_rows.keys()
+    removed_expired = [
+        record_id
+        for record_id in removed_ids
+        if reviewed_rows[record_id][4] <= comparison_date
+    ]
+    removed_active = sorted(set(removed_ids) - set(removed_expired))
+    changed = sorted(
+        record_id
+        for record_id in retained_ids
+        if reviewed_rows[record_id] != observed_rows[record_id]
+    )
+    passed = not removed_active and not changed
+    return {
+        "passed": passed,
+        "observed_on": comparison_date.isoformat(),
+        "reviewed_sha256": reviewed_sha256,
+        "observed_sha256": observed_sha256,
+        "reviewed_records": reviewed.record_count,
+        "observed_records": observed.record_count,
+        "removed_expired_records": len(removed_expired),
+        "removed_active_records": len(removed_active),
+        "added_records": len(added_ids),
+        "changed_retained_records": len(changed),
+        "recommended_floor": reviewed.record_count - len(removed_expired) if passed else None,
+        "removed_active_ids": removed_active,
+        "changed_retained_ids": changed,
+    }
 
 
 def _object(payload: bytes, label: str) -> dict[str, Any]:

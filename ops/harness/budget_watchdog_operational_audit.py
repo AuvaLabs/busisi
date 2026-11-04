@@ -37,6 +37,8 @@ PIPELINE_LOCK = ROOT / "data" / "budget_watchdog" / "project-image-automation" /
 TIMERS = (
     "busisi-project-image-coverage.timer",
     "busisi-acquisition-retry.timer",
+    "busisi-weekly-coverage-audit.timer",
+    "busisi-monthly-reconciliation.timer",
 )
 
 

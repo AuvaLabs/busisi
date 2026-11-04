@@ -21,6 +21,8 @@ import { buildQuestionCatalogue } from '../src/questions-query.js';
 import { facilityBody } from '../src/facility-content.js';
 import { publicServicesBody } from '../src/public-services-content.js';
 import { watchBody } from '../src/ecosystem-content.js';
+import { getAlertFeed } from '../src/alerts-query.js';
+import { alertsRss } from '../src/alerts-feed.js';
 import { getFacility } from '../src/facility-query.js';
 import {
   getPublicServicesSummary,
@@ -496,6 +498,35 @@ const insertJointContract = (database) => database.database.exec(`
   INSERT INTO contract_acquisition_details VALUES
     ('25JOINT1', 2025, 'valid', 'aligned', 'no_exact_row', 0, 0);
 `);
+
+test('publishes a bounded evidence update feed for people and machines', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  database.database.exec("INSERT INTO integrity_metadata VALUES ('source_as_of', '2026-01-22')");
+
+  const alerts = await getAlertFeed(database);
+  const kinds = new Set(alerts.map((item) => item.kind));
+  assert.ok(kinds.has('source_check'));
+  assert.ok(kinds.has('coverage_release'));
+  assert.ok(kinds.has('contract_evidence'));
+  assert.ok(kinds.has('review_question'));
+  assert.ok(alerts.length <= 30);
+  assert.ok(alerts.every((item) => item.boundary));
+
+  const rss = alertsRss(alerts);
+  assert.match(rss, /<rss version="2\.0"/);
+  assert.match(rss, /Busisi evidence updates/);
+  assert.match(rss, /A review question is not a finding of wrongdoing/);
+
+  const api = await worker.fetch(request('/api/v1/alerts'), environment(database));
+  assert.equal(api.status, 200);
+  assert.equal((await api.json()).meta.review_scope, 'bounded_public_evidence_updates');
+
+  const feed = await siteWorker.fetch(request('/feeds/updates.xml'), environment(database));
+  assert.equal(feed.status, 200);
+  assert.match(feed.headers.get('content-type'), /^application\/rss\+xml/);
+  assert.match(await feed.text(), /<channel>/);
+});
 
 const explorerUrl = (query = '') => new URL(`https://busisi.test/api/v1/budgets${query}`);
 const changeUrl = (query = '') => new URL(`https://busisi.test/api/v1/changes${query}`);

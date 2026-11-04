@@ -7,7 +7,12 @@ from datetime import datetime, timedelta
 
 _QUEUE_STALE_AFTER = timedelta(hours=36)
 _SOURCE_STALE_AFTER = timedelta(hours=8)
-_TIMER_MAX_DELAY = timedelta(hours=26)
+_TIMER_MAX_DELAYS = {
+    "busisi-project-image-coverage.timer": timedelta(hours=26),
+    "busisi-acquisition-retry.timer": timedelta(hours=26),
+    "busisi-weekly-coverage-audit.timer": timedelta(days=8),
+    "busisi-monthly-reconciliation.timer": timedelta(days=35),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,13 +54,10 @@ def audit_operational_facts(facts: OperationalFacts, *, now: datetime) -> tuple[
         or now - facts.source_monitor_checked_at > _SOURCE_STALE_AFTER
     ):
         issues.append("source monitor evidence is older than 8 hours")
-    for timer in (
-        "busisi-project-image-coverage.timer",
-        "busisi-acquisition-retry.timer",
-    ):
+    for timer, maximum_delay in _TIMER_MAX_DELAYS.items():
         state, next_run = facts.timer_states.get(timer, ("missing", None))
         if state != "active":
             issues.append(f"{timer} is not active")
-        elif next_run is None or next_run - now > _TIMER_MAX_DELAY:
+        elif next_run is None or next_run - now > maximum_delay:
             issues.append(f"{timer} next run is too far away")
     return tuple(issues)

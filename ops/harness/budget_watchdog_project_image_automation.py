@@ -7,8 +7,10 @@ import fcntl
 import hashlib
 import json
 import shutil
+from collections import Counter
 from dataclasses import asdict
 from datetime import UTC, datetime
+from decimal import Decimal
 from pathlib import Path
 
 import pyarrow.parquet as pq
@@ -22,6 +24,12 @@ from engine.budget_watchdog.coverage_controller import (
     save_controller,
     should_halt_cycle,
 )
+from engine.budget_watchdog.coverage_priority import (
+    CoveragePriorityFacts,
+    classify_coverage_priority,
+)
+from engine.budget_watchdog.integrity import contractor_identities
+from engine.budget_watchdog.money import parse_centavos
 from engine.budget_watchdog.project_image_bundle import build_project_image_bundle
 from engine.budget_watchdog.project_image_queue import (
     ImageCoverageQueue,
@@ -74,6 +82,24 @@ ACQUISITION_CHUNK_SIZE = 100
 REQUESTS_PER_SECOND_PER_HOST = 2.0
 MAX_METADATA_BYTES = 4 * 1024 * 1024
 MAX_IMAGE_BYTES = 20 * 1024 * 1024
+REPEATED_CONTRACTOR_MINIMUM = 10
+HIGH_VALUE_PERCENTILE_NUMERATOR = 9
+HIGH_VALUE_PERCENTILE_DENOMINATOR = 10
+COMPLETE_PROGRESS = Decimal("100")
+PRIORITY_COLUMNS = (
+    "contractId",
+    "infraYear",
+    "hasSatelliteImage",
+    "budget",
+    "contractor",
+    "status",
+    "progress",
+    "latitude",
+    "longitude",
+    "startDate",
+    "completionDate",
+)
+COA_CATALOG = ROOT / "ops" / "harness" / "fixtures" / "coa_audit_catalog.json"
 
 
 def _digest(path: Path) -> str:
@@ -84,28 +110,99 @@ def _digest(path: Path) -> str:
     return hasher.hexdigest()
 
 
+def _text(value: object) -> str:
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _integrity_question(row: dict[str, object]) -> bool:
+    status = _text(row.get("status")).casefold().replace("-", " ")
+    progress = Decimal(str(row.get("progress") or 0))
+    missing_coordinate = row.get("latitude") is None or row.get("longitude") is None
+    date_conflict = bool(
+        row.get("startDate")
+        and row.get("completionDate")
+        and row["startDate"] > row["completionDate"]
+    )
+    status_conflict = (
+        status in {"ongoing", "on going"} and progress >= COMPLETE_PROGRESS
+    ) or (status == "completed" and progress < COMPLETE_PROGRESS)
+    image_gap = status == "completed" and not bool(row.get("hasSatelliteImage"))
+    return missing_coordinate or date_conflict or status_conflict or image_gap
+
+
+def _coa_contracts() -> frozenset[str]:
+    document = json.loads(COA_CATALOG.read_text(encoding="utf-8"))
+    return frozenset(
+        item["contract_id"]
+        for item in document["project_coverage"]
+        if item["status"] != "not_covered"
+    )
+
+
+def _priority_inputs(
+    rows: tuple[dict[str, object], ...],
+) -> tuple[int, Counter[str], frozenset[str]]:
+    amounts = sorted(parse_centavos(Decimal(str(row["budget"]))) for row in rows)
+    threshold_index = len(amounts) * HIGH_VALUE_PERCENTILE_NUMERATOR // (
+        HIGH_VALUE_PERCENTILE_DENOMINATOR
+    )
+    threshold = amounts[min(threshold_index, len(amounts) - 1)]
+    contractor_counts: Counter[str] = Counter()
+    for row in rows:
+        contractor_counts.update(
+            item.key for item in contractor_identities(_text(row.get("contractor")))
+        )
+    repeated = frozenset(
+        key for key, count in contractor_counts.items() if count >= REPEATED_CONTRACTOR_MINIMUM
+    )
+    return threshold, contractor_counts, repeated
+
+
+def _row_seed(
+    row: dict[str, object],
+    *,
+    high_value_threshold: int,
+    repeated_contractors: frozenset[str],
+    coa_contracts: frozenset[str],
+) -> ImageCoverageSeed:
+    contract_id = _text(row["contractId"]).upper()
+    identities = contractor_identities(_text(row.get("contractor")))
+    facts = CoveragePriorityFacts(
+        reviewed=contract_id in REVIEWED_CONTRACTS,
+        source_image_hint=bool(row.get("hasSatelliteImage")),
+        high_value=parse_centavos(Decimal(str(row["budget"]))) >= high_value_threshold,
+        joint_venture=len(identities) > 1,
+        repeated_contractor=any(item.key in repeated_contractors for item in identities),
+        integrity_question=_integrity_question(row),
+        coa_evidence=contract_id in coa_contracts,
+    )
+    return ImageCoverageSeed(
+        contract_id=contract_id,
+        fiscal_year=int(_text(row["infraYear"])),
+        source_image_hint=bool(row.get("hasSatelliteImage")),
+        priority=classify_coverage_priority(facts).score,
+    )
+
+
 def _seeds() -> tuple[ImageCoverageSeed, ...]:
     if not SOURCE.is_file() or _digest(SOURCE) != SOURCE_SHA256:
         raise ValueError("delivery source snapshot identity does not match")
     table = pq.read_table(
         SOURCE,
-        columns=["contractId", "infraYear", "hasSatelliteImage"],
+        columns=list(PRIORITY_COLUMNS),
         filters=[("infraYear", "in", ["2024", "2025", "2026"])],
     )
+    rows = tuple(table.to_pylist())
+    high_value_threshold, _, repeated_contractors = _priority_inputs(rows)
+    coa_contracts = _coa_contracts()
     source_seeds = tuple(
-        ImageCoverageSeed(
-            contract_id=row["contractId"].strip().upper(),
-            fiscal_year=int(row["infraYear"]),
-            source_image_hint=bool(row["hasSatelliteImage"]),
-            priority=(
-                0
-                if row["contractId"].strip().upper() in REVIEWED_CONTRACTS
-                else 50
-                if row["hasSatelliteImage"]
-                else 100
-            ),
+        _row_seed(
+            row,
+            high_value_threshold=high_value_threshold,
+            repeated_contractors=repeated_contractors,
+            coa_contracts=coa_contracts,
         )
-        for row in table.to_pylist()
+        for row in rows
     )
     source_ids = {item.contract_id for item in source_seeds}
     legacy_seeds = tuple(
