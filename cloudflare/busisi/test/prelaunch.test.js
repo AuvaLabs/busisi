@@ -20,7 +20,7 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<meta property="og:image:width" content="1200">/);
   assert.match(document, /<meta property="og:image:height" content="630">/);
   assert.match(document, /<meta name="twitter:card" content="summary_large_image">/);
-  assert.match(document, /href="\/assets\/site-visual-v18\.css"/);
+  assert.match(document, /href="\/assets\/site-visual-v19\.css"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
   assert.match(document, /Busisi is a nonpartisan public-interest data platform for Filipinos/);
@@ -258,6 +258,7 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/integrity\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/sulit\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/questions\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/public-services\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/projects\/corazon-2024-phase-1\/<\/loc>/);
   assert.doesNotMatch(sitemapText, /corazon-2026-completion/);
   const llmsText = await llms.text();
@@ -266,6 +267,8 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(llmsText, /Appropriation heads/);
   assert.match(llmsText, /Public value desk/);
   assert.match(llmsText, /Evidence question catalogue/);
+  assert.match(llmsText, /Public services inventory/);
+  assert.match(llmsText, /\/api\/v1\/public-services/);
   assert.match(llmsText, /\/api\/v1\/questions/);
   assert.match(llmsText, /nonpartisan and politically unaffiliated/);
   assert.match(llmsText, /Built and maintained by Auva Labs/);
@@ -287,6 +290,18 @@ test('submits the allotment-release desk for search discovery', () => {
 
   assert.match(source, /'\/releases\/'/);
   assert.match(source, /'\/questions\/'/);
+  assert.match(source, /'\/public-services\/'/);
+});
+
+test('public-services client renders API data without injecting HTML', () => {
+  const source = readFileSync(
+    new URL('../public/assets/public-services-v1.js', import.meta.url), 'utf8',
+  );
+
+  assert.match(source, /\/api\/v1\/public-services/);
+  assert.match(source, /textContent/);
+  assert.match(source, /encodeURIComponent/);
+  assert.doesNotMatch(source, /innerHTML|insertAdjacentHTML|risk score/i);
 });
 
 test('redirects www and returns a useful 404', async () => {
@@ -354,7 +369,7 @@ test('renders a reviewed evidence dossier when the publication database is bound
 });
 
 test('serves the accessible civic color system and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v18.css');
+  const css = await fetchPath('/assets/site-visual-v19.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));
@@ -397,7 +412,7 @@ test('serves the accessible civic color system and safe method boundaries', asyn
 });
 
 test('keeps semantic text colors at WCAG AA contrast on white', async () => {
-  const cssText = await (await fetchPath('/assets/site-visual-v18.css')).text();
+  const cssText = await (await fetchPath('/assets/site-visual-v19.css')).text();
   const token = (name) => cssText.match(new RegExp(`--${name}:(#[0-9a-f]{6})`))?.[1];
   const luminance = (hex) => {
     const channels = [1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
@@ -480,7 +495,7 @@ test('places the decorative budget evidence banner on the release ledger', async
   assert.match(document, /busisi-budget-evidence-banner-v2\.webp/);
   assert.match(document, /class="release-editorial-banner" aria-hidden="true"/);
   assert.match(document, /width="1600" height="534" alt=""/);
-  assert.match(document, /site-visual-v18\.css/);
+  assert.match(document, /site-visual-v19\.css/);
 });
 
 test('reader actions use human-readable evidence instead of raw JSON endpoints', () => {

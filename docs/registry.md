@@ -24,6 +24,8 @@ monitor is read-only and holds no deployment credentials.
 | `/healthz` | Read-only service health |
 | `/api/v1/stats` | Source counts and artifact identity |
 | `/api/v1/questions` | Evidence question catalogue with answerability, scope, current counts, and limitations |
+| `/api/v1/public-services-summary` | Reconciled title-classification controls for school and health-facility records |
+| `/api/v1/public-services` | Filtered budget-stage rows and delivery contracts with facility, work-type, and evidence-flag classifications |
 | `/api/v1/budgets` | GAA source-record search |
 | `/api/v1/delivery` | DPWH delivery-record search |
 | `/api/v1/candidates` | Explicitly unreviewed candidate search |
@@ -79,6 +81,13 @@ release controls. It separates answerable questions, incomplete coverage, and
 unsupported claims. Reader actions lead to explanatory evidence desks, while
 the JSON endpoint exposes the catalogue as a machine-readable evidence contract.
 
+The public-services inventory currently classifies 6,050 records: 937 FY2027
+budget-stage rows and 5,113 FY2024 to FY2026 delivery contracts. The controls
+reconcile to 4,722 school-related records, 671 hospital records and 657
+health-center records. These are source rows, not unique physical facilities.
+The classification version and full counting boundary are returned with the
+summary endpoint and verified by the production contract.
+
 Project-image coverage begins with the reviewed dossier baseline and expands
 through a resumable evidence queue. Each contract is checked against the
 project-detail and image-list endpoints, with original source responses and
@@ -87,4 +96,4 @@ conflicts remain quarantined, and explicit zero-image responses stay visible as
 coverage results. Images are served from private R2 by immutable internal URLs.
 The live coverage page is the current source for release counts.
 
-Last updated: 2026-11-03.
+Last updated: 2026-11-04.
