@@ -1,4 +1,5 @@
 import { QueryError } from './query.js';
+import { reviewClassLanguage } from './reader-language.js';
 
 const MAX_TEXT = 200;
 const MAX_LIMIT = 100;
@@ -252,7 +253,10 @@ const flagsFor = (record, signals) => {
       flags.push(definedFlag('source_image_gap'));
     }
   }
-  return flags;
+  return flags.map((flag) => Object.freeze({
+    ...flag,
+    plain_language: reviewClassLanguage(flag.classification),
+  }));
 };
 
 const signalMap = async (database, records) => {
@@ -354,7 +358,7 @@ const loadPublicServicesSummary = async (database) => {
       'coverage_gap', 'repeat_family',
     ].map((classification) => ({ classification, count: Number(row[classification] || 0) })),
     classification_version: 'public-services-v1',
-    limitation: 'Counts are title-classified records, not unique facilities. Budget rows and delivery contracts remain separate and do not prove physical construction, completion, payment, quality, or public benefit.',
+    limitation: 'Counts are records matched by words in the project title, not unique facilities. Budget rows and delivery contracts remain separate and do not prove physical construction, completion, payment, quality, or public benefit.',
   });
 };
 

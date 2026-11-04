@@ -1,5 +1,6 @@
 import { QueryError } from './query.js';
 import { DISTRICT_SELECT, districtContext, districtOfficeJoin } from './district-context.js';
+import { signalLanguage } from './reader-language.js';
 import { deliveryRecordUrl } from './source-presentation.js';
 
 const MAX_QUERY_TEXT = 200;
@@ -138,6 +139,7 @@ const signalRecord = (row) => ({
   ...row,
   fiscal_year: Number(row.fiscal_year),
   budget_centavos: Number(row.budget_centavos),
+  plain_language: signalLanguage(row.code, row.classification),
   district_context: districtContext(row),
   district_classification: undefined,
   district_office_name: undefined,

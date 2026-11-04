@@ -189,7 +189,8 @@ export const getIntegrityRecord = async (database, signalId) => {
   const [delivery, related] = await Promise.all([
     deliveryById(database, record.contract_id),
     database.prepare(`
-      SELECT signal_id, code, label, classification FROM integrity_signal_items
+      SELECT signal_id, code, label, classification, description, evidence, limitations
+      FROM integrity_signal_items
       WHERE contract_id = ? AND signal_id <> ? ORDER BY classification ASC, code ASC
     `).bind(record.contract_id, signalId).all(),
   ]);

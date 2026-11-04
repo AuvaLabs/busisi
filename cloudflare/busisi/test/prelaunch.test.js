@@ -93,16 +93,25 @@ test('publishes the source-record explorer without implying reviewed links', asy
 test('publishes the deterministic review desk and names unavailable analyses', async () => {
   const response = await fetchPath('/signals/');
   const document = await response.text();
+  const client = readFileSync(new URL('../public/assets/review-v1.js', import.meta.url), 'utf8');
 
   assert.equal(response.status, 200);
-  assert.match(document, /Start with the records that moved/);
+  assert.match(document, /Find budget changes that need a closer look/);
+  assert.match(document, /A flag is a question to check, not an accusation/);
+  assert.match(document, /What we noticed/);
+  assert.match(document, /What this does not prove/);
   assert.match(document, /data-review-desk/);
-  assert.match(document, /Prior-year family candidates/);
-  assert.match(document, /Similar FY2027 family candidates/);
+  assert.match(document, /Similar to an earlier-year project/);
+  assert.match(document, /Similar to another FY2027 project/);
   assert.match(document, /Download evidence CSV/);
-  assert.match(document, /How to read a review signal/);
-  assert.match(document, /src="\/assets\/review-v1\.js\?v=2"/);
+  assert.match(document, /A flag is a question to check, not an accusation/);
+  assert.match(document, /src="\/assets\/review-v1\.js\?v=3"/);
   assert.match(document, /Physical existence verification/);
+  assert.match(client, /Why check/);
+  assert.match(client, /What this does not prove/);
+  assert.match(client, /What to check next/);
+  assert.match(client, /Held back for checking/);
+  assert.doesNotMatch(client, /Calculating deterministic review candidates/);
 });
 
 test('publishes the project-integrity desk and contractor leaderboard', async () => {
@@ -110,9 +119,13 @@ test('publishes the project-integrity desk and contractor leaderboard', async ()
   const document = await response.text();
 
   assert.equal(response.status, 200);
-  assert.match(document, /Inspect contradictions in delivery records/);
+  assert.match(document, /Find project records that need a closer look/);
   assert.match(document, /data-integrity-desk/);
   assert.match(document, /Contractors with the most projects/);
+  assert.match(document, /Find project records that need a closer look/);
+  assert.match(document, /A flag is a question to check, not an accusation/);
+  assert.match(document, /What we noticed/);
+  assert.match(document, /What this does not prove/);
   assert.match(document, /Rank by project count/);
   assert.match(document, /Rank by associated project budget/);
   assert.match(document, /data-concentration-desk/);
@@ -120,8 +133,8 @@ test('publishes the project-integrity desk and contractor leaderboard', async ()
   assert.match(document, /Current PCAB-table status/);
   assert.match(document, /Congressional district context/);
   assert.match(document, /does not establish political authorship/);
-  assert.match(document, /What this desk flags/);
-  assert.match(document, /src="\/assets\/integrity-v1\.js\?v=2"/);
+  assert.match(document, /A flag is a question to check, not an accusation/);
+  assert.match(document, /src="\/assets\/integrity-v1\.js\?v=3"/);
   assert.doesNotMatch(document, /proves? (?:fraud|corruption)/i);
 });
 
@@ -224,6 +237,12 @@ test('methodology is canonical and explains the publication gate', async () => {
   assert.match(document, /100 reviewed linkage cases/);
   assert.match(document, /not evidence of wrongdoing/i);
   assert.match(document, /href="#pipeline"/);
+  assert.match(document, /href="#plain-language"/);
+  assert.match(document, /id="plain-language"/);
+  assert.match(document, /The simple explanation comes first/);
+  assert.match(document, /1\. What we noticed/);
+  assert.match(document, /3\. What it does not prove/);
+  assert.match(document, /4\. What to check next/);
   assert.match(document, /href="#source-policy"/);
   assert.match(document, /href="#corrections"/);
   assert.match(document, /Congressional district context/);

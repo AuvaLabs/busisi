@@ -1,5 +1,6 @@
 import { gaaDocumentsUrl } from './source-presentation.js';
 import { contractEvidencePanel } from './contract-evidence-content.js';
+import { signalLanguage } from './reader-language.js';
 
 const html = (value) => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -39,7 +40,7 @@ const facts = (items) => `<dl class="evidence-facts">${items.map(([label, value,
   <div><dt>${html(label)}</dt><dd>${html(value)}</dd>${note ? `<small>${html(note)}</small>` : ''}</div>`).join('')}
 </dl>`;
 
-const boundary = (message) => `<aside class="evidence-boundary"><strong>Evidence boundary</strong><p>${html(message)}</p></aside>`;
+const boundary = (message) => `<aside class="evidence-boundary"><strong>What this does not prove</strong><p>${html(message)}</p></aside>`;
 
 const sourceRoles = ({ publisher, access }) => `<dl class="evidence-details">
   <div><dt>Original publisher</dt><dd>${html(publisher)}</dd></div>
@@ -72,8 +73,10 @@ const relatedBudgets = (records) => records.length ? `<ul class="evidence-record
 const relatedDeliveries = (records) => records.length ? `<ul class="evidence-record-list">${records.map((item) => `
   <li><div><span>FY ${item.fiscal_year} · ${html(item.contract_id)}</span><strong>${html(item.description)}</strong><small>${html(item.location)}</small></div><b>${html(money(item.budget_centavos))}</b><a href="${idPath('delivery', item.contract_id)}">Open record</a></li>`).join('')}</ul>` : empty('No related delivery records were found under the same normalized family identity.');
 
-const signals = (records) => records.length ? `<ul class="evidence-signal-list">${records.map((item) => `
-  <li><span>${html(item.classification.replaceAll('_', ' '))}</span><strong>${html(item.label)}</strong><p>${html(item.evidence || item.description)}</p>${item.signal_id ? `<a href="${idPath('integrity', item.signal_id)}">Inspect signal</a>` : ''}</li>`).join('')}</ul>` : empty('No published deterministic integrity signal is associated with this record.');
+const signals = (records) => records.length ? `<ul class="evidence-signal-list">${records.map((item) => {
+  const copy = signalLanguage(item.code, item.classification);
+  return `<li><span>${html(copy.category)}</span><strong>${html(copy.label)}</strong><p><b>What we noticed:</b> ${html(item.evidence || item.description)}</p><p><b>What this does not prove:</b> ${html(copy.not_proof)}</p>${item.signal_id ? `<a href="${idPath('integrity', item.signal_id)}">See why this was flagged</a>` : ''}</li>`;
+}).join('')}</ul>` : empty('No published item needs checking under the current rules.');
 
 const coordinates = (record) => {
   if (!record?.latitude || !record?.longitude) return 'Not available in the source record';
@@ -204,11 +207,11 @@ ${boundary('This page reproduces an appropriation record and normalized relation
 
 export const deliveryRecordBody = ({ record, related, budgets, candidates, projects, signals: items, contractors, imageEvidence, ...acquisition }) => `${breadcrumb('DPWH contract', record.contract_id)}
 <article class="evidence-dossier">${heading({ badge: 'Official DPWH delivery record', kicker: `FY ${record.fiscal_year} · Contract ${record.contract_id}`, title: record.description, summary: record.location })}
-${facts([['Recorded project budget', money(record.budget_centavos), 'Snapshot value, not proof of payment'], ['Status / progress', `${record.status || 'Not stated'} / ${record.progress ? `${record.progress}%` : 'Not stated'}`, 'Reported by the source record'], ['Integrity signals', items.length, 'Review leads, not findings']])}
+${facts([['Recorded project budget', money(record.budget_centavos), 'Snapshot value, not proof of payment'], ['Status / progress', `${record.status || 'Not stated'} / ${record.progress ? `${record.progress}%` : 'Not stated'}`, 'Reported by the source record'], ['Things to check', items.length, 'Questions to verify, not findings']])}
 <div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Project details</p><h2>Fields in the archived DPWH record</h2>${sourceRoles({ publisher: 'Department of Public Works and Highways', access: 'BetterGov DPWH dataset and API' })}${projectDetails(record)}<dl class="evidence-details"><div><dt>Source of funds</dt><dd>${html(record.source_of_funds || 'Not stated')}</dd></div><div><dt>Normalized family</dt><dd>${html(record.project_family_id)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.detail_artifact_sha256 || record.artifact_sha256)}</dd></div></dl></section>${district(record.district_context)}</div>
 ${projectImageEvidencePanel(imageEvidence)}
 <section class="evidence-section"><p class="kicker">Contractor identities</p><h2>Parties stated in the project record</h2>${contractorCards(contractors)}</section>
-<section class="evidence-section"><p class="kicker">Deterministic review</p><h2>Published source-record signals</h2>${signals(items)}</section>
+<section class="evidence-section"><p class="kicker">Things that need checking</p><h2>Questions raised by this record</h2>${signals(items)}</section>
 <section class="evidence-section"><p class="kicker">Possible appropriation records</p><h2>Same normalized family</h2>${relatedBudgets(budgets)}${candidates.map((item) => `<a class="candidate-callout" href="${idPath('candidate', item.candidate_id)}"><strong>Compare candidate appropriation and delivery rows</strong><span>Unreviewed · evidence score ${item.score}</span></a>`).join('')}${projects.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>${html(item.title)}</strong><span>${html(item.status_label)}</span></a>`).join('')}</section>
 <section class="evidence-section"><p class="kicker">Related delivery history</p><h2>Other records sharing the family identity</h2>${relatedDeliveries(related)}</section>${availability()}
 ${acquisitionEvidence(acquisition)}
@@ -229,13 +232,16 @@ ${boundary('This row compares acquired proposal and House bill evidence. It does
 <section class="evidence-section"><p class="kicker">Prior-year context</p><h2>Appropriations sharing the normalized family label</h2>${relatedBudgets(prior)}</section>
 <section class="evidence-section"><p class="kicker">FY2027 related rows</p><h2>Other rows in the same normalized family</h2>${related.length ? related.map((item) => `<a class="candidate-callout" href="${idPath('change', item.record_id)}"><strong>${html(item.title)}</strong><span>${html(item.change_type.replaceAll('_', ' '))} · ${html(money(item.difference_centavos))}</span></a>`).join('') : empty('No other FY2027 comparison row shares this family label.')}</section></article>`;
 
-export const integrityRecordBody = ({ record, delivery, contractors, related }) => `${breadcrumb('Integrity review signal', record.signal_id)}
-<article class="evidence-dossier">${heading({ badge: 'Review signal, not a finding', tone: 'signal', kicker: `${record.classification.replaceAll('_', ' ')} · Contract ${record.contract_id}`, title: record.label, summary: record.description })}
-${boundary('This deterministic rule identifies a source-record pattern for verification. It does not prove fraud, corruption, a ghost project, non-performance, or wrongdoing.')}
+export const integrityRecordBody = ({ record, delivery, contractors, related }) => {
+  const copy = signalLanguage(record.code, record.classification);
+  return `${breadcrumb('Something to check', record.signal_id)}
+<article class="evidence-dossier">${heading({ badge: 'Something to check, not a finding', tone: 'signal', kicker: `${copy.category} · Contract ${record.contract_id}`, title: copy.label, summary: record.description })}
+${boundary(copy.not_proof)}
 ${facts([['Recorded project budget', money(record.budget_centavos)], ['Status / progress', `${record.status || 'Not stated'} / ${record.progress || 'Not stated'}%`], ['Location', [record.province, record.region].filter(Boolean).join(', ') || 'Not stated']])}
-<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Rule evidence</p><h2>Why this record was surfaced</h2><p>${html(record.evidence)}</p><p class="evidence-limit"><strong>Known limit:</strong> ${html(record.limitations)}</p><dl class="evidence-details"><div><dt>Rule code</dt><dd>${html(record.code)}</dd></div><div><dt>Snapshot fingerprint</dt><dd>${hash(record.source_artifact_sha256)}</dd></div></dl>${delivery ? `<a class="evidence-action" href="${idPath('delivery', delivery.contract_id)}">Open underlying delivery record</a>` : ''}</section>${district(record.district_context)}</div>
+<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Why Busisi flagged this</p><h2>What we noticed</h2><p>${html(record.evidence)}</p><p><strong>Why check it:</strong> ${html(copy.why_check)}</p><p><strong>What to check next:</strong> ${html(copy.next_step)}</p><details><summary>Technical details</summary><p class="evidence-limit">${html(record.limitations)}</p><dl class="evidence-details"><div><dt>Rule code</dt><dd>${html(record.code)}</dd></div><div><dt>Snapshot fingerprint</dt><dd>${hash(record.source_artifact_sha256)}</dd></div></dl></details>${delivery ? `<a class="evidence-action" href="${idPath('delivery', delivery.contract_id)}">Open the project record</a>` : ''}</section>${district(record.district_context)}</div>
 <section class="evidence-section"><p class="kicker">Recorded contractor identities</p><h2>Every party stated in the project record</h2>${contractorCards(contractors)}</section>
-<section class="evidence-section"><p class="kicker">Other rules on this contract</p><h2>${related.length} additional signal${related.length === 1 ? '' : 's'}</h2>${signals(related)}</section></article>`;
+<section class="evidence-section"><p class="kicker">Other things to check</p><h2>${related.length} other flag${related.length === 1 ? '' : 's'} on this contract</h2>${signals(related)}</section></article>`;
+};
 
 const associationCount = (count, label) => `${count} ${label}${count === 1 ? '' : 's'}`;
 
@@ -355,7 +361,7 @@ ${procurementEvidencePanel(procurementEvidence)}
 ${contractEvidencePanel(contractEvidence)}
 ${contractOutcomePanel(contractOutcome)}
 <section class="evidence-section" id="contractors"><p class="kicker">Contractor identities</p><h2>Parties stated in the DPWH record</h2>${contractorCards(contractors)}</section>
-<section class="evidence-section"><p class="kicker">Integrity review</p><h2>Deterministic signals on this contract</h2>${signals(items)}</section>
+<section class="evidence-section"><p class="kicker">Things that need checking</p><h2>Questions raised by this contract</h2>${signals(items)}</section>
 ${auditEvidencePanel(auditEvidence)}
 <section class="evidence-section" id="phases"><p class="kicker">Related reviewed phases</p><h2>Other dossiers sharing the reviewed family identity</h2>${related.length ? related.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>FY ${item.fiscal_year} · ${html(item.title)}</strong><span>${html(item.contract_id)} · ${html(item.status_label)}</span></a>`).join('') : empty('No other reviewed dossier shares this exact family identity.')}</section>
 <section class="evidence-section"><p class="kicker">Possible later budget records</p><h2>FY2027 rows sharing the normalized family label</h2>${changes.length ? changes.map((item) => `<a class="candidate-callout" href="${idPath('change', item.record_id)}"><strong>${html(item.title)}</strong><span>${html(item.change_label)} · ${html(money(item.difference_centavos))}</span></a>`).join('') : empty('No FY2027 stage-comparison row shares this normalized family label.')}<p class="evidence-limit">Family-label similarity is review context only. It does not confirm that a later proposal funds the same phase or contract.</p></section>

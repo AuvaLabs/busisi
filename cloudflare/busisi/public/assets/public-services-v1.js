@@ -34,7 +34,7 @@
     appendText(header, 'span', record.source_type === 'budget' ? 'Budget-stage row' : 'Delivery contract', `services-tag ${record.source_type}`);
     appendText(header, 'span', label(record.facility_type), 'services-tag');
     appendText(header, 'span', label(record.work_type), 'services-tag');
-    if (record.flag_count) appendText(header, 'span', `${record.flag_count} review flag${record.flag_count === 1 ? '' : 's'}`, 'services-tag flag');
+    if (record.flag_count) appendText(header, 'span', `${record.flag_count} thing${record.flag_count === 1 ? '' : 's'} to check`, 'services-tag flag');
     main.append(header);
     const heading = appendText(main, 'h3', '');
     const link = appendText(heading, 'a', record.title);
@@ -50,17 +50,19 @@
     if (record.flags.length) {
       const flags = appendText(main, 'div', '', 'services-flags');
       record.flags.forEach((flag) => {
-        const item = appendText(flags, 'span', '', 'services-flag');
-        appendText(item, 'b', flag.label);
-        appendText(item, 'span', label(flag.classification));
-        item.title = flag.limitation;
+        const copy = flag.plain_language || {};
+        const item = appendText(flags, 'article', '', 'services-flag');
+        appendText(item, 'b', copy.label || flag.label);
+        appendText(item, 'p', `Why check: ${copy.why_check || flag.label}`);
+        appendText(item, 'p', `What this does not prove: ${copy.not_proof || flag.limitation}`);
+        appendText(item, 'small', `Technical tag: ${label(flag.classification)}`);
       });
     }
     const side = document.createElement('div');
     side.className = 'services-card-side';
     appendText(side, 'strong', peso.format(Number(record.amount_centavos || 0) / 100));
     appendText(side, 'span', record.source_type === 'budget' ? 'Published stage amount' : 'Recorded contract budget');
-    const evidence = appendText(side, 'a', 'Open evidence');
+    const evidence = appendText(side, 'a', 'See record and source');
     evidence.href = readerUrl;
     card.append(main, side);
     return card;
@@ -83,7 +85,7 @@
     controller = new AbortController();
     const params = parameters();
     if (append && nextCursor) params.set('cursor', nextCursor);
-    status.textContent = append ? 'Loading more records…' : 'Loading classified records…';
+    status.textContent = append ? 'Loading more records…' : 'Loading records…';
     try {
       const response = await fetch(`/api/v1/public-services?${params}`, { signal: controller.signal });
       if (!response.ok) throw new Error(`Request failed with HTTP ${response.status}`);
@@ -96,8 +98,8 @@
       total.textContent = payload.meta.total.toLocaleString('en-PH');
       shown.textContent = results.querySelectorAll('.services-card').length.toLocaleString('en-PH');
       status.textContent = payload.meta.total
-        ? 'Title classification only. Open a record to inspect its evidence.'
-        : 'No qualifying title-classified record was found.';
+        ? 'These are records, not a count of separate buildings. Open one to see its source.'
+        : 'No record matches these choices.';
     } catch (error) {
       if (error.name === 'AbortError') return;
       status.textContent = 'The records could not be loaded. Try again.';

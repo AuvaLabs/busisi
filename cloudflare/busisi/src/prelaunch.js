@@ -123,9 +123,9 @@ const SIGNALS_SCHEMA = Object.freeze({
 const INTEGRITY_SCHEMA = Object.freeze({
   '@context': 'https://schema.org',
   '@type': 'Dataset',
-  name: 'Busisi DPWH project integrity signals and contractor activity',
+  name: 'Busisi DPWH project records that need checking and contractor activity',
   url: `${SITE.origin}/integrity/`,
-  description: 'Deterministic source-record contradictions, coordinate review signals, and archived DPWH contractor activity for fiscal years 2024 to 2026.',
+  description: 'DPWH records with missing or conflicting details, location questions, and contractor activity for fiscal years 2024 to 2026.',
   temporalCoverage: '2024/2026',
   spatialCoverage: 'Philippines',
   isAccessibleForFree: true,
@@ -225,7 +225,7 @@ const PUBLIC_SERVICES_SCHEMA = Object.freeze({
   '@type': 'Dataset',
   name: 'Busisi school and health-facility public-record inventory',
   url: `${SITE.origin}/public-services/`,
-  description: 'Title-classified budget-stage rows and delivery contracts for schools, hospitals, and health facilities, with deterministic review flags and explicit counting limits.',
+  description: 'Budget records and project contracts that name schools, hospitals, and health facilities, with clear explanations of anything that needs checking.',
   temporalCoverage: '2024/2027',
   spatialCoverage: 'Philippines',
   isAccessibleForFree: true,
@@ -296,8 +296,8 @@ const signals = () => page(document({
 }));
 
 const integrity = () => page(document({
-  title: 'DPWH project integrity signals and contractor activity | Busisi',
-  description: 'Inspect deterministic DPWH delivery-record contradictions, coordinate review signals, and contractor activity with source evidence and explicit limitations.',
+  title: 'DPWH project records to check and contractor activity | Busisi',
+  description: 'Find DPWH records with missing or conflicting details, understand each flag, open the source, and compare contractor activity.',
   canonicalPath: '/integrity/',
   body: integrityBody,
   schema: INTEGRITY_SCHEMA,
@@ -380,7 +380,7 @@ const questions = (records) => page(document({
 
 const publicServices = (summary) => page(document({
   title: 'Schools and health facilities in Philippine budget records | Busisi',
-  description: 'Search title-classified school, hospital, and health-facility budget rows and delivery contracts with transparent work types, source amounts, and review flags.',
+  description: 'Search budget records and project contracts that name schools, hospitals, or health centers. See the amount, place, source, and anything that needs checking.',
   canonicalPath: '/public-services/',
   body: publicServicesBody(summary),
   schema: PUBLIC_SERVICES_SCHEMA,

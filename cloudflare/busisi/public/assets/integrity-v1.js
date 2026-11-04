@@ -45,10 +45,10 @@ const signalLabels = Object.freeze({
 });
 
 const classificationLabels = Object.freeze({
-  source_conflict: 'Source conflict',
-  amount_review: 'Amount review',
-  identity_review: 'Identity review',
-  coverage_gap: 'Coverage gap',
+  source_conflict: 'The record disagrees with itself',
+  amount_review: 'The amount needs checking',
+  identity_review: 'The project identity needs checking',
+  coverage_gap: 'We do not have enough information yet',
 });
 
 const appendText = (parent, tag, value, className) => {
@@ -132,8 +132,8 @@ const renderSummary = (payload) => {
     .reduce((total, item) => total + item.count, 0);
   const cards = [
     [number.format(payload.source_records), 'source records examined', 'Archived FY2024 to FY2026 DPWH snapshot'],
-    [number.format(payload.integrity_signals), 'rule-specific review signals', 'One contract can meet more than one rule'],
-    [number.format(coordinateSignals), 'coordinate-related signals', 'Missing, broad-bound, reuse, or label checks'],
+    [number.format(payload.integrity_signals), 'things to check', 'One contract can have more than one question'],
+    [number.format(coordinateSignals), 'place questions', 'Missing, unusual, repeated, or mismatched coordinates'],
     [number.format(payload.contractors), 'contractor identities', 'Explicit slash-delimited joint ventures are split by party'],
     [number.format(payload.district_count), 'legislative districts in roster', `${number.format(payload.district_offices)} mapped DPWH offices · snapshot ${payload.district_source_retrieved_on}`],
   ];
@@ -147,14 +147,15 @@ const renderSummary = (payload) => {
 };
 
 const renderIntegrityRecord = (record) => {
+  const copy = record.plain_language || {};
   const card = document.createElement('article');
   card.className = 'integrity-record';
   const heading = document.createElement('header');
-  appendText(heading, 'span', signalLabels[record.code] || record.label, 'integrity-badge');
+  appendText(heading, 'span', copy.label || signalLabels[record.code] || record.label, 'integrity-badge');
   appendText(
     heading,
     'span',
-    classificationLabels[record.classification] || record.classification,
+    copy.category || classificationLabels[record.classification] || record.classification,
     'integrity-badge classification',
   );
   card.append(heading);
@@ -179,8 +180,11 @@ const renderIntegrityRecord = (record) => {
     appendText(block, 'dd', value);
     values.append(block);
   }
-  appendText(card, 'p', record.evidence, 'integrity-evidence');
-  appendText(card, 'p', `Limit: ${record.limitations}`, 'integrity-limit');
+  const explanation = appendText(card, 'div', '', 'integrity-explanation');
+  appendText(explanation, 'p', `What we noticed: ${record.evidence}`);
+  appendText(explanation, 'p', `Why check it: ${copy.why_check || record.label}`);
+  appendText(explanation, 'p', `What this does not prove: ${copy.not_proof || record.limitations}`);
+  appendText(explanation, 'p', `What to check next: ${copy.next_step || 'Open the source record and look for a newer official document.'}`);
   card.append(renderDistrictContext(record.district_context));
   const links = appendText(card, 'div', '', 'integrity-links');
   appendLink(links, 'Inspect this review signal', titleLink.href);
@@ -294,7 +298,7 @@ const loadSummary = async () => {
 const loadIntegrity = async ({ append = false } = {}) => {
   integrityController?.abort();
   integrityController = new AbortController();
-  integrityStatus.textContent = 'Checking deterministic source-review rules...';
+  integrityStatus.textContent = 'Checking the published rules...';
   const params = integrityParams();
   if (append && integrityCursor) params.set('cursor', integrityCursor);
   const exportParams = integrityParams();
@@ -315,7 +319,7 @@ const loadIntegrity = async ({ append = false } = {}) => {
     integrityCount.textContent = number.format(integrityResults.children.length);
     integrityTotal.textContent = number.format(payload.meta.total);
     integrityStatus.textContent = payload.meta.total
-      ? 'Signals are evidence-led questions, not findings of wrongdoing.'
+      ? 'Each flag is a question to check, not proof that something is wrong.'
       : 'No source records match these filters.';
     if (!append) syncIntegrityUrl();
   } catch (error) {

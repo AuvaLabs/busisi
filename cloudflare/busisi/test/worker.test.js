@@ -1437,15 +1437,15 @@ test('renders the evidence question catalogue with current counts and hard bound
   const document = await response.text();
 
   assert.equal(response.status, 200);
-  assert.match(document, /Questions Busisi can answer from current evidence/);
-  assert.match(document, /Answerable/);
-  assert.match(document, /Partially answerable/);
-  assert.match(document, /Not yet supported/);
-  assert.match(document, /What Busisi cannot establish/);
+  assert.match(document, /What can Busisi answer today/);
+  assert.match(document, /Can answer/);
+  assert.match(document, /Can partly answer/);
+  assert.match(document, /Cannot answer yet/);
+  assert.match(document, /What this answer cannot prove/);
   assert.match(document, /4 compared project rows/);
   assert.match(document, /3 official DBM release rows/);
   assert.match(document, /36,748 contracts in the latest coverage release/);
-  assert.match(document, /Deterministic comparison/);
+  assert.match(document, /Based on official or checked records/);
   assert.match(document, /Acquired FY2027 NEP and House bill pages/);
   assert.match(document, /Was this project actually paid/);
   assert.match(document, /Who inserted, sponsored, or politically motivated a line item/);
@@ -1536,7 +1536,7 @@ test('publishes a deterministic public-services inventory with separated review 
   assert.equal(summaryBody.data.work_types.rehabilitation, 1);
   assert.equal(summaryBody.data.work_types.unspecified, 1);
   assert.equal(summaryBody.data.classification_version, 'public-services-v1');
-  assert.match(summaryBody.data.limitation, /records, not unique facilities/i);
+  assert.match(summaryBody.data.limitation, /not unique facilities/i);
 
   const schools = await worker.fetch(
     request('/api/v1/public-services?facility=school'), environment(database),
@@ -1559,6 +1559,13 @@ test('publishes a deterministic public-services inventory with separated review 
   assert.ok(identityBody.data[0].flags.some(({ code, classification }) => (
     code === 'contract_identifier_conflict' && classification === 'identity_conflict'
   )));
+  const identityLanguage = identityBody.data[0].flags.find(
+    ({ classification }) => classification === 'identity_conflict',
+  ).plain_language;
+  assert.equal(identityLanguage.label, 'The project ID may point to different records');
+  assert.match(identityLanguage.why_check, /right project/i);
+  assert.match(identityLanguage.not_proof, /does not prove/i);
+  assert.match(identityLanguage.next_step, /compare/i);
 
   const rehabilitation = await worker.fetch(
     request('/api/v1/public-services?work=rehabilitation'), environment(database),
@@ -1660,7 +1667,7 @@ test('validates public-services pagination, combined filters and sparse renderin
       `https://busisi.test/api/v1/public-services${query}`,
     )));
   }
-  assert.match(publicServicesBody(), /0 title-classified records/);
+  assert.match(publicServicesBody(), /0 records that name a facility/);
 });
 
 test('renders an interactive public-services desk with explicit red-flag boundaries', async (context) => {
@@ -1674,13 +1681,15 @@ test('renders an interactive public-services desk with explicit red-flag boundar
   const document = await response.text();
   assert.equal(response.status, 200);
   assert.match(document, /Schools and health facilities in the public record/);
-  assert.match(document, /4 title-classified records/);
-  assert.match(document, /3 records with review flags/);
-  assert.match(document, /Budget rows and delivery contracts are never added together as facilities/);
-  assert.match(document, /Stage change/);
-  assert.match(document, /Record contradiction/);
-  assert.match(document, /Identity conflict/);
-  assert.match(document, /Coverage gap/);
+  assert.match(document, /4 records that name a facility/);
+  assert.match(document, /3 records with things to check/);
+  assert.match(document, /A budget amount and a contract budget mean different things/);
+  assert.match(document, /Things that need checking/);
+  assert.match(document, /The budget entry changed/);
+  assert.match(document, /The same record says two different things/);
+  assert.match(document, /The project ID may point to different records/);
+  assert.match(document, /Some information is missing/);
+  assert.match(document, /This does not mean the project is bad or illegal/);
   assert.match(document, /data-public-services-desk/);
   assert.match(document, /\/assets\/public-services-v1\.js/);
   assert.doesNotMatch(document, /risk score|proves? (?:fraud|corruption)/i);
@@ -1849,6 +1858,13 @@ test('publishes delivery-integrity signals and contractor rankings', async (cont
   assert.match(conflictBody.data[0].source_url, /api\.dpwh\.bettergov\.ph/);
   const singleConflict = conflictBody.data.find((record) => record.contract_id === '25A');
   assert.equal(singleConflict.district_context.classification, 'single_district');
+  assert.deepEqual(singleConflict.plain_language, {
+    label: 'The project says ongoing, but progress says 100%',
+    category: 'The record disagrees with itself',
+    why_check: 'The status and progress fields should describe the same point in the work.',
+    not_proof: 'This mismatch does not prove that the project is unfinished or that anyone did something wrong.',
+    next_step: 'Check the latest project update, completion record, and inspection documents.',
+  });
   const sharedConflict = (await sharedSignals.json()).data[0];
   assert.equal(sharedConflict.district_context.classification, 'shared_office');
   assert.equal(sharedConflict.district_context.districts.length, 2);
@@ -2091,7 +2107,7 @@ test('publishes evidence drilldowns without collapsing records into findings', a
     ['/contracts/25O00113/', /Official DPWH delivery record/],
     ['/records/candidate/2025%3Apump%3A25O00113/', /Unreviewed candidate comparison/],
     ['/records/change/dpwh%3A1/', /Provisional stage comparison/],
-    ['/records/integrity/25A%3Astatus_progress_conflict/', /Review signal, not a finding/],
+    ['/records/integrity/25A%3Astatus_progress_conflict/', /Something to check, not a finding/],
     ['/contractors/pcab%3A12345/', /Archived contractor activity/],
   ];
 
@@ -2158,8 +2174,8 @@ test('publishes the COA audit desk without turning absence into clearance', asyn
   const desk = await siteWorker.fetch(request('/audit/'), environment(database));
   const document = await desk.text();
   assert.equal(desk.status, 200);
-  assert.match(document, /COA audit evidence desk/);
-  assert.match(document, /Absence is not clearance/);
+  assert.match(document, /What do COA reports say about the projects Busisi checked/);
+  assert.match(document, /Not finding a report is not the same as COA clearance/);
   assert.match(document, /DPWH reviewed annual audit report/);
   assert.match(document, /class="record-title-link"/);
 
@@ -2206,10 +2222,10 @@ test('publishes exact procurement evidence and preserves missing coverage', asyn
   const desk = await siteWorker.fetch(request('/procurement/'), environment(database));
   const document = await desk.text();
   assert.equal(desk.status, 200);
-  assert.match(document, /Procurement evidence desk/);
-  assert.match(document, /1 of 2 reviewed dossiers/);
+  assert.match(document, /What contract documents can Busisi find/);
+  assert.match(document, /1 of 2 project files have evidence/);
   assert.match(document, /PhilGEPS bid notice 123/);
-  assert.match(document, /Evidence gap, not a clean bill/);
+  assert.match(document, /A missing document does not mean procurement did not happen/);
   assert.match(document, /class="record-title-link"/);
 
   const dossier = await siteWorker.fetch(
@@ -2257,9 +2273,9 @@ test('publishes contract outcome cross-checks without inventing award or payment
 
   const desk = await siteWorker.fetch(request('/procurement/'), environment(database));
   const deskDocument = await desk.text();
-  assert.match(deskDocument, /Contract outcome cross-checks/);
+  assert.match(deskDocument, /Do the contract records agree/);
   assert.match(deskDocument, /Awardee not established by acquired procurement evidence/);
-  assert.match(deskDocument, /Questions, not findings/);
+  assert.match(deskDocument, /Questions to check, not findings/);
 
   const dossier = await siteWorker.fetch(
     request('/projects/pump-reviewed/'), environment(database),
@@ -2549,7 +2565,7 @@ test('renders procurement desk counts without unsafe source URLs', () => {
       { case_id: 'c', contract_id: 'C', fiscal_year: 2025, status: 'unexpected_status', review_note: 'Unknown.', reviewed_at: '2026-11-03' },
     ],
   });
-  assert.match(document, /1 of 1 reviewed dossiers/);
+  assert.match(document, /1 of 1 project files have evidence/);
   assert.match(document, /Source archived and verified/);
   assert.match(document, /discovered/);
   assert.doesNotMatch(document, /javascript:/);
@@ -2577,7 +2593,7 @@ test('renders archived, unavailable and incomplete COA report presentation state
 
   assert.match(desk, /Source copy archived and verified/);
   assert.match(desk, /Source unavailable/);
-  assert.match(desk, /0 dossiers checked/);
+  assert.match(desk, /0 project files checked/);
   assert.match(archivedPage, /Source copy archived/);
   assert.match(archivedPage, new RegExp('a{64}'));
   assert.match(archivedPage, /Not stated/);
@@ -2673,7 +2689,7 @@ test('renders enriched record relationships and tolerates malformed candidate me
 
   const paths = [
     ['/contracts/25O00113/', /ACME BUILDERS/],
-    ['/records/integrity/25O00113%3Amissing_coordinate/', /1 additional signal/],
+    ['/records/integrity/25O00113%3Amissing_coordinate/', /1 other flag on this contract/],
     ['/records/candidate/2025%3Apump%3A25O00113/', /San Andres Pumping Station/],
     ['/records/candidate/missing-delivery/', /Matching delivery row is not available/],
     ['/projects/pump-reviewed/', /Reader evidence links/],
@@ -2684,6 +2700,9 @@ test('renders enriched record relationships and tolerates malformed candidate me
     const document = await response.text();
     assert.match(document, expected, path);
     assert.doesNotMatch(document, /unsafe\.example/, path);
+    if (path.includes('missing_coordinate')) {
+      assert.match(document, /What we noticed:<\/b> No archived image reference\./);
+    }
   }
 
   database.database.exec("UPDATE candidate_links SET signals_json = '{}' WHERE candidate_id = 'missing-delivery'");
@@ -2742,15 +2761,15 @@ test('serves gated coverage status through the API and public page', async (cont
   const pageResponse = await siteWorker.fetch(request('/coverage/'), environment(database));
   assert.equal(pageResponse.status, 200);
   const pageDocument = await pageResponse.text();
-  assert.match(pageDocument, /See what the evidence pipeline has verified/);
+  assert.match(pageDocument, /See how many project images Busisi has checked/);
   assert.match(pageDocument, /36,748/);
-  assert.match(pageDocument, /No model or generative system decides publication status/);
-  assert.match(pageDocument, /No monitored source drift/);
+  assert.match(pageDocument, /No AI model decides whether an image is published/);
+  assert.match(pageDocument, /The checked sources have not changed/);
   assert.match(pageDocument, /Commission on Audit report catalogues/);
 });
 
 test('renders unavailable and drifted source-monitor coverage states', () => {
-  assert.match(coverageStatusBody(null), /Coverage release is not available/);
+  assert.match(coverageStatusBody(null), /No checked coverage update is available/);
   const coverage = {
     universe_contracts: 0,
     completed_contracts: 0,
@@ -2765,7 +2784,7 @@ test('renders unavailable and drifted source-monitor coverage states', () => {
     release_id: 'release',
     source_sha256: 'source',
   };
-  assert.match(coverageStatusBody(coverage), /Status not yet published/);
+  assert.match(coverageStatusBody(coverage), /No new source check is available/);
   const drifted = coverageStatusBody(coverage, {
     status: 'drift_detected',
     checked_at: '2026-11-04T00:00:00+00:00',
@@ -2773,7 +2792,7 @@ test('renders unavailable and drifted source-monitor coverage states', () => {
     limitations: [],
     observations_sha256: 'fingerprint',
   });
-  assert.match(drifted, /Source review required/);
-  assert.match(drifted, /1 change or acquisition issue requires review/);
-  assert.match(drifted, /No additional source-discovery limitation was reported/);
+  assert.match(drifted, /A source changed and needs checking/);
+  assert.match(drifted, /1 change or download problem needs checking/);
+  assert.match(drifted, /No other source limit was reported/);
 });

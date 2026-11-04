@@ -267,9 +267,9 @@ const verifyPages = async () => {
   const coverage = await request('/coverage/');
   expectStatus(coverage, 200, '/coverage/');
   const coverageText = await coverage.text();
-  expectIncludes(coverageText, 'See what the evidence pipeline has verified', 'coverage heading');
-  expectIncludes(coverageText, 'No model or generative system decides publication status', 'coverage boundary');
-  expectIncludes(coverageText, 'Source monitor', 'coverage source monitor');
+  expectIncludes(coverageText, 'See how many project images Busisi has checked', 'coverage heading');
+  expectIncludes(coverageText, 'No AI model decides whether an image is published', 'coverage boundary');
+  expectIncludes(coverageText, 'Did the sources change?', 'coverage source monitor');
 
   const publicValue = await request('/sulit/');
   expectStatus(publicValue, 200, '/sulit/');
@@ -296,18 +296,18 @@ const verifyPages = async () => {
   const signals = await request('/signals/');
   expectStatus(signals, 200, '/signals/');
   const signalsText = await signals.text();
-  expectIncludes(signalsText, 'Start with the records that moved', 'review desk heading');
-  expectIncludes(signalsText, '/assets/review-v1.js?v=2', 'review desk client');
+  expectIncludes(signalsText, 'Find budget changes that need a closer look', 'review desk heading');
+  expectIncludes(signalsText, '/assets/review-v1.js?v=3', 'review desk client');
   expectIncludes(signalsText, 'Full insertion analysis', 'signals evidence gaps');
   expectIncludes(signalsText, 'Physical existence verification', 'signals evidence gaps');
 
   const integrity = await request('/integrity/');
   expectStatus(integrity, 200, '/integrity/');
   const integrityText = await integrity.text();
-  expectIncludes(integrityText, 'Inspect contradictions in delivery records', 'integrity heading');
-  expectIncludes(integrityText, '/assets/integrity-v1.js?v=2', 'integrity client');
+  expectIncludes(integrityText, 'Find project records that need a closer look', 'integrity heading');
+  expectIncludes(integrityText, '/assets/integrity-v1.js?v=3', 'integrity client');
   expectIncludes(integrityText, 'Contractors with the most projects', 'contractor ranking');
-  expectIncludes(integrityText, 'What this desk flags', 'integrity limitation');
+  expectIncludes(integrityText, 'A flag is a question to check, not an accusation', 'integrity limitation');
 
   const changes = await request('/changes/');
   expectStatus(changes, 200, '/changes/');
@@ -334,32 +334,32 @@ const verifyPages = async () => {
   const audit = await request('/audit/');
   expectStatus(audit, 200, '/audit/');
   const auditText = await audit.text();
-  expectIncludes(auditText, 'COA audit evidence desk', 'audit desk heading');
-  expectIncludes(auditText, 'Absence is not clearance', 'audit desk evidence boundary');
-  expectIncludes(auditText, '6 dossiers checked', 'audit desk coverage');
+  expectIncludes(auditText, 'What do COA reports say about the projects Busisi checked?', 'audit desk heading');
+  expectIncludes(auditText, 'Not finding a report is not the same as COA clearance', 'audit desk evidence boundary');
+  expectIncludes(auditText, '6 project files checked', 'audit desk coverage');
   expectIncludes(auditText, 'class="record-title-link"', 'audit report drill-down');
 
   const procurement = await request('/procurement/');
   expectStatus(procurement, 200, '/procurement/');
   const procurementText = await procurement.text();
-  expectIncludes(procurementText, 'Procurement evidence desk', 'procurement desk heading');
-  expectIncludes(procurementText, '3 of 6 reviewed dossiers', 'procurement desk coverage');
-  expectIncludes(procurementText, 'Evidence gap, not a clean bill', 'procurement boundary');
+  expectIncludes(procurementText, 'What contract documents can Busisi find?', 'procurement desk heading');
+  expectIncludes(procurementText, '3 of 6 project files have evidence', 'procurement desk coverage');
+  expectIncludes(procurementText, 'A missing document does not mean procurement did not happen', 'procurement boundary');
   expectIncludes(procurementText, 'Full-universe acquisition coverage', 'acquisition coverage');
   expectIncludes(procurementText, '56,887 of 56,887 contracts examined', 'acquisition coverage');
   expectIncludes(procurementText, 'Coverage is not official proof', 'acquisition boundary');
   expectIncludes(procurementText, 'Contract evidence acquisition ledger', 'acquisition ledger');
   expectIncludes(procurementText, '3 acquisition checks queued', 'acquisition retry queue');
-  expectIncludes(procurementText, 'Contract outcome cross-checks', 'contract outcome heading');
-  expectIncludes(procurementText, 'Questions, not findings', 'contract outcome boundary');
+  expectIncludes(procurementText, 'Do the contract records agree?', 'contract outcome heading');
+  expectIncludes(procurementText, 'Questions to check, not findings', 'contract outcome boundary');
   expectIncludes(procurementText, 'class="record-title-link"', 'procurement dossier drill-down');
 
   const questions = await request('/questions/');
   expectStatus(questions, 200, '/questions/');
   const questionsText = await questions.text();
-  expectIncludes(questionsText, 'Questions Busisi can answer from current evidence', 'questions heading');
-  expectIncludes(questionsText, 'Partially answerable', 'questions partial state');
-  expectIncludes(questionsText, 'What Busisi cannot establish', 'questions evidence boundary');
+  expectIncludes(questionsText, 'What can Busisi answer today?', 'questions heading');
+  expectIncludes(questionsText, 'Can partly answer', 'questions partial state');
+  expectIncludes(questionsText, 'What this answer cannot prove', 'questions evidence boundary');
   expectIncludes(questionsText, 'Who inserted, sponsored, or politically motivated a line item', 'questions authorship boundary');
   if (/href="\/api\/v1\//.test(questionsText)) fail('questions: reader action exposes raw API');
 
@@ -368,8 +368,8 @@ const verifyPages = async () => {
   const publicServicesText = await publicServices.text();
   expectIncludes(publicServicesText, 'Schools and health facilities in the public record', 'public services heading');
   expectIncludes(publicServicesText, '/assets/public-services-v1.js', 'public services client');
-  expectIncludes(publicServicesText, 'Budget rows and delivery contracts are never added together as facilities', 'public services counting boundary');
-  expectIncludes(publicServicesText, 'Questions for review, never verdicts', 'public services flag boundary');
+  expectIncludes(publicServicesText, 'These are records, not separate buildings', 'public services counting boundary');
+  expectIncludes(publicServicesText, 'Things that need checking', 'public services flag boundary');
 
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
@@ -954,7 +954,7 @@ const verifyData = async () => {
   }
   await verifyHtmlRecord(
     `/records/integrity/${encodeURIComponent(coordinateReview.data[0].signal_id)}/`,
-    'Review signal, not a finding',
+    'Something to check, not a finding',
   );
   const districtReview = await readJson(
     '/api/v1/integrity-signals?q=Metro%20Manila%201st%20DEO&limit=1',

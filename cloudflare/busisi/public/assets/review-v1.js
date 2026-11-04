@@ -16,13 +16,49 @@ let controller = null;
 const initial = new URLSearchParams(location.search);
 let activeGroup = (initial.get('group') || '').trim();
 
-const signalLabels = Object.freeze({
-  house_only: 'House-only row',
-  increased: 'Amount increased',
-  decreased: 'Amount decreased',
-  nep_only: 'NEP-only row',
-  repeat_family: 'Prior-year family candidate',
-  similar_family: 'Similar FY2027 family candidate',
+const signalCopy = Object.freeze({
+  house_only: Object.freeze({
+    label: 'Only in the House bill',
+    noticed: 'This row appears in the House bill but not in the matched NEP rows.',
+    why: 'The source pages may show whether the item is new, renamed, split, merged, or outside the matched scope.',
+    notProof: 'This does not prove who added it, why it changed, or whether it was improper.',
+    next: 'Compare the House page with the NEP program pages and later budget stages.',
+  }),
+  increased: Object.freeze({
+    label: 'The amount increased',
+    noticed: 'The House bill amount is higher than the matched NEP amount.',
+    why: 'The change may alter what work can be funded and deserves an explanation in the source documents.',
+    notProof: 'An increase does not prove waste, favoritism, an insertion, or wrongdoing.',
+    next: 'Compare both source pages, the work description, and later Senate and enacted amounts when available.',
+  }),
+  decreased: Object.freeze({
+    label: 'The amount decreased',
+    noticed: 'The House bill amount is lower than the matched NEP amount.',
+    why: 'The change may reduce, move, or change the planned work.',
+    notProof: 'A decrease does not prove that a project was cancelled or that another item received the money.',
+    next: 'Compare both source pages and check later budget stages for the final amount.',
+  }),
+  nep_only: Object.freeze({
+    label: 'Only in the NEP',
+    noticed: 'This row appears in the matched NEP rows but not in the House bill comparison.',
+    why: 'The item may have been removed, renamed, combined, moved, or placed outside the matched scope.',
+    notProof: 'This does not prove that the project was cancelled or that its funding disappeared.',
+    next: 'Search the House bill for a renamed or moved item and check later budget stages.',
+  }),
+  repeat_family: Object.freeze({
+    label: 'Similar to an earlier-year project',
+    noticed: 'A project with a similar cleaned-up name appears in an earlier budget year.',
+    why: 'The records may describe a continuation, a new phase, maintenance, or separate work.',
+    notProof: 'A similar name does not prove duplicate funding or a ghost project.',
+    next: 'Compare the year, work description, amount, location, phase, and contract number.',
+  }),
+  similar_family: Object.freeze({
+    label: 'Similar to another FY2027 project',
+    noticed: 'More than one FY2027 row shares a similar cleaned-up project name.',
+    why: 'The rows may be duplicates, separate phases, or different work with similar titles.',
+    notProof: 'Similar wording does not prove that the same work was funded twice.',
+    next: 'Compare each row, office, place, amount, work description, and source page.',
+  }),
 });
 
 const appendText = (parent, tag, value, className) => {
@@ -79,7 +115,7 @@ const renderSummary = (payload) => {
     const item = changeMap[key] || { record_count: 0, difference_centavos: 0 };
     const card = document.createElement('article');
     appendText(card, 'strong', number.format(item.record_count));
-    appendText(card, 'span', signalLabels[key]);
+    appendText(card, 'span', signalCopy[key].label);
     appendText(card, 'small', formatMoney(item.difference_centavos), 'review-summary-money');
     return card;
   }));
@@ -89,10 +125,11 @@ const renderRanking = (record) => {
   const card = document.createElement('article');
   card.className = 'review-record';
   const heading = document.createElement('header');
-  appendText(heading, 'span', signalLabels[record.signal], 'review-badge');
+  const explanation = signalCopy[record.signal] || signalCopy.house_only;
+  appendText(heading, 'span', explanation.label, 'review-badge');
   appendText(heading, 'span', record.dataset.toUpperCase(), 'review-badge dataset');
   if (record.review_status === 'quarantine') {
-    appendText(heading, 'span', 'Quarantine', 'review-badge quarantine');
+    appendText(heading, 'span', 'Held back for checking', 'review-badge quarantine');
   }
   card.append(heading);
   const title = appendText(card, 'h3', '');
@@ -106,6 +143,17 @@ const renderRanking = (record) => {
     'review-record-context',
   );
   card.append(renderDistrictContext(record.district_context));
+  const explanationBlock = appendText(card, 'div', '', 'review-record-explanation');
+  for (const [label, value] of [
+    ['What we noticed', explanation.noticed],
+    ['Why check it', explanation.why],
+    ['What this does not prove', explanation.notProof],
+    ['What to check next', explanation.next],
+  ]) {
+    const paragraph = appendText(explanationBlock, 'p', '');
+    appendText(paragraph, 'strong', `${label}: `);
+    paragraph.append(document.createTextNode(value));
+  }
   const values = appendText(card, 'dl', '', 'review-record-values');
   for (const [label, value] of [
     ['NEP', formatMoney(record.nep_centavos)],
@@ -118,10 +166,10 @@ const renderRanking = (record) => {
     values.append(block);
   }
   if (record.prior_years.length) {
-    appendText(card, 'p', `Prior positive appropriations: ${record.prior_years.join(', ')}`, 'review-record-note');
+    appendText(card, 'p', `Earlier budget years with a positive amount: ${record.prior_years.join(', ')}`, 'review-record-note');
   }
   if (record.family_count > 1) {
-    appendText(card, 'p', `${record.family_count} FY2027 rows share this normalized family label.`, 'review-record-note');
+    appendText(card, 'p', `${record.family_count} FY2027 rows have a similar cleaned-up project name.`, 'review-record-note');
   }
   const links = appendText(card, 'div', '', 'review-record-links');
   const detail = appendText(links, 'a', 'Inspect project evidence');
@@ -159,7 +207,7 @@ const loadSummary = async () => {
 const loadReview = async () => {
   controller?.abort();
   controller = new AbortController();
-  status.textContent = 'Calculating deterministic review candidates…';
+  status.textContent = 'Checking records against the selected rule…';
   const params = query();
   exportLink.href = `/api/v1/review.csv?${params}`;
   try {
@@ -175,8 +223,8 @@ const loadReview = async () => {
     renderConcentrations(grouped.data);
     total.textContent = number.format(ranked.meta.total);
     status.textContent = ranked.meta.total
-      ? `${activeGroup ? `Filtered to ${activeGroup}. ` : ''}Candidates are ordered for documentary review, not accusation.`
-      : 'No records match this deterministic rule and dataset.';
+      ? `${activeGroup ? `Filtered to ${activeGroup}. ` : ''}These records are questions to check, not accusations.`
+      : 'No records match this rule and program.';
     renderGroupFilter();
     history.replaceState(null, '', `${location.pathname}?${params}`);
   } catch (error) {

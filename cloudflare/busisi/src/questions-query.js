@@ -14,9 +14,9 @@ import { getReviewSummary } from './review-query.js';
 import { getSourceMonitorStatus } from './source-monitor-query.js';
 
 const STATE_LABELS = Object.freeze({
-  answerable: 'Answerable',
-  partially_answerable: 'Partially answerable',
-  not_supported: 'Not yet supported',
+  answerable: 'Busisi can answer this',
+  partially_answerable: 'Busisi can answer part of this',
+  not_supported: 'Busisi cannot answer this yet',
 });
 
 const count = (value) => Number(value || 0);
@@ -160,7 +160,7 @@ const partialQuestions = ({ acquisition, coverage, procurement, coa, publicServi
     item({
       id: 'school-hospital-counts', category: 'Public services', state: 'partially_answerable',
       question: 'How many acquired records explicitly describe schools, hospitals, or health facilities, including new-build wording?',
-      scope_label: `${integer(serviceRecords.total)} title-classified records`,
+      scope_label: `${integer(serviceRecords.total)} records matched by project title`,
       scope_count: serviceRecords.total, as_of: 'FY2024 to FY2027',
       evidence_level: 'deterministic_title_classification',
       answer_summary: `${integer(facilities.school)} school, ${integer(facilities.hospital)} hospital, and ${integer(facilities.health_center)} health-center records are classified; ${integer(workTypes.new_build)} explicitly use new-build wording.`,
