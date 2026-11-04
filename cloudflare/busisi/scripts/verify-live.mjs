@@ -74,6 +74,7 @@ const expectedImageCoverage = Object.freeze({
   minimum_verified_images: 5,
   minimum_quarantined_images: 13,
 });
+const coverageReleaseMaxAgeMs = 8 * 60 * 60 * 1000;
 const sourceMonitorMaxAgeMs = 8 * 60 * 60 * 1000;
 const expectedContractStates = Object.freeze({
   conflict_review: 161,
@@ -451,8 +452,13 @@ const verifyData = async () => {
   }
 
   const imageCoverage = (await readJson('/api/v1/coverage-status')).data;
+  const coverageReleasedAt = Date.parse(imageCoverage?.released_at ?? '');
   if (!imageCoverage
-    || imageCoverage.universe_contracts !== expectedImageCoverage.universe_contracts
+    || !Number.isFinite(coverageReleasedAt)
+    || Date.now() - coverageReleasedAt > coverageReleaseMaxAgeMs) {
+    fail('project-image coverage: release is missing or stale');
+  }
+  if (imageCoverage.universe_contracts !== expectedImageCoverage.universe_contracts
     || imageCoverage.source_sha256 !== expectedImageCoverage.source_sha256
     || imageCoverage.release_id?.length !== 64
     || imageCoverage.verified_images < expectedImageCoverage.minimum_verified_images

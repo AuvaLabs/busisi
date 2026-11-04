@@ -4,6 +4,7 @@ ROOT = Path(__file__).resolve().parents[3]
 WORKFLOW = ROOT / ".github" / "workflows" / "busisi-production-monitor.yml"
 TEST_WORKFLOW = ROOT / ".github" / "workflows" / "test.yml"
 TEST_REQUIREMENTS = ROOT / "requirements-dev.txt"
+LIVE_VERIFIER = ROOT / "cloudflare" / "busisi" / "scripts" / "verify-live.mjs"
 PUBLIC_RELEASE_FILES = (
     ROOT / "LICENSE",
     ROOT / "NOTICE",
@@ -32,6 +33,14 @@ def test_busisi_production_monitor_is_scheduled_and_credential_free() -> None:
     assert "npm ci" in document
     assert "npm run verify:live" in document
     assert "secrets." not in document
+
+
+def test_live_monitor_rejects_stale_coverage_releases() -> None:
+    document = LIVE_VERIFIER.read_text(encoding="utf-8")
+
+    assert "coverageReleaseMaxAgeMs = 8 * 60 * 60 * 1000" in document
+    assert "Date.now() - coverageReleasedAt > coverageReleaseMaxAgeMs" in document
+    assert "project-image coverage: release is missing or stale" in document
 
 
 def test_test_dependencies_support_current_starlette_client() -> None:
