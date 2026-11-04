@@ -865,7 +865,11 @@ const verifyData = async () => {
   const egbPage = await request('/contractors/pcab%3A13722/');
   expectStatus(egbPage, 200, 'EGB contractor activity');
   const egbPageText = await egbPage.text();
-  expectIncludes(egbPageText, '245 archived project associations', 'EGB contractor activity');
+  expectIncludes(
+    egbPageText,
+    '<dt>Project associations</dt><dd>245</dd>',
+    'EGB contractor activity',
+  );
   expectIncludes(egbPageText, '96 joint-project associations', 'EGB contractor activity');
   expectIncludes(egbPageText, '/assets/contractor-v1.js?v=1', 'contractor project client');
   const concentrations = await readJson(
