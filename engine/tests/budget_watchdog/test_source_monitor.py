@@ -89,14 +89,14 @@ def test_compares_observations_without_hiding_added_or_changed_records() -> None
         "dbm_releases": [{"label": "January", "url": "https://example/1"}],
         "dbm_next_releases": [],
         "districts": {"revision": "b" * 40, "total": 254},
-        "pcab": {"sha256": "c" * 64, "records": 10},
+        "pcab": {"minimum_records": 10},
     }
     unchanged = {
         "datasets": {"gaa": {"revision": "a" * 40, "last_modified": "now"}},
         "dbm_releases": [{"label": "January", "url": "https://example/1"}],
         "dbm_next_releases": [],
         "districts": {"revision": "b" * 40, "total": 254, "built_at": "now"},
-        "pcab": {"sha256": "c" * 64, "records": 10},
+        "pcab": {"sha256": "c" * 64, "records": 11},
     }
     assert compare_observations(baseline, unchanged) == ()
 
@@ -109,3 +109,11 @@ def test_compares_observations_without_hiding_added_or_changed_records() -> None
     }
     differences = compare_observations(baseline, changed)
     assert differences == ("dbm_releases: catalogue changed",)
+
+    regressed = {
+        **unchanged,
+        "pcab": {"sha256": "d" * 64, "records": 9},
+    }
+    assert compare_observations(baseline, regressed) == (
+        "pcab: records fell below the reviewed floor",
+    )

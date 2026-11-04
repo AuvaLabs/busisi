@@ -37,7 +37,7 @@ MONITORED_YEAR = 2026
 NEXT_MONITORED_YEAR = 2027
 MAX_METADATA_BYTES = 2 * 1024 * 1024
 MAX_CATALOG_BYTES = 2 * 1024 * 1024
-BASELINE_SCHEMA_VERSION = 2
+BASELINE_SCHEMA_VERSION = 3
 KNOWN_DISCOVERY_LIMITS = [
     {
         "source": "Commission on Audit report catalogues",
@@ -63,8 +63,7 @@ def _stable_observation(observed: dict[str, Any]) -> dict[str, Any]:
             "total": observed["districts"]["total"],
         },
         "pcab": {
-            "sha256": observed["pcab"]["sha256"],
-            "records": observed["pcab"]["records"],
+            "minimum_records": observed["pcab"]["records"],
         },
         "known_discovery_limits": KNOWN_DISCOVERY_LIMITS,
     }

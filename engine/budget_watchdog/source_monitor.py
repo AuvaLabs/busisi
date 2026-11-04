@@ -134,7 +134,16 @@ def compare_observations(baseline: dict[str, Any], observed: dict[str, Any]) -> 
     for key in ("revision", "total"):
         if baseline.get("districts", {}).get(key) != observed.get("districts", {}).get(key):
             differences.append(f"districts: {key} changed")
-    for key in ("sha256", "records"):
-        if baseline.get("pcab", {}).get(key) != observed.get("pcab", {}).get(key):
-            differences.append(f"pcab: {key} changed")
+    minimum_pcab_records = baseline.get("pcab", {}).get("minimum_records")
+    observed_pcab_records = observed.get("pcab", {}).get("records")
+    if (
+        not isinstance(minimum_pcab_records, int)
+        or isinstance(minimum_pcab_records, bool)
+        or minimum_pcab_records <= 0
+    ):
+        raise SourceMonitorError("PCAB baseline record floor is invalid")
+    if not isinstance(observed_pcab_records, int) or isinstance(observed_pcab_records, bool):
+        raise SourceMonitorError("PCAB observed record count is invalid")
+    if observed_pcab_records < minimum_pcab_records:
+        differences.append("pcab: records fell below the reviewed floor")
     return tuple(differences)

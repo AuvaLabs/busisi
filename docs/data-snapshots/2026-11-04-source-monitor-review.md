@@ -12,9 +12,13 @@ from `KHAN LIN CONSTRUCTION` to `KHAN LIN CONSTRUCTION SERVICES`. Every current
 row passed the existing PCAB schema, count, date, category and government
 infrastructure validation.
 
-This review updates only the source-monitor baseline. The public contractor
-verification dataset remains tied to its disclosed 2026-11-03 PCAB artifact
-until a separate integrity bundle is rebuilt, reconciled and released.
+This review sets 18,943 as the source monitor's minimum validated row floor.
+PCAB is a live licensing register, so subsequent additions receive the same
+schema validation, provenance hash and immutable archive without being treated
+as a production failure. A count below the reviewed floor or any invalid row
+still fails closed. The public contractor verification dataset remains tied to
+its disclosed 2026-11-03 PCAB artifact until a separate integrity bundle is
+rebuilt, reconciled and released.
 
 The Senate FY2027 portal also changed its active catalogue. Source record `417`,
 the SEPO budget note discovered on 2026-11-03, no longer appears in the active
