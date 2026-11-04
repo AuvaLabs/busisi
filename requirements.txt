@@ -1,4 +1,4 @@
-requests>=2.32,<3
+requests>=2.34.2,<3
 urllib3>=2.2,<3
 defusedxml>=0.7,<1
 pyarrow>=22,<24
