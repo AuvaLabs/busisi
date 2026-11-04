@@ -24,7 +24,7 @@ OUTPUT_DIR = (
     / "data"
     / "research"
     / "multipurpose-buildings"
-    / "v1"
+    / "v2"
 )
 SOURCE_MODIFIED = "2026-01-22"
 PUBLISHED_AT = "2026-11-04"
@@ -70,6 +70,14 @@ def main() -> None:
         source_sha256=SOURCE_SHA256,
         source_modified=SOURCE_MODIFIED,
         published_at=PUBLISHED_AT,
+        version=2,
+        supersedes={
+            "version": 1,
+            "manifest_url": (
+                "https://busisi.org/data/research/multipurpose-buildings/v1/manifest.json"
+            ),
+            "package_sha256": ("0ee46af783e1c700116014b671e8558550fe09cd102bd783e93eed1d74b22dd2"),
+        },
     )
     claims = {claim["id"]: claim["value"] for claim in release["claims"]}
     observed = {key: claims.get(key) for key in EXPECTED_CLAIMS}

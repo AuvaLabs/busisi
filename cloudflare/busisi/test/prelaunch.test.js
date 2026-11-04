@@ -84,6 +84,9 @@ test('publishes a research library and the multipurpose-building investigation',
   assert.match(articleDocument, /Open the archived source dataset/);
   assert.doesNotMatch(articleDocument, /href="https:\/\/(?:www\.)?(?:perplexity|exa)\.ai/i);
   assert.match(articleDocument, /Download the research package/);
+  assert.match(articleDocument, /Download the finished story/);
+  assert.match(articleDocument, /Open the consumption index/);
+  assert.match(articleDocument, /data\/research\/multipurpose-buildings\/v2\/story\.json/);
   assert.match(articleDocument, /"@type":"AnalysisNewsArticle"/);
 });
 
@@ -95,6 +98,10 @@ test('research routes appear in discovery surfaces', async () => {
   assert.match(robotsDocument, /Allow: \/api\/v1\/research/);
   assert.match(sitemapDocument, /\/research\/multipurpose-buildings\//);
   assert.match(llmsDocument, /Research library/);
+  assert.match(
+    llmsDocument,
+    /\/data\/research\/multipurpose-buildings\/v2\/editorial-package\.json/,
+  );
 });
 
 test('publishes a machine-readable research release without a database binding', async () => {
@@ -102,11 +109,18 @@ test('publishes a machine-readable research release without a database binding',
   const cataloguePayload = await catalogue.json();
   assert.equal(catalogue.status, 200);
   assert.equal(cataloguePayload.data[0].story_id, 'multipurpose-buildings-2026');
+  assert.equal(cataloguePayload.data[0].version, 2);
+  assert.equal(
+    cataloguePayload.data[0].editorial_package_url,
+    'https://busisi.org/data/research/multipurpose-buildings/v2/editorial-package.json',
+  );
 
   const release = await fetchPath('/api/v1/research/multipurpose-buildings');
   const releasePayload = await release.json();
   assert.equal(release.status, 200);
-  assert.equal(releasePayload.data.manifest.package_sha256, '0ee46af783e1c700116014b671e8558550fe09cd102bd783e93eed1d74b22dd2');
+  assert.equal(releasePayload.data.manifest.version, 2);
+  assert.equal(releasePayload.data.story.editorial_status, 'ready');
+  assert.equal(releasePayload.data.editorial_package.status, 'ready_for_consumption');
   assert.equal(releasePayload.data.claims.find(({ id }) => id === 'mpb-ongoing').value, 5842);
 });
 

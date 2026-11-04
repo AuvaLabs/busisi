@@ -718,6 +718,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Projects grouped by recorded place: ${SITE.origin}/api/v1/places
 - Bounded evidence updates: ${SITE.origin}/api/v1/alerts
 - Published research packages: ${SITE.origin}/api/v1/research
+- Ready multipurpose-building editorial package: ${SITE.origin}/data/research/multipurpose-buildings/v2/editorial-package.json
 
 ## Evidence and publication rules
 

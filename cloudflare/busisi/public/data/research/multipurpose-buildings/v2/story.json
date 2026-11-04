@@ -1,0 +1,140 @@
+{
+  "audience": "Filipino public",
+  "canonical_url": "https://busisi.org/research/multipurpose-buildings/",
+  "data_cutoff": "2026-01-22",
+  "deck": "A reproducible count of multipurpose-building records, what their titles and statuses say, and what the available evidence still cannot prove.",
+  "editorial_status": "ready",
+  "headline": "How many multipurpose buildings are being built?",
+  "language": "en-PH",
+  "schema_version": "1.0",
+  "sections": [
+    {
+      "claim_ids": [
+        "mpb-total-records",
+        "mpb-ongoing",
+        "mpb-active-pipeline"
+      ],
+      "copy": [
+        "5,842 conservatively classified records are marked On-Going.",
+        "The wider active pipeline contains 7,024 records when For Procurement and Not Yet Started are included.",
+        "These are source records and source-reported statuses, not an independent count of physical buildings or active construction sites."
+      ],
+      "heading": "The source reports a large active pipeline",
+      "id": "direct-answer",
+      "limitation_ids": [
+        "record-count",
+        "source-status",
+        "classifier-omissions"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.status"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-existing-work-wording"
+      ],
+      "copy": [
+        "2,812 active titles explicitly describe completion, a later phase, repair, improvement, replacement, or reconstruction.",
+        "A title that only says construction does not establish that the structure is new."
+      ],
+      "heading": "Many titles describe work on an existing or partly built asset",
+      "id": "work-type",
+      "limitation_ids": [
+        "record-count",
+        "classifier-omissions"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.work_types"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-active-pipeline",
+        "mpb-ongoing"
+      ],
+      "copy": [
+        "Region totals reconcile to the national classified result.",
+        "District-office labels reproduce the source, while city coverage is partial because locality names are embedded in project titles."
+      ],
+      "heading": "The records can be compared by region, district-office label, and some city names",
+      "id": "location",
+      "limitation_ids": [
+        "location-coverage",
+        "district-labels"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.regions",
+        "chart_data.district_offices",
+        "chart_data.explicit_cities"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-active-budget",
+        "mpb-positive-active-budget"
+      ],
+      "copy": [
+        "The package provides the recorded active budget and price distribution for records with a positive amount.",
+        "A fair comparison still needs floor area, specifications, work scope, award, payment, final cost, year, and location."
+      ],
+      "heading": "Recorded amounts describe scale, not whether a project is fairly priced",
+      "id": "pricing",
+      "limitation_ids": [
+        "budget-meaning"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.pricing",
+        "project_examples.largest_active_recorded_budgets"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-prior-coordinate-candidates"
+      ],
+      "copy": [
+        "31 active records share an exact coordinate with a completed comparison record.",
+        "This is a bounded review queue. It does not prove duplication, a ghost project, or wrongdoing."
+      ],
+      "heading": "Some exact-coordinate matches need a closer look",
+      "id": "coordinate-review",
+      "limitation_ids": [
+        "coordinate-reuse"
+      ],
+      "narration_eligible": false,
+      "section_type": "investigation_lead",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.evidence",
+        "project_examples.prior_coordinate_candidates"
+      ]
+    }
+  ],
+  "source_ids": [
+    "dpwh-delivery-snapshot-2026-01-22"
+  ],
+  "story_id": "multipurpose-buildings-2026",
+  "version": 2
+}

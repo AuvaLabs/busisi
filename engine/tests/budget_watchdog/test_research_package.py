@@ -7,6 +7,7 @@ import pytest
 from engine.budget_watchdog.research_package import (
     build_multipurpose_release,
     is_multipurpose_building,
+    validate_editorial_release,
     write_release_package,
 )
 from engine.budget_watchdog.research_sources import (
@@ -126,6 +127,60 @@ def test_package_manifest_hashes_every_payload(tmp_path: Path) -> None:
         json.loads(payload)
 
 
+def test_v2_package_contains_a_ready_story_and_consumption_index(tmp_path: Path) -> None:
+    release = build_multipurpose_release(
+        [_row("25AA0001", "CONSTRUCTION OF MULTI-PURPOSE BUILDING, SAMPLE CITY")],
+        source_sha256="c" * 64,
+        source_modified="2026-01-22",
+        published_at="2026-11-04",
+        version=2,
+        supersedes={
+            "version": 1,
+            "manifest_url": (
+                "https://busisi.org/data/research/multipurpose-buildings/v1/manifest.json"
+            ),
+            "package_sha256": ("0ee46af783e1c700116014b671e8558550fe09cd102bd783e93eed1d74b22dd2"),
+        },
+    )
+    manifest = write_release_package(release, tmp_path)
+
+    assert manifest["version"] == 2
+    assert {entry["path"] for entry in manifest["files"]} >= {
+        "story.json",
+        "editorial-package.json",
+    }
+    story = json.loads((tmp_path / "story.json").read_text())
+    consumption = json.loads((tmp_path / "editorial-package.json").read_text())
+    assert story["editorial_status"] == "ready"
+    assert story["audience"] == "Filipino public"
+    assert story["sections"]
+    assert consumption["status"] == "ready_for_consumption"
+    assert consumption["story_url"].endswith("/v2/story.json")
+    assert consumption["manifest_url"].endswith("/v2/manifest.json")
+    assert consumption["files"]["sources"].endswith("/v2/sources.json")
+
+
+def test_editorial_story_rejects_review_leads_as_narration() -> None:
+    release = build_multipurpose_release(
+        [_row("25AA0001", "CONSTRUCTION OF MULTI-PURPOSE BUILDING, SAMPLE CITY")],
+        source_sha256="d" * 64,
+        source_modified="2026-01-22",
+        published_at="2026-11-04",
+        version=2,
+        supersedes={
+            "version": 1,
+            "manifest_url": (
+                "https://busisi.org/data/research/multipurpose-buildings/v1/manifest.json"
+            ),
+            "package_sha256": ("0ee46af783e1c700116014b671e8558550fe09cd102bd783e93eed1d74b22dd2"),
+        },
+    )
+    release["story"]["sections"][0]["claim_ids"] = ["mpb-prior-coordinate-candidates"]
+
+    with pytest.raises(ValueError, match="review candidate"):
+        validate_editorial_release(release)
+
+
 def test_release_evidence_requires_direct_archived_sources() -> None:
     release = build_multipurpose_release(
         [_row("25AA0001", "CONSTRUCTION OF MULTI-PURPOSE BUILDING, SAMPLE CITY")],
@@ -176,6 +231,46 @@ def test_published_package_matches_control_totals_and_hashes() -> None:
     assert claims["mpb-total-records"]["value"] == 12_609
     assert claims["mpb-ongoing"]["value"] == 5_842
     assert claims["mpb-active-pipeline"]["value"] == 7_024
+    for entry in manifest["files"]:
+        payload = (package / entry["path"]).read_bytes()
+        assert len(payload) == entry["bytes"]
+        assert hashlib.sha256(payload).hexdigest() == entry["sha256"]
+
+
+def test_published_v2_editorial_package_is_complete_and_authenticated() -> None:
+    root = Path(__file__).resolve().parents[3]
+    package = (
+        root
+        / "cloudflare"
+        / "busisi"
+        / "public"
+        / "data"
+        / "research"
+        / "multipurpose-buildings"
+        / "v2"
+    )
+    manifest = json.loads((package / "manifest.json").read_text())
+    story = json.loads((package / "story.json").read_text())
+    consumption = json.loads((package / "editorial-package.json").read_text())
+
+    assert manifest["version"] == 2
+    assert manifest["package_sha256"] == (
+        "bdf6fd74d6fc4a53a9c8025cc5e3214b31e61a4f84911020701a3f2709eadec1"
+    )
+    assert manifest["supersedes"]["package_sha256"] == (
+        "0ee46af783e1c700116014b671e8558550fe09cd102bd783e93eed1d74b22dd2"
+    )
+    assert story["editorial_status"] == "ready"
+    assert consumption["status"] == "ready_for_consumption"
+    assert set(consumption["files"]) == {
+        "chart_data",
+        "claims",
+        "findings",
+        "investigations",
+        "limitations",
+        "project_examples",
+        "sources",
+    }
     for entry in manifest["files"]:
         payload = (package / entry["path"]).read_bytes()
         assert len(payload) == entry["bytes"]

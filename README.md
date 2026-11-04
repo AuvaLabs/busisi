@@ -54,6 +54,12 @@ claims identify and archive the underlying publisher's evidence. The first
 release examines multipurpose-building records at
 `/research/multipurpose-buildings/`.
 
+Its immutable downstream editorial package is published under
+`/data/research/multipurpose-buildings/v2/`. The consumption index provides the
+finished story, checked claims, chart data, project examples, direct source
+links, limitations, API route, and SHA-256 manifest without requiring changes
+in a downstream production repository.
+
 The public update feed at `/feeds/updates.xml` and `/api/v1/alerts` reports
 checked source status, gated coverage releases, newly checked contract evidence
 and deterministic review questions. Every item includes an evidence boundary.

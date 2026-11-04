@@ -1,0 +1,405 @@
+{
+  "district_offices": [
+    {
+      "active_pipeline": 185,
+      "label": "Isabela 4th DEO",
+      "recorded_budget_centavos": 101793243965
+    },
+    {
+      "active_pipeline": 179,
+      "label": "Bulacan 1st DEO",
+      "recorded_budget_centavos": 263360748275
+    },
+    {
+      "active_pipeline": 171,
+      "label": "Batangas 4th DEO",
+      "recorded_budget_centavos": 343372467542
+    },
+    {
+      "active_pipeline": 137,
+      "label": "Metro Manila 1st DEO",
+      "recorded_budget_centavos": 494980009735
+    },
+    {
+      "active_pipeline": 123,
+      "label": "Ilocos Norte 1st DEO",
+      "recorded_budget_centavos": 66369002099
+    },
+    {
+      "active_pipeline": 119,
+      "label": "Cagayan 3rd DEO",
+      "recorded_budget_centavos": 65237622927
+    },
+    {
+      "active_pipeline": 119,
+      "label": "Metro Manila 3rd DEO",
+      "recorded_budget_centavos": 386183105138
+    },
+    {
+      "active_pipeline": 112,
+      "label": "Ilocos Norte 2nd DEO",
+      "recorded_budget_centavos": 61884459607
+    },
+    {
+      "active_pipeline": 107,
+      "label": "Quezon City 1st DEO",
+      "recorded_budget_centavos": 238462687767
+    },
+    {
+      "active_pipeline": 106,
+      "label": "Isabela 3rd DEO",
+      "recorded_budget_centavos": 43006566590
+    },
+    {
+      "active_pipeline": 99,
+      "label": "Pangasinan 2nd DEO",
+      "recorded_budget_centavos": 48920660143
+    },
+    {
+      "active_pipeline": 96,
+      "label": "Aurora DEO",
+      "recorded_budget_centavos": 110592438993
+    },
+    {
+      "active_pipeline": 96,
+      "label": "Region X",
+      "recorded_budget_centavos": 112462640349
+    },
+    {
+      "active_pipeline": 94,
+      "label": "Pangasinan 3rd DEO",
+      "recorded_budget_centavos": 127495769719
+    },
+    {
+      "active_pipeline": 91,
+      "label": "Cavite 1st DEO",
+      "recorded_budget_centavos": 89738370143
+    },
+    {
+      "active_pipeline": 87,
+      "label": "Batangas 1st DEO",
+      "recorded_budget_centavos": 74140880764
+    },
+    {
+      "active_pipeline": 83,
+      "label": "Batangas 3rd DEO",
+      "recorded_budget_centavos": 70440742787
+    },
+    {
+      "active_pipeline": 82,
+      "label": "Laguna 2nd DEO",
+      "recorded_budget_centavos": 136244232963
+    },
+    {
+      "active_pipeline": 81,
+      "label": "Leyte 1st DEO",
+      "recorded_budget_centavos": 93367249285
+    },
+    {
+      "active_pipeline": 79,
+      "label": "Pampanga 1st DEO",
+      "recorded_budget_centavos": 69002203760
+    },
+    {
+      "active_pipeline": 75,
+      "label": "Aklan DEO",
+      "recorded_budget_centavos": 54005409850
+    },
+    {
+      "active_pipeline": 74,
+      "label": "Laguna 3rd DEO",
+      "recorded_budget_centavos": 53295991260
+    },
+    {
+      "active_pipeline": 73,
+      "label": "Abra DEO",
+      "recorded_budget_centavos": 50028274203
+    },
+    {
+      "active_pipeline": 69,
+      "label": "Iloilo 3rd DEO",
+      "recorded_budget_centavos": 45528413378
+    },
+    {
+      "active_pipeline": 68,
+      "label": "Iloilo 6th DEO",
+      "recorded_budget_centavos": 37634230319
+    }
+  ],
+  "evidence": {
+    "active_with_coordinates": 5858,
+    "active_with_source_satellite_flag": 3618,
+    "candidate_coordinates": 24,
+    "prior_coordinate_candidates": 31
+  },
+  "explicit_cities": [
+    {
+      "active_pipeline": 139,
+      "city": "QUEZON CITY"
+    },
+    {
+      "active_pipeline": 76,
+      "city": "LIPA CITY"
+    },
+    {
+      "active_pipeline": 67,
+      "city": "CALOOCAN CITY"
+    },
+    {
+      "active_pipeline": 67,
+      "city": "CEBU CITY"
+    },
+    {
+      "active_pipeline": 50,
+      "city": "VALENZUELA CITY"
+    },
+    {
+      "active_pipeline": 50,
+      "city": "BUTUAN CITY"
+    },
+    {
+      "active_pipeline": 48,
+      "city": "LAS PINAS CITY"
+    },
+    {
+      "active_pipeline": 44,
+      "city": "SANTIAGO CITY"
+    },
+    {
+      "active_pipeline": 40,
+      "city": "LAOAG CITY"
+    },
+    {
+      "active_pipeline": 35,
+      "city": "TACLOBAN CITY"
+    },
+    {
+      "active_pipeline": 34,
+      "city": "TAGUIG CITY"
+    },
+    {
+      "active_pipeline": 34,
+      "city": "MANDALUYONG CITY"
+    },
+    {
+      "active_pipeline": 34,
+      "city": "SAN PABLO CITY"
+    },
+    {
+      "active_pipeline": 33,
+      "city": "MARIKINA CITY"
+    },
+    {
+      "active_pipeline": 33,
+      "city": "ILOILO CITY"
+    },
+    {
+      "active_pipeline": 32,
+      "city": "SAN FERNANDO CITY"
+    },
+    {
+      "active_pipeline": 30,
+      "city": "PARAÑAQUE CITY"
+    },
+    {
+      "active_pipeline": 28,
+      "city": "BACOLOD CITY"
+    },
+    {
+      "active_pipeline": 28,
+      "city": "MALOLOS CITY"
+    },
+    {
+      "active_pipeline": 26,
+      "city": "MANILA CITY"
+    },
+    {
+      "active_pipeline": 26,
+      "city": "ZAMBOANGA CITY"
+    },
+    {
+      "active_pipeline": 25,
+      "city": "ORMOC CITY"
+    },
+    {
+      "active_pipeline": 24,
+      "city": "DAVAO CITY"
+    },
+    {
+      "active_pipeline": 22,
+      "city": "BAGUIO CITY"
+    },
+    {
+      "active_pipeline": 21,
+      "city": "NAGA CITY"
+    }
+  ],
+  "explicit_city_coverage": {
+    "active": 7024,
+    "classified": 1902
+  },
+  "pricing": {
+    "maximum_centavos": 48219957061,
+    "median_centavos": 578891809,
+    "p25_centavos": 480129127,
+    "p75_centavos": 1440209543,
+    "p90_centavos": 3378375000,
+    "positive_budget_records": 6093,
+    "recorded_budget_centavos": 8878625428536,
+    "zero_budget_records": 931
+  },
+  "regions": [
+    {
+      "active_pipeline": 240,
+      "completed": 95,
+      "ongoing": 184,
+      "recorded_budget_centavos": 150949893741,
+      "region": "Cordillera Administrative Region"
+    },
+    {
+      "active_pipeline": 576,
+      "completed": 342,
+      "ongoing": 514,
+      "recorded_budget_centavos": 1604191002644,
+      "region": "National Capital Region"
+    },
+    {
+      "active_pipeline": 183,
+      "completed": 308,
+      "ongoing": 179,
+      "recorded_budget_centavos": 139576245622,
+      "region": "Negros Island Region"
+    },
+    {
+      "active_pipeline": 588,
+      "completed": 203,
+      "ongoing": 536,
+      "recorded_budget_centavos": 584397144977,
+      "region": "Region I"
+    },
+    {
+      "active_pipeline": 615,
+      "completed": 368,
+      "ongoing": 516,
+      "recorded_budget_centavos": 431545076589,
+      "region": "Region II"
+    },
+    {
+      "active_pipeline": 724,
+      "completed": 859,
+      "ongoing": 552,
+      "recorded_budget_centavos": 1135830309661,
+      "region": "Region III"
+    },
+    {
+      "active_pipeline": 977,
+      "completed": 499,
+      "ongoing": 828,
+      "recorded_budget_centavos": 1360379914495,
+      "region": "Region IV-A"
+    },
+    {
+      "active_pipeline": 175,
+      "completed": 270,
+      "ongoing": 141,
+      "recorded_budget_centavos": 183848979803,
+      "region": "Region IV-B"
+    },
+    {
+      "active_pipeline": 277,
+      "completed": 113,
+      "ongoing": 225,
+      "recorded_budget_centavos": 217036350266,
+      "region": "Region IX"
+    },
+    {
+      "active_pipeline": 329,
+      "completed": 192,
+      "ongoing": 255,
+      "recorded_budget_centavos": 575180663367,
+      "region": "Region V"
+    },
+    {
+      "active_pipeline": 436,
+      "completed": 403,
+      "ongoing": 384,
+      "recorded_budget_centavos": 449716710809,
+      "region": "Region VI"
+    },
+    {
+      "active_pipeline": 378,
+      "completed": 448,
+      "ongoing": 321,
+      "recorded_budget_centavos": 407605271331,
+      "region": "Region VII"
+    },
+    {
+      "active_pipeline": 484,
+      "completed": 209,
+      "ongoing": 362,
+      "recorded_budget_centavos": 552695348216,
+      "region": "Region VIII"
+    },
+    {
+      "active_pipeline": 363,
+      "completed": 379,
+      "ongoing": 305,
+      "recorded_budget_centavos": 513347311449,
+      "region": "Region X"
+    },
+    {
+      "active_pipeline": 310,
+      "completed": 219,
+      "ongoing": 261,
+      "recorded_budget_centavos": 343075026660,
+      "region": "Region XI"
+    },
+    {
+      "active_pipeline": 170,
+      "completed": 396,
+      "ongoing": 125,
+      "recorded_budget_centavos": 107982055749,
+      "region": "Region XII"
+    },
+    {
+      "active_pipeline": 199,
+      "completed": 279,
+      "ongoing": 154,
+      "recorded_budget_centavos": 121268123157,
+      "region": "Region XIII"
+    }
+  ],
+  "status": {
+    "Completed": 5582,
+    "For Procurement": 931,
+    "Not Yet Started": 251,
+    "On-Going": 5842,
+    "Terminated": 3
+  },
+  "work_types": {
+    "completion_or_later_phase": {
+      "count": 2195,
+      "recorded_budget_centavos": 2503048946159
+    },
+    "construction_newness_unstated": {
+      "count": 4094,
+      "recorded_budget_centavos": 5532434832405
+    },
+    "explicitly_new": {
+      "count": 36,
+      "recorded_budget_centavos": 95578455486
+    },
+    "repair_or_improvement": {
+      "count": 612,
+      "recorded_budget_centavos": 665155407209
+    },
+    "replacement_or_reconstruction": {
+      "count": 5,
+      "recorded_budget_centavos": 18766396517
+    },
+    "unclear": {
+      "count": 82,
+      "recorded_budget_centavos": 63641390760
+    }
+  }
+}

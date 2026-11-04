@@ -14,8 +14,12 @@ Each release is stored under `cloudflare/busisi/public/data/research/<slug>/v<ve
 - `project-examples.json` with bounded examples and reader URLs
 - `sources.json` with publisher, access route, scope, and artifact identity
 - `limitations.json` with release-wide interpretation boundaries
+- `story.json` with the finished, ordered editorial story and evidence references
+- `editorial-package.json` with absolute links to the story, data, direct sources, API, and integrity manifest
 
-Drafts, rejected leads, scripts, and production instructions do not belong in the public repository.
+Drafts, rejected leads, scripts, and production instructions do not belong in the public repository. A downstream publisher consumes the ready package without requiring changes to its own repository or research workflow.
+
+The story marks each section as narration eligible or as an investigation lead. Only `verified` and `source_reported` claims may appear in narration-eligible sections. A review candidate must remain a non-narratable investigation lead with an explicit limitation.
 
 ## Evidence states
 
@@ -54,4 +58,4 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_research.py
 
 The harness verifies the archived source SHA-256 identity, rebuilds every payload, checks the control totals, and writes an authenticated manifest. A changed source or changed control total fails the build.
 
-Published packages are never edited in place. A correction creates a new version whose manifest identifies the previous release in `supersedes`.
+Published packages are never edited in place. A correction or contract expansion creates a new version whose manifest identifies the previous release in `supersedes`. Version 1 remains available after version 2 becomes current.

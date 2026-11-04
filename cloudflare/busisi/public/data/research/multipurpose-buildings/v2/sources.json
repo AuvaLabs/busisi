@@ -1,0 +1,14 @@
+[
+  {
+    "access_provider": "BetterGov",
+    "id": "dpwh-delivery-snapshot-2026-01-22",
+    "modified": "2026-01-22",
+    "origin_url": "https://transparency.dpwh.gov.ph/",
+    "publisher": "Department of Public Works and Highways",
+    "retrieved_at": "2026-11-02",
+    "scope": "Archived DPWH project and contract snapshot",
+    "sha256": "5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123",
+    "source_kind": "curated_official_extract",
+    "source_url": "https://huggingface.co/datasets/bettergovph/dpwh-transparency-data/resolve/648ea96af4f7625d606fda0b78803917913a26b7/dpwh_transparency_data.parquet"
+  }
+]

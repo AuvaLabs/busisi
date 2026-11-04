@@ -46,6 +46,9 @@ WORK_TYPES = (
     "unclear",
 )
 
+PUBLISHABLE_STATES = frozenset({"verified", "source_reported"})
+EDITORIAL_PACKAGE_VERSION = 2
+
 
 def _normalize(value: object) -> str:
     return " ".join(NON_ALPHANUMERIC.sub(" ", str(value or "").upper()).split())
@@ -175,6 +178,265 @@ def _claim(
     }
 
 
+def _release_limitations() -> list[dict[str, str]]:
+    return [
+        {
+            "id": "record-count",
+            "text": "The release counts source records, not independently observed physical buildings.",
+        },
+        {
+            "id": "source-status",
+            "text": "Source status does not prove present-day activity, completion, acceptance, payment, quality, or public value.",
+        },
+        {
+            "id": "location-coverage",
+            "text": "City labels are partial because city and municipality names are embedded in free-text descriptions.",
+        },
+        {
+            "id": "district-labels",
+            "text": "DPWH district-office labels are not geographic or congressional-boundary determinations.",
+        },
+        {
+            "id": "coordinate-reuse",
+            "text": "Exact coordinate reuse is a review lead and can describe phases, nearby work, reused coordinates, or source errors.",
+        },
+        {
+            "id": "budget-meaning",
+            "text": "Recorded budgets are not award amounts, payments, final costs, or unit-price comparisons.",
+        },
+        {
+            "id": "classifier-omissions",
+            "text": "The conservative classifier can omit misspelled or abbreviated multipurpose-building descriptions.",
+        },
+    ]
+
+
+def _story_section(
+    section_id: str,
+    heading: str,
+    copy: list[str],
+    claim_ids: list[str],
+    *,
+    visual_refs: list[str],
+    limitation_ids: list[str],
+    section_type: str = "finding",
+    narration_eligible: bool = True,
+) -> dict[str, Any]:
+    return {
+        "id": section_id,
+        "section_type": section_type,
+        "heading": heading,
+        "copy": copy,
+        "claim_ids": claim_ids,
+        "source_ids": ["dpwh-delivery-snapshot-2026-01-22"],
+        "visual_refs": visual_refs,
+        "limitation_ids": limitation_ids,
+        "narration_eligible": narration_eligible,
+    }
+
+
+def _story_sections(claims: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    ongoing = claims["mpb-ongoing"]["value"]
+    pipeline = claims["mpb-active-pipeline"]["value"]
+    existing = claims["mpb-existing-work-wording"]["value"]
+    candidates = claims["mpb-prior-coordinate-candidates"]["value"]
+    return [
+        _story_section(
+            "direct-answer",
+            "The source reports a large active pipeline",
+            [
+                f"{ongoing:,} conservatively classified records are marked On-Going.",
+                f"The wider active pipeline contains {pipeline:,} records when For Procurement and Not Yet Started are included.",
+                "These are source records and source-reported statuses, not an independent count of physical buildings or active construction sites.",
+            ],
+            ["mpb-total-records", "mpb-ongoing", "mpb-active-pipeline"],
+            visual_refs=["chart_data.status"],
+            limitation_ids=["record-count", "source-status", "classifier-omissions"],
+        ),
+        _story_section(
+            "work-type",
+            "Many titles describe work on an existing or partly built asset",
+            [
+                f"{existing:,} active titles explicitly describe completion, a later phase, repair, improvement, replacement, or reconstruction.",
+                "A title that only says construction does not establish that the structure is new.",
+            ],
+            ["mpb-existing-work-wording"],
+            visual_refs=["chart_data.work_types"],
+            limitation_ids=["record-count", "classifier-omissions"],
+        ),
+        _story_section(
+            "location",
+            "The records can be compared by region, district-office label, and some city names",
+            [
+                "Region totals reconcile to the national classified result.",
+                "District-office labels reproduce the source, while city coverage is partial because locality names are embedded in project titles.",
+            ],
+            ["mpb-active-pipeline", "mpb-ongoing"],
+            visual_refs=[
+                "chart_data.regions",
+                "chart_data.district_offices",
+                "chart_data.explicit_cities",
+            ],
+            limitation_ids=["location-coverage", "district-labels"],
+        ),
+        _story_section(
+            "pricing",
+            "Recorded amounts describe scale, not whether a project is fairly priced",
+            [
+                "The package provides the recorded active budget and price distribution for records with a positive amount.",
+                "A fair comparison still needs floor area, specifications, work scope, award, payment, final cost, year, and location.",
+            ],
+            ["mpb-active-budget", "mpb-positive-active-budget"],
+            visual_refs=["chart_data.pricing", "project_examples.largest_active_recorded_budgets"],
+            limitation_ids=["budget-meaning"],
+        ),
+        _story_section(
+            "coordinate-review",
+            "Some exact-coordinate matches need a closer look",
+            [
+                f"{candidates:,} active records share an exact coordinate with a completed comparison record.",
+                "This is a bounded review queue. It does not prove duplication, a ghost project, or wrongdoing.",
+            ],
+            ["mpb-prior-coordinate-candidates"],
+            visual_refs=["chart_data.evidence", "project_examples.prior_coordinate_candidates"],
+            limitation_ids=["coordinate-reuse"],
+            section_type="investigation_lead",
+            narration_eligible=False,
+        ),
+    ]
+
+
+def _build_story(release: dict[str, Any]) -> dict[str, Any]:
+    metadata = release["metadata"]
+    claims = {item["id"]: item for item in release["claims"]}
+    return {
+        "schema_version": "1.0",
+        "story_id": metadata["story_id"],
+        "version": metadata["version"],
+        "editorial_status": "ready",
+        "headline": metadata["headline"],
+        "deck": "A reproducible count of multipurpose-building records, what their titles and statuses say, and what the available evidence still cannot prove.",
+        "audience": "Filipino public",
+        "language": "en-PH",
+        "canonical_url": metadata["canonical_url"],
+        "data_cutoff": metadata["data_cutoff"],
+        "source_ids": [item["id"] for item in release["sources"]],
+        "sections": _story_sections(claims),
+    }
+
+
+def _build_editorial_package(release: dict[str, Any]) -> dict[str, Any]:
+    metadata = release["metadata"]
+    base = f"https://busisi.org/data/research/{metadata['slug']}/v{metadata['version']}"
+    files = {
+        name: f"{base}/{path}"
+        for name, path in {
+            "claims": "claims.json",
+            "findings": "findings.json",
+            "investigations": "investigations.json",
+            "chart_data": "chart-data.json",
+            "project_examples": "project-examples.json",
+            "sources": "sources.json",
+            "limitations": "limitations.json",
+        }.items()
+    }
+    return {
+        "schema_version": "1.0",
+        "story_id": metadata["story_id"],
+        "version": metadata["version"],
+        "status": "ready_for_consumption",
+        "canonical_article_url": metadata["canonical_url"],
+        "api_url": "https://busisi.org/api/v1/research/multipurpose-buildings",
+        "package_base_url": base,
+        "manifest_url": f"{base}/manifest.json",
+        "story_url": f"{base}/story.json",
+        "files": files,
+        "direct_source_urls": [item["source_url"] for item in release["sources"]],
+        "integrity": {
+            "method": "sha256-manifest",
+            "instruction": "Verify every downloaded file against manifest.json before use.",
+        },
+        "evidence_boundary": "Only verified and source-reported claims are eligible for factual narration. Investigation leads must retain their limitations.",
+        "attribution": "Busisi, built and maintained by Auva Labs. Source publishers remain identified in sources.json.",
+        "contact": "dev@auvalabs.com",
+    }
+
+
+def _validate_story_section(
+    section: dict[str, Any],
+    claims: dict[str, dict[str, Any]],
+    sources: set[str],
+    limitations: set[str],
+) -> None:
+    if not section.get("copy") or not all(
+        isinstance(item, str) and item.strip() for item in section["copy"]
+    ):
+        raise ValueError("story section copy must be non-empty text")
+    claim_ids = section.get("claim_ids", [])
+    unknown = set(claim_ids) - claims.keys()
+    if unknown:
+        raise ValueError(f"story section references unknown claims: {sorted(unknown)}")
+    if set(section.get("source_ids", [])) - sources:
+        raise ValueError("story section references an unknown source")
+    if set(section.get("limitation_ids", [])) - limitations:
+        raise ValueError("story section references an unknown limitation")
+    review_claims = [
+        item for item in claim_ids if claims[item]["evidence_state"] not in PUBLISHABLE_STATES
+    ]
+    if section.get("narration_eligible") and review_claims:
+        raise ValueError("review candidate cannot be eligible for factual narration")
+    if review_claims and (
+        section.get("section_type") != "investigation_lead" or not section.get("limitation_ids")
+    ):
+        raise ValueError("review candidate must remain a limited investigation lead")
+
+
+def _validate_consumption_index(package: dict[str, Any], metadata: dict[str, Any]) -> None:
+    expected_files = {
+        "claims",
+        "findings",
+        "investigations",
+        "chart_data",
+        "project_examples",
+        "sources",
+        "limitations",
+    }
+    base = f"https://busisi.org/data/research/{metadata['slug']}/v{metadata['version']}"
+    if package.get("package_base_url") != base or package.get("manifest_url") != (
+        f"{base}/manifest.json"
+    ):
+        raise ValueError("consumption index must use the immutable Busisi release URLs")
+    if set(package.get("files", {})) != expected_files:
+        raise ValueError("consumption index must link every release data file")
+
+
+def validate_editorial_release(release: dict[str, Any]) -> None:
+    """Fail closed when a ready story cannot resolve its evidence references."""
+
+    metadata = release.get("metadata", {})
+    if metadata.get("version", 1) < EDITORIAL_PACKAGE_VERSION:
+        return
+    story = release.get("story")
+    package = release.get("editorial_package")
+    if not isinstance(story, dict) or story.get("editorial_status") != "ready":
+        raise ValueError("v2 release requires a ready editorial story")
+    if not isinstance(package, dict) or package.get("status") != "ready_for_consumption":
+        raise ValueError("v2 release requires a ready consumption index")
+    if story.get("story_id") != metadata.get("story_id") or story.get("version") != metadata.get(
+        "version"
+    ):
+        raise ValueError("story identity must match release metadata")
+    _validate_consumption_index(package, metadata)
+    claims = {item["id"]: item for item in release["claims"]}
+    sources = {item["id"] for item in release["sources"]}
+    limitations = {item["id"] for item in release["limitations"]}
+    sections = story.get("sections")
+    if not isinstance(sections, list) or not sections:
+        raise ValueError("editorial story must contain ordered sections")
+    for section in sections:
+        _validate_story_section(section, claims, sources, limitations)
+
+
 def _prior_coordinate_candidates(
     active: list[dict[str, Any]], all_multipurpose: list[dict[str, Any]]
 ) -> tuple[list[dict[str, Any]], int]:
@@ -243,11 +505,15 @@ def build_multipurpose_release(
     source_sha256: str,
     source_modified: str,
     published_at: str,
+    version: int = 1,
+    supersedes: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Build the complete first Busisi research release from DPWH source rows."""
+    """Build a complete Busisi research release from DPWH source rows."""
 
     if not re.fullmatch(r"[a-f0-9]{64}", source_sha256):
         raise ValueError("source_sha256 must be a lowercase SHA-256 digest")
+    if version < 1:
+        raise ValueError("version must be a positive integer")
     all_multipurpose = [row for row in all_rows if is_multipurpose_building(row.get("description"))]
     records = [row for row in all_multipurpose if str(row.get("infraYear")) in FISCAL_YEARS]
     active = [row for row in records if row.get("status") in ACTIVE_STATUSES]
@@ -370,12 +636,12 @@ def build_multipurpose_release(
         for row in sorted(active, key=_budget_centavos, reverse=True)[:12]
     ]
 
-    return {
+    release = {
         "metadata": {
             "schema_version": "1.0",
             "story_id": "multipurpose-buildings-2026",
             "slug": "multipurpose-buildings",
-            "version": 1,
+            "version": version,
             "status": "published",
             "video_ready": True,
             "headline": "How many multipurpose buildings are being built?",
@@ -384,7 +650,7 @@ def build_multipurpose_release(
             "data_cutoff": source_modified,
             "methodology_version": "mpb-classifier-v1",
             "source_artifact_sha256": source_sha256,
-            "supersedes": None,
+            "supersedes": supersedes,
         },
         "claims": claims,
         "findings": [
@@ -488,16 +754,17 @@ def build_multipurpose_release(
                 "sha256": source_sha256,
             }
         ],
-        "limitations": [
-            "The release counts source records, not independently observed physical buildings.",
-            "Source status does not prove present-day activity, completion, acceptance, payment, quality, or public value.",
-            "City labels are partial because city and municipality names are embedded in free-text descriptions.",
-            "DPWH district-office labels are not geographic or congressional-boundary determinations.",
-            "Exact coordinate reuse is a review lead and can describe phases, nearby work, reused coordinates, or source errors.",
-            "Recorded budgets are not award amounts, payments, final costs, or unit-price comparisons.",
-            "The conservative classifier can omit misspelled or abbreviated multipurpose-building descriptions.",
-        ],
+        "limitations": (
+            _release_limitations()
+            if version >= EDITORIAL_PACKAGE_VERSION
+            else [item["text"] for item in _release_limitations()]
+        ),
     }
+    if version >= EDITORIAL_PACKAGE_VERSION:
+        release["story"] = _build_story(release)
+        release["editorial_package"] = _build_editorial_package(release)
+        validate_editorial_release(release)
+    return release
 
 
 def _json_bytes(value: object) -> bytes:
@@ -508,6 +775,7 @@ def write_release_package(release: dict[str, Any], output_dir: Path) -> dict[str
     """Write immutable payloads and a manifest that authenticates every file."""
 
     validate_release_evidence(release)
+    validate_editorial_release(release)
     output_dir.mkdir(parents=True, exist_ok=True)
     payloads = {
         "claims.json": release["claims"],
@@ -518,6 +786,9 @@ def write_release_package(release: dict[str, Any], output_dir: Path) -> dict[str
         "sources.json": release["sources"],
         "limitations.json": release["limitations"],
     }
+    if release["metadata"]["version"] >= EDITORIAL_PACKAGE_VERSION:
+        payloads["story.json"] = release["story"]
+        payloads["editorial-package.json"] = release["editorial_package"]
     files = []
     for path, value in sorted(payloads.items()):
         payload = _json_bytes(value)

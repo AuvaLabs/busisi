@@ -17,6 +17,11 @@ const expectedArtifacts = Object.freeze({
   budget_artifact_sha256: '6ed63d8db36e10280782ff2c9e5e1c32fe99ffbe2ff0accfe319a025203a48c4',
   delivery_artifact_sha256: '5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123',
 });
+const expectedResearch = Object.freeze({
+  version: 2,
+  package_sha256: 'bdf6fd74d6fc4a53a9c8025cc5e3214b31e61a4f84911020701a3f2709eadec1',
+  story_id: 'multipurpose-buildings-2026',
+});
 const expectedChanges = Object.freeze({
   record_count: 20_431,
   quarantine_count: 426,
@@ -439,6 +444,13 @@ const verifyPages = async () => {
   }
   expectIncludes(publicServicesText, 'Things that need checking', 'public services flag boundary');
 
+  const research = await request('/research/multipurpose-buildings/');
+  expectStatus(research, 200, '/research/multipurpose-buildings/');
+  const researchText = await research.text();
+  expectIncludes(researchText, 'Download the finished story', 'research story link');
+  expectIncludes(researchText, 'Open the consumption index', 'research package link');
+  expectIncludes(researchText, '/data/research/multipurpose-buildings/v2/', 'research version');
+
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
   const robotsText = await robots.text();
@@ -466,6 +478,11 @@ const verifyPages = async () => {
   expectIncludes(llmsText, 'Public services inventory', 'llms public services desk');
   expectIncludes(llmsText, '/api/v1/public-services', 'llms public services API');
   expectIncludes(llmsText, '/api/v1/facility-registry-status', 'llms facility status API');
+  expectIncludes(
+    llmsText,
+    '/data/research/multipurpose-buildings/v2/editorial-package.json',
+    'llms research editorial package',
+  );
 
   const indexNow = await request(`/${indexNowKey}.txt`);
   expectStatus(indexNow, 200, 'IndexNow key');
@@ -589,6 +606,34 @@ const verifyData = async () => {
   }
   for (const [key, value] of Object.entries(expectedArtifacts)) {
     if (stats[key] !== value) fail(`stats: ${key} does not match the release artifact`);
+  }
+
+  const researchCatalogue = await readJson('/api/v1/research');
+  const researchEntry = researchCatalogue.data?.[0];
+  if (researchEntry?.story_id !== expectedResearch.story_id
+    || researchEntry?.version !== expectedResearch.version
+    || researchEntry?.package_sha256 !== expectedResearch.package_sha256
+    || !researchEntry?.editorial_package_url?.endsWith('/v2/editorial-package.json')) {
+    fail('research catalogue: current editorial package identity is missing');
+  }
+  const researchRelease = await readJson('/api/v1/research/multipurpose-buildings');
+  if (researchRelease.data?.manifest?.package_sha256 !== expectedResearch.package_sha256
+    || researchRelease.data?.story?.editorial_status !== 'ready'
+    || researchRelease.data?.editorial_package?.status !== 'ready_for_consumption') {
+    fail('research release: story, package, or integrity identity is missing');
+  }
+  const researchManifest = await readJson(
+    '/data/research/multipurpose-buildings/v2/manifest.json',
+  );
+  const researchStory = await readJson('/data/research/multipurpose-buildings/v2/story.json');
+  const editorialPackage = await readJson(
+    '/data/research/multipurpose-buildings/v2/editorial-package.json',
+  );
+  if (researchManifest.package_sha256 !== expectedResearch.package_sha256
+    || researchStory.editorial_status !== 'ready'
+    || editorialPackage.status !== 'ready_for_consumption'
+    || editorialPackage.manifest_url !== `${publicOrigin}/data/research/multipurpose-buildings/v2/manifest.json`) {
+    fail('research static package: files are unavailable or inconsistent');
   }
 
   const imageCoverage = (await readJson('/api/v1/coverage-status')).data;
