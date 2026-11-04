@@ -1,0 +1,31 @@
+[
+  {
+    "claim_ids": [
+      "stage-net-movement"
+    ],
+    "evidence_state": "verified",
+    "id": "net-change",
+    "result": "Across the four scoped lists, the recorded House total is PHP 13,729,951,000.00 higher than the NEP total.",
+    "title": "The four scoped project lists grew in net terms"
+  },
+  {
+    "claim_ids": [
+      "stage-house-only",
+      "stage-nep-only",
+      "stage-amount-changes"
+    ],
+    "evidence_state": "source_reported",
+    "id": "separate-change-types",
+    "result": "243 matched rows increased and 265 decreased in the compared House list.",
+    "title": "Rows are separated by document-stage change type"
+  },
+  {
+    "claim_ids": [
+      "stage-quarantined"
+    ],
+    "evidence_state": "verified",
+    "id": "held-review",
+    "result": "426 ambiguous or scope-review rows are held in quarantine.",
+    "title": "Ambiguous rows are not promoted"
+  }
+]

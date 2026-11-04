@@ -53,6 +53,9 @@
     "revision": "a0caa778442cdae5583f5a006ea7401dab00e5ac",
     "total": 254
   },
+  "hgab_2027": {
+    "source_commit": "a0caa778442cdae5583f5a006ea7401dab00e5ac"
+  },
   "known_discovery_limits": [
     {
       "effect": "New COA reports require separate discovery and cannot be auto-published from this monitor.",
@@ -74,5 +77,5 @@
       "reviewed_sha256": "089144b6450c0d511562f02044a2989dc48322dfe3b5f0c02a9ed35cba0e4f39"
     }
   },
-  "schema_version": 3
+  "schema_version": 4
 }

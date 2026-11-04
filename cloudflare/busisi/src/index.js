@@ -82,7 +82,11 @@ import {
   queryAccountabilityEvents,
 } from './accountability-query.js';
 import { getAlertFeed } from './alerts-query.js';
-import { multipurposeBuildingsRelease, researchCatalogue } from './research-data.js';
+import {
+  fy2027StageChangesRelease,
+  multipurposeBuildingsRelease,
+  researchCatalogue,
+} from './research-data.js';
 
 const API_PREFIX = '/api/v1/projects';
 const MAX_SLUG_LENGTH = 160;
@@ -212,6 +216,16 @@ const apiResponse = async (request, environment, url) => {
         review_scope: 'published_multipurpose_building_investigation',
       },
       data: multipurposeBuildingsRelease,
+    });
+  }
+  if (url.pathname === '/api/v1/research/fy2027-nep-house-changes') {
+    return jsonResponse({
+      meta: {
+        story_id: fy2027StageChangesRelease.manifest.story_id,
+        version: fy2027StageChangesRelease.manifest.version,
+        review_scope: 'published_fy2027_nep_house_project_list_comparison',
+      },
+      data: fy2027StageChangesRelease,
     });
   }
   if (url.pathname === '/api/v1/public-services-summary') {

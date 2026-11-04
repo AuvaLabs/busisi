@@ -13,6 +13,7 @@ from engine.budget_watchdog.pcab import parse_pcab_regular_licenses
 
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _DBM_ORIGIN = "https://www.dbm.gov.ph"
+_HGAB_FISCAL_YEAR = 2027
 
 
 class SourceMonitorError(ValueError):
@@ -125,6 +126,39 @@ def parse_huggingface_metadata(payload: bytes, dataset_id: str) -> dict[str, str
     }
 
 
+def parse_hgab_overview(payload: bytes) -> dict[str, Any]:
+    """Return stable identity fields from the FY2027 stage-comparison overview."""
+    value = _object(payload, "HGAB overview")
+    metadata = value.get("meta")
+    data = value.get("data")
+    if not isinstance(metadata, dict) or not isinstance(data, dict):
+        raise SourceMonitorError("HGAB overview metadata is invalid")
+    if (
+        metadata.get("dataset") != "hgab"
+        or metadata.get("fiscal_year") != _HGAB_FISCAL_YEAR
+    ):
+        raise SourceMonitorError("HGAB overview identity changed")
+    revision = metadata.get("source_commit")
+    built_at = metadata.get("built_at")
+    if not isinstance(revision, str) or _GIT_SHA.fullmatch(revision) is None:
+        raise SourceMonitorError("HGAB source commit is invalid")
+    if not isinstance(built_at, str):
+        raise SourceMonitorError("HGAB build time is invalid")
+    try:
+        datetime.fromisoformat(built_at.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise SourceMonitorError("HGAB build time is invalid") from exc
+    datasets = data.get("datasets")
+    if not isinstance(datasets, list) or not datasets:
+        raise SourceMonitorError("HGAB overview has no datasets")
+    keys = [item.get("key") for item in datasets if isinstance(item, dict)]
+    if len(keys) != len(datasets) or not all(isinstance(key, str) and key for key in keys):
+        raise SourceMonitorError("HGAB dataset identity is invalid")
+    if len(keys) != len(set(keys)):
+        raise SourceMonitorError("HGAB overview has duplicate datasets")
+    return {"source_commit": revision, "built_at": built_at, "datasets": keys}
+
+
 def _canonical_dbm_url(value: str) -> str:
     absolute = urljoin(f"{_DBM_ORIGIN}/", value)
     parsed = urlparse(absolute)
@@ -208,6 +242,10 @@ def compare_observations(baseline: dict[str, Any], observed: dict[str, Any]) -> 
     for key in ("revision", "total"):
         if baseline.get("districts", {}).get(key) != observed.get("districts", {}).get(key):
             differences.append(f"districts: {key} changed")
+    if baseline.get("hgab_2027", {}).get("source_commit") != observed.get(
+        "hgab_2027", {}
+    ).get("source_commit"):
+        differences.append("hgab_2027: source commit changed")
     minimum_pcab_records = baseline.get("pcab", {}).get("minimum_records")
     observed_pcab_records = observed.get("pcab", {}).get("records")
     if (

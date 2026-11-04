@@ -69,6 +69,7 @@ test('publishes a research library and the multipurpose-building investigation',
   assert.equal(library.status, 200);
   assert.match(libraryDocument, /Research and investigations/);
   assert.match(libraryDocument, /href="\/research\/multipurpose-buildings\//);
+  assert.match(libraryDocument, /href="\/research\/fy2027-nep-house-changes\//);
   assert.match(libraryDocument, /Data cutoff/);
 
   const article = await fetchPath('/research/multipurpose-buildings/');
@@ -90,6 +91,19 @@ test('publishes a research library and the multipurpose-building investigation',
   assert.match(articleDocument, /"@type":"AnalysisNewsArticle"/);
 });
 
+test('publishes the FY2027 NEP-to-House investigation with evidence limits', async () => {
+  const article = await fetchPath('/research/fy2027-nep-house-changes/');
+  const document = await article.text();
+  assert.equal(article.status, 200);
+  assert.match(document, /20,431/);
+  assert.match(document, /6,954/);
+  assert.match(document, /426/);
+  assert.match(document, /not proof of an insertion/i);
+  assert.match(document, /four project-level lists/i);
+  assert.match(document, /fy2027-nep-house-changes\/v1\/manifest\.json/);
+  assert.match(document, /"@type":"AnalysisNewsArticle"/);
+});
+
 test('research routes appear in discovery surfaces', async () => {
   const robotsDocument = await (await fetchPath('/robots.txt')).text();
   const sitemapDocument = await (await fetchPath('/sitemap.xml')).text();
@@ -97,21 +111,24 @@ test('research routes appear in discovery surfaces', async () => {
 
   assert.match(robotsDocument, /Allow: \/api\/v1\/research/);
   assert.match(sitemapDocument, /\/research\/multipurpose-buildings\//);
+  assert.match(sitemapDocument, /\/research\/fy2027-nep-house-changes\//);
   assert.match(llmsDocument, /Research library/);
   assert.match(
     llmsDocument,
     /\/data\/research\/multipurpose-buildings\/v2\/editorial-package\.json/,
   );
+  assert.match(llmsDocument, /fy2027-nep-house-changes\/v1\/editorial-package\.json/);
 });
 
 test('publishes a machine-readable research release without a database binding', async () => {
   const catalogue = await fetchPath('/api/v1/research');
   const cataloguePayload = await catalogue.json();
   assert.equal(catalogue.status, 200);
-  assert.equal(cataloguePayload.data[0].story_id, 'multipurpose-buildings-2026');
-  assert.equal(cataloguePayload.data[0].version, 2);
+  const multipurpose = cataloguePayload.data.find(({ slug }) => slug === 'multipurpose-buildings');
+  assert.equal(multipurpose.story_id, 'multipurpose-buildings-2026');
+  assert.equal(multipurpose.version, 2);
   assert.equal(
-    cataloguePayload.data[0].editorial_package_url,
+    multipurpose.editorial_package_url,
     'https://busisi.org/data/research/multipurpose-buildings/v2/editorial-package.json',
   );
 
@@ -122,6 +139,12 @@ test('publishes a machine-readable research release without a database binding',
   assert.equal(releasePayload.data.story.editorial_status, 'ready');
   assert.equal(releasePayload.data.editorial_package.status, 'ready_for_consumption');
   assert.equal(releasePayload.data.claims.find(({ id }) => id === 'mpb-ongoing').value, 5842);
+
+  const stageRelease = await fetchPath('/api/v1/research/fy2027-nep-house-changes');
+  const stagePayload = await stageRelease.json();
+  assert.equal(stageRelease.status, 200);
+  assert.equal(stagePayload.data.manifest.package_sha256, '7cd2b9fc154cdae4228232fae5fd2446bb2b88c5bd82f56823d9e1afd77cca1a');
+  assert.equal(stagePayload.data.claims.find(({ id }) => id === 'stage-total-records').value, 20431);
 });
 
 test('publishes the ecosystem hubs while preserving established evidence pages', async () => {

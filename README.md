@@ -50,9 +50,10 @@ The research library at `/research/` publishes bounded investigations from the
 same evidence system. Each article has an authenticated, versioned data package
 with claim states, calculations, sources, limitations, chart data, and project
 examples. Discovery services may help locate documents privately, but public
-claims identify and archive the underlying publisher's evidence. The first
-release examines multipurpose-building records at
-`/research/multipurpose-buildings/`.
+claims identify and archive the underlying publisher's evidence. Published
+work currently examines multipurpose-building records at
+`/research/multipurpose-buildings/` and FY2027 NEP-to-House project-list
+changes at `/research/fy2027-nep-house-changes/`.
 
 Its immutable downstream editorial package is published under
 `/data/research/multipurpose-buildings/v2/`. The consumption index provides the

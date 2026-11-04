@@ -22,6 +22,11 @@ const expectedResearch = Object.freeze({
   package_sha256: 'bdf6fd74d6fc4a53a9c8025cc5e3214b31e61a4f84911020701a3f2709eadec1',
   story_id: 'multipurpose-buildings-2026',
 });
+const expectedStageResearch = Object.freeze({
+  version: 1,
+  package_sha256: '7cd2b9fc154cdae4228232fae5fd2446bb2b88c5bd82f56823d9e1afd77cca1a',
+  story_id: 'fy2027-nep-house-changes-2026',
+});
 const expectedChanges = Object.freeze({
   record_count: 20_431,
   quarantine_count: 426,
@@ -450,6 +455,12 @@ const verifyPages = async () => {
   expectIncludes(researchText, 'Download the finished story', 'research story link');
   expectIncludes(researchText, 'Open the consumption index', 'research package link');
   expectIncludes(researchText, '/data/research/multipurpose-buildings/v2/', 'research version');
+  const stageResearch = await request('/research/fy2027-nep-house-changes/');
+  expectStatus(stageResearch, 200, '/research/fy2027-nep-house-changes/');
+  const stageResearchText = await stageResearch.text();
+  expectIncludes(stageResearchText, '20,431', 'stage research row control');
+  expectIncludes(stageResearchText, 'not proof of an insertion', 'stage research boundary');
+  expectIncludes(stageResearchText, '/data/research/fy2027-nep-house-changes/v1/', 'stage research version');
 
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
@@ -462,7 +473,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/fy2027-nep-house-changes/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${publicOrigin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -482,6 +493,11 @@ const verifyPages = async () => {
     llmsText,
     '/data/research/multipurpose-buildings/v2/editorial-package.json',
     'llms research editorial package',
+  );
+  expectIncludes(
+    llmsText,
+    '/data/research/fy2027-nep-house-changes/v1/editorial-package.json',
+    'llms stage-change editorial package',
   );
 
   const indexNow = await request(`/${indexNowKey}.txt`);
@@ -609,7 +625,9 @@ const verifyData = async () => {
   }
 
   const researchCatalogue = await readJson('/api/v1/research');
-  const researchEntry = researchCatalogue.data?.[0];
+  const researchEntry = researchCatalogue.data?.find(({ story_id: id }) => (
+    id === expectedResearch.story_id
+  ));
   if (researchEntry?.story_id !== expectedResearch.story_id
     || researchEntry?.version !== expectedResearch.version
     || researchEntry?.package_sha256 !== expectedResearch.package_sha256
@@ -634,6 +652,23 @@ const verifyData = async () => {
     || editorialPackage.status !== 'ready_for_consumption'
     || editorialPackage.manifest_url !== `${publicOrigin}/data/research/multipurpose-buildings/v2/manifest.json`) {
     fail('research static package: files are unavailable or inconsistent');
+  }
+  const stageResearchEntry = researchCatalogue.data?.find(({ story_id: id }) => (
+    id === expectedStageResearch.story_id
+  ));
+  if (stageResearchEntry?.version !== expectedStageResearch.version
+    || stageResearchEntry?.package_sha256 !== expectedStageResearch.package_sha256
+    || !stageResearchEntry?.editorial_package_url?.endsWith('/v1/editorial-package.json')) {
+    fail('stage research catalogue: current package identity is missing');
+  }
+  const stageRelease = await readJson('/api/v1/research/fy2027-nep-house-changes');
+  const stageManifest = await readJson(
+    '/data/research/fy2027-nep-house-changes/v1/manifest.json',
+  );
+  if (stageRelease.data?.manifest?.package_sha256 !== expectedStageResearch.package_sha256
+    || stageRelease.data?.story?.editorial_status !== 'ready'
+    || stageManifest.package_sha256 !== expectedStageResearch.package_sha256) {
+    fail('stage research release: story, package, or static manifest is inconsistent');
   }
 
   const imageCoverage = (await readJson('/api/v1/coverage-status')).data;

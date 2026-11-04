@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import re
 from collections import Counter, defaultdict
 from decimal import Decimal
@@ -11,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from engine.budget_watchdog.money import parse_centavos
-from engine.budget_watchdog.research_sources import validate_release_evidence
+from engine.budget_watchdog.research_editor import write_research_release
 
 FISCAL_YEARS = frozenset({"2024", "2025", "2026"})
 ACTIVE_STATUSES = frozenset({"On-Going", "For Procurement", "Not Yet Started"})
@@ -767,40 +765,8 @@ def build_multipurpose_release(
     return release
 
 
-def _json_bytes(value: object) -> bytes:
-    return (json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + "\n").encode()
-
-
 def write_release_package(release: dict[str, Any], output_dir: Path) -> dict[str, Any]:
-    """Write immutable payloads and a manifest that authenticates every file."""
+    """Write through the shared research editor package contract."""
 
-    validate_release_evidence(release)
     validate_editorial_release(release)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    payloads = {
-        "claims.json": release["claims"],
-        "findings.json": release["findings"],
-        "investigations.json": release["investigations"],
-        "chart-data.json": release["chart_data"],
-        "project-examples.json": release["project_examples"],
-        "sources.json": release["sources"],
-        "limitations.json": release["limitations"],
-    }
-    if release["metadata"]["version"] >= EDITORIAL_PACKAGE_VERSION:
-        payloads["story.json"] = release["story"]
-        payloads["editorial-package.json"] = release["editorial_package"]
-    files = []
-    for path, value in sorted(payloads.items()):
-        payload = _json_bytes(value)
-        (output_dir / path).write_bytes(payload)
-        files.append(
-            {"path": path, "sha256": hashlib.sha256(payload).hexdigest(), "bytes": len(payload)}
-        )
-    package_identity = "".join(f"{item['path']}\0{item['sha256']}\n" for item in files).encode()
-    manifest = {
-        **release["metadata"],
-        "files": files,
-        "package_sha256": hashlib.sha256(package_identity).hexdigest(),
-    }
-    (output_dir / "manifest.json").write_bytes(_json_bytes(manifest))
-    return manifest
+    return write_research_release(release, output_dir)

@@ -43,7 +43,11 @@ import {
 } from './accountability-query.js';
 import { alertsRss } from './alerts-feed.js';
 import { getAlertFeed } from './alerts-query.js';
-import { multipurposeBuildingsBody, researchIndexBody } from './research-content.js';
+import {
+  fy2027StageChangesBody,
+  multipurposeBuildingsBody,
+  researchIndexBody,
+} from './research-content.js';
 import {
   budgetRecordBody,
   candidateRecordBody,
@@ -283,6 +287,19 @@ const MULTIPURPOSE_BUILDINGS_SCHEMA = Object.freeze({
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
 });
 
+const FY2027_STAGE_CHANGES_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'AnalysisNewsArticle',
+  headline: 'What changed between the FY2027 NEP and House project lists?',
+  url: `${SITE.origin}/research/fy2027-nep-house-changes/`,
+  description: 'A reconciled comparison of four FY2027 NEP and House project lists with document changes, quarantine, sources, and evidence limits.',
+  datePublished: '2026-11-04',
+  dateModified: '2026-11-04',
+  inLanguage: ['en-PH', 'fil-PH'],
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
 const page = (html, status = 200) => response(html, {
   status,
   type: 'text/html; charset=utf-8',
@@ -504,6 +521,14 @@ const multipurposeBuildings = () => page(document({
   schema: MULTIPURPOSE_BUILDINGS_SCHEMA,
 }));
 
+const fy2027StageChanges = () => page(document({
+  title: 'What changed from the FY2027 NEP to the House lists? | Busisi',
+  description: 'Compare four FY2027 project lists and see which rows were added, removed, changed, unchanged, or quarantined, with careful evidence limits.',
+  canonicalPath: '/research/fy2027-nep-house-changes/',
+  body: fy2027StageChangesBody,
+  schema: FY2027_STAGE_CHANGES_SCHEMA,
+}));
+
 const facility = (payload) => {
   const { record } = payload;
   const path = `/facilities/${encodeURIComponent(record.facility_id)}/`;
@@ -662,6 +687,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/public-services/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/research/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/research/multipurpose-buildings/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>${SITE.origin}/research/fy2027-nep-house-changes/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/corazon-2022-combined/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/agoncillo-2023/</loc><lastmod>2026-11-03</lastmod></url>
@@ -706,6 +732,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Public services inventory: ${SITE.origin}/public-services/
 - Research library: ${SITE.origin}/research/
 - Multipurpose-building investigation: ${SITE.origin}/research/multipurpose-buildings/
+- FY2027 NEP-to-House project-list investigation: ${SITE.origin}/research/fy2027-nep-house-changes/
 - Methodology: ${SITE.origin}/methodology/
 
 ## Machine-readable catalogue
@@ -719,6 +746,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Bounded evidence updates: ${SITE.origin}/api/v1/alerts
 - Published research packages: ${SITE.origin}/api/v1/research
 - Ready multipurpose-building editorial package: ${SITE.origin}/data/research/multipurpose-buildings/v2/editorial-package.json
+- Ready FY2027 stage-change editorial package: ${SITE.origin}/data/research/fy2027-nep-house-changes/v1/editorial-package.json
 
 ## Evidence and publication rules
 
@@ -798,6 +826,7 @@ const route = (path) => {
   if (path === '/places' || path === '/places/') return places();
   if (path === '/research' || path === '/research/') return research();
   if (path === '/research/multipurpose-buildings' || path === '/research/multipurpose-buildings/') return multipurposeBuildings();
+  if (path === '/research/fy2027-nep-house-changes' || path === '/research/fy2027-nep-house-changes/') return fy2027StageChanges();
   if (path === '/sources' || path === '/sources/') return sources();
   if (path === '/watch' || path === '/watch/') return watch();
   if (path === '/changes' || path === '/changes/') return changes();
@@ -837,6 +866,7 @@ export default {
     }
     if ((url.pathname === '/api/v1/research'
       || url.pathname === '/api/v1/research/multipurpose-buildings'
+      || url.pathname === '/api/v1/research/fy2027-nep-house-changes'
       || ((url.pathname === '/healthz' || url.pathname.startsWith('/api/')) && env.DB))) {
       return dataWorker.fetch(request, env);
     }

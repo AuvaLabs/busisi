@@ -1,0 +1,34 @@
+[
+  {
+    "id": "stage-scope",
+    "text": "The comparison covers four project-level lists, not the entire national budget."
+  },
+  {
+    "id": "matching-boundary",
+    "text": "A House-only or NEP-only row can reflect renaming, regrouping, scope changes, or unmatched text."
+  },
+  {
+    "id": "not-an-insertion-finding",
+    "text": "A House-only row is a documentary review lead, not proof of an insertion, authorship, motive, or wrongdoing."
+  },
+  {
+    "id": "quarantine-boundary",
+    "text": "Held and scope-review rows remain quarantined and are not promoted as findings."
+  },
+  {
+    "id": "missing-stages",
+    "text": "The release does not yet compare Senate, bicameral, enacted GAA, release, procurement, payment, or implementation stages."
+  },
+  {
+    "id": "source-extraction",
+    "text": "BetterGov performed the row extraction and initial comparison; Busisi validates schemas, hashes, arithmetic, and control totals."
+  },
+  {
+    "id": "missing-original-links",
+    "text": "Three NEP annex extracts lack original-source URLs in the source manifest, although their archived bytes and hashes are retained."
+  },
+  {
+    "id": "amounts-not-spending",
+    "text": "Document amounts are proposed authority, not releases, obligations, payments, final costs, or outcomes."
+  }
+]

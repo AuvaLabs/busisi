@@ -6,6 +6,10 @@
 data/
 backups/
 
+# Private research editor drafts, quarantine reports and publication receipts.
+# Only authenticated releases under cloudflare/busisi/public/data/research are public.
+data/budget_watchdog/research-editor/
+
 # Authenticated public research releases are deployment inputs, not local data.
 !cloudflare/busisi/public/data/
 !cloudflare/busisi/public/data/research/

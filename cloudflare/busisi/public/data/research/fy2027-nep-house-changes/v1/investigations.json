@@ -1,0 +1,20 @@
+[
+  {
+    "calculation_id": "fy2027-stage-change-research-v1",
+    "question": "Which rows appear only in the compared House project list?",
+    "result": "6,954 rows are classified as appearing only in the compared House project list.",
+    "state": "partial"
+  },
+  {
+    "calculation_id": "fy2027-stage-change-research-v1",
+    "question": "Who authored or caused a document-stage change?",
+    "result": "Not established by the acquired records.",
+    "state": "evidence_gap"
+  },
+  {
+    "calculation_id": "fy2027-stage-change-research-v1",
+    "question": "Did a changed amount become a release, payment, or completed project?",
+    "result": "Not established. Later budget and implementation stages are outside this release.",
+    "state": "evidence_gap"
+  }
+]

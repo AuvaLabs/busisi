@@ -8,9 +8,43 @@ from engine.budget_watchdog.source_monitor import (
     SourceMonitorError,
     compare_observations,
     parse_dbm_release_catalog,
+    parse_hgab_overview,
     parse_huggingface_metadata,
     review_pcab_transition,
 )
+
+
+def test_parses_hgab_overview_identity() -> None:
+    payload = json.dumps({
+        "meta": {
+            "dataset": "hgab",
+            "fiscal_year": 2027,
+            "source_commit": "a" * 40,
+            "built_at": "2026-10-26T08:46:14.383Z",
+        },
+        "data": {"datasets": [{"key": "dpwh"}, {"key": "fmr"}]},
+    }).encode()
+
+    assert parse_hgab_overview(payload) == {
+        "source_commit": "a" * 40,
+        "built_at": "2026-10-26T08:46:14.383Z",
+        "datasets": ["dpwh", "fmr"],
+    }
+
+
+def test_rejects_hgab_overview_with_wrong_year_or_invalid_commit() -> None:
+    for year, commit in ((2026, "a" * 40), (2027, "bad")):
+        payload = json.dumps({
+            "meta": {
+                "dataset": "hgab",
+                "fiscal_year": year,
+                "source_commit": commit,
+                "built_at": "2026-10-26T08:46:14.383Z",
+            },
+            "data": {"datasets": [{"key": "dpwh"}]},
+        }).encode()
+        with pytest.raises(SourceMonitorError):
+            parse_hgab_overview(payload)
 
 
 def _pcab_document(rows: list[list[str]]) -> bytes:
@@ -151,6 +185,7 @@ def test_compares_observations_without_hiding_added_or_changed_records() -> None
         "dbm_next_releases": [],
         "districts": {"revision": "b" * 40, "total": 254},
         "pcab": {"minimum_records": 10},
+        "hgab_2027": {"source_commit": "d" * 40},
     }
     unchanged = {
         "datasets": {"gaa": {"revision": "a" * 40, "last_modified": "now"}},
@@ -158,6 +193,7 @@ def test_compares_observations_without_hiding_added_or_changed_records() -> None
         "dbm_next_releases": [],
         "districts": {"revision": "b" * 40, "total": 254, "built_at": "now"},
         "pcab": {"sha256": "c" * 64, "records": 11},
+        "hgab_2027": {"source_commit": "d" * 40, "built_at": "now"},
     }
     assert compare_observations(baseline, unchanged) == ()
 
@@ -177,4 +213,12 @@ def test_compares_observations_without_hiding_added_or_changed_records() -> None
     }
     assert compare_observations(baseline, regressed) == (
         "pcab: records fell below the reviewed floor",
+    )
+
+    hgab_changed = {
+        **unchanged,
+        "hgab_2027": {"source_commit": "e" * 40, "built_at": "later"},
+    }
+    assert compare_observations(baseline, hgab_changed) == (
+        "hgab_2027: source commit changed",
     )

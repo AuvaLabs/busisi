@@ -1,0 +1,66 @@
+{
+  "canonical_url": "https://busisi.org/research/fy2027-nep-house-changes/",
+  "data_cutoff": "2026-10-26",
+  "editorial_ready": true,
+  "files": [
+    {
+      "bytes": 11671,
+      "path": "chart-data.json",
+      "sha256": "b27eccf2ff41c03ef545e489c51d34b1f43bf2b3436aaed528ebf1ed0c67c963"
+    },
+    {
+      "bytes": 3951,
+      "path": "claims.json",
+      "sha256": "dcf306cbf2178e1ad615c52bcc33ee491a8750e92cecfb21dd9d5d7ad00ca4c9"
+    },
+    {
+      "bytes": 2398,
+      "path": "editorial-package.json",
+      "sha256": "ef59305eeb04e401a3051137f09b0b4594b2359666b03c36c2acdb969b16cd4d"
+    },
+    {
+      "bytes": 897,
+      "path": "findings.json",
+      "sha256": "cbbd7d752c91f4b7a77dabe45fb1f0286498aba29d41e90b91d9f76605fe9701"
+    },
+    {
+      "bytes": 768,
+      "path": "investigations.json",
+      "sha256": "2050b574932426bbca967e841d4c7d713886e19a8f44a18f12d43bc2971031ac"
+    },
+    {
+      "bytes": 1294,
+      "path": "limitations.json",
+      "sha256": "d7f58983c4def3f0b2e18e3091f5c32f568428c9bf99f7269617881c49d529fc"
+    },
+    {
+      "bytes": 11872,
+      "path": "project-examples.json",
+      "sha256": "2097f22f88abfe3ce4ec26fce2fdc9aa1515bcd6f8a6992543ca7b8bc0c39db8"
+    },
+    {
+      "bytes": 4632,
+      "path": "sources.json",
+      "sha256": "c2f50ad88acc7e9c49c8924af6ac4db85ac392df3fc3c12710672c0f27ef01e0"
+    },
+    {
+      "bytes": 4254,
+      "path": "story.json",
+      "sha256": "4a6dc1b7c70505eaffa970fd5523cf58953e8585224bd866e0e626f8255f57af"
+    }
+  ],
+  "headline": "What changed between the FY2027 NEP and House project lists?",
+  "max_source_age_days": 7,
+  "methodology_version": "fy2027-stage-change-research-v1",
+  "package_sha256": "7cd2b9fc154cdae4228232fae5fd2446bb2b88c5bd82f56823d9e1afd77cca1a",
+  "published_at": "2026-11-04",
+  "schema_version": "1.1",
+  "slug": "fy2027-nep-house-changes",
+  "source_artifact_sha256": "f47cc042ae08efb6883854b23b230dda25cba073765edfe7aeb84ce509b32177",
+  "source_checked_at": "2026-11-03",
+  "source_commit": "a0caa778442cdae5583f5a006ea7401dab00e5ac",
+  "status": "published",
+  "story_id": "fy2027-nep-house-changes-2026",
+  "supersedes": null,
+  "version": 1
+}

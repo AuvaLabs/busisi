@@ -17,6 +17,7 @@ from engine.budget_watchdog.source_monitor import (
     SourceMonitorError,
     compare_observations,
     parse_dbm_release_catalog,
+    parse_hgab_overview,
     parse_huggingface_metadata,
 )
 from engine.budget_watchdog.sources import default_source_registry
@@ -37,7 +38,7 @@ MONITORED_YEAR = 2026
 NEXT_MONITORED_YEAR = 2027
 MAX_METADATA_BYTES = 2 * 1024 * 1024
 MAX_CATALOG_BYTES = 2 * 1024 * 1024
-BASELINE_SCHEMA_VERSION = 3
+BASELINE_SCHEMA_VERSION = 4
 KNOWN_DISCOVERY_LIMITS = [
     {
         "source": "Commission on Audit report catalogues",
@@ -64,6 +65,9 @@ def _stable_observation(observed: dict[str, Any]) -> dict[str, Any]:
         },
         "pcab": {
             "minimum_records": observed["pcab"]["records"],
+        },
+        "hgab_2027": {
+            "source_commit": observed["hgab_2027"]["source_commit"],
         },
         "known_discovery_limits": KNOWN_DISCOVERY_LIMITS,
     }
@@ -108,6 +112,19 @@ def _observe(
         }
     )
 
+    hgab = metadata_fetcher.fetch(
+        "bettergov-budget", "/api/v1/hgab/2027", retrieved_at=now
+    )
+    hgab_artifact = archive.store(hgab)
+    hgab_overview = parse_hgab_overview(hgab.payload)
+    artifacts.append(
+        {
+            "source": "hgab_2027",
+            "sha256": hgab_artifact.sha256,
+            "byte_size": hgab_artifact.byte_size,
+        }
+    )
+
     district_artifacts, districts = acquire_district_snapshot(
         metadata_fetcher, archive, retrieved_at=now
     )
@@ -145,6 +162,7 @@ def _observe(
             "records": pcab.record_count,
             "retrieved_on": pcab.retrieved_on.isoformat(),
         },
+        "hgab_2027": hgab_overview,
     }
     return observed, artifacts
 

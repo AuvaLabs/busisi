@@ -1,0 +1,136 @@
+{
+  "audience": "Filipino public",
+  "canonical_url": "https://busisi.org/research/fy2027-nep-house-changes/",
+  "data_cutoff": "2026-10-26",
+  "deck": "A controlled comparison of four FY2027 project lists, the rows that changed, and the evidence limits that prevent political attribution.",
+  "editorial_status": "ready",
+  "headline": "What changed between the FY2027 NEP and House project lists?",
+  "language": "en-PH",
+  "schema_version": "1.0",
+  "sections": [
+    {
+      "claim_ids": [
+        "stage-total-records",
+        "stage-net-movement"
+      ],
+      "copy": [
+        "Busisi validated 20,431 comparison rows across the four acquired FY2027 project lists.",
+        "Across the four scoped lists, the recorded House total is PHP 13,729,951,000.00 higher than the NEP total."
+      ],
+      "heading": "The four project lists became larger in total, but not every row moved the same way",
+      "id": "direct-answer",
+      "limitation_ids": [
+        "stage-scope",
+        "amounts-not-spending"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "bettergov-hgab-overview-2027"
+      ],
+      "visual_refs": [
+        "chart_data.datasets"
+      ]
+    },
+    {
+      "claim_ids": [
+        "stage-house-only",
+        "stage-nep-only",
+        "stage-amount-changes"
+      ],
+      "copy": [
+        "6,954 rows are classified as appearing only in the compared House project list.",
+        "1,784 rows are classified as appearing only in the compared NEP project list.",
+        "243 matched rows increased and 265 decreased in the compared House list."
+      ],
+      "heading": "The comparison separates additions, removals, amount changes, and unchanged rows",
+      "id": "change-types",
+      "limitation_ids": [
+        "matching-boundary",
+        "stage-scope"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "bettergov-hgab-overview-2027"
+      ],
+      "visual_refs": [
+        "chart_data.change_types"
+      ]
+    },
+    {
+      "claim_ids": [
+        "stage-publishable-house-only"
+      ],
+      "copy": [
+        "6,565 House-only rows remain available as documentary review leads after quarantine.",
+        "Each row still needs both document pages, naming, scope, and later budget stages checked before any attribution or conclusion."
+      ],
+      "heading": "House-only rows are questions to check, not insertion findings",
+      "id": "house-only-review",
+      "limitation_ids": [
+        "not-an-insertion-finding",
+        "matching-boundary"
+      ],
+      "narration_eligible": false,
+      "section_type": "investigation_lead",
+      "source_ids": [
+        "bettergov-hgab-overview-2027"
+      ],
+      "visual_refs": [
+        "chart_data.regions",
+        "project_examples.largest_absolute_changes"
+      ]
+    },
+    {
+      "claim_ids": [
+        "stage-quarantined"
+      ],
+      "copy": [
+        "426 ambiguous or scope-review rows are held in quarantine."
+      ],
+      "heading": "Ambiguous rows are held back",
+      "id": "quarantine",
+      "limitation_ids": [
+        "quarantine-boundary",
+        "source-extraction"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "bettergov-hgab-overview-2027"
+      ],
+      "visual_refs": [
+        "chart_data.review_gate"
+      ]
+    },
+    {
+      "claim_ids": [
+        "stage-dataset-count"
+      ],
+      "copy": [
+        "The release covers the NEP and the declared House stage for four project lists.",
+        "Senate, bicameral, enacted GAA, release, procurement, payment, and implementation evidence remain outside this result."
+      ],
+      "heading": "This is a House-stage comparison, not the final budget trail",
+      "id": "coverage-boundary",
+      "limitation_ids": [
+        "missing-stages",
+        "stage-scope"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "bettergov-hgab-overview-2027"
+      ],
+      "visual_refs": [
+        "chart_data.datasets"
+      ]
+    }
+  ],
+  "source_ids": [
+    "bettergov-hgab-overview-2027"
+  ],
+  "story_id": "fy2027-nep-house-changes-2026",
+  "version": 1
+}

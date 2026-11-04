@@ -1,0 +1,477 @@
+{
+  "change_types": {
+    "decreased": {
+      "count": 265,
+      "house_centavos": 5671551700000,
+      "nep_centavos": 14723782200000,
+      "net_difference_centavos": -9052230500000,
+      "quarantined": 0
+    },
+    "house_only": {
+      "count": 6954,
+      "house_centavos": 18790249500000,
+      "nep_centavos": 0,
+      "net_difference_centavos": 18790249500000,
+      "quarantined": 389
+    },
+    "increased": {
+      "count": 243,
+      "house_centavos": 1345240400000,
+      "nep_centavos": 646262700000,
+      "net_difference_centavos": 698977700000,
+      "quarantined": 0
+    },
+    "nep_only": {
+      "count": 1784,
+      "house_centavos": 0,
+      "nep_centavos": 9078945000000,
+      "net_difference_centavos": -9078945000000,
+      "quarantined": 0
+    },
+    "scope_review": {
+      "count": 37,
+      "house_centavos": 247674100000,
+      "nep_centavos": 232730700000,
+      "net_difference_centavos": 14943400000,
+      "quarantined": 37
+    },
+    "unchanged": {
+      "count": 11148,
+      "house_centavos": 37417756800000,
+      "nep_centavos": 37417756800000,
+      "net_difference_centavos": 0,
+      "quarantined": 0
+    }
+  },
+  "datasets": [
+    {
+      "change_counts": {
+        "decreased": 194,
+        "house_only": 6193,
+        "increased": 188,
+        "nep_only": 1341,
+        "scope_review": 37,
+        "unchanged": 9660
+      },
+      "dataset": "dpwh",
+      "house_centavos": 58707566100000,
+      "label": "DPWH national infrastructure",
+      "nep_centavos": 57292407400000,
+      "net_difference_centavos": 1415158700000,
+      "quarantined": 426,
+      "records": 17613
+    },
+    {
+      "change_counts": {
+        "decreased": 3,
+        "house_only": 355,
+        "increased": 1,
+        "nep_only": 95,
+        "unchanged": 605
+      },
+      "dataset": "fmr",
+      "house_centavos": 1962810000000,
+      "label": "Farm-to-market roads",
+      "nep_centavos": 1600000000000,
+      "net_difference_centavos": 362810000000,
+      "quarantined": 0,
+      "records": 1059
+    },
+    {
+      "change_counts": {
+        "decreased": 64,
+        "house_only": 184,
+        "increased": 54,
+        "nep_only": 163,
+        "unchanged": 281
+      },
+      "dataset": "hfep",
+      "house_centavos": 1002165900000,
+      "label": "Health facilities",
+      "nep_centavos": 1447251900000,
+      "net_difference_centavos": -445086000000,
+      "quarantined": 0,
+      "records": 746
+    },
+    {
+      "change_counts": {
+        "decreased": 4,
+        "house_only": 222,
+        "nep_only": 185,
+        "unchanged": 602
+      },
+      "dataset": "nia",
+      "house_centavos": 1799930500000,
+      "label": "Irrigation",
+      "nep_centavos": 1759818100000,
+      "net_difference_centavos": 40112400000,
+      "quarantined": 0,
+      "records": 1013
+    }
+  ],
+  "regions": [
+    {
+      "house_only": 782,
+      "house_only_centavos": 2438035800000,
+      "publishable_house_only": 681,
+      "records": 2171,
+      "region": "Region IV-A"
+    },
+    {
+      "house_only": 777,
+      "house_only_centavos": 1385885800000,
+      "publishable_house_only": 762,
+      "records": 1456,
+      "region": "Region I"
+    },
+    {
+      "house_only": 692,
+      "house_only_centavos": 2320948100000,
+      "publishable_house_only": 641,
+      "records": 2157,
+      "region": "Region III"
+    },
+    {
+      "house_only": 548,
+      "house_only_centavos": 1147026400000,
+      "publishable_house_only": 534,
+      "records": 1386,
+      "region": "Region II"
+    },
+    {
+      "house_only": 468,
+      "house_only_centavos": 1499961400000,
+      "publishable_house_only": 443,
+      "records": 1252,
+      "region": "Region X"
+    },
+    {
+      "house_only": 421,
+      "house_only_centavos": 466394400000,
+      "publishable_house_only": 396,
+      "records": 900,
+      "region": "Region XII"
+    },
+    {
+      "house_only": 403,
+      "house_only_centavos": 841851400000,
+      "publishable_house_only": 364,
+      "records": 952,
+      "region": "Region VI"
+    },
+    {
+      "house_only": 335,
+      "house_only_centavos": 1477965800000,
+      "publishable_house_only": 313,
+      "records": 1103,
+      "region": "Region V"
+    },
+    {
+      "house_only": 307,
+      "house_only_centavos": 800535000000,
+      "publishable_house_only": 297,
+      "records": 824,
+      "region": "Region VII"
+    },
+    {
+      "house_only": 268,
+      "house_only_centavos": 1391139900000,
+      "publishable_house_only": 246,
+      "records": 1112,
+      "region": "NCR"
+    },
+    {
+      "house_only": 252,
+      "house_only_centavos": 829237800000,
+      "publishable_house_only": 248,
+      "records": 618,
+      "region": "Region XI"
+    },
+    {
+      "house_only": 232,
+      "house_only_centavos": 722421200000,
+      "publishable_house_only": 230,
+      "records": 906,
+      "region": "Region VIII"
+    },
+    {
+      "house_only": 222,
+      "house_only_centavos": 738170000000,
+      "publishable_house_only": 222,
+      "records": 1013,
+      "region": "Not stated"
+    },
+    {
+      "house_only": 214,
+      "house_only_centavos": 652677000000,
+      "publishable_house_only": 199,
+      "records": 738,
+      "region": "CAR"
+    },
+    {
+      "house_only": 213,
+      "house_only_centavos": 349513600000,
+      "publishable_house_only": 199,
+      "records": 815,
+      "region": "NIR"
+    },
+    {
+      "house_only": 161,
+      "house_only_centavos": 300613400000,
+      "publishable_house_only": 159,
+      "records": 556,
+      "region": "Region XIII"
+    },
+    {
+      "house_only": 151,
+      "house_only_centavos": 516972000000,
+      "publishable_house_only": 144,
+      "records": 675,
+      "region": "Region IX"
+    },
+    {
+      "house_only": 144,
+      "house_only_centavos": 295200000000,
+      "publishable_house_only": 123,
+      "records": 674,
+      "region": "MIMAROPA"
+    },
+    {
+      "house_only": 76,
+      "house_only_centavos": 123650500000,
+      "publishable_house_only": 76,
+      "records": 173,
+      "region": "REGION III - CENTRAL LUZON"
+    },
+    {
+      "house_only": 64,
+      "house_only_centavos": 91640000000,
+      "publishable_house_only": 64,
+      "records": 133,
+      "region": "REGION IVA - CALABARZON"
+    },
+    {
+      "house_only": 29,
+      "house_only_centavos": 53620000000,
+      "publishable_house_only": 29,
+      "records": 77,
+      "region": "REGION V - BICOL"
+    },
+    {
+      "house_only": 28,
+      "house_only_centavos": 53680000000,
+      "publishable_house_only": 28,
+      "records": 52,
+      "region": "REGION VIII - EASTERN VISAYAS"
+    },
+    {
+      "house_only": 27,
+      "house_only_centavos": 61775000000,
+      "publishable_house_only": 27,
+      "records": 50,
+      "region": "REGION VI - WESTERN VISAYAS"
+    },
+    {
+      "house_only": 26,
+      "house_only_centavos": 35340000000,
+      "publishable_house_only": 26,
+      "records": 99,
+      "region": "REGION II - CAGAYAN VALLEY"
+    },
+    {
+      "house_only": 16,
+      "house_only_centavos": 24500000000,
+      "publishable_house_only": 16,
+      "records": 28,
+      "region": "REGION XII - SOCCSKSARGEN"
+    },
+    {
+      "house_only": 15,
+      "house_only_centavos": 27340000000,
+      "publishable_house_only": 15,
+      "records": 33,
+      "region": "REGION X - NORTHERN MINDANAO"
+    },
+    {
+      "house_only": 14,
+      "house_only_centavos": 15500000000,
+      "publishable_house_only": 14,
+      "records": 96,
+      "region": "REGION I - ILOCOS"
+    },
+    {
+      "house_only": 12,
+      "house_only_centavos": 22000000000,
+      "publishable_house_only": 12,
+      "records": 36,
+      "region": "NEGROS ISLAND REGION (NIR)"
+    },
+    {
+      "house_only": 11,
+      "house_only_centavos": 22535000000,
+      "publishable_house_only": 11,
+      "records": 44,
+      "region": "REGION IVB - MIMAROPA"
+    },
+    {
+      "house_only": 11,
+      "house_only_centavos": 21000000000,
+      "publishable_house_only": 11,
+      "records": 32,
+      "region": "REGION IX - ZAMBOANGA PENINSULA"
+    },
+    {
+      "house_only": 10,
+      "house_only_centavos": 13000000000,
+      "publishable_house_only": 10,
+      "records": 20,
+      "region": "REGION XI - DAVAO"
+    },
+    {
+      "house_only": 8,
+      "house_only_centavos": 16820000000,
+      "publishable_house_only": 8,
+      "records": 51,
+      "region": "REGION XIII - CARAGA"
+    },
+    {
+      "house_only": 7,
+      "house_only_centavos": 12000000000,
+      "publishable_house_only": 7,
+      "records": 19,
+      "region": "REGION VII - CENTRAL VISAYAS"
+    },
+    {
+      "house_only": 6,
+      "house_only_centavos": 17000000000,
+      "publishable_house_only": 6,
+      "records": 28,
+      "region": "CALABARZON"
+    },
+    {
+      "house_only": 3,
+      "house_only_centavos": 1800000000,
+      "publishable_house_only": 3,
+      "records": 18,
+      "region": "BARMM"
+    },
+    {
+      "house_only": 1,
+      "house_only_centavos": 2500000000,
+      "publishable_house_only": 1,
+      "records": 22,
+      "region": "CORDILLERA ADMINISTRATIVE REGION (CAR)"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 18,
+      "region": "Nationwide"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 8,
+      "region": "Region I - ILOCOS"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 4,
+      "region": "Region II - CAGAYAN VALLEY"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 34,
+      "region": "Region III - CENTRAL LUZON"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 10,
+      "region": "Region IVA - CALABARZON"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 1,
+      "region": "Region IVB - MIMAROPA"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 5,
+      "region": "Region IX - ZAMBOANGA PENINSULA"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 3,
+      "region": "Region V - BICOL"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 5,
+      "region": "Region VI - WESTERN VISAYAS"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 2,
+      "region": "Region VII - CENTRAL VISAYAS"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 4,
+      "region": "Region VIII - EASTERN VISAYAS"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 3,
+      "region": "Region X - NORTHERN MINDANAO"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 4,
+      "region": "Region XI - DAVAO"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 4,
+      "region": "Region XII - SOCCSKSARGEN"
+    },
+    {
+      "house_only": 0,
+      "house_only_centavos": 0,
+      "publishable_house_only": 0,
+      "records": 7,
+      "region": "Region XIII - CARAGA"
+    }
+  ],
+  "review_gate": {
+    "publishable_house_only": 6565,
+    "publishable_records": 20005,
+    "quarantined": 426,
+    "total_records": 20431
+  }
+}

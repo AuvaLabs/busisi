@@ -1,0 +1,38 @@
+{
+  "api_url": "https://busisi.org/api/v1/research/fy2027-nep-house-changes",
+  "attribution": "Busisi, built and maintained by Auva Labs. Source publishers remain identified in sources.json.",
+  "canonical_article_url": "https://busisi.org/research/fy2027-nep-house-changes/",
+  "contact": "dev@auvalabs.com",
+  "direct_source_urls": [
+    "https://budget.bettergov.ph/api/v1/hgab/2027",
+    "https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-2r-vol-ib.pdf",
+    "https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-2r-vol-ic.pdf",
+    "https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-3r-vol-ib.pdf",
+    "https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-3r-vol-ic.pdf",
+    "https://budget-assets.bettergov.ph/hgab/2027/pdf/nep2027-vol-iib.pdf",
+    "https://budget-assets.bettergov.ph/hgab/2027/pdf/nep2027-fmr.pdf",
+    "https://budget-assets.bettergov.ph/hgab/2027/pdf/nep2027-nia.pdf",
+    "https://budget-assets.bettergov.ph/hgab/2027/pdf/nep2027-hfep.pdf"
+  ],
+  "evidence_boundary": "Only verified and source-reported claims are eligible for factual narration. Investigation leads must retain their limitations.",
+  "files": {
+    "chart_data": "https://busisi.org/data/research/fy2027-nep-house-changes/v1/chart-data.json",
+    "claims": "https://busisi.org/data/research/fy2027-nep-house-changes/v1/claims.json",
+    "findings": "https://busisi.org/data/research/fy2027-nep-house-changes/v1/findings.json",
+    "investigations": "https://busisi.org/data/research/fy2027-nep-house-changes/v1/investigations.json",
+    "limitations": "https://busisi.org/data/research/fy2027-nep-house-changes/v1/limitations.json",
+    "project_examples": "https://busisi.org/data/research/fy2027-nep-house-changes/v1/project-examples.json",
+    "sources": "https://busisi.org/data/research/fy2027-nep-house-changes/v1/sources.json"
+  },
+  "integrity": {
+    "instruction": "Verify every downloaded file against manifest.json before use.",
+    "method": "sha256-manifest"
+  },
+  "manifest_url": "https://busisi.org/data/research/fy2027-nep-house-changes/v1/manifest.json",
+  "package_base_url": "https://busisi.org/data/research/fy2027-nep-house-changes/v1",
+  "schema_version": "1.0",
+  "status": "ready_for_consumption",
+  "story_id": "fy2027-nep-house-changes-2026",
+  "story_url": "https://busisi.org/data/research/fy2027-nep-house-changes/v1/story.json",
+  "version": 1
+}

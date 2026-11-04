@@ -1,0 +1,114 @@
+[
+  {
+    "calculation_id": "fy2027-stage-change-research-v1",
+    "evidence_state": "verified",
+    "id": "stage-total-records",
+    "limitations": [],
+    "scope": "FY2027 NEP-to-House project-list comparison for four acquired programs",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "Busisi validated 20,431 comparison rows across the four acquired FY2027 project lists.",
+    "unit": "records",
+    "value": 20431
+  },
+  {
+    "calculation_id": "fy2027-stage-change-research-v1",
+    "evidence_state": "verified",
+    "id": "stage-dataset-count",
+    "limitations": [],
+    "scope": "FY2027 NEP-to-House project-list comparison for four acquired programs",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "The release covers 4 project-list datasets.",
+    "unit": "datasets",
+    "value": 4
+  },
+  {
+    "calculation_id": "fy2027-stage-change-research-v1",
+    "evidence_state": "source_reported",
+    "id": "stage-house-only",
+    "limitations": [
+      "House-only does not establish insertion, authorship, motive, or wrongdoing."
+    ],
+    "scope": "FY2027 NEP-to-House project-list comparison for four acquired programs",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "6,954 rows are classified as appearing only in the compared House project list.",
+    "unit": "records",
+    "value": 6954
+  },
+  {
+    "calculation_id": "fy2027-stage-change-research-v1",
+    "evidence_state": "review_candidate",
+    "id": "stage-publishable-house-only",
+    "limitations": [
+      "Each candidate requires document and scope review before any conclusion."
+    ],
+    "scope": "FY2027 NEP-to-House project-list comparison for four acquired programs",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "6,565 House-only rows remain available as documentary review leads after quarantine.",
+    "unit": "review candidates",
+    "value": 6565
+  },
+  {
+    "calculation_id": "fy2027-stage-change-research-v1",
+    "evidence_state": "source_reported",
+    "id": "stage-nep-only",
+    "limitations": [
+      "NEP-only can reflect removal, renaming, merging, or unmatched text."
+    ],
+    "scope": "FY2027 NEP-to-House project-list comparison for four acquired programs",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "1,784 rows are classified as appearing only in the compared NEP project list.",
+    "unit": "records",
+    "value": 1784
+  },
+  {
+    "calculation_id": "fy2027-stage-change-research-v1",
+    "evidence_state": "source_reported",
+    "id": "stage-amount-changes",
+    "limitations": [],
+    "scope": "FY2027 NEP-to-House project-list comparison for four acquired programs",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "243 matched rows increased and 265 decreased in the compared House list.",
+    "unit": "records",
+    "value": 508
+  },
+  {
+    "calculation_id": "fy2027-stage-change-research-v1",
+    "evidence_state": "verified",
+    "id": "stage-net-movement",
+    "limitations": [
+      "This is a project-list total, not spending or the whole national budget."
+    ],
+    "scope": "FY2027 NEP-to-House project-list comparison for four acquired programs",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "Across the four scoped lists, the recorded House total is PHP 13,729,951,000.00 higher than the NEP total.",
+    "unit": "PHP centavos",
+    "value": 1372995100000
+  },
+  {
+    "calculation_id": "fy2027-stage-change-research-v1",
+    "evidence_state": "verified",
+    "id": "stage-quarantined",
+    "limitations": [],
+    "scope": "FY2027 NEP-to-House project-list comparison for four acquired programs",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "426 ambiguous or scope-review rows are held in quarantine.",
+    "unit": "records",
+    "value": 426
+  }
+]
