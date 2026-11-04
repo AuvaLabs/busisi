@@ -199,7 +199,7 @@ const verifyHtmlRecord = async (path, expected) => {
   expectContentType(response, 'text/html', path);
   const body = await response.text();
   expectIncludes(body, expected, path);
-  expectIncludes(body, 'Evidence boundary', `${path} evidence boundary`);
+  expectIncludes(body, 'What this does not prove', `${path} evidence boundary`);
 };
 
 const verifyFont = async (path) => {
