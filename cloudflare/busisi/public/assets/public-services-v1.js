@@ -68,7 +68,12 @@
       });
     }
     const identityNote = appendText(main, 'div', '', 'services-identity-note');
-    appendText(identityNote, 'b', identity.name || identityLabels[identity.state] || 'Facility identity');
+    if (identity.reader_url) {
+      const identityLink = appendText(identityNote, 'a', identity.name || 'Open facility identity');
+      identityLink.href = identity.reader_url;
+    } else {
+      appendText(identityNote, 'b', identity.name || identityLabels[identity.state] || 'Facility identity');
+    }
     appendText(identityNote, 'p', identity.explanation || 'No facility identity explanation is available.');
     if (identity.official_id) appendText(identityNote, 'small', `Official ID: ${identity.official_id}`);
     const side = document.createElement('div');

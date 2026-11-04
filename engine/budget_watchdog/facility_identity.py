@@ -29,6 +29,14 @@ class FacilityRegistryRecord:
     province: str
     region: str
     source_id: str
+    division: str = ""
+    latitude_e6: int | None = None
+    longitude_e6: int | None = None
+    source_row: int | None = None
+    demolition_required: bool = False
+    geotechnical_report: bool = False
+    site_development_plan: bool = False
+    ownership_documents: bool = False
 
     def __post_init__(self) -> None:
         required = (
@@ -61,6 +69,20 @@ class FacilityMention:
             raise ValueError("facility type is invalid")
         if not self.record_id.strip():
             raise ValueError("record ID is required")
+
+
+@dataclass(frozen=True, slots=True)
+class FacilityTitleRecord:
+    source_type: SourceType
+    record_id: str
+    title: str
+    location: str = ""
+
+    def __post_init__(self) -> None:
+        if self.source_type not in {"budget", "delivery"}:
+            raise ValueError("source type is invalid")
+        if not self.record_id.strip() or not self.title.strip():
+            raise ValueError("record ID and title are required")
 
 
 @dataclass(frozen=True, slots=True)
@@ -235,4 +257,96 @@ def link_facility(
         _official_id_link(mention, registry)
         or _name_link(mention, registry)
         or _group_link(mention)
+    )
+
+
+def _school_name(value: str) -> str:
+    normalized = _normalize(value)
+    replacements = (
+        (r"\bes\b", "elementary school"),
+        (r"\bnhs\b", "national high school"),
+        (r"\bhs\b", "high school"),
+        (r"\bcs\b", "central school"),
+        (r"\bis\b", "integrated school"),
+    )
+    for pattern, replacement in replacements:
+        normalized = re.sub(pattern, replacement, normalized)
+    return " ".join(normalized.split())
+
+
+def _place_aliases(value: str) -> tuple[str, ...]:
+    normalized = _normalize(value)
+    without_capital = re.sub(r"\bcapital\b", "", normalized).strip()
+    aliases = {normalized, without_capital}
+    if without_capital.startswith("city of "):
+        name = without_capital.removeprefix("city of ").strip()
+        aliases.update((name, f"{name} city"))
+    return tuple(sorted(alias for alias in aliases if alias))
+
+
+def _contains(haystack: str, needle: str) -> bool:
+    return f" {needle} " in f" {haystack} "
+
+
+def _title_link(
+    record: FacilityTitleRecord,
+    state: MatchState,
+    *,
+    name: str,
+    facility_id: str | None = None,
+    confidence: int = 0,
+    signals: tuple[str, ...],
+    limitation: str,
+) -> FacilityLink:
+    return FacilityLink(
+        source_type=record.source_type,
+        record_id=record.record_id,
+        match_state=state,
+        facility_id=facility_id,
+        record_group_key=None,
+        record_group_label=name,
+        match_method="exact_registry_name_and_place" if state == "official_exact" else "registry_title_review",
+        confidence=confidence,
+        signals=signals,
+        limitation=limitation,
+    )
+
+
+def link_school_title(
+    record: FacilityTitleRecord,
+    registry: tuple[FacilityRegistryRecord, ...],
+) -> FacilityLink:
+    """Match a title only when an exact normalized registry name and place agree."""
+
+    title = _school_name(record.title)
+    context = _normalize(f"{record.title} {record.location}")
+    name_candidates = tuple(
+        facility
+        for facility in registry
+        if facility.facility_type == "school"
+        and _contains(title, _school_name(facility.official_name))
+    )
+    place_candidates = tuple(
+        facility
+        for facility in name_candidates
+        if any(_contains(context, place) for place in _place_aliases(facility.municipality))
+    )
+    if len(place_candidates) == 1:
+        facility = place_candidates[0]
+        return _title_link(
+            record, "official_exact", name=facility.official_name,
+            facility_id=facility.facility_id, confidence=95,
+            signals=("exact_registry_name_in_title", "place_in_record"),
+            limitation="The link identifies one listed school, not a building or completed project.",
+        )
+    if name_candidates:
+        return _title_link(
+            record, "ambiguous", name=name_candidates[0].official_name,
+            signals=("exact_registry_name_in_title", "place_missing_or_ambiguous"),
+            limitation="The title matched a registry name but not one compatible place.",
+        )
+    return _title_link(
+        record, "unlinked", name="",
+        signals=("no_exact_registry_name",),
+        limitation="No exact scoped registry name was found in the record title.",
     )

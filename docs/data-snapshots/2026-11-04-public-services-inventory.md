@@ -22,7 +22,7 @@ named work occurred.
 
 ## Facility rules
 
-The `public-services-v1` rules use explicit terms in the acquired title:
+The `public-services-v2` rules use explicit terms in the acquired title:
 
 - `school`: school or classroom
 - `hospital`: hospital, medical center, or medical centre
@@ -33,6 +33,34 @@ The `public-services-v1` rules use explicit terms in the acquired title:
 The action requirement for the generic `health facility` term prevents a
 program heading such as public health facilities from classifying an unrelated
 evacuation-center project. Ambiguous names remain outside this inventory.
+
+## Scoped identity pilot
+
+The facility identity layer has four publication states:
+
+- `official_exact`: one official identity passed an exact name and place gate
+- `group_only`: records share a normalized label and place, but no official ID
+- `ambiguous`: a possible registry name has missing or conflicting place evidence
+- `unlinked`: no safe identity or group is available
+
+The first official registry target is the Department of Education's indicative
+list of 1,095 possible PPP sites in CAR, NCR, Regions I, II, III, IV-A, IV-B and
+V. It is preliminary, non-binding and not a national school registry. The build
+requires the original official workbook, archived bytes, SHA-256 provenance, a
+reconciled 1,095-row total, unique six-digit school IDs, required identity
+fields, valid planning flags and coordinates within broad Philippines bounds.
+
+The official workbook returned HTTP 403 to the unattended acquisition harness
+on 2026-11-04. The release therefore remains closed: zero official identities,
+zero official record links, zero record groups and zero ambiguous links are
+published from this pilot. All 6,050 records remain unlinked. Search-result
+renderings and unofficial mirrors are not accepted as substitute source bytes.
+
+When acquisition succeeds, the matcher will examine the 4,722 school-related
+records already in the public inventory. It publishes a link only when one
+normalized official school name appears in the record title and one compatible
+municipality appears in the title or source location. It does not use fuzzy
+matching or choose among repeated names.
 
 ## Review flags
 

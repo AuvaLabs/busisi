@@ -28,6 +28,8 @@ import { questionsBody } from './questions-content.js';
 import { getQuestionCatalogue } from './questions-query.js';
 import { publicServicesBody } from './public-services-content.js';
 import { getPublicServicesSummary } from './public-services-query.js';
+import { facilityBody } from './facility-content.js';
+import { getFacility } from './facility-query.js';
 import {
   budgetRecordBody,
   candidateRecordBody,
@@ -386,6 +388,27 @@ const publicServices = (summary) => page(document({
   schema: PUBLIC_SERVICES_SCHEMA,
 }));
 
+const facility = (payload) => {
+  const { record } = payload;
+  const path = `/facilities/${encodeURIComponent(record.facility_id)}/`;
+  const description = `Official facility identity ${record.official_id}, its scoped registry evidence, and linked public budget and delivery records.`;
+  return page(document({
+    title: `${record.official_name} public records | Busisi`,
+    description,
+    canonicalPath: path,
+    body: facilityBody(payload),
+    schema: {
+      '@context': 'https://schema.org',
+      '@type': 'Dataset',
+      name: record.official_name,
+      identifier: record.official_id,
+      description,
+      spatialCoverage: `${record.municipality}, ${record.region}`,
+      isAccessibleForFree: true,
+    },
+  }));
+};
+
 const evidenceSchema = (name, description, path, year) => ({
   '@context': 'https://schema.org',
   '@type': 'Dataset',
@@ -694,6 +717,12 @@ export default {
     }
     if (!result && (url.pathname === '/public-services' || url.pathname === '/public-services/') && env.DB) {
       result = publicServices(await getPublicServicesSummary(env.DB));
+    }
+    const facilityMatch = url.pathname.match(/^\/facilities\/([^/]+)\/?$/);
+    if (!result && facilityMatch && env.DB) {
+      const id = decodeRecordId(facilityMatch[1]);
+      const payload = id ? await getFacility(env.DB, id) : null;
+      if (payload) result = facility(payload);
     }
     const auditReportMatch = url.pathname.match(/^\/audit\/reports\/([a-z0-9-]+)\/?$/);
     if (!result && auditReportMatch && env.DB) {

@@ -1,7 +1,9 @@
 from engine.budget_watchdog.facility_identity import (
     FacilityMention,
     FacilityRegistryRecord,
+    FacilityTitleRecord,
     link_facility,
+    link_school_title,
 )
 
 
@@ -133,3 +135,58 @@ def test_missing_facility_name_remains_unlinked() -> None:
     assert link.facility_id is None
     assert link.record_group_key is None
     assert link.confidence == 0
+
+
+def test_school_title_match_expands_suffix_and_requires_place() -> None:
+    registry = (_school(name="Agtangao ES", municipality="Bangued (Capital)"),)
+    record = FacilityTitleRecord(
+        source_type="delivery",
+        record_id="25AB0001",
+        title="Construction of School Building, Agtangao Elementary School, Bangued, Abra",
+        location="Abra DEO, CAR",
+    )
+
+    link = link_school_title(record, registry)
+
+    assert link.match_state == "official_exact"
+    assert link.facility_id == "deped:136505"
+    assert link.confidence == 95
+    assert link.signals == ("exact_registry_name_in_title", "place_in_record")
+
+
+def test_school_title_without_place_or_with_multiple_candidates_is_ambiguous() -> None:
+    registry = (
+        _school(name="San Antonio Elementary School", municipality="Quezon City"),
+        _school("deped:999999", "999999", name="San Antonio ES", municipality="Pasig City"),
+    )
+    no_place = FacilityTitleRecord(
+        source_type="budget",
+        record_id="dpwh:school",
+        title="Repair of San Antonio Elementary School classrooms",
+        location="NCR",
+    )
+    multiple = FacilityTitleRecord(
+        source_type="delivery",
+        record_id="25AA0003",
+        title="Facilities for San Antonio ES in Quezon City and Pasig City",
+        location="NCR",
+    )
+
+    assert link_school_title(no_place, registry).match_state == "ambiguous"
+    assert link_school_title(no_place, registry).facility_id is None
+    assert link_school_title(multiple, registry).match_state == "ambiguous"
+
+
+def test_unmatched_school_title_remains_unlinked() -> None:
+    record = FacilityTitleRecord(
+        source_type="delivery",
+        record_id="25AA0004",
+        title="Construction of Unlisted Elementary School, Cebu",
+        location="Cebu DEO, Region VII",
+    )
+
+    link = link_school_title(record, (_school(),))
+
+    assert link.match_state == "unlinked"
+    assert link.facility_id is None
+    assert link.signals == ("no_exact_registry_name",)

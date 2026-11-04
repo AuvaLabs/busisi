@@ -18,7 +18,9 @@ import { getCoverageStatus } from '../src/coverage-status-query.js';
 import { coverageStatusBody } from '../src/coverage-status-content.js';
 import { getSourceMonitorStatus } from '../src/source-monitor-query.js';
 import { buildQuestionCatalogue } from '../src/questions-query.js';
+import { facilityBody } from '../src/facility-content.js';
 import { publicServicesBody } from '../src/public-services-content.js';
+import { getFacility } from '../src/facility-query.js';
 import {
   getPublicServicesSummary,
   parsePublicServicesQuery,
@@ -113,6 +115,9 @@ const contractorAssociationMigrationPath = fileURLToPath(
 const facilityIdentityMigrationPath = fileURLToPath(
   new URL('../migrations/0026_facility_identity.sql', import.meta.url),
 );
+const facilityRegistryDetailsMigrationPath = fileURLToPath(
+  new URL('../migrations/0027_facility_registry_details.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -176,6 +181,7 @@ class LocalD1 {
     this.database.exec(readFileSync(sourceMonitorMigrationPath, 'utf8'));
     this.database.exec(readFileSync(contractorAssociationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(facilityIdentityMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(facilityRegistryDetailsMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -1488,6 +1494,8 @@ const insertPublicServiceExamples = (database) => database.database.exec(`
   INSERT INTO facility_identities VALUES
     ('deped:136505', 'school', '136505', 'San Antonio Elementary School',
      'Quezon City', 'Metro Manila', 'NCR', 14650000, 121050000, 'deped-ppp-2025');
+  INSERT INTO facility_identity_details VALUES
+    ('deped:136505', 'Quezon City', 48, 1, 0, 1, 1);
   INSERT INTO facility_record_links VALUES
     ('budget', 'dpwh:school', 'official_exact', 'deped:136505',
      'school:san-antonio-es:quezon-city', 'San Antonio Elementary School',
@@ -1646,6 +1654,123 @@ test('filters public-service records by explainable facility identity state', as
   assert.throws(() => parsePublicServicesQuery(new URL(
     'https://busisi.test/api/v1/public-services?identity=confirmed',
   )), /identity is invalid/);
+});
+
+test('publishes an official facility dossier without converting records into buildings', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  insertPublicServiceExamples(database);
+  database.database.exec(`
+    INSERT INTO budget_items VALUES
+      ('budget:school', 'line:school', 2026, 'Repair of San Antonio Elementary School',
+       1200000000, 'family:school-repair', 'San Antonio school repair', '${'c'.repeat(64)}');
+    INSERT INTO delivery_items VALUES
+      ('26SCHOOL01', 2026, 'Repair of San Antonio Elementary School', 1500000000,
+       'Quezon City, NCR', 'GAA 2026', 'family:school-repair',
+       'San Antonio school repair', '${'d'.repeat(64)}');
+    INSERT INTO delivery_project_details VALUES
+      ('26SCHOOL01', 2026, 'Buildings and Facilities', 'Completed', '100',
+       'SAMPLE BUILDER', '[]', '2026-01-01', '2026-06-30', 'Quezon City DEO',
+       'NCR', '', '', 0, '${'d'.repeat(64)}');
+    INSERT INTO facility_record_links VALUES
+      ('budget', 'budget:school', 'official_exact', 'deped:136505', NULL,
+       'San Antonio Elementary School', 'exact_registry_name_and_place', 95, '{}',
+       'The link identifies a school, not a completed building.',
+       '2026-11-04T00:00:00+00:00'),
+      ('delivery', '26SCHOOL01', 'official_exact', 'deped:136505', NULL,
+       'San Antonio Elementary School', 'exact_registry_name_and_place', 95,
+       '["exact_registry_name_in_title","place_in_record"]',
+       'The link identifies a school, not a completed building.',
+       '2026-11-04T00:00:00+00:00');
+  `);
+
+  const facility = await getFacility(database, 'deped:136505');
+  assert.equal(facility.record.official_id, '136505');
+  assert.equal(facility.record.division, 'Quezon City');
+  assert.equal(facility.links.length, 3);
+  assert.deepEqual(
+    facility.links.map(({ reader_url }) => reader_url).sort(),
+    [
+      '/contracts/26SCHOOL01/',
+      '/records/budget/budget%3Aschool/',
+      '/records/change/dpwh%3Aschool/',
+    ],
+  );
+  assert.deepEqual(facility.links.find(({ record_id }) => record_id === 'budget:school').signals, []);
+  assert.equal(facility.summary.record_count, 3);
+  assert.equal(facility.summary.budget_records, 2);
+  assert.equal(facility.summary.delivery_records, 1);
+  assert.equal(facility.summary.first_year, 2026);
+  assert.equal(facility.summary.last_year, 2027);
+
+  const api = await worker.fetch(
+    request('/api/v1/facilities/deped%3A136505'), environment(database),
+  );
+  const apiBody = await api.json();
+  assert.equal(api.status, 200);
+  assert.equal(apiBody.meta.review_scope, 'official_facility_identity_and_linked_records');
+  assert.equal(apiBody.data.record.official_name, 'San Antonio Elementary School');
+
+  const pageResponse = await siteWorker.fetch(
+    request('/facilities/deped%3A136505/'), environment(database),
+  );
+  const pageDocument = await pageResponse.text();
+  assert.equal(pageResponse.status, 200);
+  assert.match(pageDocument, /San Antonio Elementary School/);
+  assert.match(pageDocument, /Official school ID 136505/);
+  assert.match(pageDocument, /3 linked public records/);
+  assert.match(pageDocument, /not a count of school buildings/i);
+  assert.match(pageDocument, /Preliminary school list, not a complete national registry/);
+  assert.match(pageDocument, /Open linked record/);
+
+  const missingApi = await worker.fetch(
+    request('/api/v1/facilities/deped%3Amissing'), environment(database),
+  );
+  assert.equal(missingApi.status, 404);
+  assert.deepEqual(await missingApi.json(), { detail: 'facility not found' });
+});
+
+test('renders a sparse facility dossier without inventing coordinates or linked records', () => {
+  const document = facilityBody({
+    record: {
+      official_id: '<100001>',
+      official_name: '<Sample School>',
+      municipality: 'Sample City',
+      province: 'Sample Province',
+      region: 'Region I',
+      division: '',
+      latitude_e6: null,
+      longitude_e6: null,
+      source_row: null,
+      demolition_required: 0,
+      geotechnical_report: 0,
+      site_development_plan: 0,
+      ownership_documents: 0,
+      dataset_name: 'Scoped school list',
+      publisher: 'Department of Education',
+      acquired_at: '2026-11-04T00:00:00+00:00',
+      artifact_sha256: 'a'.repeat(64),
+      source_status: 'partial',
+      scope_note: 'Not a national registry.',
+      source_url: 'https://www.deped.gov.ph/list.xlsx',
+    },
+    links: [],
+    summary: {
+      record_count: 0,
+      budget_records: 0,
+      delivery_records: 0,
+      budget_amount_centavos: 0,
+      delivery_amount_centavos: 0,
+      first_year: null,
+      last_year: null,
+    },
+  });
+
+  assert.match(document, /Not stated in the registry/);
+  assert.match(document, /No public budget or delivery record has passed/);
+  assert.match(document, /Not marked yes in the source list/);
+  assert.match(document, /&lt;Sample School&gt;/);
+  assert.doesNotMatch(document, /<Sample School>/);
 });
 
 test('reuses the public-services summary briefly within one database binding', async (context) => {

@@ -309,6 +309,7 @@ const mapRecord = (record, signals) => {
       official_id: record.official_id,
       source: record.registry_dataset,
       source_url: record.registry_source_url,
+      reader_url: `/facilities/${encodeURIComponent(record.facility_id)}/`,
       explanation: `Linked to official ${record.facility_type === 'school' ? 'school' : 'facility'} ID ${record.official_id} in ${record.registry_dataset}, published by ${record.registry_publisher}.`,
       limitation: record.identity_limitation || record.registry_scope_note,
     };
@@ -318,6 +319,7 @@ const mapRecord = (record, signals) => {
       official_id: null,
       source: null,
       source_url: null,
+      reader_url: null,
       explanation: 'Similar record labels were grouped by normalized facility name and place. This is not an official identity or a count of buildings.',
       limitation: record.identity_limitation,
     };
@@ -327,6 +329,7 @@ const mapRecord = (record, signals) => {
       official_id: null,
       source: null,
       source_url: null,
+      reader_url: null,
       explanation: record.identity_limitation || 'More than one facility could fit this record, so Busisi did not select one.',
       limitation: record.identity_limitation,
     };
@@ -336,6 +339,7 @@ const mapRecord = (record, signals) => {
       official_id: null,
       source: null,
       source_url: null,
+      reader_url: null,
       explanation: 'No official facility identity or reliable record group has been linked to this record yet.',
       limitation: 'An unlinked record is not evidence that the named facility does not exist.',
     };

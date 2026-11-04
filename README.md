@@ -50,6 +50,15 @@ payment, quality or public benefit. The reader desk is `/public-services/`; its
 machine-readable records and controls are `/api/v1/public-services` and
 `/api/v1/public-services-summary`.
 
+A scoped facility-identity pipeline can reconcile school-related records with
+the Department of Education's indicative list of 1,095 possible PPP sites in
+eight announced regions. It requires the original workbook, its SHA-256 digest,
+the 1,095-row control total, valid school IDs and coordinates, and an exact
+school-name-and-place match. Repeated names, missing places and conflicts remain
+quarantined. The source currently blocks unattended acquisition, so no identity
+from this pilot is published until those controls pass. The pipeline does not
+turn a listed school or linked record into a building count.
+
 The project-integrity desk publishes deterministic DPWH source contradictions,
 coordinate review signals and coverage gaps. Its contractor view separately
 ranks archived activity by project count and total project budget. Neither view
@@ -143,6 +152,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_contract_evidence.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_release.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_universe.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_retry.py --limit 10
+PYTHONPATH=. python3 ops/harness/budget_watchdog_facilities.py
 cd cloudflare/busisi
 npm ci
 npm run check

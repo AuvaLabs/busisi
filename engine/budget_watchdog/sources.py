@@ -137,6 +137,12 @@ def default_source_registry() -> SourceRegistry:
                 SourceAuthority.PRIMARY,
             ),
             SourceDefinition(
+                "deped-facilities",
+                "Department of Education facility datasets",
+                "https://www.deped.gov.ph",
+                SourceAuthority.PRIMARY,
+            ),
+            SourceDefinition(
                 "bettergov-budget",
                 "BetterGov Budget API",
                 "https://budget.bettergov.ph",

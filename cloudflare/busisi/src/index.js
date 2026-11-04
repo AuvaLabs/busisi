@@ -73,6 +73,7 @@ import {
   parsePublicServicesQuery,
   queryPublicServices,
 } from './public-services-query.js';
+import { getFacility } from './facility-query.js';
 
 const API_PREFIX = '/api/v1/projects';
 const MAX_SLUG_LENGTH = 160;
@@ -86,6 +87,16 @@ const jsonResponse = (body, status = 200) => new Response(JSON.stringify(body), 
   status,
   headers: { 'Content-Type': 'application/json; charset=utf-8' },
 });
+
+const decodedPathId = (value) => {
+  try {
+    const decoded = decodeURIComponent(value);
+    return decoded && decoded.length <= 512 && !/[\u0000-\u001f\u007f]/.test(decoded)
+      ? decoded : null;
+  } catch {
+    return null;
+  }
+};
 
 const secure = (response, isApi) => {
   const secured = new Response(response.body, response);
@@ -150,6 +161,16 @@ const apiResponse = async (request, environment, url) => {
         review_scope: 'title_classified_public_service_records',
       },
       data: page.records,
+    });
+  }
+  const facilityMatch = url.pathname.match(/^\/api\/v1\/facilities\/([^/]+)$/);
+  if (facilityMatch) {
+    const facilityId = decodedPathId(facilityMatch[1]);
+    const facility = facilityId ? await getFacility(environment.DB, facilityId) : null;
+    if (!facility) return jsonResponse({ detail: 'facility not found' }, 404);
+    return jsonResponse({
+      meta: { review_scope: 'official_facility_identity_and_linked_records' },
+      data: facility,
     });
   }
   if (url.pathname === '/api/v1/change-stats') {

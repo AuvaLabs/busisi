@@ -11,6 +11,7 @@
     "build:project-images": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_project_images.py",
     "coverage:images": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_project_image_automation.py --publish",
     "build:public-value": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_public_value.py",
+    "build:facilities": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_facilities.py",
     "build:budget-cycle": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_senate.py",
     "build:coa": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_coa.py",
     "build:procurement": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_procurement.py",
