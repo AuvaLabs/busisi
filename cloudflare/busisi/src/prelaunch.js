@@ -476,6 +476,8 @@ const llms = () => response(`# Busisi
 
 Busisi is a nonpartisan and politically unaffiliated public-interest project helping Filipino citizens examine Philippine public budget records.
 
+Built and maintained by Auva Labs. Official publishers and data-access providers are credited separately and do not control Busisi methodology or publication decisions.
+
 ## Current status
 
 Official source records and reconciled FY2027 stage comparisons are public. Cross-source and project-family candidates remain explicitly unreviewed unless a dossier says otherwise.

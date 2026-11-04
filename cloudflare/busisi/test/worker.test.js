@@ -1783,6 +1783,23 @@ test('publishes evidence drilldowns without collapsing records into findings', a
     assert.match(document, expected, path);
     assert.doesNotMatch(document, /(?:is|confirms|establishes) (?:fraud|corruption|wrongdoing)/i, path);
   }
+
+  const budget = await siteWorker.fetch(
+    request('/records/budget/2025%3Apump/'), environment(database),
+  );
+  const budgetDocument = await budget.text();
+  assert.match(budgetDocument, /Original publisher/);
+  assert.match(budgetDocument, /Department of Budget and Management/);
+  assert.match(budgetDocument, /Accessed through/);
+  assert.match(budgetDocument, /BetterGov GAA dataset/);
+  assert.match(budgetDocument, /Processed and published by/);
+
+  const delivery = await siteWorker.fetch(
+    request('/contracts/25O00113/'), environment(database),
+  );
+  const deliveryDocument = await delivery.text();
+  assert.match(deliveryDocument, /Department of Public Works and Highways/);
+  assert.match(deliveryDocument, /BetterGov DPWH dataset and API/);
 });
 
 test('expands reviewed project dossiers with phase history and evidence boundaries', async (context) => {

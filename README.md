@@ -1,7 +1,10 @@
 # Busisi
 
-Busisi is an evidence-first explorer for Philippine public budget and delivery
-records. It publishes official source records, deterministic review signals,
+*Follow public money. Check the evidence.*
+
+Busisi is a nonpartisan public-interest data platform that helps Filipinos
+follow public money from proposal to project delivery. It publishes official
+source records, deterministic review signals,
 an FY2027 NEP-to-House project ledger, a national appropriation-head ledger,
 an FY2027 source-separated budget publication trail, a reconciled FY2026
 allotment-release ledger, and a small reviewed dossier set
@@ -62,9 +65,13 @@ inspect where the data ends and challenge an error using source evidence.
 
 ## Project and data attribution
 
-Busisi is a public-interest project by [Auva Labs](https://auvalabs.com/).
+Busisi is built and maintained by [Auva Labs](https://auvalabs.com/).
 Questions, corrections and collaboration enquiries can be sent to
-[hello@auvalabs.com](mailto:hello@auvalabs.com).
+[dev@auvalabs.com](mailto:dev@auvalabs.com).
+
+Auva Labs is responsible for Busisi's software, data pipeline, methodology,
+presentation and publication decisions. Data-source organizations do not
+control Busisi classifications or conclusions.
 
 Busisi uses public datasets and API endpoints maintained by
 [BetterGov.ph](https://bettergov.ph/) and the

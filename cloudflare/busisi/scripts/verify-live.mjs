@@ -210,8 +210,13 @@ const verifyPages = async () => {
   expectIncludes(homeText, `<link rel="canonical" href="${origin}/">`, 'home canonical');
   expectIncludes(homeText, '"@type":"WebSite"', 'home structured data');
   expectIncludes(homeText, 'index, follow, max-image-preview:large', 'home robots');
+  expectIncludes(
+    homeText,
+    'Busisi is a nonpartisan public-interest data platform for Filipinos',
+    'home positioning',
+  );
   expectIncludes(homeText, 'https://auvalabs.com/', 'Auva Labs project credit');
-  expectIncludes(homeText, 'mailto:hello@auvalabs.com', 'project contact');
+  expectIncludes(homeText, 'mailto:dev@auvalabs.com', 'project contact');
   const csp = home.headers.get('content-security-policy') ?? '';
   expectIncludes(csp, "default-src 'self'", 'home CSP');
   expectIncludes(csp, "connect-src 'self'", 'home CSP');
@@ -229,6 +234,11 @@ const verifyPages = async () => {
     methodologyText,
     'no affiliation with any politician, political party, candidate',
     'methodology political boundary',
+  );
+  expectIncludes(
+    methodologyText,
+    'BetterGov does not operate, sponsor, or endorse Busisi',
+    'methodology data-source boundary',
   );
 
   const coverage = await request('/coverage/');
@@ -338,6 +348,7 @@ const verifyPages = async () => {
   const llmsText = await llms.text();
   expectIncludes(llmsText, 'Evidence and publication rules', 'llms evidence policy');
   expectIncludes(llmsText, 'nonpartisan and politically unaffiliated', 'llms independence policy');
+  expectIncludes(llmsText, 'Built and maintained by Auva Labs', 'llms ownership');
 
   const indexNow = await request(`/${indexNowKey}.txt`);
   expectStatus(indexNow, 200, 'IndexNow key');

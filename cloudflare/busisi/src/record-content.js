@@ -41,6 +41,12 @@ const facts = (items) => `<dl class="evidence-facts">${items.map(([label, value,
 
 const boundary = (message) => `<aside class="evidence-boundary"><strong>Evidence boundary</strong><p>${html(message)}</p></aside>`;
 
+const sourceRoles = ({ publisher, access }) => `<dl class="evidence-details">
+  <div><dt>Original publisher</dt><dd>${html(publisher)}</dd></div>
+  <div><dt>Accessed through</dt><dd>${html(access)}</dd></div>
+  <div><dt>Processed and published by</dt><dd>Busisi, built and maintained by Auva Labs</dd></div>
+</dl>`;
+
 const hash = (value) => value
   ? `<code title="${html(value)}">${html(value.slice(0, 16))}…</code>`
   : '<span>Not available</span>';
@@ -177,6 +183,8 @@ const projectAvailability = (delivery, procurementEvidence, auditEvidence) => {
 };
 
 const projectProvenance = (record, delivery, provenance) => `<section class="evidence-section" id="provenance"><p class="kicker">Provenance</p><h2>Identifiers and archived source fingerprints</h2><dl class="provenance-grid">
+  <div><dt>Original publishers</dt><dd>Department of Budget and Management; Department of Public Works and Highways</dd></div><div><dt>Accessed through</dt><dd>BetterGov public datasets and APIs</dd></div>
+  <div><dt>Processed and published by</dt><dd>Busisi, built and maintained by Auva Labs</dd></div><div><dt>Publication role</dt><dd>Independent normalization, reconciliation, review, and presentation</dd></div>
   <div><dt>Reviewed case</dt><dd>${html(record.case_id)}</dd></div><div><dt>Project family</dt><dd>${html(record.family_id)}</dd></div>
   <div><dt>Contract ID</dt><dd>${html(record.contract_id)}</dd></div><div><dt>Delivery snapshot as of</dt><dd>${html(provenance.source_as_of || 'Not stated')}</dd></div>
   <div><dt>Budget artifact SHA-256</dt><dd>${hash(provenance.budget_artifact_sha256 || '')}</dd></div><div><dt>Delivery artifact SHA-256</dt><dd>${hash(delivery?.detail_artifact_sha256 || provenance.delivery_artifact_sha256 || provenance.source_artifact_sha256 || '')}</dd></div>
@@ -189,7 +197,7 @@ export const budgetRecordBody = ({ record, related, candidates, projects }) => `
   title: record.description, summary: record.family_label,
 })}
 ${facts([['Appropriation', money(record.amount_centavos), 'Authority to spend, not proof of release or payment'], ['Fiscal year', record.fiscal_year], ['Snapshot fingerprint', record.artifact_sha256.slice(0, 16), 'Full digest shown below']])}
-<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Source identity</p><h2>Archived appropriation row</h2><dl class="evidence-details"><div><dt>Record ID</dt><dd>${html(record.record_id)}</dd></div><div><dt>Budget line ID</dt><dd>${html(record.budget_line_id)}</dd></div><div><dt>Normalized family</dt><dd>${html(record.project_family_id)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.artifact_sha256)}</dd></div></dl><a class="evidence-action" href="${html(gaaDocumentsUrl(record.fiscal_year))}" target="_blank" rel="noopener noreferrer">Open FY ${record.fiscal_year} GAA document index</a></section>${availability()}</div>
+<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Source identity</p><h2>Archived appropriation row</h2>${sourceRoles({ publisher: 'Department of Budget and Management', access: 'BetterGov GAA dataset' })}<dl class="evidence-details"><div><dt>Record ID</dt><dd>${html(record.record_id)}</dd></div><div><dt>Budget line ID</dt><dd>${html(record.budget_line_id)}</dd></div><div><dt>Normalized family</dt><dd>${html(record.project_family_id)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.artifact_sha256)}</dd></div></dl><a class="evidence-action" href="${html(gaaDocumentsUrl(record.fiscal_year))}" target="_blank" rel="noopener noreferrer">Open FY ${record.fiscal_year} GAA document index</a></section>${availability()}</div>
 <section class="evidence-section"><p class="kicker">Related appropriation history</p><h2>Rows sharing this normalized family</h2>${relatedBudgets(related)}</section>
 <section class="evidence-section"><p class="kicker">Cross-source review</p><h2>${candidates.length} candidate link${candidates.length === 1 ? '' : 's'}</h2>${candidates.length ? candidates.map((item) => `<a class="candidate-callout" href="${idPath('candidate', item.candidate_id)}"><strong>${html(item.delivery_description)}</strong><span>Unreviewed · evidence score ${item.score}</span></a>`).join('') : empty('No candidate delivery link is associated with this budget line and fiscal year.')}${projects.map((item) => `<a class="reviewed-callout" href="/projects/${html(item.slug)}/"><strong>${html(item.title)}</strong><span>${html(item.status_label)}</span></a>`).join('')}</section>
 ${boundary('This page reproduces an appropriation record and normalized relationships. It does not establish procurement, release, payment, construction, completion, benefit, or wrongdoing.')}</article>`;
@@ -197,7 +205,7 @@ ${boundary('This page reproduces an appropriation record and normalized relation
 export const deliveryRecordBody = ({ record, related, budgets, candidates, projects, signals: items, contractors, imageEvidence, ...acquisition }) => `${breadcrumb('DPWH contract', record.contract_id)}
 <article class="evidence-dossier">${heading({ badge: 'Official DPWH delivery record', kicker: `FY ${record.fiscal_year} · Contract ${record.contract_id}`, title: record.description, summary: record.location })}
 ${facts([['Recorded project budget', money(record.budget_centavos), 'Snapshot value, not proof of payment'], ['Status / progress', `${record.status || 'Not stated'} / ${record.progress ? `${record.progress}%` : 'Not stated'}`, 'Reported by the source record'], ['Integrity signals', items.length, 'Review leads, not findings']])}
-<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Project details</p><h2>Fields in the archived DPWH record</h2>${projectDetails(record)}<dl class="evidence-details"><div><dt>Source of funds</dt><dd>${html(record.source_of_funds || 'Not stated')}</dd></div><div><dt>Normalized family</dt><dd>${html(record.project_family_id)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.detail_artifact_sha256 || record.artifact_sha256)}</dd></div></dl></section>${district(record.district_context)}</div>
+<div class="evidence-columns"><section class="evidence-panel"><p class="kicker">Project details</p><h2>Fields in the archived DPWH record</h2>${sourceRoles({ publisher: 'Department of Public Works and Highways', access: 'BetterGov DPWH dataset and API' })}${projectDetails(record)}<dl class="evidence-details"><div><dt>Source of funds</dt><dd>${html(record.source_of_funds || 'Not stated')}</dd></div><div><dt>Normalized family</dt><dd>${html(record.project_family_id)}</dd></div><div><dt>Artifact SHA-256</dt><dd>${hash(record.detail_artifact_sha256 || record.artifact_sha256)}</dd></div></dl></section>${district(record.district_context)}</div>
 ${projectImageEvidencePanel(imageEvidence)}
 <section class="evidence-section"><p class="kicker">Contractor identities</p><h2>Parties stated in the project record</h2>${contractorCards(contractors)}</section>
 <section class="evidence-section"><p class="kicker">Deterministic review</p><h2>Published source-record signals</h2>${signals(items)}</section>

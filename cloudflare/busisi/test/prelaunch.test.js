@@ -23,9 +23,10 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /href="\/assets\/site-visual-v17\.css"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public budget records/);
+  assert.match(document, /Busisi is a nonpartisan public-interest data platform for Filipinos/);
   assert.doesNotMatch(document, /corazon-2026|25HI0028|api\/v1\/projects/i);
-  assert.match(document, /A public-interest project by <a href="https:\/\/auvalabs\.com\//);
-  assert.match(document, /href="mailto:hello@auvalabs\.com"/);
+  assert.match(document, /Built and maintained by <a href="https:\/\/auvalabs\.com\//);
+  assert.match(document, /href="mailto:dev@auvalabs\.com"/);
   assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
   assert.match(
     response.headers.get('content-security-policy'),
@@ -213,10 +214,12 @@ test('methodology is canonical and explains the publication gate', async () => {
   assert.match(document, /Congressional district context/);
   assert.match(document, /Machine-readable provenance stays in the JSON API/);
   assert.match(document, /not a coordinate or boundary-polygon determination/);
-  assert.match(document, /A public-interest project by/);
+  assert.match(document, /Built and maintained by/);
   assert.match(document, /id="editorial-independence"/);
   assert.match(document, /no affiliation with any politician, political party, candidate/);
   assert.match(document, /same published evidence rules/);
+  assert.match(document, /BetterGov does not operate, sponsor, or endorse Busisi/);
+  assert.match(document, /Auva Labs is responsible for Busisi's software, data pipeline, methodology, presentation, and publication decisions/);
 });
 
 test('publishes machine-readable discovery files', async () => {
@@ -246,6 +249,7 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(llmsText, /Appropriation heads/);
   assert.match(llmsText, /Public value desk/);
   assert.match(llmsText, /nonpartisan and politically unaffiliated/);
+  assert.match(llmsText, /Built and maintained by Auva Labs/);
   assert.match(llms.headers.get('content-type'), /^text\/plain/);
 });
 
