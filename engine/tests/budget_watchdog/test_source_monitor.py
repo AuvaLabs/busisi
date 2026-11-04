@@ -47,6 +47,44 @@ def test_rejects_hgab_overview_with_wrong_year_or_invalid_commit() -> None:
             parse_hgab_overview(payload)
 
 
+@pytest.mark.parametrize(
+    "value",
+    [
+        {"meta": [], "data": {}},
+        {
+            "meta": {
+                "dataset": "hgab",
+                "fiscal_year": 2027,
+                "source_commit": "a" * 40,
+                "built_at": "today",
+            },
+            "data": {"datasets": [{"key": "dpwh"}]},
+        },
+        {
+            "meta": {
+                "dataset": "hgab",
+                "fiscal_year": 2027,
+                "source_commit": "a" * 40,
+                "built_at": "2026-10-26T00:00:00Z",
+            },
+            "data": {"datasets": []},
+        },
+        {
+            "meta": {
+                "dataset": "hgab",
+                "fiscal_year": 2027,
+                "source_commit": "a" * 40,
+                "built_at": "2026-10-26T00:00:00Z",
+            },
+            "data": {"datasets": [{"key": "dpwh"}, {"key": "dpwh"}]},
+        },
+    ],
+)
+def test_rejects_malformed_hgab_overview_boundaries(value: dict) -> None:
+    with pytest.raises(SourceMonitorError):
+        parse_hgab_overview(json.dumps(value).encode())
+
+
 def _pcab_document(rows: list[list[str]]) -> bytes:
     return json.dumps({
         "page": 1,
@@ -141,6 +179,30 @@ def test_rejects_private_disabled_or_malformed_dataset_metadata() -> None:
         with pytest.raises(SourceMonitorError):
             parse_huggingface_metadata(json.dumps(value).encode(), "bettergovph/gaa")
 
+    for payload in (b"not json", b"[]"):
+        with pytest.raises(SourceMonitorError):
+            parse_huggingface_metadata(payload, "bettergovph/gaa")
+
+    for modified in (None, "today"):
+        value = {
+            "id": "bettergovph/gaa",
+            "sha": "a" * 40,
+            "lastModified": modified,
+        }
+        with pytest.raises(SourceMonitorError, match="modification time"):
+            parse_huggingface_metadata(json.dumps(value).encode(), "bettergovph/gaa")
+
+
+def test_rejects_invalid_pcab_transition_date() -> None:
+    with pytest.raises(SourceMonitorError, match="ISO format"):
+        review_pcab_transition(
+            b"{}",
+            b"{}",
+            reviewed_sha256="a" * 64,
+            observed_sha256="b" * 64,
+            observed_on="today",
+        )
+
 
 def test_extracts_only_normalized_2026_dbm_release_entries() -> None:
     payload = b"""
@@ -176,6 +238,9 @@ def test_rejects_missing_or_duplicate_dbm_catalog_entries() -> None:
     with pytest.raises(SourceMonitorError, match="duplicate"):
         parse_dbm_release_catalog(duplicate, 2026)
     assert parse_dbm_release_catalog(b"<main></main>", 2027, allow_empty=True) == ()
+    escaped = b'<div id="rlta-panel-2026"><a href="https://example.com/file">Bad</a></div>'
+    with pytest.raises(SourceMonitorError, match="official origin"):
+        parse_dbm_release_catalog(escaped, 2026)
 
 
 def test_compares_observations_without_hiding_added_or_changed_records() -> None:

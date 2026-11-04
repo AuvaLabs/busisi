@@ -1,5 +1,6 @@
 import hashlib
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -171,3 +172,121 @@ def test_editor_rejects_missing_consumption_link() -> None:
 
     with pytest.raises(ValueError, match="every release data file"):
         validate_research_release(release)
+
+
+@pytest.mark.parametrize(
+    ("case", "message"),
+    [
+        ("metadata", "metadata"),
+        ("required_text", "story_id"),
+        ("status", "status"),
+        ("version", "version"),
+        ("canonical", "canonical_url"),
+        ("digest", "SHA-256"),
+        ("date", "ISO date"),
+        ("freshness_limit", "max_source_age_days"),
+        ("editorial_ready", "editorial ready"),
+        ("claims", "claims"),
+        ("duplicate_claim", "duplicate claim"),
+        ("claim_state", "evidence state"),
+        ("limitations", "limitations"),
+        ("duplicate_limit", "duplicate limitation"),
+        ("findings", "findings"),
+        ("finding_object", "finding"),
+        ("finding_claim", "unknown claims"),
+        ("story_pair", "published together"),
+        ("story_status", "story must be ready"),
+        ("story_identity", "story identity"),
+        ("story_sections", "ordered sections"),
+        ("story_copy", "section copy"),
+        ("story_claims", "identify at least one claim"),
+        ("story_source", "unknown source"),
+        ("story_limitation", "unknown limitation"),
+        ("story_visual", "outside the public package"),
+        ("lead_boundary", "limited investigation lead"),
+        ("package_status", "ready consumption index"),
+        ("package_identity", "story_id does not match"),
+    ],
+)
+def test_editor_fails_closed_for_malformed_release_contract(  # noqa: PLR0912, PLR0915
+    case: str, message: str
+) -> None:
+    release = _release()
+    if case == "metadata":
+        release["metadata"] = None
+    elif case == "required_text":
+        release["metadata"]["story_id"] = ""
+    elif case == "status":
+        release["metadata"]["status"] = "draft"
+    elif case == "version":
+        release["metadata"]["version"] = 0
+    elif case == "canonical":
+        release["metadata"]["canonical_url"] = "http://example.test/story"
+    elif case == "digest":
+        release["metadata"]["source_artifact_sha256"] = "bad"
+    elif case == "date":
+        release["metadata"]["published_at"] = "today"
+    elif case == "freshness_limit":
+        release["metadata"]["max_source_age_days"] = True
+    elif case == "editorial_ready":
+        release["metadata"]["editorial_ready"] = False
+    elif case == "claims":
+        release["claims"] = []
+    elif case == "duplicate_claim":
+        release["claims"].append(deepcopy(release["claims"][0]))
+    elif case == "claim_state":
+        release["claims"][0]["evidence_state"] = "maybe"
+    elif case == "limitations":
+        release["limitations"] = []
+    elif case == "duplicate_limit":
+        release["limitations"].append(deepcopy(release["limitations"][0]))
+    elif case == "findings":
+        release["findings"] = None
+    elif case == "finding_object":
+        release["findings"] = ["bad"]
+    elif case == "finding_claim":
+        release["findings"][0]["claim_ids"] = ["missing"]
+    elif case == "story_pair":
+        del release["editorial_package"]
+    elif case == "story_status":
+        release["story"]["editorial_status"] = "draft"
+    elif case == "story_identity":
+        release["story"]["story_id"] = "wrong"
+    elif case == "story_sections":
+        release["story"]["sections"] = []
+    elif case == "story_copy":
+        release["story"]["sections"][0]["copy"] = []
+    elif case == "story_claims":
+        release["story"]["sections"][0]["claim_ids"] = []
+    elif case == "story_source":
+        release["story"]["sections"][0]["source_ids"] = ["missing"]
+    elif case == "story_limitation":
+        release["story"]["sections"][0]["limitation_ids"] = ["missing"]
+    elif case == "story_visual":
+        release["story"]["sections"][0]["visual_refs"] = ["private.notes"]
+    elif case == "lead_boundary":
+        release["story"]["sections"][1]["section_type"] = "finding"
+    elif case == "package_status":
+        release["editorial_package"]["status"] = "draft"
+    else:
+        release["editorial_package"]["story_id"] = "wrong"
+
+    with pytest.raises(ValueError, match=message):
+        validate_research_release(release)
+
+
+def test_writer_refuses_nonempty_output_and_verifier_detects_tampering(tmp_path: Path) -> None:
+    occupied = tmp_path / "occupied"
+    occupied.mkdir()
+    (occupied / "keep.txt").write_text("keep")
+    with pytest.raises(FileExistsError, match="empty"):
+        write_research_release(_release(), occupied)
+
+    package = tmp_path / "package"
+    write_research_release(_release(), package)
+    (package / "claims.json").write_text("[]")
+    with pytest.raises(ValueError, match="failed authentication"):
+        verify_published_package(package)
+
+    with pytest.raises(ValueError, match="manifest is missing"):
+        verify_published_package(tmp_path / "missing")
