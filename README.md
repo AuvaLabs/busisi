@@ -42,6 +42,14 @@ established. Its counts and dates are derived from the same D1 release controls,
 and every supported question links to a reader-facing evidence desk with an
 explicit limitation. The catalogue is also available at `/api/v1/questions`.
 
+The public-services inventory separately classifies acquired budget-stage rows
+and DPWH delivery contracts whose titles explicitly name schools, hospitals or
+health facilities. It labels work wording and deterministic review flags, but
+does not count the rows as unique facilities or claim construction, completion,
+payment, quality or public benefit. The reader desk is `/public-services/`; its
+machine-readable records and controls are `/api/v1/public-services` and
+`/api/v1/public-services-summary`.
+
 The project-integrity desk publishes deterministic DPWH source contradictions,
 coordinate review signals and coverage gaps. Its contractor view separately
 ranks archived activity by project count and total project budget. Neither view

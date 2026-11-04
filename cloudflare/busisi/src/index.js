@@ -68,6 +68,11 @@ import {
   queryContractorProjects,
 } from './contractor-activity-query.js';
 import { getQuestionCatalogue, summarizeQuestionStates } from './questions-query.js';
+import {
+  getPublicServicesSummary,
+  parsePublicServicesQuery,
+  queryPublicServices,
+} from './public-services-query.js';
 
 const API_PREFIX = '/api/v1/projects';
 const MAX_SLUG_LENGTH = 160;
@@ -125,6 +130,26 @@ const apiResponse = async (request, environment, url) => {
         review_scope: 'evidence_question_catalogue',
       },
       data: records,
+    });
+  }
+  if (url.pathname === '/api/v1/public-services-summary') {
+    return jsonResponse({
+      meta: { review_scope: 'title_classified_public_service_records' },
+      data: await getPublicServicesSummary(environment.DB),
+    });
+  }
+  if (url.pathname === '/api/v1/public-services') {
+    const query = parsePublicServicesQuery(url);
+    const page = await queryPublicServices(environment.DB, query);
+    return jsonResponse({
+      meta: {
+        total: page.total,
+        count: page.records.length,
+        limit: query.limit,
+        next_cursor: page.nextCursor,
+        review_scope: 'title_classified_public_service_records',
+      },
+      data: page.records,
     });
   }
   if (url.pathname === '/api/v1/change-stats') {

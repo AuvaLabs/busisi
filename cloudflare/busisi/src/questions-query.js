@@ -9,6 +9,7 @@ import { getCoverageStatus } from './coverage-status-query.js';
 import { getIntegritySummary } from './integrity-query.js';
 import { getProcurementSummary } from './procurement-query.js';
 import { getPublicValueSummary } from './public-value-query.js';
+import { getPublicServicesSummary } from './public-services-query.js';
 import { getReviewSummary } from './review-query.js';
 import { getSourceMonitorStatus } from './source-monitor-query.js';
 
@@ -148,11 +149,24 @@ const contextQuestions = ({ cycle, publicValue, source }) => {
   ];
 };
 
-const partialQuestions = ({ acquisition, coverage, procurement, coa }) => {
+const partialQuestions = ({ acquisition, coverage, procurement, coa, publicServices }) => {
   const acquisitionCount = count(acquisition.summary?.examined_contracts);
   const procurementCount = count(procurement.metadata?.checked_projects);
   const coaCount = count(coa.metadata?.checked_projects);
+  const serviceRecords = publicServices?.records || {};
+  const facilities = publicServices?.facilities || {};
+  const workTypes = publicServices?.work_types || {};
   return [
+    item({
+      id: 'school-hospital-counts', category: 'Public services', state: 'partially_answerable',
+      question: 'How many acquired records explicitly describe schools, hospitals, or health facilities, including new-build wording?',
+      scope_label: `${integer(serviceRecords.total)} title-classified records`,
+      scope_count: serviceRecords.total, as_of: 'FY2024 to FY2027',
+      evidence_level: 'deterministic_title_classification',
+      answer_summary: `${integer(facilities.school)} school, ${integer(facilities.hospital)} hospital, and ${integer(facilities.health_center)} health-center records are classified; ${integer(workTypes.new_build)} explicitly use new-build wording.`,
+      answer_url: '/public-services/', source_label: 'Acquired budget-stage rows and DPWH delivery contracts',
+      limitation: 'These are records, not unique facilities. Titles do not prove physical construction, completion, payment, quality, readiness, or public benefit.',
+    }),
     item({
       id: 'secondary-contract-evidence', category: 'Procurement', state: 'partially_answerable',
       question: 'Which contracts have an exact row in the archived secondary award mirror?',
@@ -198,7 +212,6 @@ const unsupported = Object.freeze([
   ['physical-project-verification', 'Projects', 'Does the project physically exist, and was it completed to the required quality?', 'Source records and images are not an independent site inspection, engineering acceptance, material test, or quality certification.'],
   ['wrongdoing-determination', 'Accountability', 'Is this a ghost project, fraud, corruption, or other wrongdoing?', 'A lawful finding requires corroborated evidence and competent investigation. Busisi publishes review leads, never a wrongdoing verdict.'],
   ['political-authorship', 'Budget', 'Who inserted, sponsored, or politically motivated a line item?', 'Budget documents show text and amounts, not authorship or motive. Attribution requires authenticated amendment and legislative records.'],
-  ['school-hospital-counts', 'Public services', 'How many schools and hospitals are being newly built?', 'The current titles have not passed a reviewed facility-type and new-build classifier, so a precise national count would be misleading.'],
   ['measured-public-benefit', 'Public value', 'Did the project produce its promised public benefit or economic outcome?', 'Appropriations and implementation records do not measure service use, beneficiaries, causal impact, or durable economic outcomes.'],
   ['project-cost-reasonableness', 'Value for money', 'Is this project price reasonable compared with equivalent work?', 'A defensible comparison needs quantities, specifications, location adjustments, market references, and comparable completed projects not yet acquired.'],
 ].map(([id, category, question, limitation]) => item({
@@ -215,10 +228,10 @@ const loadEvidence = async (database) => {
     getContractIntelligenceSummary(database), getBudgetCycleSummary(database),
     getPublicValueSummary(database), getSourceMonitorStatus(database),
     getAcquisitionCoverage(database), getCoverageStatus(database),
-    getProcurementSummary(database), getCoaSummary(database),
+    getProcurementSummary(database), getCoaSummary(database), getPublicServicesSummary(database),
   ]);
   const keys = ['change', 'review', 'agency', 'release', 'integrity', 'contracts', 'cycle',
-    'publicValue', 'source', 'acquisition', 'coverage', 'procurement', 'coa'];
+    'publicValue', 'source', 'acquisition', 'coverage', 'procurement', 'coa', 'publicServices'];
   return Object.fromEntries(keys.map((key, index) => [key, values[index]]));
 };
 

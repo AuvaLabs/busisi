@@ -21,6 +21,7 @@ const paths = [
   '/signals/',
   '/integrity/',
   '/questions/',
+  '/public-services/',
   '/methodology/',
   '/contracts/24CM0078/',
   '/contracts/24CJ0309/',

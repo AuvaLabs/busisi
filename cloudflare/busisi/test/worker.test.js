@@ -18,6 +18,8 @@ import { getCoverageStatus } from '../src/coverage-status-query.js';
 import { coverageStatusBody } from '../src/coverage-status-content.js';
 import { getSourceMonitorStatus } from '../src/source-monitor-query.js';
 import { buildQuestionCatalogue } from '../src/questions-query.js';
+import { publicServicesBody } from '../src/public-services-content.js';
+import { parsePublicServicesQuery, queryPublicServices } from '../src/public-services-query.js';
 import { parseContractIntelligenceQuery } from '../src/contract-intelligence-query.js';
 import { parseContractorProjectQuery } from '../src/contractor-activity-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
@@ -1380,7 +1382,7 @@ test('publishes a deterministic catalogue of answerable and unsupported question
   assert.equal(response.status, 200);
   assert.deepEqual(body.meta, {
     total: 21,
-    states: { answerable: 10, partially_answerable: 4, not_supported: 7 },
+    states: { answerable: 10, partially_answerable: 5, not_supported: 6 },
     review_scope: 'evidence_question_catalogue',
   });
   assert.equal(new Set(body.data.map(({ id }) => id)).size, body.data.length);
@@ -1466,6 +1468,183 @@ test('keeps the question catalogue explicit when optional releases are unavailab
     /No monitor release available/,
   );
   assert.ok(records.every(({ scope_count }) => Number.isSafeInteger(scope_count)));
+});
+
+const insertPublicServiceExamples = (database) => database.database.exec(`
+  INSERT INTO stage_change_items VALUES
+    ('dpwh:school', 2027, 'dpwh', 'Construction of Four-Storey School Building',
+     'Basic Education Facilities', 'School Building Program', 'Region VII',
+     'Cebu 1st DEO', 'unchanged', 'Same amount in both', 'candidate', 0, 1,
+     4500000000, 4500000000, 0, 'https://budget.example/school',
+     'https://budget.example/nep-school.pdf#page=8',
+     'https://budget.example/house-school.pdf#page=9', 8, 9,
+     '${'a'.repeat(40)}', '${'4'.repeat(64)}', 'four storey school building');
+  INSERT INTO delivery_items VALUES
+    ('25HOSP01', 2025, 'Rehabilitation of District Hospital', 9800000000,
+     'Cebu, Region VII', 'GAA 2025', 'family:hospital',
+     'rehabilitation district hospital', '${'b'.repeat(64)}');
+  INSERT INTO delivery_project_details VALUES
+    ('25HOSP01', 2025, 'Buildings and Facilities', 'On-Going', '40',
+     'HEALTH BUILDERS (54321)',
+     '[{"contractor_key":"pcab:54321","contractor_name":"HEALTH BUILDERS","pcab_id":"54321"}]',
+     '2025-01-15', '2025-12-20', 'Cebu 1st DEO', 'Region VII', '', '', 0,
+     '${'b'.repeat(64)}');
+  INSERT INTO contract_acquisition_details VALUES
+    ('25HOSP01', 2025, 'valid', 'aligned', 'no_exact_row', 0, 0);
+  INSERT INTO integrity_signal_items VALUES
+    ('25HOSP01:missing_coordinate', '25HOSP01', 2025, 'missing_coordinate',
+     'coverage_gap', 'Coordinate not available', 'Rehabilitation of District Hospital',
+     'HEALTH BUILDERS', '54321', 9800000000, 'On-Going', '40', 'Cebu 1st DEO',
+     'Region VII', '', '', 'No usable coordinate.',
+     'Missing coordinates do not indicate a missing project.', '${'f'.repeat(64)}');
+  INSERT INTO project_image_coverage VALUES
+    ('25HOSP01', 0, 0, 0, 'no_images', '${'7'.repeat(64)}', '${'8'.repeat(64)}',
+     '2026-11-04T02:00:00+00:00', 'Both source representations report no images.');
+`);
+
+test('publishes a deterministic public-services inventory with separated review flags', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  insertPublicServiceExamples(database);
+
+  const summary = await worker.fetch(
+    request('/api/v1/public-services-summary'), environment(database),
+  );
+  const summaryBody = await summary.json();
+  assert.equal(summary.status, 200);
+  assert.equal(summaryBody.meta.review_scope, 'title_classified_public_service_records');
+  assert.deepEqual(summaryBody.data.records, {
+    total: 4, budget: 2, delivery: 2, flagged: 3,
+  });
+  assert.deepEqual(summaryBody.data.facilities, {
+    school: 1, hospital: 1, health_center: 2,
+  });
+  assert.equal(summaryBody.data.work_types.new_build, 2);
+  assert.equal(summaryBody.data.work_types.rehabilitation, 1);
+  assert.equal(summaryBody.data.work_types.unspecified, 1);
+  assert.equal(summaryBody.data.classification_version, 'public-services-v1');
+  assert.match(summaryBody.data.limitation, /records, not unique facilities/i);
+
+  const schools = await worker.fetch(
+    request('/api/v1/public-services?facility=school'), environment(database),
+  );
+  const schoolBody = await schools.json();
+  assert.equal(schoolBody.meta.total, 1);
+  assert.equal(schoolBody.meta.review_scope, 'title_classified_public_service_records');
+  assert.equal(schoolBody.data[0].record_id, 'dpwh:school');
+  assert.equal(schoolBody.data[0].facility_type, 'school');
+  assert.equal(schoolBody.data[0].work_type, 'new_build');
+  assert.deepEqual(schoolBody.data[0].flags, []);
+  assert.match(schoolBody.data[0].reader_url, /^\/records\/change\//);
+
+  const identity = await worker.fetch(
+    request('/api/v1/public-services?flag=identity_conflict'), environment(database),
+  );
+  const identityBody = await identity.json();
+  assert.equal(identityBody.meta.total, 1);
+  assert.equal(identityBody.data[0].record_id, '26ZERO01');
+  assert.ok(identityBody.data[0].flags.some(({ code, classification }) => (
+    code === 'contract_identifier_conflict' && classification === 'identity_conflict'
+  )));
+
+  const rehabilitation = await worker.fetch(
+    request('/api/v1/public-services?work=rehabilitation'), environment(database),
+  );
+  const rehabilitationBody = await rehabilitation.json();
+  assert.equal(rehabilitationBody.meta.total, 1);
+  assert.equal(rehabilitationBody.data[0].record_id, '25HOSP01');
+  assert.equal(rehabilitationBody.data[0].source_type, 'delivery');
+  assert.ok(rehabilitationBody.data[0].flags.some(({ code }) => code === 'missing_coordinate'));
+  assert.ok(rehabilitationBody.data[0].flags.some(({ code }) => code === 'no_exact_secondary_row'));
+  assert.ok(rehabilitationBody.data[0].flags.some(({ code }) => code === 'source_image_gap'));
+  assert.equal(rehabilitationBody.data[0].reader_url, '/contracts/25HOSP01/');
+});
+
+test('validates public-services filters without exposing an accusation filter', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  for (const query of ['?facility=clinic', '?work=construction', '?flag=corruption', '?source=agency']) {
+    const response = await worker.fetch(
+      request(`/api/v1/public-services${query}`), environment(database),
+    );
+    assert.equal(response.status, 400, query);
+  }
+});
+
+test('validates public-services pagination, combined filters and sparse rendering', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  insertPublicServiceExamples(database);
+
+  const firstQuery = parsePublicServicesQuery(new URL(
+    'https://busisi.test/api/v1/public-services?source=budget&limit=1&sort=title_asc',
+  ));
+  const first = await queryPublicServices(database, firstQuery);
+  assert.equal(first.total, 2);
+  assert.equal(first.records.length, 1);
+  assert.ok(first.nextCursor);
+  const secondQuery = parsePublicServicesQuery(new URL(
+    `https://busisi.test/api/v1/public-services?source=budget&limit=1&sort=title_asc&cursor=${first.nextCursor}`,
+  ));
+  const second = await queryPublicServices(database, secondQuery);
+  assert.equal(second.records.length, 1);
+  assert.equal(second.nextCursor, null);
+  assert.notEqual(second.records[0].record_id, first.records[0].record_id);
+  assert.throws(() => parsePublicServicesQuery(new URL(
+    `https://busisi.test/api/v1/public-services?source=delivery&limit=1&sort=title_asc&cursor=${first.nextCursor}`,
+  )), /cursor is invalid/);
+
+  const combined = parsePublicServicesQuery(new URL(
+    'https://busisi.test/api/v1/public-services?q=Cebu&source=delivery&facility=hospital&work=rehabilitation&flag=with_flags&year=2025&sort=year_desc',
+  ));
+  const result = await queryPublicServices(database, combined);
+  assert.equal(result.total, 1);
+  assert.equal(result.records[0].record_id, '25HOSP01');
+  assert.ok(result.records[0].flags.some(({ classification }) => (
+    classification === 'location_review'
+  )));
+
+  const unflagged = await queryPublicServices(
+    database,
+    parsePublicServicesQuery(new URL(
+      'https://busisi.test/api/v1/public-services?flag=without_flags&facility=school',
+    )),
+  );
+  assert.equal(unflagged.total, 1);
+  assert.deepEqual(unflagged.records[0].flags, []);
+
+  for (const query of [
+    `?q=${'x'.repeat(201)}`, '?year=word', '?year=1900', '?limit=0', '?limit=101',
+    '?sort=money', '?cursor=not-a-cursor',
+  ]) {
+    assert.throws(() => parsePublicServicesQuery(new URL(
+      `https://busisi.test/api/v1/public-services${query}`,
+    )));
+  }
+  assert.match(publicServicesBody(), /0 title-classified records/);
+});
+
+test('renders an interactive public-services desk with explicit red-flag boundaries', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  insertPublicServiceExamples(database);
+
+  const response = await siteWorker.fetch(
+    request('/public-services/'), environment(database),
+  );
+  const document = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(document, /Schools and health facilities in the public record/);
+  assert.match(document, /4 title-classified records/);
+  assert.match(document, /3 records with review flags/);
+  assert.match(document, /Budget rows and delivery contracts are never added together as facilities/);
+  assert.match(document, /Stage change/);
+  assert.match(document, /Record contradiction/);
+  assert.match(document, /Identity conflict/);
+  assert.match(document, /Coverage gap/);
+  assert.match(document, /data-public-services-desk/);
+  assert.match(document, /\/assets\/public-services-v1\.js/);
+  assert.doesNotMatch(document, /risk score|proves? (?:fraud|corruption)/i);
 });
 
 test('publishes sourced public-value indicators without a composite score', async (context) => {

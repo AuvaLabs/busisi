@@ -26,6 +26,8 @@ import { getCoverageStatus } from './coverage-status-query.js';
 import { getSourceMonitorStatus } from './source-monitor-query.js';
 import { questionsBody } from './questions-content.js';
 import { getQuestionCatalogue } from './questions-query.js';
+import { publicServicesBody } from './public-services-content.js';
+import { getPublicServicesSummary } from './public-services-query.js';
 import {
   budgetRecordBody,
   candidateRecordBody,
@@ -218,6 +220,18 @@ const QUESTIONS_SCHEMA = Object.freeze({
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
 });
 
+const PUBLIC_SERVICES_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi school and health-facility public-record inventory',
+  url: `${SITE.origin}/public-services/`,
+  description: 'Title-classified budget-stage rows and delivery contracts for schools, hospitals, and health facilities, with deterministic review flags and explicit counting limits.',
+  temporalCoverage: '2024/2027',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
 const page = (html, status = 200) => response(html, {
   status,
   type: 'text/html; charset=utf-8',
@@ -364,6 +378,14 @@ const questions = (records) => page(document({
   schema: QUESTIONS_SCHEMA,
 }));
 
+const publicServices = (summary) => page(document({
+  title: 'Schools and health facilities in Philippine budget records | Busisi',
+  description: 'Search title-classified school, hospital, and health-facility budget rows and delivery contracts with transparent work types, source amounts, and review flags.',
+  canonicalPath: '/public-services/',
+  body: publicServicesBody(summary),
+  schema: PUBLIC_SERVICES_SCHEMA,
+}));
+
 const evidenceSchema = (name, description, path, year) => ({
   '@context': 'https://schema.org',
   '@type': 'Dataset',
@@ -460,6 +482,8 @@ const notFound = (path) => page(document({
 const robots = () => response(`User-agent: *
 Allow: /
 Allow: /api/v1/questions
+Allow: /api/v1/public-services
+Allow: /api/v1/public-services-summary
 Disallow: /api/
 Disallow: /watchlist/
 Sitemap: ${SITE.origin}/sitemap.xml
@@ -485,6 +509,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/integrity/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/coverage/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/questions/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>${SITE.origin}/public-services/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/corazon-2022-combined/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/agoncillo-2023/</loc><lastmod>2026-11-03</lastmod></url>
@@ -520,11 +545,14 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Project integrity desk: ${SITE.origin}/integrity/
 - Evidence coverage status: ${SITE.origin}/coverage/
 - Evidence question catalogue: ${SITE.origin}/questions/
+- Public services inventory: ${SITE.origin}/public-services/
 - Methodology: ${SITE.origin}/methodology/
 
 ## Machine-readable catalogue
 
 - Evidence questions and scope states: ${SITE.origin}/api/v1/questions
+- Title-classified public services records: ${SITE.origin}/api/v1/public-services
+- Public services classification summary: ${SITE.origin}/api/v1/public-services-summary
 
 ## Evidence and publication rules
 
@@ -544,7 +572,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 `, { type: 'text/plain; charset=utf-8' });
 
 const assets = (path) => {
-  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css' || path === '/assets/site-visual-v8.css' || path === '/assets/site-visual-v9.css' || path === '/assets/site-visual-v10.css' || path === '/assets/site-visual-v11.css' || path === '/assets/site-visual-v12.css' || path === '/assets/site-visual-v13.css' || path === '/assets/site-visual-v14.css' || path === '/assets/site-visual-v15.css' || path === '/assets/site-visual-v16.css' || path === '/assets/site-visual-v17.css' || path === '/assets/site-visual-v18.css') {
+  if (path === '/assets/site.css' || path === '/assets/site-visual-v2.css' || path === '/assets/site-visual-v3.css' || path === '/assets/site-visual-v4.css' || path === '/assets/site-visual-v5.css' || path === '/assets/site-visual-v6.css' || path === '/assets/site-visual-v7.css' || path === '/assets/site-visual-v8.css' || path === '/assets/site-visual-v9.css' || path === '/assets/site-visual-v10.css' || path === '/assets/site-visual-v11.css' || path === '/assets/site-visual-v12.css' || path === '/assets/site-visual-v13.css' || path === '/assets/site-visual-v14.css' || path === '/assets/site-visual-v15.css' || path === '/assets/site-visual-v16.css' || path === '/assets/site-visual-v17.css' || path === '/assets/site-visual-v18.css' || path === '/assets/site-visual-v19.css') {
     return response(siteCss, { type: 'text/css; charset=utf-8', cache: 'public, max-age=604800, immutable' });
   }
   if (path === '/assets/favicon.svg') {
@@ -654,6 +682,9 @@ export default {
     }
     if (!result && (url.pathname === '/questions' || url.pathname === '/questions/') && env.DB) {
       result = questions(await getQuestionCatalogue(env.DB));
+    }
+    if (!result && (url.pathname === '/public-services' || url.pathname === '/public-services/') && env.DB) {
+      result = publicServices(await getPublicServicesSummary(env.DB));
     }
     const auditReportMatch = url.pathname.match(/^\/audit\/reports\/([a-z0-9-]+)\/?$/);
     if (!result && auditReportMatch && env.DB) {

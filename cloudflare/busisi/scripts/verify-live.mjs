@@ -125,6 +125,20 @@ const expectedIntegritySignals = Object.freeze({
   same_site_repeat_family: 4,
   status_progress_conflict: 5_744,
 });
+const expectedPublicServices = Object.freeze({
+  total: 6_050,
+  budget: 937,
+  delivery: 5_113,
+  school: 4_722,
+  hospital: 671,
+  health_center: 657,
+  new_build: 3_611,
+  rehabilitation: 798,
+  expansion: 31,
+  equipment: 1,
+  continuation: 703,
+  unspecified: 906,
+});
 const resolver = new Resolver();
 resolver.setServers((process.env.BUSISI_DNS_SERVERS ?? '1.1.1.1,8.8.8.8').split(','));
 
@@ -341,16 +355,25 @@ const verifyPages = async () => {
   expectIncludes(questionsText, 'Who inserted, sponsored, or politically motivated a line item', 'questions authorship boundary');
   if (/href="\/api\/v1\//.test(questionsText)) fail('questions: reader action exposes raw API');
 
+  const publicServices = await request('/public-services/');
+  expectStatus(publicServices, 200, '/public-services/');
+  const publicServicesText = await publicServices.text();
+  expectIncludes(publicServicesText, 'Schools and health facilities in the public record', 'public services heading');
+  expectIncludes(publicServicesText, '/assets/public-services-v1.js', 'public services client');
+  expectIncludes(publicServicesText, 'Budget rows and delivery contracts are never added together as facilities', 'public services counting boundary');
+  expectIncludes(publicServicesText, 'Questions for review, never verdicts', 'public services flag boundary');
+
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
   const robotsText = await robots.text();
   expectIncludes(robotsText, `Sitemap: ${origin}/sitemap.xml`, 'robots sitemap');
   expectIncludes(robotsText, 'Allow: /api/v1/questions', 'robots question API');
+  expectIncludes(robotsText, 'Allow: /api/v1/public-services', 'robots public services API');
 
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/questions/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -363,12 +386,14 @@ const verifyPages = async () => {
   expectIncludes(llmsText, 'Built and maintained by Auva Labs', 'llms ownership');
   expectIncludes(llmsText, 'Evidence question catalogue', 'llms question catalogue');
   expectIncludes(llmsText, '/api/v1/questions', 'llms question API');
+  expectIncludes(llmsText, 'Public services inventory', 'llms public services desk');
+  expectIncludes(llmsText, '/api/v1/public-services', 'llms public services API');
 
   const indexNow = await request(`/${indexNowKey}.txt`);
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/questions/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -376,7 +401,7 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v18.css',
+    '/assets/site-visual-v19.css',
     '/assets/busisi-mark-v3.svg',
     '/assets/busisi-social-v2.png',
     '/assets/busisi-evidence-banner-v2.webp',
@@ -389,7 +414,7 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v18.css');
+  const css = await request('/assets/site-visual-v19.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
@@ -399,6 +424,7 @@ const verifyDesign = async () => {
     '.explorer-shell', '.review-shell', '.integrity-shell', '.contractor-shell',
     '.lifecycle-grid', '.lifecycle-item', '.contract-explorer', '.contract-card',
     '.release-shell', '.release-card', '.questions-hero', '.question-grid',
+    '.services-hero', '.services-desk', '.services-card',
   ]) {
     expectIncludes(cssText, value, 'design CSS');
   }
@@ -560,12 +586,54 @@ const verifyData = async () => {
     fail('allotment releases: DPWH row or evidence boundary does not reconcile');
   }
 
+  const publicServices = (await readJson('/api/v1/public-services-summary')).data;
+  const publicServiceControls = {
+    total: publicServices.records?.total,
+    budget: publicServices.records?.budget,
+    delivery: publicServices.records?.delivery,
+    school: publicServices.facilities?.school,
+    hospital: publicServices.facilities?.hospital,
+    health_center: publicServices.facilities?.health_center,
+    ...publicServices.work_types,
+  };
+  for (const [key, expected] of Object.entries(expectedPublicServices)) {
+    if (publicServiceControls[key] !== expected) {
+      fail(`public services: ${key} expected ${expected}, received ${publicServiceControls[key]}`);
+    }
+  }
+  if (publicServices.classification_version !== 'public-services-v1'
+    || publicServices.records.flagged < 0
+    || publicServices.records.flagged > publicServices.records.total
+    || publicServices.facilities.school + publicServices.facilities.hospital
+      + publicServices.facilities.health_center !== publicServices.records.total
+    || Object.values(publicServices.work_types).reduce((sum, value) => sum + value, 0)
+      !== publicServices.records.total) {
+    fail('public services: classification identity or control totals do not reconcile');
+  }
+  const schoolServices = await readJson('/api/v1/public-services?facility=school&limit=1');
+  if (schoolServices.meta.total !== expectedPublicServices.school
+    || schoolServices.meta.review_scope !== 'title_classified_public_service_records'
+    || schoolServices.data.length !== 1
+    || schoolServices.data[0].facility_type !== 'school'
+    || schoolServices.data[0].reader_url?.startsWith('/api/')) {
+    fail('public services: school filter or reader-safe evidence link does not reconcile');
+  }
+  const serviceIdentityConflicts = await readJson(
+    '/api/v1/public-services?flag=identity_conflict&limit=1',
+  );
+  if (serviceIdentityConflicts.meta.total < 1
+    || !serviceIdentityConflicts.data[0]?.flags.some(({ classification }) => (
+      classification === 'identity_conflict'
+    ))) {
+    fail('public services: identity-conflict filter does not return qualifying evidence');
+  }
+
   const questionCatalogue = await readJson('/api/v1/questions');
   if (questionCatalogue.meta.review_scope !== 'evidence_question_catalogue'
     || questionCatalogue.meta.total !== 21
     || questionCatalogue.meta.states?.answerable !== 10
-    || questionCatalogue.meta.states?.partially_answerable !== 4
-    || questionCatalogue.meta.states?.not_supported !== 7
+    || questionCatalogue.meta.states?.partially_answerable !== 5
+    || questionCatalogue.meta.states?.not_supported !== 6
     || new Set(questionCatalogue.data.map(({ id }) => id)).size !== 21) {
     fail('question catalogue: identity or state controls do not reconcile');
   }
@@ -573,6 +641,8 @@ const verifyData = async () => {
   if (questionsById['fy2027-project-stage-changes']?.scope_count !== changeStats.record_count
     || questionsById['dbm-allotment-releases']?.scope_count !== releaseSummary.record_count
     || questionsById['project-image-coverage']?.scope_count !== imageCoverage.universe_contracts
+    || questionsById['school-hospital-counts']?.scope_count !== publicServices.records.total
+    || questionsById['school-hospital-counts']?.answer_url !== '/public-services/'
     || questionsById['actual-project-payment']?.answer_url !== null
     || questionCatalogue.data.some(({ answer_url: answerUrl }) => answerUrl?.startsWith('/api/'))) {
     fail('question catalogue: live counts or reader-safe answer links do not reconcile');
