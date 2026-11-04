@@ -650,6 +650,15 @@ const route = (path) => {
 export default {
   async fetch(request, env = {}) {
     const url = new URL(request.url);
+    if (url.hostname.endsWith('.workers.dev')
+      && (!env.MONITOR_TOKEN
+        || request.headers.get('X-Busisi-Monitor-Token') !== env.MONITOR_TOKEN)) {
+      return response('Not found\n', {
+        status: 404,
+        type: 'text/plain; charset=utf-8',
+        cache: 'no-store',
+      });
+    }
     if (url.hostname === 'www.busisi.org') {
       url.hostname = 'busisi.org';
       return Response.redirect(url.toString(), 301);

@@ -314,6 +314,23 @@ test('redirects www and returns a useful 404', async () => {
   assert.match(await missing.text(), /Page not found/);
 });
 
+test('keeps the workers.dev monitor origin private', async () => {
+  const monitorUrl = 'https://busisi-publication.example.workers.dev/';
+  const environment = { MONITOR_TOKEN: 'monitor-test-token' };
+  const missing = await worker.fetch(new Request(monitorUrl), environment);
+  const incorrect = await worker.fetch(new Request(monitorUrl, {
+    headers: { 'X-Busisi-Monitor-Token': 'incorrect' },
+  }), environment);
+  const allowed = await worker.fetch(new Request(monitorUrl, {
+    headers: { 'X-Busisi-Monitor-Token': 'monitor-test-token' },
+  }), environment);
+
+  assert.equal(missing.status, 404);
+  assert.equal(incorrect.status, 404);
+  assert.equal(allowed.status, 200);
+  assert.match(await allowed.text(), /Philippine public budget records/);
+});
+
 test('keeps the unreleased register and API unavailable', async () => {
   for (const path of ['/projects/example', '/api/v1/projects']) {
     const response = await fetchPath(path);

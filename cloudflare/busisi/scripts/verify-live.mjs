@@ -2,8 +2,10 @@ import { Resolver } from 'node:dns/promises';
 
 import { INDEX_NOW_KEY, SITE } from '../src/prelaunch-config.js';
 
-const origin = process.env.BUSISI_ORIGIN ?? SITE.origin;
-const expectedHost = new URL(origin).hostname;
+const publicOrigin = SITE.origin;
+const requestOrigin = process.env.BUSISI_ORIGIN ?? publicOrigin;
+const monitorToken = process.env.BUSISI_MONITOR_TOKEN ?? '';
+const expectedHost = new URL(publicOrigin).hostname;
 const indexNowKey = INDEX_NOW_KEY;
 const expectedCounts = Object.freeze({
   budget_records: 68_608,
@@ -150,12 +152,13 @@ const request = async (path, options = {}) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
   try {
-    return await fetch(`${origin}${path}`, {
+    return await fetch(`${requestOrigin}${path}`, {
       redirect: 'manual',
       ...options,
       headers: {
         Accept: '*/*',
         'User-Agent': 'BusisiProductionMonitor/1.0 (+https://busisi.org/methodology/)',
+        ...(monitorToken ? { 'X-Busisi-Monitor-Token': monitorToken } : {}),
         ...options.headers,
       },
       signal: controller.signal,
@@ -227,7 +230,7 @@ const verifyPages = async () => {
   const home = await request('/');
   expectStatus(home, 200, '/');
   const homeText = await home.text();
-  expectIncludes(homeText, `<link rel="canonical" href="${origin}/">`, 'home canonical');
+  expectIncludes(homeText, `<link rel="canonical" href="${publicOrigin}/">`, 'home canonical');
   expectIncludes(homeText, '"@type":"WebSite"', 'home structured data');
   expectIncludes(homeText, 'index, follow, max-image-preview:large', 'home robots');
   expectIncludes(
@@ -371,7 +374,7 @@ const verifyPages = async () => {
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
   const robotsText = await robots.text();
-  expectIncludes(robotsText, `Sitemap: ${origin}/sitemap.xml`, 'robots sitemap');
+  expectIncludes(robotsText, `Sitemap: ${publicOrigin}/sitemap.xml`, 'robots sitemap');
   expectIncludes(robotsText, 'Allow: /api/v1/questions', 'robots question API');
   expectIncludes(robotsText, 'Allow: /api/v1/public-services', 'robots public services API');
 
@@ -379,7 +382,7 @@ const verifyPages = async () => {
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
   for (const path of ['/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
-    expectIncludes(sitemapText, `<loc>${origin}${path}</loc>`, `sitemap ${path}`);
+    expectIncludes(sitemapText, `<loc>${publicOrigin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
 
@@ -816,7 +819,7 @@ const verifyData = async () => {
   expectIncludes(conflictText, 'not a finding of wrongdoing', 'contract conflict boundary');
   const formerDelivery = await request('/records/delivery/24CM0078/');
   expectStatus(formerDelivery, 301, 'former delivery route');
-  if (formerDelivery.headers.get('location') !== `${origin}/contracts/24CM0078/`) {
+  if (formerDelivery.headers.get('location') !== `${publicOrigin}/contracts/24CM0078/`) {
     fail('former delivery route: unexpected redirect destination');
   }
   const contractOutcomes = await readJson('/api/v1/contract-outcomes');
@@ -1045,7 +1048,7 @@ const verifyBoundaries = async () => {
 
   const watchlist = await request('/watchlist/');
   expectStatus(watchlist, 302, '/watchlist/');
-  if (watchlist.headers.get('location') !== `${origin}/explore/?view=reviewed`) {
+  if (watchlist.headers.get('location') !== `${publicOrigin}/explore/?view=reviewed`) {
     fail('/watchlist/: unexpected redirect destination');
   }
 
@@ -1078,10 +1081,12 @@ const verifyBoundaries = async () => {
   const post = await request('/', { method: 'POST' });
   expectStatus(post, 405, 'POST /');
 
-  const redirect = await fetch(`https://www.${expectedHost}/methodology/`, { redirect: 'manual' });
-  expectStatus(redirect, 301, 'www redirect');
-  if (redirect.headers.get('location') !== `${origin}/methodology/`) {
-    fail('www redirect: unexpected destination');
+  if (requestOrigin === publicOrigin) {
+    const redirect = await fetch(`https://www.${expectedHost}/methodology/`, { redirect: 'manual' });
+    expectStatus(redirect, 301, 'www redirect');
+    if (redirect.headers.get('location') !== `${publicOrigin}/methodology/`) {
+      fail('www redirect: unexpected destination');
+    }
   }
   return { missing, quarantined: '/projects/corazon-2026-completion/' };
 };
@@ -1092,10 +1097,24 @@ const main = async () => {
   const design = await verifyDesign();
   const data = await verifyData();
   const boundaries = await verifyBoundaries();
-  console.log(JSON.stringify({ passed: true, origin, dns, pages, design, data, boundaries }, null, 2));
+  console.log(JSON.stringify({
+    passed: true,
+    origin: publicOrigin,
+    request_origin: requestOrigin,
+    dns,
+    pages,
+    design,
+    data,
+    boundaries,
+  }, null, 2));
 };
 
 main().catch((error) => {
-  console.error(JSON.stringify({ passed: false, origin, error: error.message }, null, 2));
+  console.error(JSON.stringify({
+    passed: false,
+    origin: publicOrigin,
+    request_origin: requestOrigin,
+    error: error.message,
+  }, null, 2));
   process.exitCode = 1;
 });

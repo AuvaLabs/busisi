@@ -3,6 +3,8 @@
   "name": "busisi-publication",
   "main": "src/prelaunch.js",
   "compatibility_date": "2026-11-02",
+  "workers_dev": true,
+  "preview_urls": false,
   "upload_source_maps": true,
   "assets": {
     "directory": "./public",
