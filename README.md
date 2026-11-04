@@ -72,6 +72,13 @@ coordinate review signals and coverage gaps. Its contractor view separately
 ranks archived activity by project count and total project budget. Neither view
 uses a model or produces a corruption score.
 
+The contractor-accountability desk links official GPPB restriction records only
+when the normalized DPWH name and current PCAB name agree on one identity. It
+links low CPES ratings by exact PCAB ID. Exact rows from the archived secondary
+award mirror can create a dated review question, but are never presented as an
+official award document or proof of corruption, political connection or an
+improper award. Name-only and unmatched records remain quarantined.
+
 Where the listed DPWH office has an exact roster mapping, records also show the
 roster-snapshot congressional district and representative. Shared offices retain every
 possible district, and unmatched offices remain unassigned. This context does
@@ -162,6 +169,8 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_universe.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_acquisition_retry.py --limit 10
 PYTHONPATH=. python3 ops/harness/budget_watchdog_facilities.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_facility_monitor.py --reset-output
+PYTHONPATH=. python3 ops/harness/budget_watchdog_accountability.py --source-only --reset-output
+PYTHONPATH=. python3 ops/harness/budget_watchdog_accountability.py --reset-output
 cd cloudflare/busisi
 npm ci
 npm run check

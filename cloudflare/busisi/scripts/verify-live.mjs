@@ -128,6 +128,15 @@ const expectedIntegritySignals = Object.freeze({
   same_site_repeat_family: 4,
   status_progress_conflict: 5_744,
 });
+const expectedAccountability = Object.freeze({
+  checked_on: '2026-11-04',
+  blacklist_events: 28,
+  blacklist_active: 7,
+  cpes_events: 5,
+  award_signals: 18,
+  blacklist_name_only: 32,
+  cpes_missing_or_unmatched_pcab: 7,
+});
 const expectedPublicServices = Object.freeze({
   total: 6_050,
   budget: 937,
@@ -172,6 +181,9 @@ const request = async (path, options = {}) => {
       },
       signal: controller.signal,
     });
+  } catch (error) {
+    if (error?.name === 'AbortError') fail(`${path}: timed out after 15 seconds`);
+    throw error;
   } finally {
     clearTimeout(timeout);
   }
@@ -318,6 +330,13 @@ const verifyPages = async () => {
   expectIncludes(integrityText, 'Contractors with the most projects', 'contractor ranking');
   expectIncludes(integrityText, 'A flag is a question to check, not an accusation', 'integrity limitation');
 
+  const accountability = await request('/accountability/');
+  expectStatus(accountability, 200, '/accountability/');
+  const accountabilityText = await accountability.text();
+  expectIncludes(accountabilityText, 'Check the official record, then follow what happened next', 'accountability heading');
+  expectIncludes(accountabilityText, 'not proof of corruption or an improper award', 'accountability boundary');
+  expectIncludes(accountabilityText, 'Open evidence timeline', 'accountability drill-down');
+
   const changes = await request('/changes/');
   expectStatus(changes, 200, '/changes/');
   const changesText = await changes.text();
@@ -395,7 +414,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${publicOrigin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -416,7 +435,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/releases/', '/contracts/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -697,11 +716,11 @@ const verifyData = async () => {
 
   const questionCatalogue = await readJson('/api/v1/questions');
   if (questionCatalogue.meta.review_scope !== 'evidence_question_catalogue'
-    || questionCatalogue.meta.total !== 21
-    || questionCatalogue.meta.states?.answerable !== 10
+    || questionCatalogue.meta.total !== 22
+    || questionCatalogue.meta.states?.answerable !== 11
     || questionCatalogue.meta.states?.partially_answerable !== 5
     || questionCatalogue.meta.states?.not_supported !== 6
-    || new Set(questionCatalogue.data.map(({ id }) => id)).size !== 21) {
+    || new Set(questionCatalogue.data.map(({ id }) => id)).size !== 22) {
     fail('question catalogue: identity or state controls do not reconcile');
   }
   const questionsById = Object.fromEntries(questionCatalogue.data.map((item) => [item.id, item]));
@@ -1002,6 +1021,33 @@ const verifyData = async () => {
       fail(`integrity summary: ${code} expected ${value}, received ${integritySignalMap[code]}`);
     }
   }
+  const accountabilitySummary = (await readJson('/api/v1/accountability-summary')).data;
+  for (const [key, expected] of Object.entries(expectedAccountability)) {
+    if (accountabilitySummary[key] !== expected) {
+      fail(`contractor accountability: ${key} expected ${expected}, received ${accountabilitySummary[key]}`);
+    }
+  }
+  const accountabilityEvents = await readJson('/api/v1/accountability-events');
+  if (accountabilityEvents.meta.total !== (
+    expectedAccountability.blacklist_events + expectedAccountability.cpes_events
+  ) || accountabilityEvents.meta.review_scope !== 'strong_identity_official_accountability_evidence') {
+    fail('contractor accountability: event count or evidence scope does not reconcile');
+  }
+  const contractorAccountability = await readJson(
+    '/api/v1/contractors/pcab%3A37545/accountability',
+  );
+  if (!contractorAccountability.data.blacklist_events.length
+    || !contractorAccountability.data.award_signals.length
+    || contractorAccountability.data.award_signals.some(({ signal_type: type }) => (
+      type !== 'award_during_blacklist' && type !== 'award_after_low_cpes'
+    ))) {
+    fail('contractor accountability: profile timeline evidence is missing or invalid');
+  }
+  const accountabilityProfile = await request('/contractors/pcab%3A37545/');
+  expectStatus(accountabilityProfile, 200, 'accountability contractor profile');
+  const accountabilityProfileText = await accountabilityProfile.text();
+  expectIncludes(accountabilityProfileText, 'Accountability evidence timeline', 'accountability contractor profile');
+  expectIncludes(accountabilityProfileText, 'Archived secondary award row', 'accountability contractor profile');
   const coordinateReview = await readJson(
     '/api/v1/integrity-signals?signal=coordinate_location_conflict&limit=1',
   );

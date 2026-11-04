@@ -7,6 +7,7 @@ import { getContractAwardMirror } from './outcome-query.js';
 import { getProjectContractEvidence } from './contract-evidence-query.js';
 import { getProjectImageEvidence } from './project-image-query.js';
 import { getContractorAssociationSummary } from './contractor-activity-query.js';
+import { getContractorAccountability } from './accountability-query.js';
 
 const rows = (result) => result.results || [];
 
@@ -208,7 +209,7 @@ export const getContractorRecord = async (database, contractorKey) => {
     'SELECT * FROM contractor_rankings WHERE contractor_key = ?',
   ).bind(contractorKey).first());
   if (!record) return null;
-  const [signals, concentrations, associationSummary, statuses, years] = await Promise.all([
+  const [signals, concentrations, associationSummary, statuses, years, accountability] = await Promise.all([
     database.prepare(`
       SELECT signal.signal_id, signal.contract_id, signal.fiscal_year, signal.code,
         signal.classification, signal.label, signal.description, signal.budget_centavos,
@@ -239,6 +240,7 @@ export const getContractorRecord = async (database, contractorKey) => {
       WHERE association.contractor_key = ?
       GROUP BY detail.fiscal_year ORDER BY detail.fiscal_year DESC
     `).bind(contractorKey).all(),
+    getContractorAccountability(database, contractorKey),
   ]);
   return {
     record,
@@ -247,6 +249,7 @@ export const getContractorRecord = async (database, contractorKey) => {
     associationSummary,
     statuses: rows(statuses),
     years: rows(years),
+    accountability,
   };
 };
 

@@ -119,6 +119,18 @@ def default_source_registry() -> SourceRegistry:
                 SourceAuthority.PRIMARY,
             ),
             SourceDefinition(
+                "gppb",
+                "Government Procurement Policy Board",
+                "https://www.gppb.gov.ph",
+                SourceAuthority.PRIMARY,
+            ),
+            SourceDefinition(
+                "gppb-blacklist",
+                "GPPB Online Blacklisting Portal",
+                "https://onlineblacklistingportal.gppb.gov.ph",
+                SourceAuthority.PRIMARY,
+            ),
+            SourceDefinition(
                 "pcab",
                 "PCAB License Verification",
                 "https://pcab.construction.gov.ph",

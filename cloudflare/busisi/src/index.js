@@ -75,6 +75,11 @@ import {
 } from './public-services-query.js';
 import { getFacility } from './facility-query.js';
 import { getFacilityRegistryStatus } from './facility-status-query.js';
+import {
+  getAccountabilitySummary,
+  getContractorAccountability,
+  queryAccountabilityEvents,
+} from './accountability-query.js';
 
 const API_PREFIX = '/api/v1/projects';
 const MAX_SLUG_LENGTH = 160;
@@ -277,6 +282,22 @@ const apiResponse = async (request, environment, url) => {
       data: await getSourceMonitorStatus(environment.DB),
     });
   }
+  if (url.pathname === '/api/v1/accountability-summary') {
+    return jsonResponse({
+      meta: { review_scope: 'strong_identity_official_accountability_evidence' },
+      data: await getAccountabilitySummary(environment.DB),
+    });
+  }
+  if (url.pathname === '/api/v1/accountability-events') {
+    const records = await queryAccountabilityEvents(environment.DB);
+    return jsonResponse({
+      meta: {
+        total: records.length,
+        review_scope: 'strong_identity_official_accountability_evidence',
+      },
+      data: records,
+    });
+  }
   if (url.pathname === '/api/v1/contract-intelligence-summary') {
     return jsonResponse({ data: await getContractIntelligenceSummary(environment.DB) });
   }
@@ -439,6 +460,23 @@ const apiResponse = async (request, environment, url) => {
   const contractorProjectsMatch = url.pathname.match(
     /^\/api\/v1\/contractors\/([^/]+)\/projects$/,
   );
+  const contractorAccountabilityMatch = url.pathname.match(
+    /^\/api\/v1\/contractors\/([^/]+)\/accountability$/,
+  );
+  if (contractorAccountabilityMatch) {
+    const contractorKey = decodedPathId(contractorAccountabilityMatch[1]);
+    if (!contractorKey || !/^(?:pcab:\d+|name:[a-f0-9]{64})$/.test(contractorKey)) {
+      return jsonResponse({ detail: 'contractor not found' }, 404);
+    }
+    const exists = await environment.DB.prepare(
+      'SELECT contractor_key FROM contractor_rankings WHERE contractor_key = ?',
+    ).bind(contractorKey).first();
+    if (!exists) return jsonResponse({ detail: 'contractor not found' }, 404);
+    return jsonResponse({
+      meta: { review_scope: 'contractor_accountability_evidence_timeline' },
+      data: await getContractorAccountability(environment.DB, contractorKey),
+    });
+  }
   if (contractorProjectsMatch) {
     let contractorKey = '';
     try {

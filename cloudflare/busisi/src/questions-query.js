@@ -12,6 +12,7 @@ import { getPublicValueSummary } from './public-value-query.js';
 import { getPublicServicesSummary } from './public-services-query.js';
 import { getReviewSummary } from './review-query.js';
 import { getSourceMonitorStatus } from './source-monitor-query.js';
+import { getAccountabilitySummary } from './accountability-query.js';
 
 const STATE_LABELS = Object.freeze({
   answerable: 'Busisi can answer this',
@@ -110,6 +111,19 @@ const deliveryQuestions = ({ integrity, contracts }) => [
     limitation: 'Office context is not a coordinate boundary determination and does not establish a legislator as project author or sponsor.',
   }),
 ];
+
+const accountabilityQuestions = (accountability = {}) => [item({
+  id: 'contractor-accountability-events', category: 'Contractors', state: 'answerable',
+  question: 'Which contractor identities have strongly matched official restriction or low performance-rating records?',
+  scope_label: `${integer(accountability.blacklist_events)} restriction records and ${integer(accountability.cpes_events)} low CPES ratings`,
+  scope_count: count(accountability.blacklist_events) + count(accountability.cpes_events),
+  as_of: accountability.checked_on || null,
+  evidence_level: 'strong_identity_official_event_match',
+  answer_summary: `${integer(accountability.award_signals)} exact archived award rows create a timing question linked to an official event.`,
+  answer_url: '/accountability/',
+  source_label: 'GPPB blacklisting portal, official CPES reports, PCAB, and archived award mirror',
+  limitation: 'A restriction, rating, or date overlap is not proof of corruption, political connection, or an improper award.',
+})];
 
 const contextQuestions = ({ cycle, publicValue, source }) => {
   const metadata = cycle.metadata || {};
@@ -229,10 +243,10 @@ const loadEvidence = async (database) => {
     getContractIntelligenceSummary(database), getBudgetCycleSummary(database),
     getPublicValueSummary(database), getSourceMonitorStatus(database),
     getAcquisitionCoverage(database), getCoverageStatus(database),
-    getProcurementSummary(database), getCoaSummary(database),
+    getProcurementSummary(database), getCoaSummary(database), getAccountabilitySummary(database),
   ]);
   const keys = ['change', 'review', 'agency', 'release', 'integrity', 'contracts', 'cycle',
-    'publicValue', 'source', 'acquisition', 'coverage', 'procurement', 'coa'];
+    'publicValue', 'source', 'acquisition', 'coverage', 'procurement', 'coa', 'accountability'];
   return {
     ...Object.fromEntries(keys.map((key, index) => [key, values[index]])),
     publicServices,
@@ -243,6 +257,7 @@ export const buildQuestionCatalogue = (evidence) => Object.freeze([
   ...changeQuestions(evidence),
   ...releaseQuestions(evidence.release),
   ...deliveryQuestions(evidence),
+  ...accountabilityQuestions(evidence.accountability),
   ...contextQuestions(evidence),
   ...partialQuestions(evidence),
   ...unsupported,

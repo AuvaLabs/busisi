@@ -30,6 +30,11 @@ import { publicServicesBody } from './public-services-content.js';
 import { getPublicServicesSummary } from './public-services-query.js';
 import { facilityBody } from './facility-content.js';
 import { getFacility } from './facility-query.js';
+import { accountabilityBody } from './accountability-content.js';
+import {
+  getAccountabilitySummary,
+  queryAccountabilityEvents,
+} from './accountability-query.js';
 import {
   budgetRecordBody,
   candidateRecordBody,
@@ -129,6 +134,18 @@ const INTEGRITY_SCHEMA = Object.freeze({
   url: `${SITE.origin}/integrity/`,
   description: 'DPWH records with missing or conflicting details, location questions, and contractor activity for fiscal years 2024 to 2026.',
   temporalCoverage: '2024/2026',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
+const ACCOUNTABILITY_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi contractor accountability evidence',
+  url: `${SITE.origin}/accountability/`,
+  description: 'Strong-identity links to official GPPB restriction and low CPES rating records, with narrowly framed award-timing review questions.',
+  temporalCoverage: '2020/2026',
   spatialCoverage: 'Philippines',
   isAccessibleForFree: true,
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
@@ -303,6 +320,14 @@ const integrity = () => page(document({
   canonicalPath: '/integrity/',
   body: integrityBody,
   schema: INTEGRITY_SCHEMA,
+}));
+
+const accountability = (summary, events) => page(document({
+  title: 'Contractor accountability evidence | Busisi',
+  description: 'Inspect strongly matched official contractor restrictions, low CPES ratings, and evidence-linked award-timing questions.',
+  canonicalPath: '/accountability/',
+  body: accountabilityBody(summary, events),
+  schema: ACCOUNTABILITY_SCHEMA,
 }));
 
 const changes = () => page(document({
@@ -531,6 +556,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/audit/reports/coa-cpa-capiz-fmr-2015-01/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/signals/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/integrity/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/accountability/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/coverage/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/questions/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/public-services/</loc><lastmod>2026-11-04</lastmod></url>
@@ -567,6 +593,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Procurement evidence: ${SITE.origin}/procurement/
 - Deterministic review desk: ${SITE.origin}/signals/
 - Project integrity desk: ${SITE.origin}/integrity/
+- Contractor accountability evidence: ${SITE.origin}/accountability/
 - Evidence coverage status: ${SITE.origin}/coverage/
 - Evidence question catalogue: ${SITE.origin}/questions/
 - Public services inventory: ${SITE.origin}/public-services/
@@ -716,6 +743,12 @@ export default {
     }
     if (!result && (url.pathname === '/questions' || url.pathname === '/questions/') && env.DB) {
       result = questions(await getQuestionCatalogue(env.DB));
+    }
+    if (!result && (url.pathname === '/accountability' || url.pathname === '/accountability/') && env.DB) {
+      const [summary, events] = await Promise.all([
+        getAccountabilitySummary(env.DB), queryAccountabilityEvents(env.DB),
+      ]);
+      result = accountability(summary, events);
     }
     if (!result && (url.pathname === '/public-services' || url.pathname === '/public-services/') && env.DB) {
       result = publicServices(await getPublicServicesSummary(env.DB));

@@ -121,6 +121,9 @@ const facilityRegistryDetailsMigrationPath = fileURLToPath(
 const facilityRegistryStatusMigrationPath = fileURLToPath(
   new URL('../migrations/0028_facility_registry_status.sql', import.meta.url),
 );
+const contractorAccountabilityMigrationPath = fileURLToPath(
+  new URL('../migrations/0029_contractor_accountability.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -186,6 +189,7 @@ class LocalD1 {
     this.database.exec(readFileSync(facilityIdentityMigrationPath, 'utf8'));
     this.database.exec(readFileSync(facilityRegistryDetailsMigrationPath, 'utf8'));
     this.database.exec(readFileSync(facilityRegistryStatusMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(contractorAccountabilityMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -1401,8 +1405,8 @@ test('publishes a deterministic catalogue of answerable and unsupported question
 
   assert.equal(response.status, 200);
   assert.deepEqual(body.meta, {
-    total: 21,
-    states: { answerable: 10, partially_answerable: 5, not_supported: 6 },
+    total: 22,
+    states: { answerable: 11, partially_answerable: 5, not_supported: 6 },
     review_scope: 'evidence_question_catalogue',
   });
   assert.equal(new Set(body.data.map(({ id }) => id)).size, body.data.length);
@@ -1477,7 +1481,7 @@ test('keeps the question catalogue explicit when optional releases are unavailab
     procurement: { metadata: {} }, coa: { metadata: {} },
   });
 
-  assert.equal(records.length, 21);
+  assert.equal(records.length, 22);
   assert.equal(records.find(({ id }) => id === 'fy2027-project-stage-changes').as_of, 'FY2027');
   assert.match(
     records.find(({ id }) => id === 'project-image-coverage').answer_summary,
@@ -2185,6 +2189,63 @@ test('keeps every joint contractor independently drillable and reconciled', asyn
   assert.match(signalDocument, /EGB BUILDERS/);
   assert.match(signalDocument, /contractors\/pcab%3A11111/);
   assert.match(signalDocument, /contractors\/pcab%3A22222/);
+});
+
+test('publishes evidence-linked contractor accountability without alleging wrongdoing', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  database.database.exec(`
+    INSERT INTO accountability_metadata VALUES
+      ('checked_on', '2026-11-04'), ('blacklist_events', '1'), ('blacklist_active', '1'),
+      ('cpes_events', '1'), ('award_signals', '2'), ('blacklist_name_only', '3'),
+      ('cpes_missing_or_unmatched_pcab', '2');
+    INSERT INTO contractor_blacklist_events VALUES
+      ('order-1', 'pcab:12345', 'ACME BUILDERS', '12345', 'ACME BUILDERS, INC.',
+       'pcab_name_exact', 'DPWH Central Office', 'Example public works contract',
+       '2025-01-01', '2025-12-31', 'expired', '${'a'.repeat(64)}');
+    INSERT INTO contractor_cpes_events VALUES
+      ('rating-1', 'pcab:12345', 'ACME BUILDERS', '12345', 'ACME BUILDERS, INC.',
+       'pcab_id_exact', 'Example road project', '2026-03-10', 'DPWH', 6215, 7156,
+       'Poor', 1, '41st Release', '${'b'.repeat(64)}',
+       'https://www.gppb.gov.ph/example-cpes.pdf');
+    INSERT INTO contractor_award_timing_signals VALUES
+      ('signal-1', 'award_during_blacklist', 'pcab:12345', 'ACME BUILDERS', '12345',
+       'order-1', '25O00113', 'sole', 'structured_exact', 'ACME BUILDERS',
+       '2025-03-01', 37679270658, '${'c'.repeat(64)}'),
+      ('signal-2', 'award_after_low_cpes', 'pcab:12345', 'ACME BUILDERS', '12345',
+       'rating-1', '25O00113', 'sole', 'structured_exact', 'ACME BUILDERS',
+       '2026-04-01', 37679270658, '${'d'.repeat(64)}');
+  `);
+
+  const [summary, events, contractorApi, desk, profile] = await Promise.all([
+    worker.fetch(request('/api/v1/accountability-summary'), environment(database)),
+    worker.fetch(request('/api/v1/accountability-events'), environment(database)),
+    worker.fetch(
+      request('/api/v1/contractors/pcab%3A12345/accountability'), environment(database),
+    ),
+    siteWorker.fetch(request('/accountability/'), environment(database)),
+    siteWorker.fetch(request('/contractors/pcab%3A12345/'), environment(database)),
+  ]);
+
+  assert.equal(summary.status, 200);
+  assert.equal((await summary.json()).data.award_signals, 2);
+  const eventBody = await events.json();
+  assert.equal(eventBody.meta.total, 2);
+  assert.equal(eventBody.data[0].contractor_key, 'pcab:12345');
+  const contractorBody = await contractorApi.json();
+  assert.equal(contractorBody.data.blacklist_events.length, 1);
+  assert.equal(contractorBody.data.cpes_events[0].final_rating_bps, 7156);
+  assert.equal(contractorBody.data.award_signals.length, 2);
+
+  const deskDocument = await desk.text();
+  assert.match(deskDocument, /Contractor accountability/);
+  assert.match(deskDocument, /official restriction record/i);
+  assert.match(deskDocument, /not proof of corruption/i);
+  assert.match(deskDocument, /contractors\/pcab%3A12345/);
+  const profileDocument = await profile.text();
+  assert.match(profileDocument, /Accountability evidence timeline/);
+  assert.match(profileDocument, /Archived secondary award row/);
+  assert.match(profileDocument, /contracts\/25O00113/);
 });
 
 test('treats contractor searches literally and separates recorded parties from awardees', async (context) => {

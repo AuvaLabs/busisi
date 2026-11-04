@@ -245,6 +245,21 @@ ${facts([['Recorded project budget', money(record.budget_centavos)], ['Status / 
 
 const associationCount = (count, label) => `${count} ${label}${count === 1 ? '' : 's'}`;
 
+const accountabilityTimeline = ({ blacklist_events: blacklists, cpes_events: ratings, award_signals: awards }) => {
+  if (!blacklists.length && !ratings.length && !awards.length) {
+    return `<section class="evidence-section" id="accountability"><p class="kicker">Contractor accountability</p><h2>No strongly matched accountability event is published</h2>${empty('A missing event is not clearance. Name-only and unmatched records remain quarantined and are not shown.')}</section>`;
+  }
+  const blacklistItems = blacklists.map((item) => `<article class="accountability-event"><header><span>Official restriction record</span><time datetime="${html(item.start_date)}">${html(item.start_date)}</time></header><h3>${html(item.status)} restriction</h3><p><strong>What the record says:</strong> GPPB reports a restriction connected to ${html(item.project_title)} by ${html(item.procuring_entity)}.</p><p><strong>Identity evidence:</strong> Exact normalized name in the DPWH record and current PCAB snapshot, PCAB ${html(item.pcab_id)}.</p><a class="evidence-action" href="https://onlineblacklistingportal.gppb.gov.ph/" target="_blank" rel="noopener noreferrer">Open official GPPB portal</a></article>`).join('');
+  const ratingItems = ratings.map((item) => `<article class="accountability-event"><header><span>Official low CPES rating</span><time datetime="${html(item.evaluation_date)}">${html(item.evaluation_date)}</time></header><h3>${html(item.qualitative_rating)} · ${(Number(item.final_rating_bps) / 100).toFixed(2)}%</h3><p><strong>What the record says:</strong> GPPB reports this final rating for ${html(item.project_title)} under ${html(item.implementing_agency)}.</p><p><strong>Identity evidence:</strong> Exact PCAB ID ${html(item.pcab_id)} in the official CPES row.</p><a class="evidence-action" href="${html(item.source_url)}#page=${item.page_number}" target="_blank" rel="noopener noreferrer">Open official CPES report · page ${item.page_number}</a></article>`).join('');
+  const awardItems = awards.map((item) => {
+    const label = item.signal_type === 'award_during_blacklist'
+      ? 'Award date falls inside a restriction period'
+      : 'Award date follows a low CPES rating';
+    return `<article class="accountability-event timing-question"><header><span>Question for document review</span><time datetime="${html(item.award_date)}">${html(item.award_date)}</time></header><h3>${html(label)}</h3><p><strong>Archived secondary award row:</strong> ${html(item.awardee_name)} · ${html(money(item.contract_amount_centavos))} · ${html(item.match_basis.replaceAll('_', ' '))} match.</p><p>This date pattern is not proof that the award was improper. Verify the official notice of award, eligibility review, and contract documents.</p><a class="evidence-action" href="/contracts/${encodeURIComponent(item.contract_id)}/">Open contract evidence</a></article>`;
+  }).join('');
+  return `<section class="evidence-section" id="accountability"><p class="kicker">Contractor accountability</p><h2>Accountability evidence timeline</h2>${boundary('An official restriction, low performance rating, or date overlap is not proof of corruption, political connection, or an improper award. Each item has a narrow source-backed meaning.')}<div class="accountability-grid">${blacklistItems}${ratingItems}${awardItems}</div><a class="evidence-action" href="/accountability/">Open the contractor accountability desk</a></section>`;
+};
+
 export const contractorRecordBody = ({
   record,
   signals: items,
@@ -252,6 +267,7 @@ export const contractorRecordBody = ({
   associationSummary,
   statuses,
   years,
+  accountability,
 }) => `${breadcrumb('Contractor activity', record.contractor_key)}
 <article class="evidence-dossier">${heading({ badge: 'Archived contractor activity', kicker: record.pcab_id ? `Recorded PCAB ID ${record.pcab_id}` : 'No PCAB ID in source identity', title: record.contractor_name, summary: `Project associations in the acquired DPWH snapshot, FY ${record.first_year} to FY ${record.last_year}.` })}
 ${facts([['Project associations', record.project_count, 'Associations, not necessarily unique completed works'], ['Associated project budget', money(record.total_budget_centavos), 'Not revenue, payment, or contract value received'], ['Joint-project associations', record.joint_project_count]])}
@@ -278,6 +294,7 @@ ${boundary('These counts describe archived project-record associations. They do 
   <div class="contractor-project-actions"><button type="button" data-contractor-project-more hidden>Load more projects</button></div>
   <noscript><p class="evidence-empty">JavaScript is required for the paginated project ledger. The read-only project-association API remains available.</p></noscript>
 </section>
+${accountabilityTimeline(accountability)}
 <section class="evidence-section"><p class="kicker">Review leads</p><h2>Signals associated with this contractor identity</h2>${signals(items)}</section>
 <section class="evidence-section"><p class="kicker">Concentration context</p><h2>Groups where this was the leading recorded party</h2>${concentrations.length ? concentrations.map((item) => `<div class="candidate-callout"><strong>${html(item.group_label)}</strong><span>${(Number(item.top_share_basis_points) / 100).toFixed(1)}% of contractor-party associations · FY ${item.fiscal_year || 'all years'}</span></div>`).join('') : empty('No published concentration group lists this contractor as the leading recorded party.')}</section></article>`;
 

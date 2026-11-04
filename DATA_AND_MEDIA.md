@@ -10,6 +10,9 @@ It does not relicense third-party material. In particular:
   original publishers.
 - BetterGov is credited as an access route for selected public datasets and
   APIs. BetterGov does not operate, sponsor, or endorse Busisi.
+- Government Procurement Policy Board restriction and CPES records remain
+  official GPPB publications. Busisi archives source fingerprints and applies
+  its own identity, quarantine, and presentation rules.
 - Self-hosted fonts retain the licenses identified in
   `cloudflare/busisi/THIRD_PARTY_NOTICES.md` and their bundled license files.
 - The Busisi and Auva Labs names, logos, and marks are not granted for use as
