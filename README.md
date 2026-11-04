@@ -46,6 +46,14 @@ established. Its counts and dates are derived from the same D1 release controls,
 and every supported question links to a reader-facing evidence desk with an
 explicit limitation. The catalogue is also available at `/api/v1/questions`.
 
+The research library at `/research/` publishes bounded investigations from the
+same evidence system. Each article has an authenticated, versioned data package
+with claim states, calculations, sources, limitations, chart data, and project
+examples. Discovery services may help locate documents privately, but public
+claims identify and archive the underlying publisher's evidence. The first
+release examines multipurpose-building records at
+`/research/multipurpose-buildings/`.
+
 The public update feed at `/feeds/updates.xml` and `/api/v1/alerts` reports
 checked source status, gated coverage releases, newly checked contract evidence
 and deterministic review questions. Every item includes an evidence boundary.
@@ -181,6 +189,7 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_facilities.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_facility_monitor.py --reset-output
 PYTHONPATH=. python3 ops/harness/budget_watchdog_accountability.py --source-only --reset-output
 PYTHONPATH=. python3 ops/harness/budget_watchdog_accountability.py --reset-output
+PYTHONPATH=. python3 ops/harness/budget_watchdog_research.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_scheduled_audit.py --cadence weekly
 cd cloudflare/busisi
 npm ci
@@ -188,8 +197,10 @@ npm run check
 npm run verify:live
 ```
 
-Generated data and local publication bundles are written under
-`data/budget_watchdog/` and are not committed.
+Generated local data and publication bundles are written under
+`data/budget_watchdog/` and are not committed. Authenticated public research
+packages under `cloudflare/busisi/public/data/research/` are versioned deployment
+inputs and are committed with the code that renders them.
 
 ## Runtime
 

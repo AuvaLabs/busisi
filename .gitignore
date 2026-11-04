@@ -6,6 +6,11 @@
 data/
 backups/
 
+# Authenticated public research releases are deployment inputs, not local data.
+!cloudflare/busisi/public/data/
+!cloudflare/busisi/public/data/research/
+!cloudflare/busisi/public/data/research/**
+
 # Python
 __pycache__/
 *.pyc

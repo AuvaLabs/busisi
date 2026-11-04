@@ -1,0 +1,9 @@
+[
+  "The release counts source records, not independently observed physical buildings.",
+  "Source status does not prove present-day activity, completion, acceptance, payment, quality, or public value.",
+  "City labels are partial because city and municipality names are embedded in free-text descriptions.",
+  "DPWH district-office labels are not geographic or congressional-boundary determinations.",
+  "Exact coordinate reuse is a review lead and can describe phases, nearby work, reused coordinates, or source errors.",
+  "Recorded budgets are not award amounts, payments, final costs, or unit-price comparisons.",
+  "The conservative classifier can omit misspelled or abbreviated multipurpose-building descriptions."
+]

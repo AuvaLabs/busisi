@@ -1,0 +1,53 @@
+{
+  "canonical_url": "https://busisi.org/research/multipurpose-buildings/",
+  "data_cutoff": "2026-01-22",
+  "files": [
+    {
+      "bytes": 9135,
+      "path": "chart-data.json",
+      "sha256": "5703acd8b2d70b78406692467e5d9126319dd93648066e8ab6352ccc39080e44"
+    },
+    {
+      "bytes": 3921,
+      "path": "claims.json",
+      "sha256": "5d8827eea81f611441a9c3596e870e0bd4bd92b99ea9dcf1aeda7c648ed370a2"
+    },
+    {
+      "bytes": 967,
+      "path": "findings.json",
+      "sha256": "786b5772fc423eba19734b7eab71f74b1005bc5a549d1c5841676128150e291e"
+    },
+    {
+      "bytes": 1102,
+      "path": "investigations.json",
+      "sha256": "d78b113bd6b6ec85e198d116efd6c7907e9bc430cc8847212bbd57e0ab0a1f5e"
+    },
+    {
+      "bytes": 724,
+      "path": "limitations.json",
+      "sha256": "df0179eec2d9011cf9c3f550b8b6c862c9a73ebde9f921d20e09405e4c28d485"
+    },
+    {
+      "bytes": 23146,
+      "path": "project-examples.json",
+      "sha256": "ba89a6176ee2b951c3b0687c61f46d6b2a3af99a06ed8f6f6096f99c1cef07ea"
+    },
+    {
+      "bytes": 630,
+      "path": "sources.json",
+      "sha256": "e3ef89089b09104ed6c4fe9447eb284cd236cec0e0658aabdeeeedffa148b438"
+    }
+  ],
+  "headline": "How many multipurpose buildings are being built?",
+  "methodology_version": "mpb-classifier-v1",
+  "package_sha256": "0ee46af783e1c700116014b671e8558550fe09cd102bd783e93eed1d74b22dd2",
+  "published_at": "2026-11-04",
+  "schema_version": "1.0",
+  "slug": "multipurpose-buildings",
+  "source_artifact_sha256": "5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123",
+  "status": "published",
+  "story_id": "multipurpose-buildings-2026",
+  "supersedes": null,
+  "version": 1,
+  "video_ready": true
+}

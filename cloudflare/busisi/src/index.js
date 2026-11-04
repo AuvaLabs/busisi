@@ -82,6 +82,7 @@ import {
   queryAccountabilityEvents,
 } from './accountability-query.js';
 import { getAlertFeed } from './alerts-query.js';
+import { multipurposeBuildingsRelease, researchCatalogue } from './research-data.js';
 
 const API_PREFIX = '/api/v1/projects';
 const MAX_SLUG_LENGTH = 160;
@@ -101,6 +102,7 @@ const API_CATALOGUE = Object.freeze([
   { path: '/api/v1/allotment-releases', description: 'Official DBM allotment releases' },
   { path: '/api/v1/questions', description: 'Supported public evidence questions' },
   { path: '/api/v1/alerts', description: 'Bounded evidence update feed' },
+  { path: '/api/v1/research', description: 'Published research package catalogue' },
 ]);
 
 const jsonResponse = (body, status = 200) => new Response(JSON.stringify(body), {
@@ -194,6 +196,22 @@ const apiResponse = async (request, environment, url) => {
         rss: '/feeds/updates.xml',
       },
       data: records,
+    });
+  }
+  if (url.pathname === '/api/v1/research') {
+    return jsonResponse({
+      meta: { total: researchCatalogue.length, review_scope: 'published_research_releases' },
+      data: researchCatalogue,
+    });
+  }
+  if (url.pathname === '/api/v1/research/multipurpose-buildings') {
+    return jsonResponse({
+      meta: {
+        story_id: multipurposeBuildingsRelease.manifest.story_id,
+        version: multipurposeBuildingsRelease.manifest.version,
+        review_scope: 'published_multipurpose_building_investigation',
+      },
+      data: multipurposeBuildingsRelease,
     });
   }
   if (url.pathname === '/api/v1/public-services-summary') {

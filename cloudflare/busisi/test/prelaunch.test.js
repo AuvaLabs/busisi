@@ -60,7 +60,54 @@ test('home provides task-led navigation and a data-led editorial masthead', asyn
   assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#investigate"/);
   assert.doesNotMatch(document, /busisi-masthead\.webp|Illustrative view/);
   assert.doesNotMatch(document, /class="utility-strip"/);
-  assert.equal((document.match(/data-nav-group=/g) ?? []).length, 6);
+  assert.equal((document.match(/data-nav-group=/g) ?? []).length, 7);
+});
+
+test('publishes a research library and the multipurpose-building investigation', async () => {
+  const library = await fetchPath('/research/');
+  const libraryDocument = await library.text();
+  assert.equal(library.status, 200);
+  assert.match(libraryDocument, /Research and investigations/);
+  assert.match(libraryDocument, /href="\/research\/multipurpose-buildings\//);
+  assert.match(libraryDocument, /Data cutoff/);
+
+  const article = await fetchPath('/research/multipurpose-buildings/');
+  const articleDocument = await article.text();
+  assert.equal(article.status, 200);
+  assert.match(articleDocument, /5,842/);
+  assert.match(articleDocument, /7,024/);
+  assert.match(articleDocument, /What we investigated/);
+  assert.match(articleDocument, /What this does not establish/);
+  assert.match(articleDocument, /Where the records came from/);
+  assert.match(articleDocument, /Department of Public Works and Highways/);
+  assert.match(articleDocument, /Accessed through<\/dt><dd>BetterGov/);
+  assert.match(articleDocument, /Open the archived source dataset/);
+  assert.doesNotMatch(articleDocument, /href="https:\/\/(?:www\.)?(?:perplexity|exa)\.ai/i);
+  assert.match(articleDocument, /Download the research package/);
+  assert.match(articleDocument, /"@type":"AnalysisNewsArticle"/);
+});
+
+test('research routes appear in discovery surfaces', async () => {
+  const robotsDocument = await (await fetchPath('/robots.txt')).text();
+  const sitemapDocument = await (await fetchPath('/sitemap.xml')).text();
+  const llmsDocument = await (await fetchPath('/llms.txt')).text();
+
+  assert.match(robotsDocument, /Allow: \/api\/v1\/research/);
+  assert.match(sitemapDocument, /\/research\/multipurpose-buildings\//);
+  assert.match(llmsDocument, /Research library/);
+});
+
+test('publishes a machine-readable research release without a database binding', async () => {
+  const catalogue = await fetchPath('/api/v1/research');
+  const cataloguePayload = await catalogue.json();
+  assert.equal(catalogue.status, 200);
+  assert.equal(cataloguePayload.data[0].story_id, 'multipurpose-buildings-2026');
+
+  const release = await fetchPath('/api/v1/research/multipurpose-buildings');
+  const releasePayload = await release.json();
+  assert.equal(release.status, 200);
+  assert.equal(releasePayload.data.manifest.package_sha256, '0ee46af783e1c700116014b671e8558550fe09cd102bd783e93eed1d74b22dd2');
+  assert.equal(releasePayload.data.claims.find(({ id }) => id === 'mpb-ongoing').value, 5842);
 });
 
 test('publishes the ecosystem hubs while preserving established evidence pages', async () => {

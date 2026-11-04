@@ -1,0 +1,114 @@
+[
+  {
+    "calculation_id": "mpb-classifier-v1",
+    "evidence_state": "verified",
+    "id": "mpb-total-records",
+    "limitations": [],
+    "scope": "Conservatively classified DPWH FY2024 to FY2026 delivery records",
+    "source_ids": [
+      "dpwh-delivery-snapshot-2026-01-22"
+    ],
+    "statement": "12,609 FY2024 to FY2026 records conservatively name a multipurpose building as the project itself.",
+    "unit": "records",
+    "value": 12609
+  },
+  {
+    "calculation_id": "mpb-status-v1",
+    "evidence_state": "source_reported",
+    "id": "mpb-ongoing",
+    "limitations": [
+      "Source status is not independent physical-site verification."
+    ],
+    "scope": "Conservatively classified DPWH FY2024 to FY2026 delivery records",
+    "source_ids": [
+      "dpwh-delivery-snapshot-2026-01-22"
+    ],
+    "statement": "5,842 classified records are marked On-Going in the archived source.",
+    "unit": "records",
+    "value": 5842
+  },
+  {
+    "calculation_id": "mpb-status-v1",
+    "evidence_state": "source_reported",
+    "id": "mpb-active-pipeline",
+    "limitations": [],
+    "scope": "Conservatively classified DPWH FY2024 to FY2026 delivery records",
+    "source_ids": [
+      "dpwh-delivery-snapshot-2026-01-22"
+    ],
+    "statement": "7,024 classified records are On-Going, For Procurement, or Not Yet Started.",
+    "unit": "records",
+    "value": 7024
+  },
+  {
+    "calculation_id": "mpb-status-v1",
+    "evidence_state": "source_reported",
+    "id": "mpb-completed",
+    "limitations": [
+      "Completed is a source field, not an acquired acceptance certificate."
+    ],
+    "scope": "Conservatively classified DPWH FY2024 to FY2026 delivery records",
+    "source_ids": [
+      "dpwh-delivery-snapshot-2026-01-22"
+    ],
+    "statement": "5,582 classified records are marked Completed in the archived source.",
+    "unit": "records",
+    "value": 5582
+  },
+  {
+    "calculation_id": "mpb-budget-v1",
+    "evidence_state": "source_reported",
+    "id": "mpb-active-budget",
+    "limitations": [
+      "Recorded budget is not payment, final cost, or price reasonableness."
+    ],
+    "scope": "Conservatively classified DPWH FY2024 to FY2026 delivery records",
+    "source_ids": [
+      "dpwh-delivery-snapshot-2026-01-22"
+    ],
+    "statement": "The active pipeline carries the recorded budget total stated in this package.",
+    "unit": "PHP centavos",
+    "value": 8878625428536
+  },
+  {
+    "calculation_id": "mpb-budget-v1",
+    "evidence_state": "source_reported",
+    "id": "mpb-positive-active-budget",
+    "limitations": [],
+    "scope": "Conservatively classified DPWH FY2024 to FY2026 delivery records",
+    "source_ids": [
+      "dpwh-delivery-snapshot-2026-01-22"
+    ],
+    "statement": "6,093 active records contain a positive recorded budget.",
+    "unit": "records",
+    "value": 6093
+  },
+  {
+    "calculation_id": "mpb-work-type-v1",
+    "evidence_state": "source_reported",
+    "id": "mpb-existing-work-wording",
+    "limitations": [],
+    "scope": "Conservatively classified DPWH FY2024 to FY2026 delivery records",
+    "source_ids": [
+      "dpwh-delivery-snapshot-2026-01-22"
+    ],
+    "statement": "2,812 active titles explicitly describe completion, a later phase, repair, improvement, replacement, or reconstruction.",
+    "unit": "records",
+    "value": 2812
+  },
+  {
+    "calculation_id": "mpb-coordinate-v1",
+    "evidence_state": "review_candidate",
+    "id": "mpb-prior-coordinate-candidates",
+    "limitations": [
+      "Exact coordinate reuse does not prove a duplicate or an existing structure."
+    ],
+    "scope": "Conservatively classified DPWH FY2024 to FY2026 delivery records",
+    "source_ids": [
+      "dpwh-delivery-snapshot-2026-01-22"
+    ],
+    "statement": "31 active records share an exact coordinate with a completed multipurpose-building record from the same or an earlier infrastructure year.",
+    "unit": "review candidates",
+    "value": 31
+  }
+]

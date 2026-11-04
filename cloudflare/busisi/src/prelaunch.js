@@ -43,6 +43,7 @@ import {
 } from './accountability-query.js';
 import { alertsRss } from './alerts-feed.js';
 import { getAlertFeed } from './alerts-query.js';
+import { multipurposeBuildingsBody, researchIndexBody } from './research-content.js';
 import {
   budgetRecordBody,
   candidateRecordBody,
@@ -259,6 +260,29 @@ const PUBLIC_SERVICES_SCHEMA = Object.freeze({
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
 });
 
+const RESEARCH_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Busisi research and investigations',
+  url: `${SITE.origin}/research/`,
+  description: 'Dated, evidence-led investigations of Philippine public budget and project records.',
+  inLanguage: ['en-PH', 'fil-PH'],
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
+const MULTIPURPOSE_BUILDINGS_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'AnalysisNewsArticle',
+  headline: 'How many multipurpose buildings are being built?',
+  url: `${SITE.origin}/research/multipurpose-buildings/`,
+  description: 'A reproducible investigation of multipurpose-building records, locations, work types, recorded budgets, and evidence gaps in the archived DPWH snapshot.',
+  datePublished: '2026-11-04',
+  dateModified: '2026-11-04',
+  inLanguage: ['en-PH', 'fil-PH'],
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
 const page = (html, status = 200) => response(html, {
   status,
   type: 'text/html; charset=utf-8',
@@ -464,6 +488,22 @@ const publicServices = (summary) => page(document({
   schema: PUBLIC_SERVICES_SCHEMA,
 }));
 
+const research = () => page(document({
+  title: 'Research and investigations | Busisi',
+  description: 'Read dated Busisi investigations backed by reproducible Philippine public budget and project evidence.',
+  canonicalPath: '/research/',
+  body: researchIndexBody,
+  schema: RESEARCH_SCHEMA,
+}));
+
+const multipurposeBuildings = () => page(document({
+  title: 'How many multipurpose buildings are being built? | Busisi',
+  description: 'See how many DPWH multipurpose-building records are marked ongoing, where they appear, whether work is new or continuing, and what recorded prices can establish.',
+  canonicalPath: '/research/multipurpose-buildings/',
+  body: multipurposeBuildingsBody,
+  schema: MULTIPURPOSE_BUILDINGS_SCHEMA,
+}));
+
 const facility = (payload) => {
   const { record } = payload;
   const path = `/facilities/${encodeURIComponent(record.facility_id)}/`;
@@ -585,6 +625,7 @@ Allow: /api/v1/public-services
 Allow: /api/v1/public-services-summary
 Allow: /api/v1/facility-registry-status
 Allow: /api/v1/alerts
+Allow: /api/v1/research
 Allow: /api/v1
 Allow: /api/v1/places
 Allow: /feeds/updates.xml
@@ -619,6 +660,8 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/coverage/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/questions/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/public-services/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>${SITE.origin}/research/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>${SITE.origin}/research/multipurpose-buildings/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/corazon-2022-combined/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/agoncillo-2023/</loc><lastmod>2026-11-03</lastmod></url>
@@ -661,6 +704,8 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Evidence coverage status: ${SITE.origin}/coverage/
 - Evidence question catalogue: ${SITE.origin}/questions/
 - Public services inventory: ${SITE.origin}/public-services/
+- Research library: ${SITE.origin}/research/
+- Multipurpose-building investigation: ${SITE.origin}/research/multipurpose-buildings/
 - Methodology: ${SITE.origin}/methodology/
 
 ## Machine-readable catalogue
@@ -672,6 +717,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Public API catalogue: ${SITE.origin}/api/v1
 - Projects grouped by recorded place: ${SITE.origin}/api/v1/places
 - Bounded evidence updates: ${SITE.origin}/api/v1/alerts
+- Published research packages: ${SITE.origin}/api/v1/research
 
 ## Evidence and publication rules
 
@@ -749,6 +795,8 @@ const route = (path) => {
   if (path === '/contracts' || path === '/contracts/') return contracts();
   if (path === '/contractors' || path === '/contractors/') return contractorDirectory();
   if (path === '/places' || path === '/places/') return places();
+  if (path === '/research' || path === '/research/') return research();
+  if (path === '/research/multipurpose-buildings' || path === '/research/multipurpose-buildings/') return multipurposeBuildings();
   if (path === '/sources' || path === '/sources/') return sources();
   if (path === '/watch' || path === '/watch/') return watch();
   if (path === '/changes' || path === '/changes/') return changes();
@@ -786,7 +834,9 @@ export default {
       url.hostname = 'busisi.org';
       return Response.redirect(url.toString(), 301);
     }
-    if ((url.pathname === '/healthz' || url.pathname.startsWith('/api/')) && env.DB) {
+    if ((url.pathname === '/api/v1/research'
+      || url.pathname === '/api/v1/research/multipurpose-buildings'
+      || ((url.pathname === '/healthz' || url.pathname.startsWith('/api/')) && env.DB))) {
       return dataWorker.fetch(request, env);
     }
     if (!['GET', 'HEAD'].includes(request.method)) {

@@ -15,6 +15,7 @@ import { releaseCss } from './prelaunch-release-styles.js';
 import { questionsCss } from './questions-styles.js';
 import { publicServicesCss } from './public-services-styles.js';
 import { ecosystemCss } from './ecosystem-styles.js';
+import { researchCss } from './research-styles.js';
 import { methodDiagram } from './prelaunch-visuals.js';
 
 const icon = (name, className = 'section-icon') => (
@@ -26,6 +27,7 @@ const navigation = (canonicalPath) => {
     { label: 'Projects', icon: 'projects', href: '/contracts/', paths: ['/contracts/', '/projects/', '/public-services/'] },
     { label: 'Contractors', icon: 'contractors', href: '/contractors/', paths: ['/contractors/'] },
     { label: 'Places', icon: 'projects', href: '/places/', paths: ['/places/'] },
+    { label: 'Research', icon: 'search', href: '/research/', paths: ['/research/'] },
     { label: 'Needs checking', icon: 'investigate', href: '/signals/', paths: ['/signals/', '/integrity/', '/accountability/'] },
     { label: 'Sources', icon: 'sources', href: '/sources/', paths: ['/sources/', '/budget-trail/', '/audit/', '/procurement/', '/methodology/'] },
     { label: 'Watch', icon: 'search', href: '/watch/', paths: ['/watch/', '/coverage/'] },
@@ -41,7 +43,7 @@ const navigation = (canonicalPath) => {
 
 const footer = `<footer class="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent, nonpartisan evidence desk helping Filipino citizens examine public projects and the records behind them.</p></div>
-  <nav class="footer-nav" aria-label="Footer navigation"><a href="/contracts/">Projects</a><a href="/contractors/">Contractors</a><a href="/places/">Places</a><a href="/signals/">Needs checking</a><a href="/sources/">Sources</a><a href="/watch/">Watch</a><a href="/questions/">Questions</a><a href="/public-services/">Public services</a><a href="/sulit/">Sulit Ba?</a><a href="/releases/">Releases</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/integrity/">Integrity</a><a href="/accountability/">Contractor accountability</a><a href="/coverage/">Coverage</a><a href="/methodology/">Method</a></nav>
+  <nav class="footer-nav" aria-label="Footer navigation"><a href="/contracts/">Projects</a><a href="/contractors/">Contractors</a><a href="/places/">Places</a><a href="/research/">Research</a><a href="/signals/">Needs checking</a><a href="/sources/">Sources</a><a href="/watch/">Watch</a><a href="/questions/">Questions</a><a href="/public-services/">Public services</a><a href="/sulit/">Sulit Ba?</a><a href="/releases/">Releases</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/integrity/">Integrity</a><a href="/accountability/">Contractor accountability</a><a href="/coverage/">Coverage</a><a href="/methodology/">Method</a></nav>
   <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.<br><small>Built and maintained by <a href="https://auvalabs.com/" target="_blank" rel="noopener noreferrer">Auva Labs</a>. Questions and corrections: <a href="mailto:dev@auvalabs.com">dev@auvalabs.com</a></small></p>
 </div></footer>`;
 
@@ -363,6 +365,6 @@ export const methodologyBody = `
     <div class="standards-grid"><article class="standard-panel"><h3>Same rules for every record</h3><p>Every agency, district, contractor, project, and public official is evaluated under the same published evidence rules. Names, offices, locations, and amounts do not change a threshold or turn a review signal into a finding.</p></article><article class="standard-panel"><h3>Data before interpretation</h3><p>Official records, derived comparisons, review signals, and verified findings remain separate. Busisi does not infer political motive from an amount or association, and it publishes coverage limits and correction history so readers can examine possible sources of bias.</p></article><article class="standard-panel"><h3>Ownership and contact</h3><p>Auva Labs is responsible for Busisi's software, data pipeline, methodology, presentation, and publication decisions. Data-source organizations do not control Busisi's classifications or conclusions. Questions, corrections, and source-backed challenges are welcome at <a href="mailto:dev@auvalabs.com">dev@auvalabs.com</a>.</p></article></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}\n${questionsCss}\n${publicServicesCss}\n${ecosystemCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}\n${questionsCss}\n${publicServicesCss}\n${ecosystemCss}\n${researchCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#15191d" stroke-width="2.5" stroke-linejoin="round"><path fill="#d2d9de" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#e9f0f4" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fff" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#17415f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#17415f"/><path fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/><circle cx="18" cy="44" r="1.2" fill="#8a4600"/></svg>`;
