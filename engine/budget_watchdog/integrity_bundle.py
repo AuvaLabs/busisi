@@ -41,6 +41,7 @@ MIGRATION_PATHS = (
     MIGRATION_DIRECTORY / "0007_district_attribution.sql",
     MIGRATION_DIRECTORY / "0011_delivery_details.sql",
     MIGRATION_DIRECTORY / "0024_contractor_project_associations.sql",
+    MIGRATION_DIRECTORY / "0025_contractor_association_metadata.sql",
 )
 SNAPSHOT_COLUMNS = (
     "contractId",

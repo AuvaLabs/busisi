@@ -181,6 +181,7 @@ def _apply_integrity_migrations(connection: sqlite3.Connection, migration: Path)
         "0007_district_attribution.sql",
         "0011_delivery_details.sql",
         "0024_contractor_project_associations.sql",
+        "0025_contractor_association_metadata.sql",
     ):
         connection.executescript(migration.with_name(name).read_text())
 
