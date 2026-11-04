@@ -222,17 +222,21 @@ const unsupported = Object.freeze([
 })));
 
 const loadEvidence = async (database) => {
+  const publicServices = await getPublicServicesSummary(database);
   const values = await Promise.all([
     getChangeStats(database), getReviewSummary(database), getAgencyBudgetSummary(database),
     getAllotmentReleaseSummary(database), getIntegritySummary(database),
     getContractIntelligenceSummary(database), getBudgetCycleSummary(database),
     getPublicValueSummary(database), getSourceMonitorStatus(database),
     getAcquisitionCoverage(database), getCoverageStatus(database),
-    getProcurementSummary(database), getCoaSummary(database), getPublicServicesSummary(database),
+    getProcurementSummary(database), getCoaSummary(database),
   ]);
   const keys = ['change', 'review', 'agency', 'release', 'integrity', 'contracts', 'cycle',
-    'publicValue', 'source', 'acquisition', 'coverage', 'procurement', 'coa', 'publicServices'];
-  return Object.fromEntries(keys.map((key, index) => [key, values[index]]));
+    'publicValue', 'source', 'acquisition', 'coverage', 'procurement', 'coa'];
+  return {
+    ...Object.fromEntries(keys.map((key, index) => [key, values[index]])),
+    publicServices,
+  };
 };
 
 export const buildQuestionCatalogue = (evidence) => Object.freeze([

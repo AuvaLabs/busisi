@@ -153,6 +153,11 @@ const request = async (path, options = {}) => {
     return await fetch(`${origin}${path}`, {
       redirect: 'manual',
       ...options,
+      headers: {
+        Accept: '*/*',
+        'User-Agent': 'BusisiProductionMonitor/1.0 (+https://busisi.org/methodology/)',
+        ...options.headers,
+      },
       signal: controller.signal,
     });
   } finally {
