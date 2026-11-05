@@ -505,7 +505,7 @@ const verifyPages = async () => {
   const researchHistory = await request('/research/releases/');
   expectStatus(researchHistory, 200, '/research/releases/');
   const researchHistoryText = await researchHistory.text();
-  expectIncludes(researchHistoryText, '6 published packages', 'research release history');
+  expectIncludes(researchHistoryText, '7 published packages', 'research release history');
   expectIncludes(researchHistoryText, 'No corrections have been filed', 'research corrections state');
 
   const robots = await request('/robots.txt');
