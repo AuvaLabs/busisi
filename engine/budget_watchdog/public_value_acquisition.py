@@ -192,6 +192,7 @@ def _official_status(status: str) -> str:
     return {
         "official_artifact_archived": "verified_archived",
         "official_summary_archived": "official_summary_archived",
+        "indexed_unarchived": "indexed_unarchived",
         "source_conflict_quarantined": "quarantined",
     }.get(status, "")
 
@@ -203,6 +204,11 @@ def _official_note(record: dict[str, Any], status: str) -> str:
         return (
             "An archived official summary reports this stage. It is not the underlying "
             "notice, signed contract, certificate, or receipt."
+        )
+    if status == "indexed_unarchived":
+        return (
+            "The official document is indexed, but its source bytes could not be "
+            "archived. This remains an acquisition lead."
         )
     return str(record.get("limitation") or "Conflicting official identity evidence is quarantined.")
 
@@ -231,8 +237,17 @@ def _official_records(
         sha256 = record.get("artifact_sha256")
         if not status or not isinstance(source_url, str) or not source_url.startswith("https://"):
             raise ValueError("official review record has an invalid state or source URL")
-        if not isinstance(sha256, str) or SHA256.fullmatch(sha256) is None:
-            raise ValueError("official review record requires an archived artifact digest")
+        requires_digest = status in {"verified_archived", "official_summary_archived"}
+        if requires_digest and (not isinstance(sha256, str) or SHA256.fullmatch(sha256) is None):
+            raise ValueError("archived official review record requires an artifact digest")
+        if status == "indexed_unarchived" and sha256 is not None:
+            raise ValueError("unarchived official review record cannot claim an artifact digest")
+        if (
+            status == "quarantined"
+            and sha256 is not None
+            and (not isinstance(sha256, str) or SHA256.fullmatch(sha256) is None)
+        ):
+            raise ValueError("quarantined official review digest is invalid")
         indexed[(str(key[0]), str(key[1]))].append(record)
     return indexed
 
@@ -242,7 +257,12 @@ def _apply_official_records(
     records: dict[tuple[str, str], list[dict[str, Any]]],
     contract_id: str,
 ) -> list[dict[str, Any]]:
-    priority = {"verified_archived": 1, "official_summary_archived": 2, "quarantined": 3}
+    priority = {
+        "indexed_unarchived": 1,
+        "verified_archived": 2,
+        "official_summary_archived": 3,
+        "quarantined": 4,
+    }
     result = []
     for task in tasks:
         matches = records.get((contract_id, task["evidence_type"]), [])
@@ -284,6 +304,7 @@ def _counts(tasks: list[dict[str, Any]]) -> dict[str, int]:
     ordered = (
         "verified_archived",
         "official_summary_archived",
+        "indexed_unarchived",
         "secondary_exact",
         "source_media_archived",
         "pending",
@@ -356,9 +377,8 @@ def build_public_value_acquisition(
             "candidate_count": len(candidates),
             "task_count": len(all_tasks),
             "verified_archived": _counts(all_tasks).get("verified_archived", 0),
-            "official_summary_archived": _counts(all_tasks).get(
-                "official_summary_archived", 0
-            ),
+            "official_summary_archived": _counts(all_tasks).get("official_summary_archived", 0),
+            "indexed_unarchived": _counts(all_tasks).get("indexed_unarchived", 0),
             "secondary_exact": _counts(all_tasks).get("secondary_exact", 0),
             "source_media_archived": _counts(all_tasks).get("source_media_archived", 0),
             "pending": _counts(all_tasks).get("pending", 0),
@@ -371,6 +391,8 @@ def build_public_value_acquisition(
             "A queued task records work still required. It is not evidence that the document exists or that the project failed a check.",
             "An exact secondary award row is a discovery lead, not an archived official award notice.",
             "Archived source media does not independently prove exact location, capture time, completion, quality, payment, or public value.",
+            "An indexed official URL is a discovery lead until the source bytes are archived, hashed, and identity-checked.",
+            "Conflicting contract identities are quarantined and are not counted as verified evidence.",
         ],
     }
 

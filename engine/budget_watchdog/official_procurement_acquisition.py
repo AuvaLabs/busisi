@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Protocol
 from urllib.parse import urlparse
 
+from engine.budget_watchdog.acquisition import AcquisitionError
 from engine.budget_watchdog.archive import Acquisition, ArtifactArchive
 from engine.budget_watchdog.official_procurement_evidence import (
     ALLOWED_DOCUMENT_TYPES,
@@ -22,6 +23,8 @@ from engine.budget_watchdog.official_procurement_evidence import (
     EvidenceBinding,
     OfficialDocument,
 )
+
+HTTP_SERVER_ERROR_MINIMUM = 500
 
 
 class OfficialAcquisitionError(ValueError):
@@ -168,7 +171,9 @@ def download_official_sources(
         if acquisition.source_url != source.source_url:
             raise OfficialAcquisitionError(f"official source URL changed: {source.source_id}")
         if not acquisition.payload.startswith(b"%PDF-"):
-            raise OfficialAcquisitionError(f"official source did not return a PDF: {source.source_id}")
+            raise OfficialAcquisitionError(
+                f"official source did not return a PDF: {source.source_id}"
+            )
         path = destination / f"{source.source_id}.pdf"
         _write_download(path, acquisition.payload)
         manifest.append(
@@ -179,6 +184,96 @@ def download_official_sources(
             }
         )
     return manifest
+
+
+def attempt_official_source_downloads(
+    sources: tuple[OfficialSource, ...],
+    *,
+    destination: Path,
+    fetcher: UrlFetcher,
+    retrieved_at: datetime,
+) -> list[dict[str, object]]:
+    """Attempt every source and retain explicit blocked states without promotion."""
+
+    if retrieved_at.tzinfo is None:
+        raise OfficialAcquisitionError("retrieved_at must be timezone-aware")
+    attempts = []
+    for source in sources:
+        try:
+            acquisition = fetcher.fetch_url(source.source_url, retrieved_at)
+            if acquisition.source_url != source.source_url:
+                raise OfficialAcquisitionError("official source URL changed")
+            if not acquisition.payload.startswith(b"%PDF-"):
+                raise OfficialAcquisitionError("official source did not return a PDF")
+            _write_download(destination / f"{source.source_id}.pdf", acquisition.payload)
+            attempts.append(
+                {
+                    "source_id": source.source_id,
+                    "source_url": source.source_url,
+                    "status": "downloaded",
+                    "http_status": 200,
+                    "retry_eligible": False,
+                    "byte_size": len(acquisition.payload),
+                }
+            )
+        except AcquisitionError as error:
+            attempts.append(
+                {
+                    "source_id": source.source_id,
+                    "source_url": source.source_url,
+                    "status": "blocked",
+                    "http_status": error.http_status,
+                    "retry_eligible": error.http_status in {403, 408, 425, 429}
+                    or bool(error.http_status and error.http_status >= HTTP_SERVER_ERROR_MINIMUM),
+                }
+            )
+        except OfficialAcquisitionError:
+            attempts.append(
+                {
+                    "source_id": source.source_id,
+                    "source_url": source.source_url,
+                    "status": "blocked",
+                    "http_status": None,
+                    "retry_eligible": False,
+                }
+            )
+    return attempts
+
+
+def indexed_records_for_blocked_sources(
+    sources: tuple[OfficialSource, ...],
+    attempts: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Convert reviewed index leads into unarchived records, never verified evidence."""
+
+    attempt_index = {str(item["source_id"]): item for item in attempts}
+    if set(attempt_index) != {source.source_id for source in sources}:
+        raise OfficialAcquisitionError("download attempts do not cover the source catalogue")
+    records = []
+    for source in sources:
+        attempt = attempt_index[source.source_id]
+        if attempt.get("status") != "blocked":
+            continue
+        for binding in source.bindings:
+            conflict = binding.evidence_class == "identity_conflict"
+            records.append(
+                {
+                    "contract_id": binding.contract_id,
+                    "evidence_type": binding.evidence_type,
+                    "status": ("source_conflict_quarantined" if conflict else "indexed_unarchived"),
+                    "evidence_class": binding.evidence_class,
+                    "document_type": source.document_type,
+                    "source_id": source.source_id,
+                    "source_url": source.source_url,
+                    "retrieved_at": None,
+                    "artifact_sha256": None,
+                    "http_status": attempt.get("http_status"),
+                    "retry_eligible": bool(attempt.get("retry_eligible")),
+                    "limitation": binding.limitation
+                    or "The official document is indexed but its source bytes are not archived.",
+                }
+            )
+    return records
 
 
 def acquire_official_documents(

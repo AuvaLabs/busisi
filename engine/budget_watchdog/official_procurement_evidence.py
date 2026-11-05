@@ -13,9 +13,7 @@ from urllib.parse import urlparse
 SHA256 = re.compile(r"[0-9a-f]{64}")
 CONTRACT_ID = re.compile(r"\b\d{2}[A-Z]{1,3}\d{3,5}\b")
 NON_ALPHANUMERIC = re.compile(r"[^A-Z0-9]+")
-ALLOWED_EVIDENCE_CLASSES = frozenset(
-    {"official_artifact", "official_summary", "identity_conflict"}
-)
+ALLOWED_EVIDENCE_CLASSES = frozenset({"official_artifact", "official_summary", "identity_conflict"})
 ALLOWED_DOCUMENT_TYPES = frozenset(
     {
         "annual_procurement_plan",
@@ -86,7 +84,10 @@ def _validate_document(document: OfficialDocument) -> None:
     if not document.payload or not document.extracted_text.strip():
         raise ProcurementEvidenceError("official document bytes and extracted text are required")
     observed_digest = hashlib.sha256(document.payload).hexdigest()
-    if SHA256.fullmatch(document.artifact_sha256) is None or observed_digest != document.artifact_sha256:
+    if (
+        SHA256.fullmatch(document.artifact_sha256) is None
+        or observed_digest != document.artifact_sha256
+    ):
         raise ProcurementEvidenceError("official document digest does not match its payload")
     if not document.bindings:
         raise ProcurementEvidenceError("official document must declare at least one binding")
@@ -157,8 +158,10 @@ def _contract_states(
         states = {row["status"] for row in contract_records}
         if "source_conflict_quarantined" in states:
             state = "source_conflict_quarantined"
-        elif contract_records:
+        elif states & {"official_artifact_archived", "official_summary_archived"}:
             state = "official_source_archived"
+        elif "indexed_unarchived" in states:
+            state = "official_source_indexed"
         else:
             state = "discovery_pending"
         result[contract_id] = {
@@ -173,15 +176,14 @@ def _summary(contracts: dict[str, dict[str, Any]], records: list[dict[str, Any]]
     states = [item["state"] for item in contracts.values()]
     return {
         "targeted_contracts": len(contracts),
-        "contracts_with_official_sources": sum(
-            state != "discovery_pending" for state in states
-        ),
+        "contracts_with_official_sources": sum(state != "discovery_pending" for state in states),
         "official_artifact_records": sum(
             row["status"] == "official_artifact_archived" for row in records
         ),
         "official_summary_records": sum(
             row["status"] == "official_summary_archived" for row in records
         ),
+        "indexed_unarchived_records": sum(row["status"] == "indexed_unarchived" for row in records),
         "quarantined_contracts": states.count("source_conflict_quarantined"),
         "discovery_pending_contracts": states.count("discovery_pending"),
     }
@@ -198,7 +200,9 @@ def reconcile_official_documents(
     if not expected_contract_ids or len(expected_contract_ids) != len(set(expected_contract_ids)):
         raise ProcurementEvidenceError("expected contract IDs must be unique and non-empty")
     if set(expected_contract_ids) != set(candidates):
-        raise ProcurementEvidenceError("candidate descriptions must cover the targeted contract set")
+        raise ProcurementEvidenceError(
+            "candidate descriptions must cover the targeted contract set"
+        )
     records = []
     source_ids = set()
     for document in documents:
@@ -216,4 +220,38 @@ def reconcile_official_documents(
         "summary": _summary(contracts, records),
         "contracts": contracts,
         "records": records,
+    }
+
+
+def merge_indexed_records(
+    review: dict[str, Any], indexed_records: list[dict[str, object]]
+) -> dict[str, Any]:
+    """Merge blocked official index leads without converting them to archived proof."""
+
+    contracts = review.get("contracts")
+    existing = review.get("records")
+    if not isinstance(contracts, dict) or not isinstance(existing, list):
+        raise ProcurementEvidenceError("review is missing contracts or records")
+    allowed = frozenset({"indexed_unarchived", "source_conflict_quarantined"})
+    merged = [dict(item) for item in existing]
+    for record in indexed_records:
+        contract_id = record.get("contract_id")
+        status = record.get("status")
+        if contract_id not in contracts or status not in allowed:
+            raise ProcurementEvidenceError("indexed record is outside the review contract")
+        if record.get("artifact_sha256") is not None:
+            raise ProcurementEvidenceError("indexed records cannot claim archived bytes")
+        source_url = record.get("source_url")
+        parsed = urlparse(str(source_url or ""))
+        if parsed.scheme != "https" or parsed.hostname not in OFFICIAL_DPWH_HOSTS:
+            raise ProcurementEvidenceError("indexed record requires an official DPWH URL")
+        merged.append(dict(record))
+    merged.sort(key=lambda row: (row["contract_id"], row["evidence_type"], row["source_id"]))
+    expected_ids = tuple(contracts)
+    merged_contracts = _contract_states(expected_ids, merged)
+    return {
+        **review,
+        "summary": _summary(merged_contracts, merged),
+        "contracts": merged_contracts,
+        "records": merged,
     }

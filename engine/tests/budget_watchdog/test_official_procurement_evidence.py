@@ -7,6 +7,7 @@ from engine.budget_watchdog.official_procurement_evidence import (
     EvidenceBinding,
     OfficialDocument,
     ProcurementEvidenceError,
+    merge_indexed_records,
     reconcile_official_documents,
 )
 
@@ -60,6 +61,7 @@ def test_reconciles_exact_official_summary_without_overstating_artifact() -> Non
         "contracts_with_official_sources": 1,
         "official_artifact_records": 0,
         "official_summary_records": 1,
+        "indexed_unarchived_records": 0,
         "quarantined_contracts": 0,
         "discovery_pending_contracts": 1,
     }
@@ -236,9 +238,7 @@ def test_rejects_invalid_bindings(binding: EvidenceBinding, message: str) -> Non
 
 
 def test_rejects_contract_set_and_source_identity_errors() -> None:
-    binding = EvidenceBinding(
-        "24DD0136", "procurement_plan", "official_artifact", ("DAGATAN",)
-    )
+    binding = EvidenceBinding("24DD0136", "procurement_plan", "official_artifact", ("DAGATAN",))
     document = _document("24DD0136 DAGATAN", (binding,))
     with pytest.raises(ProcurementEvidenceError, match="unique and non-empty"):
         reconcile_official_documents(
@@ -261,12 +261,51 @@ def test_rejects_contract_set_and_source_identity_errors() -> None:
 
 
 def test_rejects_document_without_bound_contract_id() -> None:
-    binding = EvidenceBinding(
-        "24DD0136", "procurement_plan", "official_artifact", ("DAGATAN",)
-    )
+    binding = EvidenceBinding("24DD0136", "procurement_plan", "official_artifact", ("DAGATAN",))
     with pytest.raises(ProcurementEvidenceError, match="does not contain"):
         reconcile_official_documents(
             {"24DD0136": "DAGATAN"},
             (_document("DAGATAN only", (binding,)),),
             expected_contract_ids=("24DD0136",),
         )
+
+
+def test_merges_indexed_and_conflicting_records_without_verified_promotion() -> None:
+    review = reconcile_official_documents(
+        {"24DD0136": "DAGATAN", "24OD0281": "DEPED MALINTA"},
+        (),
+        expected_contract_ids=("24DD0136", "24OD0281"),
+    )
+    merged = merge_indexed_records(
+        review,
+        [
+            {
+                "contract_id": "24DD0136",
+                "evidence_type": "procurement_plan",
+                "status": "indexed_unarchived",
+                "source_id": "dpwh-app",
+                "source_url": "https://www.dpwh.gov.ph/dpwh/app.pdf",
+                "artifact_sha256": None,
+            },
+            {
+                "contract_id": "24OD0281",
+                "evidence_type": "procurement_plan",
+                "status": "source_conflict_quarantined",
+                "source_id": "dpwh-mm-app",
+                "source_url": "https://www.dpwh.gov.ph/dpwh/mm-app.pdf",
+                "artifact_sha256": None,
+            },
+        ],
+    )
+
+    assert merged["summary"] == {
+        "targeted_contracts": 2,
+        "contracts_with_official_sources": 2,
+        "official_artifact_records": 0,
+        "official_summary_records": 0,
+        "indexed_unarchived_records": 1,
+        "quarantined_contracts": 1,
+        "discovery_pending_contracts": 0,
+    }
+    assert merged["contracts"]["24DD0136"]["state"] == "official_source_indexed"
+    assert merged["contracts"]["24OD0281"]["state"] == "source_conflict_quarantined"

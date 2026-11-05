@@ -1,0 +1,50 @@
+[
+  {
+    "calculation_id": "mpb-classifier-v1",
+    "question": "How many records actually describe a multipurpose building?",
+    "result": "Generic program-heading occurrences were removed before the project phrase was classified.",
+    "state": "verified"
+  },
+  {
+    "calculation_id": "mpb-work-type-v1",
+    "question": "Is the work new, continuing, repairing, or replacing a structure?",
+    "result": "Titles were classified by explicit wording. Construction alone remains newness unstated.",
+    "state": "verified"
+  },
+  {
+    "calculation_id": "mpb-coordinate-v1",
+    "question": "Does a completed building already exist at the same place?",
+    "result": "Exact-coordinate comparisons identify candidates only. The snapshot does not prove physical existence.",
+    "state": "partial"
+  },
+  {
+    "calculation_id": "mpb-budget-v1",
+    "question": "Is the recorded amount a fair construction price?",
+    "result": "Not established. Comparable floor area, specifications, work scope, award, payment, and final cost are not available for every record.",
+    "state": "evidence_gap"
+  },
+  {
+    "calculation_id": "mpb-public-value-v1",
+    "question": "Is every active multipurpose-building project necessary?",
+    "result": "Not established by the current snapshot.",
+    "state": "evidence_gap"
+  },
+  {
+    "calculation_id": "mpb-public-value-v1",
+    "question": "Is each location and design appropriate for its intended function?",
+    "result": "Not established without verified sites, hazards, plans, specifications, and utilization evidence.",
+    "state": "evidence_gap"
+  },
+  {
+    "calculation_id": "mpb-public-value-evidence-v1",
+    "question": "Which queued projects have enough evidence for a public-value judgment?",
+    "result": "0 of 43 pass every evidence gate in this release.",
+    "state": "evidence_gap"
+  },
+  {
+    "calculation_id": "mpb-official-procurement-evidence-v1",
+    "question": "What did the official procurement source search establish?",
+    "result": "Official URLs were indexed for 17 of 43 contracts. No source file was archived because the DPWH host returned HTTP 403. 3 identity conflicts remain quarantined.",
+    "state": "evidence_gap"
+  }
+]

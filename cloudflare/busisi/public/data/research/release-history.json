@@ -1,8 +1,23 @@
 {
   "correction_count": 0,
   "policy": "A correction changes an error or supported conclusion. Editorial expansions and data updates are labelled separately. Older immutable packages remain available.",
-  "release_count": 7,
+  "release_count": 8,
   "releases": [
+    {
+      "affects_findings": false,
+      "canonical_url": "https://busisi.org/research/multipurpose-buildings/",
+      "change_type": "data_update",
+      "data_cutoff": "2026-01-22",
+      "headline": "How many multipurpose buildings are being built?",
+      "manifest_url": "https://busisi.org/data/research/multipurpose-buildings/v6/manifest.json",
+      "package_sha256": "f05ed59e874862d25f7ade31041b711be61bc126c4f0a3e7dd4dceafdd930b2a",
+      "published_at": "2026-11-05",
+      "slug": "multipurpose-buildings",
+      "story_id": "multipurpose-buildings-2026",
+      "summary": "Indexed 19 official DPWH procurement document URLs covering 17 queued contracts. No official file was archived because the source host returned HTTP 403, and three contract identity conflicts remain quarantined.",
+      "supersedes_version": 5,
+      "version": 6
+    },
     {
       "affects_findings": false,
       "canonical_url": "https://busisi.org/research/multipurpose-buildings/",

@@ -36,6 +36,13 @@
   },
   {
     "affects_findings": false,
+    "change_type": "data_update",
+    "story_id": "multipurpose-buildings-2026",
+    "summary": "Indexed 19 official DPWH procurement document URLs covering 17 queued contracts. No official file was archived because the source host returned HTTP 403, and three contract identity conflicts remain quarantined.",
+    "version": 6
+  },
+  {
+    "affects_findings": false,
     "change_type": "initial",
     "story_id": "fy2027-nep-house-changes-2026",
     "summary": "Initial authenticated comparison of four FY2027 NEP and House project lists.",

@@ -2,6 +2,8 @@ name: Official procurement evidence
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '41 3 * * 2'
 
 permissions:
   contents: read

@@ -4,11 +4,14 @@ from pathlib import Path
 
 import pytest
 
+from engine.budget_watchdog.acquisition import AcquisitionError
 from engine.budget_watchdog.archive import Acquisition, ArtifactArchive
 from engine.budget_watchdog.official_procurement_acquisition import (
     OfficialAcquisitionError,
     acquire_official_documents,
+    attempt_official_source_downloads,
     download_official_sources,
+    indexed_records_for_blocked_sources,
     load_official_source_catalog,
 )
 
@@ -93,6 +96,7 @@ def test_rejects_missing_or_non_pdf_download(tmp_path: Path) -> None:
             extract_text=lambda _path: "text",
         )
 
+
 def test_downloads_only_pdf_bytes_from_exact_catalog_url(tmp_path: Path) -> None:
     catalog = load_official_source_catalog(_catalog())
 
@@ -162,21 +166,15 @@ def test_rejects_download_redirect_or_non_pdf_payload(tmp_path: Path) -> None:
         (lambda raw: raw["sources"][0].update({"bindings": []}), "non-empty list"),
         (lambda raw: raw["sources"][0]["bindings"].__setitem__(0, "bad"), "objects"),
         (
-            lambda raw: raw["sources"][0]["bindings"][0].update(
-                {"evidence_type": "unknown"}
-            ),
+            lambda raw: raw["sources"][0]["bindings"][0].update({"evidence_type": "unknown"}),
             "evidence_type",
         ),
         (
-            lambda raw: raw["sources"][0]["bindings"][0].update(
-                {"evidence_class": "unknown"}
-            ),
+            lambda raw: raw["sources"][0]["bindings"][0].update({"evidence_class": "unknown"}),
             "evidence_class",
         ),
         (
-            lambda raw: raw["sources"][0]["bindings"][0].update(
-                {"identity_terms": []}
-            ),
+            lambda raw: raw["sources"][0]["bindings"][0].update({"identity_terms": []}),
             "identity_terms",
         ),
     ],
@@ -236,3 +234,54 @@ def test_rejects_empty_extracted_text_and_bad_review_time(tmp_path: Path) -> Non
             retrieved_at="2026-11-05T10:00:00+00:00",
             extract_text=lambda _path: "",
         )
+
+
+def test_records_blocked_sources_without_promoting_catalog_bindings(tmp_path: Path) -> None:
+    catalog = load_official_source_catalog(_catalog())
+
+    class Fetcher:
+        def fetch_url(self, url: str, retrieved_at: datetime) -> Acquisition:
+            raise AcquisitionError("blocked", http_status=403)
+
+    attempts = attempt_official_source_downloads(
+        catalog,
+        destination=tmp_path,
+        fetcher=Fetcher(),
+        retrieved_at=datetime(2026, 11, 5, 10, tzinfo=UTC),
+    )
+    records = indexed_records_for_blocked_sources(catalog, attempts)
+
+    assert attempts == [
+        {
+            "source_id": "dpwh-test-app",
+            "source_url": "https://www.dpwh.gov.ph/dpwh/test.pdf",
+            "status": "blocked",
+            "http_status": 403,
+            "retry_eligible": True,
+        }
+    ]
+    assert records[0]["status"] == "indexed_unarchived"
+    assert records[0]["artifact_sha256"] is None
+    assert records[0]["http_status"] == 403
+
+
+def test_indexed_identity_conflict_remains_quarantined() -> None:
+    raw = json.loads(_catalog())
+    binding = raw["sources"][0]["bindings"][0]
+    binding["evidence_class"] = "identity_conflict"
+    binding["limitation"] = "Official sources use the ID for different projects."
+    catalog = load_official_source_catalog(json.dumps(raw).encode())
+    attempts = [
+        {
+            "source_id": "dpwh-test-app",
+            "source_url": raw["sources"][0]["source_url"],
+            "status": "blocked",
+            "http_status": 403,
+            "retry_eligible": True,
+        }
+    ]
+
+    records = indexed_records_for_blocked_sources(catalog, attempts)
+
+    assert records[0]["status"] == "source_conflict_quarantined"
+    assert records[0]["limitation"].startswith("Official sources")

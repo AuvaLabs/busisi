@@ -59,6 +59,7 @@ def test_builds_complete_targeted_queue_without_promoting_leads() -> None:
         "task_count": 44,
         "verified_archived": 0,
         "official_summary_archived": 0,
+        "indexed_unarchived": 0,
         "secondary_exact": 1,
         "source_media_archived": 1,
         "pending": 42,
@@ -165,6 +166,13 @@ def test_applies_official_records_and_quarantines_conflicts() -> None:
                 "artifact_sha256": "d" * 64,
                 "limitation": "Official sources associate the ID with different projects.",
             },
+            {
+                "contract_id": "24DD0136",
+                "evidence_type": "bid_notice",
+                "status": "indexed_unarchived",
+                "source_url": "https://www.dpwh.gov.ph/dpwh/bid.pdf",
+                "artifact_sha256": None,
+            },
         ],
     }
 
@@ -182,18 +190,17 @@ def test_applies_official_records_and_quarantines_conflicts() -> None:
         "task_count": 44,
         "verified_archived": 1,
         "official_summary_archived": 1,
+        "indexed_unarchived": 1,
         "secondary_exact": 1,
         "source_media_archived": 0,
-        "pending": 40,
+        "pending": 39,
         "quarantined": 1,
     }
     candidates = {item["contract_id"]: item for item in snapshot["candidates"]}
     assert candidates["24DD0136"]["assessment_state"] == "cannot_assess_from_current_evidence"
     assert candidates["24OD0280"]["assessment_state"] == "source_conflict_quarantined"
     conflict = next(
-        item
-        for item in snapshot["tasks"]
-        if item["task_id"] == "24OD0280:procurement_plan"
+        item for item in snapshot["tasks"] if item["task_id"] == "24OD0280:procurement_plan"
     )
     assert conflict["status"] == "quarantined"
     assert conflict["artifact_sha256"] == "d" * 64

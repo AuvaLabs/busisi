@@ -1,0 +1,1086 @@
+{
+  "assessment_gates": [
+    {
+      "id": "need",
+      "required_evidence": [
+        "Named public function and intended users",
+        "Catchment population and demand",
+        "Nearby equivalent facilities and their utilization",
+        "Least-cost option comparison"
+      ],
+      "state": "not_in_snapshot",
+      "title": "Need and public function"
+    },
+    {
+      "id": "location",
+      "required_evidence": [
+        "Verified parcel and land rights",
+        "Access, utilities, and drainage",
+        "Government hazard assessment and ground validation"
+      ],
+      "state": "not_in_snapshot",
+      "title": "Location and hazards"
+    },
+    {
+      "id": "design",
+      "required_evidence": [
+        "Floor area, capacity, plans, and specifications",
+        "Structural, climate, sanitation, and accessibility review",
+        "Design matched to the intended public function"
+      ],
+      "state": "not_in_snapshot",
+      "title": "Design and accessibility"
+    },
+    {
+      "id": "delivery",
+      "required_evidence": [
+        "Bill of quantities and comparable unit costs",
+        "Award, variation, payment, acceptance, and final cost",
+        "Utilization and maintenance after completion"
+      ],
+      "state": "partial",
+      "title": "Cost and delivery"
+    }
+  ],
+  "budget_reconciliation": {
+    "active_recorded_budget_centavos": 8878625428536,
+    "active_records": 7024,
+    "all_recorded_budget_centavos": 12977915530776,
+    "all_records": 12609,
+    "completed_recorded_budget_centavos": 4099290102240,
+    "completed_records": 5582
+  },
+  "district_offices": [
+    {
+      "active_pipeline": 185,
+      "label": "Isabela 4th DEO",
+      "recorded_budget_centavos": 101793243965
+    },
+    {
+      "active_pipeline": 179,
+      "label": "Bulacan 1st DEO",
+      "recorded_budget_centavos": 263360748275
+    },
+    {
+      "active_pipeline": 171,
+      "label": "Batangas 4th DEO",
+      "recorded_budget_centavos": 343372467542
+    },
+    {
+      "active_pipeline": 137,
+      "label": "Metro Manila 1st DEO",
+      "recorded_budget_centavos": 494980009735
+    },
+    {
+      "active_pipeline": 123,
+      "label": "Ilocos Norte 1st DEO",
+      "recorded_budget_centavos": 66369002099
+    },
+    {
+      "active_pipeline": 119,
+      "label": "Cagayan 3rd DEO",
+      "recorded_budget_centavos": 65237622927
+    },
+    {
+      "active_pipeline": 119,
+      "label": "Metro Manila 3rd DEO",
+      "recorded_budget_centavos": 386183105138
+    },
+    {
+      "active_pipeline": 112,
+      "label": "Ilocos Norte 2nd DEO",
+      "recorded_budget_centavos": 61884459607
+    },
+    {
+      "active_pipeline": 107,
+      "label": "Quezon City 1st DEO",
+      "recorded_budget_centavos": 238462687767
+    },
+    {
+      "active_pipeline": 106,
+      "label": "Isabela 3rd DEO",
+      "recorded_budget_centavos": 43006566590
+    },
+    {
+      "active_pipeline": 99,
+      "label": "Pangasinan 2nd DEO",
+      "recorded_budget_centavos": 48920660143
+    },
+    {
+      "active_pipeline": 96,
+      "label": "Aurora DEO",
+      "recorded_budget_centavos": 110592438993
+    },
+    {
+      "active_pipeline": 96,
+      "label": "Region X",
+      "recorded_budget_centavos": 112462640349
+    },
+    {
+      "active_pipeline": 94,
+      "label": "Pangasinan 3rd DEO",
+      "recorded_budget_centavos": 127495769719
+    },
+    {
+      "active_pipeline": 91,
+      "label": "Cavite 1st DEO",
+      "recorded_budget_centavos": 89738370143
+    },
+    {
+      "active_pipeline": 87,
+      "label": "Batangas 1st DEO",
+      "recorded_budget_centavos": 74140880764
+    },
+    {
+      "active_pipeline": 83,
+      "label": "Batangas 3rd DEO",
+      "recorded_budget_centavos": 70440742787
+    },
+    {
+      "active_pipeline": 82,
+      "label": "Laguna 2nd DEO",
+      "recorded_budget_centavos": 136244232963
+    },
+    {
+      "active_pipeline": 81,
+      "label": "Leyte 1st DEO",
+      "recorded_budget_centavos": 93367249285
+    },
+    {
+      "active_pipeline": 79,
+      "label": "Pampanga 1st DEO",
+      "recorded_budget_centavos": 69002203760
+    },
+    {
+      "active_pipeline": 75,
+      "label": "Aklan DEO",
+      "recorded_budget_centavos": 54005409850
+    },
+    {
+      "active_pipeline": 74,
+      "label": "Laguna 3rd DEO",
+      "recorded_budget_centavos": 53295991260
+    },
+    {
+      "active_pipeline": 73,
+      "label": "Abra DEO",
+      "recorded_budget_centavos": 50028274203
+    },
+    {
+      "active_pipeline": 69,
+      "label": "Iloilo 3rd DEO",
+      "recorded_budget_centavos": 45528413378
+    },
+    {
+      "active_pipeline": 68,
+      "label": "Iloilo 6th DEO",
+      "recorded_budget_centavos": 37634230319
+    }
+  ],
+  "evidence": {
+    "active_with_coordinates": 5858,
+    "active_with_source_satellite_flag": 3618,
+    "candidate_coordinates": 24,
+    "prior_coordinate_candidates": 31
+  },
+  "explicit_cities": [
+    {
+      "active_pipeline": 139,
+      "city": "QUEZON CITY"
+    },
+    {
+      "active_pipeline": 76,
+      "city": "LIPA CITY"
+    },
+    {
+      "active_pipeline": 67,
+      "city": "CALOOCAN CITY"
+    },
+    {
+      "active_pipeline": 67,
+      "city": "CEBU CITY"
+    },
+    {
+      "active_pipeline": 50,
+      "city": "VALENZUELA CITY"
+    },
+    {
+      "active_pipeline": 50,
+      "city": "BUTUAN CITY"
+    },
+    {
+      "active_pipeline": 48,
+      "city": "LAS PINAS CITY"
+    },
+    {
+      "active_pipeline": 44,
+      "city": "SANTIAGO CITY"
+    },
+    {
+      "active_pipeline": 40,
+      "city": "LAOAG CITY"
+    },
+    {
+      "active_pipeline": 35,
+      "city": "TACLOBAN CITY"
+    },
+    {
+      "active_pipeline": 34,
+      "city": "TAGUIG CITY"
+    },
+    {
+      "active_pipeline": 34,
+      "city": "MANDALUYONG CITY"
+    },
+    {
+      "active_pipeline": 34,
+      "city": "SAN PABLO CITY"
+    },
+    {
+      "active_pipeline": 33,
+      "city": "MARIKINA CITY"
+    },
+    {
+      "active_pipeline": 33,
+      "city": "ILOILO CITY"
+    },
+    {
+      "active_pipeline": 32,
+      "city": "SAN FERNANDO CITY"
+    },
+    {
+      "active_pipeline": 30,
+      "city": "PARAÑAQUE CITY"
+    },
+    {
+      "active_pipeline": 28,
+      "city": "BACOLOD CITY"
+    },
+    {
+      "active_pipeline": 28,
+      "city": "MALOLOS CITY"
+    },
+    {
+      "active_pipeline": 26,
+      "city": "MANILA CITY"
+    },
+    {
+      "active_pipeline": 26,
+      "city": "ZAMBOANGA CITY"
+    },
+    {
+      "active_pipeline": 25,
+      "city": "ORMOC CITY"
+    },
+    {
+      "active_pipeline": 24,
+      "city": "DAVAO CITY"
+    },
+    {
+      "active_pipeline": 22,
+      "city": "BAGUIO CITY"
+    },
+    {
+      "active_pipeline": 21,
+      "city": "NAGA CITY"
+    }
+  ],
+  "explicit_city_coverage": {
+    "active": 7024,
+    "classified": 1902
+  },
+  "official_procurement_evidence": {
+    "archived_source_count": 0,
+    "blocked_source_count": 19,
+    "catalog_sha256": "203a55e7d4a77a38e62ee8897cdfef9faf026d94caf1a0b20bccdd548c3625b1",
+    "checked_at": "2026-11-05T18:47:15.631926+00:00",
+    "limitations": [
+      "An official summary is not the underlying notice, contract, certificate, or receipt.",
+      "An indexed official URL is not archived evidence. The source bytes must be acquired and hashed before verification.",
+      "A source conflict is quarantined until another official record resolves the identity.",
+      "Contracts without an accepted source remain discovery pending, not not-located."
+    ],
+    "source_catalog_count": 19,
+    "sources": [
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24DD0064",
+          "24DD0136",
+          "24DD0174",
+          "24DD0204"
+        ],
+        "document_types": [
+          "annual_procurement_plan"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-batangas-iv-app-2024",
+        "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/GAA/APP/batangas_iv_updated_app_fy_2024_changes_within_2nd_semester.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24DD0064",
+          "24DD0136",
+          "24DD0174",
+          "24DD0204"
+        ],
+        "document_types": [
+          "procurement_monitoring_report"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-batangas-iv-pmr-2024",
+        "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/pmr/procurementmonitoringreport2ndsemesterfy2024.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24CC0442"
+        ],
+        "document_types": [
+          "annual_procurement_plan"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-bulacan-i-app-2024-h1",
+        "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/GAA/APP/fy_2024_final_app_non-cse_dpwh_bulacan_1st_deo_updated_1st_semester.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24CC0442"
+        ],
+        "document_types": [
+          "procurement_monitoring_report"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-bulacan-i-pmr-2024-h1",
+        "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/pmr/pmr1stsemestercy2024dpwhbulacan1stdeo.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24CD0251"
+        ],
+        "document_types": [
+          "post_contract_award_disclosure"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-bulacan-ii-pcad-2024-09",
+        "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/webform/civil_works/pcad/pdf/post_contract_award_september_2024-bul2nddeo.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24KE0087"
+        ],
+        "document_types": [
+          "annual_procurement_plan"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-camiguin-app-2024",
+        "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/GAA/APP/a3_updated_app_format_2024_as_of_december_2024.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24KE0087"
+        ],
+        "document_types": [
+          "post_contract_award_disclosure"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-camiguin-pcad-2024",
+        "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/webform/civil_works/pcad/pdf/camiguin_deo_post_contract_award_disclosure.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24IH0050"
+        ],
+        "document_types": [
+          "constructors_performance_report"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-cpes-2024-q3",
+        "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/references/cpes_consolidation_ims_3rd_qtr.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24DD0136",
+          "24EE0129"
+        ],
+        "document_types": [
+          "constructors_performance_report"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-cpes-2024-q4",
+        "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/references/CPES%20CONSOLIDATION%20IMS%204th%20QTR.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24GH0185"
+        ],
+        "document_types": [
+          "annual_procurement_plan"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-iloilo-iii-app-2024",
+        "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/GAA/APP/updated_fapp_2024_iloilo_3rd_deo.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24GH0185"
+        ],
+        "document_types": [
+          "procurement_monitoring_report"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-iloilo-iii-pmr-2024",
+        "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/pmr/dpwhiloilo3rd2ndsemesteroffy2024.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24OD0280",
+          "24OD0281"
+        ],
+        "document_types": [
+          "annual_procurement_plan"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "source_conflict_quarantined"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-mm-iii-app-2024-h2",
+        "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/GAA/APP/mm3deo_updated_annual_procurement_plan_fy2024_as_of_second_semester.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "25OD0267"
+        ],
+        "document_types": [
+          "annual_procurement_plan"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "source_conflict_quarantined"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-mm-iii-app-2025",
+        "source_url": "https://dpwh.gov.ph/dpwh/sites/default/files/GAA/APP/mm3deo_final_annual_procurement_plan_fy2025.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24OD0280"
+        ],
+        "document_types": [
+          "bidding_documents"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-mm-iii-bidding-24od0280",
+        "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/webform/civil_works/advertisement/2024_bid_docs_pbd_24.0280.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "25OD0267"
+        ],
+        "document_types": [
+          "bidding_documents"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-mm-iii-bidding-25od0267",
+        "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/webform/civil_works/advertisement/2025_bid_docs_25.0267.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24EE0090"
+        ],
+        "document_types": [
+          "procurement_monitoring_report"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-palawan-i-pmr-2024-h1",
+        "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/pmr/palawan1stdeopmrcivilworksandgoodsconsultingservices1stsemester2024revised.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24EF0068"
+        ],
+        "document_types": [
+          "annual_procurement_plan"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-palawan-ii-indicative-app-2024",
+        "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/GAA/APP/indicative_app_2024_cw.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "25DK0018"
+        ],
+        "document_types": [
+          "procurement_monitoring_report"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-quezon-i-pmr-2025-h1",
+        "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/pmr/07062023gppb-prescribed-pmr-fy-2025-civilworks.pdf",
+        "status": "blocked"
+      },
+      {
+        "archived_sha256": null,
+        "contract_ids": [
+          "24I00375"
+        ],
+        "document_types": [
+          "bidding_documents"
+        ],
+        "http_status": 403,
+        "record_states": [
+          "indexed_unarchived"
+        ],
+        "retry_eligible": true,
+        "source_id": "dpwh-region-viii-bidding-24i00375",
+        "source_url": "https://dpwh.gov.ph/dpwh/sites/default/files/webform/civil_works/advertisement/24i00375_-bidding_documents.pdf",
+        "status": "blocked"
+      }
+    ],
+    "summary": {
+      "contracts_with_official_sources": 17,
+      "discovery_pending_contracts": 26,
+      "indexed_unarchived_records": 34,
+      "official_artifact_records": 0,
+      "official_summary_records": 0,
+      "quarantined_contracts": 3,
+      "targeted_contracts": 43
+    }
+  },
+  "opportunity_cost": [
+    {
+      "budget_centavos": 1330000000000,
+      "equivalent_units": 32503,
+      "id": "dbm-proposed-new-classrooms-2026",
+      "interpretation": "Nominal funding-scale comparison only",
+      "label": "2026 proposed budget technical-note target",
+      "physical_target": 4869,
+      "reference_amount_centavos": 8878625428536,
+      "rounding": "floor",
+      "source_id": "dbm-technical-notes-2026",
+      "unit": "new classrooms"
+    },
+    {
+      "budget_centavos": 1727000000000,
+      "equivalent_units": 25499,
+      "id": "dbm-released-new-classrooms-2026",
+      "interpretation": "Nominal funding-scale comparison only",
+      "label": "April 2026 classroom and furniture release",
+      "physical_target": 4960,
+      "reference_amount_centavos": 8878625428536,
+      "rounding": "floor",
+      "source_id": "dbm-classroom-release-2026",
+      "unit": "new classrooms"
+    },
+    {
+      "budget_centavos": 610000000000,
+      "equivalent_units": 137400,
+      "id": "dbm-proposed-classroom-repairs-2026",
+      "interpretation": "Nominal funding-scale comparison only",
+      "label": "2026 proposed classroom repair and rehabilitation target",
+      "physical_target": 9440,
+      "reference_amount_centavos": 8878625428536,
+      "rounding": "floor",
+      "source_id": "dbm-technical-notes-2026",
+      "unit": "classroom repairs or rehabilitations"
+    }
+  ],
+  "pricing": {
+    "maximum_centavos": 48219957061,
+    "median_centavos": 578891809,
+    "p25_centavos": 480129127,
+    "p75_centavos": 1440209543,
+    "p90_centavos": 3378375000,
+    "positive_budget_records": 6093,
+    "recorded_budget_centavos": 8878625428536,
+    "zero_budget_records": 931
+  },
+  "public_value_acquisition": {
+    "candidate_count": 43,
+    "checked_at": "2026-11-05T18:47:15.631926+00:00",
+    "gate_counts": {
+      "cost_delivery": {
+        "indexed_unarchived": 34,
+        "pending": 365,
+        "quarantined": 3,
+        "secondary_exact": 28
+      },
+      "design": {
+        "pending": 129
+      },
+      "identity": {
+        "pending": 129
+      },
+      "location": {
+        "pending": 127,
+        "source_media_archived": 2
+      },
+      "need": {
+        "pending": 129
+      }
+    },
+    "indexed_unarchived": 34,
+    "limitations": [
+      "A queued task records work still required. It is not evidence that the document exists or that the project failed a check.",
+      "An exact secondary award row is a discovery lead, not an archived official award notice.",
+      "Archived source media does not independently prove exact location, capture time, completion, quality, payment, or public value.",
+      "An indexed official URL is a discovery lead until the source bytes are archived, hashed, and identity-checked.",
+      "Conflicting contract identities are quarantined and are not counted as verified evidence."
+    ],
+    "official_summary_archived": 0,
+    "pending": 879,
+    "quarantined": 3,
+    "secondary_exact": 28,
+    "source_identities": {
+      "award_snapshot_sha256": "9bfa9e7cbf5041dc3b51a4c2742e60a43d1615f119955581d4b155bf3a6d4a8b",
+      "delivery_snapshot_sha256": "5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123",
+      "official_procurement_catalog_sha256": "203a55e7d4a77a38e62ee8897cdfef9faf026d94caf1a0b20bccdd548c3625b1",
+      "official_procurement_review_sha256": "243984fe53ff2fee3436e986d80547aab75c40d21e447ad41ba2815985188534",
+      "project_image_release_id": "94a1f650c273682b8d0bd71bf4b51615f7d52fc47821ede2785e0aea1ab2ec50",
+      "targeted_lifecycle_state_sha256": "80eabd60e599bd4fdd86d115360c27bc8681f861c14a595223686796477e5e4d"
+    },
+    "source_media_archived": 2,
+    "task_count": 946,
+    "task_definitions": [
+      {
+        "gate": "identity",
+        "id": "facility_registry",
+        "label": "Facility or asset registry record"
+      },
+      {
+        "gate": "identity",
+        "id": "parcel_land_rights",
+        "label": "Parcel, ownership, and land-right record"
+      },
+      {
+        "gate": "identity",
+        "id": "phase_history",
+        "label": "Prior work and related phase history"
+      },
+      {
+        "gate": "need",
+        "id": "needs_assessment",
+        "label": "Needs assessment and named public function"
+      },
+      {
+        "gate": "need",
+        "id": "catchment_demand",
+        "label": "Catchment population and intended users"
+      },
+      {
+        "gate": "need",
+        "id": "nearby_facility_utilization",
+        "label": "Nearby equivalent facilities and use"
+      },
+      {
+        "gate": "location",
+        "id": "verified_site",
+        "label": "Verified site and project coordinates"
+      },
+      {
+        "gate": "location",
+        "id": "hazard_assessment",
+        "label": "Official hazard and ground assessment"
+      },
+      {
+        "gate": "location",
+        "id": "site_access_utilities",
+        "label": "Access, utilities, drainage, and right of way"
+      },
+      {
+        "gate": "design",
+        "id": "plans_specifications",
+        "label": "Approved plans and specifications"
+      },
+      {
+        "gate": "design",
+        "id": "capacity_floor_area",
+        "label": "Capacity, floor area, and intended function"
+      },
+      {
+        "gate": "design",
+        "id": "accessibility_compliance",
+        "label": "Accessibility and design compliance"
+      },
+      {
+        "gate": "cost_delivery",
+        "id": "procurement_plan",
+        "label": "Procurement plan"
+      },
+      {
+        "gate": "cost_delivery",
+        "id": "bid_notice",
+        "label": "Bid notice"
+      },
+      {
+        "gate": "cost_delivery",
+        "id": "procurement_monitoring_report",
+        "label": "Procurement monitoring report"
+      },
+      {
+        "gate": "cost_delivery",
+        "id": "award_notice",
+        "label": "Award notice"
+      },
+      {
+        "gate": "cost_delivery",
+        "id": "signed_contract",
+        "label": "Signed contract"
+      },
+      {
+        "gate": "cost_delivery",
+        "id": "notice_to_proceed",
+        "label": "Notice to proceed"
+      },
+      {
+        "gate": "cost_delivery",
+        "id": "completion_certificate",
+        "label": "Completion certificate"
+      },
+      {
+        "gate": "cost_delivery",
+        "id": "inspection_acceptance",
+        "label": "Inspection and acceptance record"
+      },
+      {
+        "gate": "cost_delivery",
+        "id": "payment_record",
+        "label": "Payment and disbursement record"
+      },
+      {
+        "gate": "cost_delivery",
+        "id": "utilization_maintenance",
+        "label": "Utilization and maintenance after completion"
+      }
+    ],
+    "verified_archived": 0
+  },
+  "public_value_evidence": {
+    "candidate_count": 43,
+    "coordinate_history_candidates": 31,
+    "fully_assessed": 0,
+    "gate_counts": {
+      "cost_delivery": {
+        "partial": 43
+      },
+      "design": {
+        "not_in_snapshot": 43
+      },
+      "identity": {
+        "partial": 43
+      },
+      "location": {
+        "partial": 12,
+        "review_lead": 31
+      },
+      "need": {
+        "not_in_snapshot": 43
+      }
+    },
+    "gate_definitions": [
+      {
+        "id": "identity",
+        "question": "Is this a distinct facility, another phase, a repair, or a replacement?",
+        "required_evidence": [
+          "Verified facility or asset identifier",
+          "Parcel and ownership record",
+          "Prior and related project records"
+        ],
+        "title": "Project and facility identity"
+      },
+      {
+        "id": "need",
+        "question": "What public need will this project address, and who will use it?",
+        "required_evidence": [
+          "Needs assessment and named public function",
+          "Catchment population or intended users",
+          "Nearby equivalent facilities and utilization"
+        ],
+        "title": "Need and intended public use"
+      },
+      {
+        "id": "location",
+        "question": "Is the verified site appropriate and safe for the intended use?",
+        "required_evidence": [
+          "Verified parcel and project coordinates",
+          "Official hazard assessment and ground validation",
+          "Access, utilities, drainage, and right-of-way evidence"
+        ],
+        "title": "Location and site suitability"
+      },
+      {
+        "id": "design",
+        "question": "Does the design fit the intended public function?",
+        "required_evidence": [
+          "Plans, floor area, capacity, and specifications",
+          "Structural, climate, sanitation, and accessibility review",
+          "Design approval and professional accountability"
+        ],
+        "title": "Design, capacity, and accessibility"
+      },
+      {
+        "id": "cost_delivery",
+        "question": "Was the project fairly procured, delivered, accepted, and used?",
+        "required_evidence": [
+          "Bill of quantities and comparable unit costs",
+          "Award, variations, payments, inspection, and acceptance",
+          "Actual utilization and maintenance after completion"
+        ],
+        "title": "Cost, delivery, and actual use"
+      }
+    ],
+    "largest_budget_candidates": 12,
+    "selection_overlap": 0
+  },
+  "regions": [
+    {
+      "active_pipeline": 240,
+      "completed": 95,
+      "ongoing": 184,
+      "recorded_budget_centavos": 150949893741,
+      "region": "Cordillera Administrative Region"
+    },
+    {
+      "active_pipeline": 576,
+      "completed": 342,
+      "ongoing": 514,
+      "recorded_budget_centavos": 1604191002644,
+      "region": "National Capital Region"
+    },
+    {
+      "active_pipeline": 183,
+      "completed": 308,
+      "ongoing": 179,
+      "recorded_budget_centavos": 139576245622,
+      "region": "Negros Island Region"
+    },
+    {
+      "active_pipeline": 588,
+      "completed": 203,
+      "ongoing": 536,
+      "recorded_budget_centavos": 584397144977,
+      "region": "Region I"
+    },
+    {
+      "active_pipeline": 615,
+      "completed": 368,
+      "ongoing": 516,
+      "recorded_budget_centavos": 431545076589,
+      "region": "Region II"
+    },
+    {
+      "active_pipeline": 724,
+      "completed": 859,
+      "ongoing": 552,
+      "recorded_budget_centavos": 1135830309661,
+      "region": "Region III"
+    },
+    {
+      "active_pipeline": 977,
+      "completed": 499,
+      "ongoing": 828,
+      "recorded_budget_centavos": 1360379914495,
+      "region": "Region IV-A"
+    },
+    {
+      "active_pipeline": 175,
+      "completed": 270,
+      "ongoing": 141,
+      "recorded_budget_centavos": 183848979803,
+      "region": "Region IV-B"
+    },
+    {
+      "active_pipeline": 277,
+      "completed": 113,
+      "ongoing": 225,
+      "recorded_budget_centavos": 217036350266,
+      "region": "Region IX"
+    },
+    {
+      "active_pipeline": 329,
+      "completed": 192,
+      "ongoing": 255,
+      "recorded_budget_centavos": 575180663367,
+      "region": "Region V"
+    },
+    {
+      "active_pipeline": 436,
+      "completed": 403,
+      "ongoing": 384,
+      "recorded_budget_centavos": 449716710809,
+      "region": "Region VI"
+    },
+    {
+      "active_pipeline": 378,
+      "completed": 448,
+      "ongoing": 321,
+      "recorded_budget_centavos": 407605271331,
+      "region": "Region VII"
+    },
+    {
+      "active_pipeline": 484,
+      "completed": 209,
+      "ongoing": 362,
+      "recorded_budget_centavos": 552695348216,
+      "region": "Region VIII"
+    },
+    {
+      "active_pipeline": 363,
+      "completed": 379,
+      "ongoing": 305,
+      "recorded_budget_centavos": 513347311449,
+      "region": "Region X"
+    },
+    {
+      "active_pipeline": 310,
+      "completed": 219,
+      "ongoing": 261,
+      "recorded_budget_centavos": 343075026660,
+      "region": "Region XI"
+    },
+    {
+      "active_pipeline": 170,
+      "completed": 396,
+      "ongoing": 125,
+      "recorded_budget_centavos": 107982055749,
+      "region": "Region XII"
+    },
+    {
+      "active_pipeline": 199,
+      "completed": 279,
+      "ongoing": 154,
+      "recorded_budget_centavos": 121268123157,
+      "region": "Region XIII"
+    }
+  ],
+  "status": {
+    "Completed": 5582,
+    "For Procurement": 931,
+    "Not Yet Started": 251,
+    "On-Going": 5842,
+    "Terminated": 3
+  },
+  "work_types": {
+    "completion_or_later_phase": {
+      "count": 2195,
+      "recorded_budget_centavos": 2503048946159
+    },
+    "construction_newness_unstated": {
+      "count": 4094,
+      "recorded_budget_centavos": 5532434832405
+    },
+    "explicitly_new": {
+      "count": 36,
+      "recorded_budget_centavos": 95578455486
+    },
+    "repair_or_improvement": {
+      "count": 612,
+      "recorded_budget_centavos": 665155407209
+    },
+    "replacement_or_reconstruction": {
+      "count": 5,
+      "recorded_budget_centavos": 18766396517
+    },
+    "unclear": {
+      "count": 82,
+      "recorded_budget_centavos": 63641390760
+    }
+  }
+}

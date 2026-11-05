@@ -162,6 +162,6 @@ def test_published_release_history_matches_all_authenticated_packages() -> None:
     observed = json.loads((public_root / "release-history.json").read_text())
 
     assert observed == build_release_history(public_root, notes)
-    assert observed["release_count"] == 7
+    assert observed["release_count"] == 8
     assert observed["story_count"] == 3
     assert observed["correction_count"] == 0
