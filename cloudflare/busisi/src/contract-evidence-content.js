@@ -5,6 +5,14 @@ const html = (value) => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#39;');
 
+const plainPublicText = (value) => String(value ?? '')
+  .replace(/\bacquired\b/gi, 'available')
+  .replace(/\bacquisition\b/gi, 'document search')
+  .replace(/\bartifact\b/gi, 'source file')
+  .replace(/\bquarantined\b/gi, 'held back for checking')
+  .replace(/\breconciled\b/gi, 'checked')
+  .replace(/\bsnapshot\b/gi, 'dated copy');
+
 const safeLink = (value) => {
   try {
     const url = new URL(value);
@@ -15,11 +23,11 @@ const safeLink = (value) => {
 };
 
 const STATUS_LABELS = {
-  verified_archived: 'Official source archived and verified',
-  indexed_unarchived: 'Official source indexed, not archived',
-  blocked: 'Official source indexed, archive blocked',
-  secondary: 'Secondary mirror evidence',
-  not_located: 'Target document not located',
+  verified_archived: 'Official source copy saved and checked',
+  indexed_unarchived: 'Official source found, copy not saved',
+  blocked: 'Official source found, download blocked',
+  secondary: 'Secondary source only',
+  not_located: 'Expected document not located',
 };
 
 const itemStatus = (item) => STATUS_LABELS[item.status] || item.status.replaceAll('_', ' ');
@@ -43,11 +51,11 @@ const dateLine = (item) => {
 const sourceDetails = (item) => {
   const url = safeLink(item.source_url);
   const fingerprint = item.artifact_sha256
-    ? `<p><span>Evidence SHA-256</span><code>${html(item.artifact_sha256)}</code></p>` : '';
+    ? `<p><span>Saved-file check code</span><code>${html(item.artifact_sha256)}</code></p>` : '';
   const revision = item.source_revision
-    ? `<p><span>Source revision</span><code>${html(item.source_revision)}</code></p>` : '';
+    ? `<p><span>Source version check code</span><code>${html(item.source_revision)}</code></p>` : '';
   const http = item.http_status && item.status === 'blocked'
-    ? `<p><span>Last acquisition result</span><strong>HTTP ${item.http_status}</strong></p>` : '';
+    ? `<p><span>Last download result</span><strong>HTTP ${item.http_status}</strong></p>` : '';
   const source = item.source_title
     ? `<p><span>Supporting source</span><strong>${html(item.source_title)}</strong></p>` : '';
   const action = url
@@ -57,7 +65,7 @@ const sourceDetails = (item) => {
 
 const compactItem = (item) => `<li class="lifecycle-item status-${html(item.status)}"><div><span>${html(item.title)}</span><b>${html(itemStatus(item))}</b></div>${dateLine(item)}</li>`;
 
-const detailItem = (item) => `<li class="lifecycle-item lifecycle-detail status-${html(item.status)}"><header><span>${html(item.title)}</span><b>${html(itemStatus(item))}</b></header>${dateLine(item)}<p>${html(item.limitation)}</p><div class="lifecycle-source">${sourceDetails(item)}</div></li>`;
+const detailItem = (item) => `<li class="lifecycle-item lifecycle-detail status-${html(item.status)}"><header><span>${html(item.title)}</span><b>${html(itemStatus(item))}</b></header>${dateLine(item)}<p>${html(plainPublicText(item.limitation))}</p><div class="lifecycle-source">${sourceDetails(item)}</div></li>`;
 
 const grouped = (items) => items.reduce((result, item) => {
   const existing = result.get(item.contract_id) || [];
@@ -74,14 +82,14 @@ export const contractEvidenceLedger = (summary, items) => {
   const cards = [...contracts.entries()].map(([contractId, records]) => {
     const first = records[0];
     const confirmed = records.filter((item) => item.status === 'verified_archived').length;
-    return `<article class="lifecycle-card"><header><div><span>FY ${first.fiscal_year}</span><h3>${html(contractId)}</h3></div><strong>${confirmed} original document${confirmed === 1 ? '' : 's'} archived</strong></header><ol class="lifecycle-list">${records.map(compactItem).join('')}</ol><a href="/projects/${html(first.case_id)}/#contract-evidence">Open document checklist</a></article>`;
+    return `<article class="lifecycle-card"><header><div><span>FY ${first.fiscal_year}</span><h3>${html(contractId)}</h3></div><strong>${confirmed} original document${confirmed === 1 ? '' : 's'} saved</strong></header><ol class="lifecycle-list">${records.map(compactItem).join('')}</ol><a href="/projects/${html(first.case_id)}/#contract-evidence">Open document checklist</a></article>`;
   }).join('');
-  return `<section class="evidence-section" id="acquisition-ledger"><div class="section-heading-inline"><div><p class="kicker">Document acquisition</p><h2>Contract evidence acquisition ledger</h2><p>Every expected document has an explicit acquisition state. Reported dates remain separate from the underlying document.</p></div><aside><strong>${html(metadata.retry_item_count || '0')} acquisition checks queued</strong><span>${html(metadata.item_count || '0')} checks across ${html(metadata.contract_count || '0')} contracts</span></aside></div><ul class="evidence-status-legend" aria-label="Evidence status legend">${legends}</ul><div class="lifecycle-grid">${cards}</div></section>`;
+  return `<section class="evidence-section" id="acquisition-ledger"><div class="section-heading-inline"><div><p class="kicker">Document checks</p><h2>Which contract documents did Busisi find?</h2><p>Each expected document is marked as found, missing, blocked, or supported only by a secondary source. A date reported elsewhere is not treated as the document itself.</p></div><aside><strong>${html(metadata.retry_item_count || '0')} downloads waiting to be tried again</strong><span>${html(metadata.item_count || '0')} checks across ${html(metadata.contract_count || '0')} contracts</span></aside></div><ul class="evidence-status-legend" aria-label="Document status guide">${legends}</ul><div class="lifecycle-grid">${cards}</div></section>`;
 };
 
 export const contractEvidencePanel = (items = []) => {
-  if (!items.length) return `<section class="evidence-section" id="contract-evidence"><p class="kicker">Document acquisition</p><h2>Contract evidence checklist</h2><p class="evidence-empty">No lifecycle document checklist is available for this dossier.</p></section>`;
+  if (!items.length) return `<section class="evidence-section" id="contract-evidence"><p class="kicker">Document checks</p><h2>Contract document checklist</h2><p class="evidence-empty">No contract document checklist is available for this project.</p></section>`;
   const archived = items.filter((item) => item.status === 'verified_archived').length;
   const retry = items.filter((item) => item.retry_eligible).length;
-  return `<section class="evidence-section" id="contract-evidence"><p class="kicker">Document acquisition</p><h2>Contract evidence checklist</h2><p>${archived} of ${items.length} target documents is archived as an original official source. ${retry} acquisition check${retry === 1 ? '' : 's'} remain retryable.</p><ol class="lifecycle-list lifecycle-full">${items.map(detailItem).join('')}</ol><p class="evidence-limit">A reported event date is not a substitute for the signed contract, Notice to Proceed, completion certificate, inspection record, acceptance record, voucher, receipt, or payment confirmation.</p></section>`;
+  return `<section class="evidence-section" id="contract-evidence"><p class="kicker">Document checks</p><h2>Contract document checklist</h2><p>${archived} of ${items.length} expected documents is saved from an original official source. ${retry} download${retry === 1 ? '' : 's'} can be tried again.</p><ol class="lifecycle-list lifecycle-full">${items.map(detailItem).join('')}</ol><p class="evidence-limit">A reported event date is not a substitute for the signed contract, Notice to Proceed, completion certificate, inspection record, acceptance record, voucher, receipt, or payment confirmation.</p></section>`;
 };

@@ -288,9 +288,13 @@ const verifyPages = async () => {
   const methodology = await request('/methodology/');
   expectStatus(methodology, 200, '/methodology/');
   const methodologyText = await methodology.text();
-  expectIncludes(methodologyText, '100 reviewed linkage cases', 'methodology gate');
+  expectIncludes(methodologyText, '100 reviewed record links', 'methodology gate');
   expectIncludes(methodologyText, 'Congressional district context', 'methodology district boundary');
-  expectIncludes(methodologyText, 'Discovery can be automatic', 'methodology automation boundary');
+  expectIncludes(
+    methodologyText,
+    'Software can find records. It cannot assume they are trustworthy',
+    'methodology automation boundary',
+  );
   expectIncludes(methodologyText, 'Nonpartisan by policy', 'methodology independence');
   expectIncludes(
     methodologyText,
@@ -327,10 +331,10 @@ const verifyPages = async () => {
   const contracts = await request('/contracts/');
   expectStatus(contracts, 200, '/contracts/');
   const contractsText = await contracts.text();
-  expectIncludes(contractsText, 'Contract intelligence explorer', 'contract explorer heading');
+  expectIncludes(contractsText, 'Contract record explorer', 'contract explorer heading');
   expectIncludes(contractsText, '/assets/contracts-v1.js?v=3', 'contract explorer client');
   expectIncludes(contractsText, 'Province or district office', 'contract province filter');
-  expectIncludes(contractsText, 'Source patterns are review leads, not findings', 'contract explorer boundary');
+  expectIncludes(contractsText, 'Source patterns are questions to check, not findings', 'contract explorer boundary');
 
   const contractors = await request('/contractors/');
   expectStatus(contractors, 200, '/contractors/');
@@ -350,8 +354,8 @@ const verifyPages = async () => {
   expectStatus(sources, 200, '/sources/');
   const sourcesText = await sources.text();
   expectIncludes(sourcesText, 'See where each claim begins', 'source guide heading');
-  expectIncludes(sourcesText, 'Original publisher', 'source role');
-  expectIncludes(sourcesText, 'Busisi processing', 'source role');
+  expectIncludes(sourcesText, 'Who published it', 'source role');
+  expectIncludes(sourcesText, 'What Busisi did', 'source role');
 
   const watch = await request('/watch/');
   expectStatus(watch, 200, '/watch/');
@@ -401,7 +405,7 @@ const verifyPages = async () => {
   const releases = await request('/releases/');
   expectStatus(releases, 200, '/releases/');
   const releasesText = await releases.text();
-  expectIncludes(releasesText, 'See what DBM had released by September', 'releases heading');
+  expectIncludes(releasesText, 'See how much budget authority DBM had released by September', 'releases heading');
   expectIncludes(releasesText, '/assets/releases-v1.js', 'releases client');
   expectIncludes(releasesText, 'Allotment release is not payment', 'releases boundary');
   expectIncludes(releasesText, expectedReleases.source_sha256, 'releases fingerprint');
@@ -427,11 +431,11 @@ const verifyPages = async () => {
   expectIncludes(procurementText, 'What contract documents can Busisi find?', 'procurement desk heading');
   expectIncludes(procurementText, '3 of 6 project files have evidence', 'procurement desk coverage');
   expectIncludes(procurementText, 'A missing document does not mean procurement did not happen', 'procurement boundary');
-  expectIncludes(procurementText, 'Full-universe acquisition coverage', 'acquisition coverage');
+  expectIncludes(procurementText, 'How many contracts have matching secondary records?', 'acquisition coverage');
   expectIncludes(procurementText, '56,887 of 56,887 contracts examined', 'acquisition coverage');
-  expectIncludes(procurementText, 'Coverage is not official proof', 'acquisition boundary');
-  expectIncludes(procurementText, 'Contract evidence acquisition ledger', 'acquisition ledger');
-  expectIncludes(procurementText, '3 acquisition checks queued', 'acquisition retry queue');
+  expectIncludes(procurementText, 'This comparison is not official proof', 'acquisition boundary');
+  expectIncludes(procurementText, 'Which contract documents did Busisi find?', 'document checklist');
+  expectIncludes(procurementText, '3 downloads waiting to be tried again', 'download retry queue');
   expectIncludes(procurementText, 'Do the contract records agree?', 'contract outcome heading');
   expectIncludes(procurementText, 'Questions to check, not findings', 'contract outcome boundary');
   expectIncludes(procurementText, 'class="record-title-link"', 'procurement dossier drill-down');
@@ -464,7 +468,7 @@ const verifyPages = async () => {
   expectIncludes(researchText, 'Open the consumption index', 'research package link');
   expectIncludes(researchText, '₱88.79 billion', 'research active budget');
   expectIncludes(researchText, '₱129.78 billion', 'research all-record budget');
-  expectIncludes(researchText, 'cannot determine necessity from the current snapshot', 'research necessity boundary');
+  expectIncludes(researchText, 'cannot determine necessity from the current dated records', 'research necessity boundary');
   expectIncludes(researchText, '25,499 to 32,503', 'research opportunity-cost range');
   expectIncludes(researchText, 'not a cancellation recommendation', 'research opportunity-cost boundary');
   expectIncludes(researchText, '43 projects now have a public evidence checklist', 'research evidence queue');
@@ -473,7 +477,7 @@ const verifyPages = async () => {
   const valueEvidence = await request('/research/multipurpose-buildings/evidence/');
   expectStatus(valueEvidence, 200, '/research/multipurpose-buildings/evidence/');
   const valueEvidenceText = await valueEvidence.text();
-  expectIncludes(valueEvidenceText, 'Public value evidence layer', 'value evidence heading');
+  expectIncludes(valueEvidenceText, 'Project evidence review', 'value evidence heading');
   expectIncludes(valueEvidenceText, 'Coordinate-history leads</span><strong>31', 'value evidence coordinate control');
   expectIncludes(valueEvidenceText, 'Largest-budget records</span><strong>12', 'value evidence budget control');
   expectIncludes(valueEvidenceText, 'Fully assessed</span><strong>0', 'value evidence assessment boundary');
@@ -1005,7 +1009,7 @@ const verifyData = async () => {
   }
   await verifyHtmlRecord(
     '/audit/reports/coa-oda-consolidated-2024/',
-    'Source copy not archived',
+    'Source copy not saved',
   );
   const procurementSummary = (await readJson('/api/v1/procurement-summary')).data;
   for (const [key, expected] of Object.entries(expectedProcurement)) {
@@ -1103,12 +1107,12 @@ const verifyData = async () => {
     || exactContract.data.metadata.award_sha256 !== expectedAcquisitionCoverage.award_sha256) {
     fail('contract detail: exact acquisition evidence does not reconcile');
   }
-  await verifyHtmlRecord('/contracts/24CM0078/', 'Contract acquisition evidence');
+  await verifyHtmlRecord('/contracts/24CM0078/', 'Contract match check');
 
   const projectImagesPage = await request('/projects/corazon-2024-phase-1/');
   expectStatus(projectImagesPage, 200, 'reviewed project images page');
   const projectImagesText = await projectImagesPage.text();
-  expectIncludes(projectImagesText, '2 archived source images', 'reviewed project image count');
+  expectIncludes(projectImagesText, '2 saved source images', 'reviewed project image count');
   expectIncludes(projectImagesText, 'source-reported, timezone unstated', 'project image time boundary');
   const projectImage = await request('/media/project-images/2e8edcf80e5eadfc64804bcbb2dbfafc27f922906c3657525781fc6cfdaf9144');
   expectStatus(projectImage, 200, 'verified project image');
@@ -1283,7 +1287,7 @@ const verifyData = async () => {
   expectStatus(accountabilityProfile, 200, 'accountability contractor profile');
   const accountabilityProfileText = await accountabilityProfile.text();
   expectIncludes(accountabilityProfileText, 'Accountability evidence timeline', 'accountability contractor profile');
-  expectIncludes(accountabilityProfileText, 'Archived secondary award row', 'accountability contractor profile');
+  expectIncludes(accountabilityProfileText, 'Saved secondary award row', 'accountability contractor profile');
   const coordinateReview = await readJson(
     '/api/v1/integrity-signals?signal=coordinate_location_conflict&limit=1',
   );
@@ -1324,7 +1328,7 @@ const verifyData = async () => {
   }
   await verifyHtmlRecord(
     `/contractors/${encodeURIComponent(contractorsByCount.data[0].contractor_key)}/`,
-    'Archived contractor activity',
+    'Saved contractor activity',
   );
   const egbProjects = await readJson(
     '/api/v1/contractors/pcab%3A13722/projects?relationship=joint&limit=100',
@@ -1396,17 +1400,17 @@ const verifyBoundaries = async () => {
   const reviewed = await request('/projects/corazon-2024-phase-1/');
   expectStatus(reviewed, 200, 'reviewed dossier');
   const reviewedText = await reviewed.text();
-  expectIncludes(reviewedText, 'Reviewed project evidence dossier', 'reviewed dossier');
+  expectIncludes(reviewedText, 'Reviewed project evidence', 'reviewed dossier');
   expectIncludes(reviewedText, 'Related reviewed phases', 'reviewed dossier');
   for (const value of [
     'Recorded implementation details', 'Completed', '100.0%', 'LA PRUEBA CONSTRUCTION',
     '2024-09-05', '2024-12-18', '10.7218472, 124.0110944',
-    'Identifiers and archived source fingerprints', 'Reader evidence links',
+    'Sources and checks', 'Open the records behind this project page',
     'Procurement timeline', 'Notice of award', 'Page 6', '₱5,324.90',
-    'Contract outcome pack', 'Payment evidence',
-    'Contract evidence checklist', 'Reported date, document missing', 'HTTP 403',
+    'What the available records show, disagree on, and leave unanswered', 'Payment evidence',
+    'Contract document checklist', 'Reported date, document missing', 'HTTP 403',
     'Awardee reported by the PhilGEPS mirror', 'LA PRUEBA CONSTRUCTION',
-    'Complete mirror snapshot archived; original official award page not archived',
+    'Complete mirror copy saved; original official award page not saved',
   ]) expectIncludes(reviewedText, value, 'reviewed dossier detail');
   if (/api\.dpwh\.bettergov\.ph|budget\.bettergov\.ph\/api/.test(reviewedText)) {
     fail('reviewed dossier: raw API reader link is public');
@@ -1416,7 +1420,7 @@ const verifyBoundaries = async () => {
   const quarantined = await request('/projects/corazon-2026-completion/');
   expectStatus(quarantined, 200, 'quarantined dossier');
   const quarantinedText = await quarantined.text();
-  expectIncludes(quarantinedText, 'Quarantined project candidate', 'quarantined dossier');
+  expectIncludes(quarantinedText, 'Possible project link held for review', 'quarantined dossier');
   expectIncludes(quarantinedText, 'noindex, nofollow', 'quarantined dossier robots');
 
   const post = await request('/', { method: 'POST' });

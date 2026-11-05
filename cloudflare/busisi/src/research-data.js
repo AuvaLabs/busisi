@@ -85,7 +85,7 @@ export const researchCatalogue = Object.freeze([
     manifest_url: editorialPackage.manifest_url,
     story_url: editorialPackage.story_url,
     editorial_package_url: `${editorialPackage.package_base_url}/editorial-package.json`,
-    summary: 'A source-bounded count and ₱88.79 billion active-pipeline reconciliation, with official procurement leads and conflicts clearly separated from verified evidence.',
+    summary: 'A carefully limited count of the ₱88.79 billion active pipeline, with official procurement leads and record conflicts kept separate from verified evidence.',
   },
   {
     story_id: stageManifest.story_id,
@@ -100,7 +100,7 @@ export const researchCatalogue = Object.freeze([
     manifest_url: stageEditorialPackage.manifest_url,
     story_url: stageEditorialPackage.story_url,
     editorial_package_url: `${stageEditorialPackage.package_base_url}/editorial-package.json`,
-    summary: 'A reconciled comparison of four FY2027 NEP and House project lists, separating document changes from claims the records cannot prove.',
+    summary: 'A comparison of four FY2027 NEP and House project lists whose row counts and money totals were checked against their sources.',
   },
   {
     story_id: concentrationManifest.story_id,
@@ -115,6 +115,6 @@ export const researchCatalogue = Object.freeze([
     manifest_url: concentrationEditorialPackage.manifest_url,
     story_url: concentrationEditorialPackage.story_url,
     editorial_package_url: `${concentrationEditorialPackage.package_base_url}/editorial-package.json`,
-    summary: 'A bounded ranking of where FY2027 project-list differences cluster by recorded program, region, office, and dataset labels.',
+    summary: 'A limited ranking of where FY2027 project-list differences cluster by recorded program, region, office, and dataset labels.',
   },
 ]);

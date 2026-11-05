@@ -53,5 +53,5 @@ export const methodDiagram = `
     <div><span>01</span><strong>Preserve</strong><small>Source and archive</small></div><i aria-hidden="true"></i>
     <div><span>02</span><strong>Normalize</strong><small>Schema and controls</small></div><i aria-hidden="true"></i>
     <div><span>03</span><strong>Link</strong><small>Identity and confidence</small></div><i aria-hidden="true"></i>
-    <div><span>04</span><strong>Review</strong><small>Quarantine or publish</small></div>
+    <div><span>04</span><strong>Review</strong><small>Hold back or publish</small></div>
   </figure>`;

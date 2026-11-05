@@ -46,6 +46,18 @@ import {
 import worker from '../src/index.js';
 import siteWorker from '../src/prelaunch.js';
 
+const PUBLIC_JARGON = /\b(?:acquired|provenance|deterministic|quarantined|acquisition|full-universe|gated|immutable|artifact|lifecycle|fingerprint(?:ed)?|reconciled|ledger|snapshot)\b|\bevidence dossier\b|\bnormalized family\b/i;
+const assertPlainPublicLanguage = (document, label) => {
+  const text = document
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z0-9#]+;/gi, ' ')
+    .replace(/\s+/g, ' ');
+  const jargon = text.match(PUBLIC_JARGON);
+  assert.equal(jargon, null, `${label}: ${jargon?.[0] || 'unexpected jargon'}`);
+};
+
 const migrationPath = fileURLToPath(new URL('../migrations/0001_publication.sql', import.meta.url));
 const explorerMigrationPath = fileURLToPath(
   new URL('../migrations/0002_public_explorer.sql', import.meta.url),
@@ -950,7 +962,7 @@ test('renders safe contract drill-downs and redirects the former delivery route'
   const absentDocument = await absent.text();
 
   assert.equal(exact.status, 200);
-  assert.match(exactDocument, /Contract acquisition evidence/);
+  assert.match(exactDocument, /Contract match check/);
   assert.match(exactDocument, /ACME BUILDERS/);
   assert.match(exactDocument, /not an official notice of award/i);
   assert.match(exactDocument, /aaaaaaaaaaaaaaaa/);
@@ -962,11 +974,11 @@ test('renders safe contract drill-downs and redirects the former delivery route'
   assert.match(conflictDocument, /26ZERO01/);
   assert.match(conflictDocument, /25O00113/);
   assert.match(conflictDocument, /not a finding of wrongdoing/i);
-  assert.match(conflictDocument, /Source image evidence quarantined/);
+  assert.match(conflictDocument, /Images held back because the source counts disagree/);
   assert.equal(absent.status, 200);
   assert.match(absentDocument, /No exact secondary row located/);
   assert.match(absentDocument, /No exact row for this contract was accepted/);
-  assert.match(absentDocument, /No images reported by either acquired source view/);
+  assert.match(absentDocument, /No images reported by either source view Busisi checked/);
   assert.equal(former.status, 301);
   assert.equal(former.headers.get('location'), 'https://busisi.org/contracts/25O00113/');
 });
@@ -1054,7 +1066,7 @@ test('renders original-color source image metadata without inventing missing fie
     },
   });
 
-  assert.match(document, /2 archived source images/);
+  assert.match(document, /2 saved source images/);
   assert.match(document, /Purpose not stated/);
   assert.match(document, /Status not stated/);
   assert.match(document, /Coordinates<\/dt><dd>Not reported/);
@@ -1260,13 +1272,13 @@ test('publishes the contract intelligence explorer and client', async (context) 
   const document = await response.text();
 
   assert.equal(response.status, 200);
-  assert.match(document, /Contract intelligence explorer/);
-  assert.match(document, /56,887 archived DPWH contract records/);
+  assert.match(document, /Contract record explorer/);
+  assert.match(document, /56,887 saved DPWH contract records/);
   assert.match(document, /Compare selected contracts/);
   assert.match(document, /Province/);
   assert.match(document, /Download filtered CSV, up to 10,000 rows/);
   assert.match(document, /\/assets\/contracts-v1\.js\?v=3/);
-  assert.match(document, /Source patterns are review leads, not findings/);
+  assert.match(document, /Source patterns are questions to check, not findings/);
 });
 
 test('bounds BetterGov source searches and scopes them to the record agency', async (context) => {
@@ -1786,6 +1798,7 @@ test('publishes an official facility dossier without converting records into bui
   assert.match(pageDocument, /not a count of school buildings/i);
   assert.match(pageDocument, /Preliminary school list, not a complete national registry/);
   assert.match(pageDocument, /Open linked record/);
+  assertPlainPublicLanguage(pageDocument, 'facility page');
 
   const missingApi = await worker.fetch(
     request('/api/v1/facilities/deped%3Amissing'), environment(database),
@@ -1849,8 +1862,8 @@ test('renders a sparse facility dossier without inventing coordinates or linked 
     },
   });
 
-  assert.match(document, /Not stated in the registry/);
-  assert.match(document, /No public budget or delivery record has passed/);
+  assert.match(document, /Not stated in the official list/);
+  assert.match(document, /No public budget or delivery record has a confirmed link/);
   assert.match(document, /Not marked yes in the source list/);
   assert.match(document, /&lt;Sample School&gt;/);
   assert.doesNotMatch(document, /<Sample School>/);
@@ -1991,6 +2004,7 @@ test('renders an interactive public-services desk with explicit red-flag boundar
   assert.match(document, /1 official facility identity linked/);
   assert.match(document, /1 possible facility group/);
   assert.match(document, /Official school list is currently blocked/);
+  assertPlainPublicLanguage(document, 'public services page');
   assert.match(document, /Last checked 2026-11-04T14:00:00\+00:00/);
   assert.match(document, /An official identity means the record was linked to a published facility ID/);
   assert.match(document, /data-public-services-desk/);
@@ -2341,9 +2355,10 @@ test('publishes evidence-linked contractor accountability without alleging wrong
   assert.match(deskDocument, /official restriction record/i);
   assert.match(deskDocument, /not proof of corruption/i);
   assert.match(deskDocument, /contractors\/pcab%3A12345/);
+  assertPlainPublicLanguage(deskDocument, 'contractor accountability page');
   const profileDocument = await profile.text();
   assert.match(profileDocument, /Accountability evidence timeline/);
-  assert.match(profileDocument, /Archived secondary award row/);
+  assert.match(profileDocument, /Saved secondary award row/);
   assert.match(profileDocument, /contracts\/25O00113/);
 });
 
@@ -2533,7 +2548,7 @@ test('publishes evidence drilldowns without collapsing records into findings', a
     ['/records/candidate/2025%3Apump%3A25O00113/', /Unreviewed candidate comparison/],
     ['/records/change/dpwh%3A1/', /Provisional stage comparison/],
     ['/records/integrity/25A%3Astatus_progress_conflict/', /Something to check, not a finding/],
-    ['/contractors/pcab%3A12345/', /Archived contractor activity/],
+    ['/contractors/pcab%3A12345/', /Saved contractor activity/],
   ];
 
   for (const [path, expected] of paths) {
@@ -2548,11 +2563,13 @@ test('publishes evidence drilldowns without collapsing records into findings', a
     request('/records/budget/2025%3Apump/'), environment(database),
   );
   const budgetDocument = await budget.text();
-  assert.match(budgetDocument, /Original publisher/);
+  assert.match(budgetDocument, /Where this budget information came from/);
+  assert.match(budgetDocument, /Published by/);
   assert.match(budgetDocument, /Department of Budget and Management/);
-  assert.match(budgetDocument, /Accessed through/);
+  assert.match(budgetDocument, /Data accessed through/);
   assert.match(budgetDocument, /BetterGov GAA dataset/);
-  assert.match(budgetDocument, /Processed and published by/);
+  assert.doesNotMatch(budgetDocument, /Processed and published by/);
+  assertPlainPublicLanguage(budgetDocument, 'budget record page');
 
   const delivery = await siteWorker.fetch(
     request('/contracts/25O00113/'), environment(database),
@@ -2562,10 +2579,14 @@ test('publishes evidence drilldowns without collapsing records into findings', a
   assert.match(deliveryDocument, /BetterGov DPWH dataset and API/);
   assert.match(deliveryDocument, /aria-label="Dossier sections"/);
   assert.match(deliveryDocument, /Procurement timeline/);
-  assert.match(deliveryDocument, /Contract evidence checklist/);
-  assert.match(deliveryDocument, /Contract outcome pack/);
+  assert.match(deliveryDocument, /Contract document checklist/);
+  assert.match(deliveryDocument, /What the available records show, disagree on, and leave unanswered/);
   assert.match(deliveryDocument, /COA audit evidence/);
-  assert.match(deliveryDocument, /Identifiers and archived source fingerprints/);
+  assert.match(deliveryDocument, /Where this information came from/);
+  assert.match(deliveryDocument, /Official information published by/);
+  assert.match(deliveryDocument, /Data accessed through/);
+  assert.doesNotMatch(deliveryDocument, /Publication role/);
+  assertPlainPublicLanguage(deliveryDocument, 'contract record page');
 });
 
 test('expands reviewed project dossiers with phase history and evidence boundaries', async (context) => {
@@ -2578,11 +2599,11 @@ test('expands reviewed project dossiers with phase history and evidence boundari
   const document = await response.text();
 
   assert.equal(response.status, 200);
-  assert.match(document, /Reviewed project evidence dossier/);
+  assert.match(document, /Reviewed project evidence/);
   assert.match(document, /Related reviewed phases/);
   assert.match(document, /corazon-2024-phase-2/);
   assert.match(document, /Release, obligation and payment/);
-  assert.match(document, /Not available in the acquired records/);
+  assert.match(document, /Not available in the records Busisi has/);
   assert.match(document, /COA audit evidence/);
   assert.match(document, /No qualifying project-level COA evidence/);
 });
@@ -2609,6 +2630,7 @@ test('publishes the COA audit desk without turning absence into clearance', asyn
   assert.match(document, /Not finding a report is not the same as COA clearance/);
   assert.match(document, /DPWH reviewed annual audit report/);
   assert.match(document, /class="record-title-link"/);
+  assertPlainPublicLanguage(document, 'COA reports page');
 
   const report = await siteWorker.fetch(
     request('/audit/reports/coa-report-1/'), environment(database),
@@ -2616,8 +2638,9 @@ test('publishes the COA audit desk without turning absence into clearance', asyn
   assert.equal(report.status, 200);
   const reportDocument = await report.text();
   assert.match(reportDocument, /Agency accounts and operations/);
-  assert.match(reportDocument, /Source copy not archived/);
+  assert.match(reportDocument, /Source copy not saved/);
   assert.doesNotMatch(reportDocument, /audit score|cleared the project/i);
+  assertPlainPublicLanguage(reportDocument, 'COA report page');
 });
 
 test('publishes exact procurement evidence and preserves missing coverage', async (context) => {
@@ -2658,6 +2681,7 @@ test('publishes exact procurement evidence and preserves missing coverage', asyn
   assert.match(document, /PhilGEPS bid notice 123/);
   assert.match(document, /A missing document does not mean procurement did not happen/);
   assert.match(document, /class="record-title-link"/);
+  assertPlainPublicLanguage(document, 'procurement page');
 
   const dossier = await siteWorker.fetch(
     request('/projects/pump-reviewed/'), environment(database),
@@ -2667,7 +2691,7 @@ test('publishes exact procurement evidence and preserves missing coverage', asyn
   assert.match(dossierDocument, /Notice of award/);
   assert.match(dossierDocument, /Difference below ABC/);
   assert.match(dossierDocument, /₱23,207,293\.42/);
-  assert.match(dossierDocument, /Archived source SHA-256/);
+  assert.match(dossierDocument, /Saved-source check code/);
 
   const missing = await getProjectProcurementEvidence(database, '26ZERO01');
   assert.equal(missing.coverage.status, 'not_located');
@@ -2705,17 +2729,17 @@ test('publishes contract outcome cross-checks without inventing award or payment
   const desk = await siteWorker.fetch(request('/procurement/'), environment(database));
   const deskDocument = await desk.text();
   assert.match(deskDocument, /Do the contract records agree/);
-  assert.match(deskDocument, /Awardee not established by acquired procurement evidence/);
+  assert.match(deskDocument, /Awardee not established by available procurement evidence/);
   assert.match(deskDocument, /Questions to check, not findings/);
 
   const dossier = await siteWorker.fetch(
     request('/projects/pump-reviewed/'), environment(database),
   );
   const dossierDocument = await dossier.text();
-  assert.match(dossierDocument, /Contract outcome pack/);
+  assert.match(dossierDocument, /What the available records show, disagree on, and leave unanswered/);
   assert.match(dossierDocument, /Delivery record contractor/);
   assert.match(dossierDocument, /Payment evidence/);
-  assert.match(dossierDocument, /No project-specific payment record acquired/);
+  assert.match(dossierDocument, /No project-specific payment record available/);
 });
 
 test('publishes complete contract evidence checklists and a bounded retry queue', async (context) => {
@@ -2754,16 +2778,16 @@ test('publishes complete contract evidence checklists and a bounded retry queue'
 
   const desk = await siteWorker.fetch(request('/procurement/'), environment(database));
   const deskDocument = await desk.text();
-  assert.match(deskDocument, /Contract evidence acquisition ledger/);
-  assert.match(deskDocument, /3 acquisition checks queued/);
-  assert.match(deskDocument, /Official source indexed, archive blocked/);
-  assert.match(deskDocument, /Secondary mirror evidence/);
+  assert.match(deskDocument, /Which contract documents did Busisi find/);
+  assert.match(deskDocument, /3 downloads waiting to be tried again/);
+  assert.match(deskDocument, /Official source found, download blocked/);
+  assert.match(deskDocument, /Secondary source only/);
 
   const dossier = await siteWorker.fetch(
     request('/projects/corazon-2024-phase-1/'), environment(database),
   );
   const dossierDocument = await dossier.text();
-  assert.match(dossierDocument, /Contract evidence checklist/);
+  assert.match(dossierDocument, /Contract document checklist/);
   assert.match(dossierDocument, /Reported date, document missing/);
   assert.match(dossierDocument, /No project-specific voucher/);
   assert.match(dossierDocument, /HTTP 403/);
@@ -2803,11 +2827,12 @@ test('publishes reconciled full-universe acquisition coverage', async (context) 
 
   const page = await siteWorker.fetch(request('/procurement/'), environment(database));
   const document = await page.text();
-  assert.match(document, /Full-universe acquisition coverage/);
+  assert.match(document, /How many contracts have matching secondary records/);
   assert.match(document, /56,887 of 56,887 contracts examined/);
-  assert.match(document, /47,071 contracts with usable exact secondary rows/);
-  assert.match(document, /83 conflicting source rows quarantined/);
-  assert.match(document, /Coverage is not official proof/);
+  assert.match(document, /47,071<\/strong><p>The same exact contract ID/);
+  assert.match(document, /Conflicting source rows held back/);
+  assert.match(document, /This comparison is not official proof/);
+  assertPlainPublicLanguage(document, 'procurement coverage page');
 });
 
 test('classifies contract amount, sequence, schedule and completion questions deterministically', () => {
@@ -2997,7 +3022,7 @@ test('renders procurement desk counts without unsafe source URLs', () => {
     ],
   });
   assert.match(document, /1 of 1 project files have evidence/);
-  assert.match(document, /Source archived and verified/);
+  assert.match(document, /Source copy saved and checked/);
   assert.match(document, /discovered/);
   assert.doesNotMatch(document, /javascript:/);
 });
@@ -3022,13 +3047,13 @@ test('renders archived, unavailable and incomplete COA report presentation state
   const archivedPage = coaReportBody(archived);
   const unavailablePage = coaReportBody(unavailable);
 
-  assert.match(desk, /Source copy archived and verified/);
+  assert.match(desk, /Source copy saved and checked/);
   assert.match(desk, /Source unavailable/);
   assert.match(desk, /0 project files checked/);
-  assert.match(archivedPage, /Source copy archived/);
+  assert.match(archivedPage, /Source copy saved/);
   assert.match(archivedPage, new RegExp('a{64}'));
   assert.match(archivedPage, /Not stated/);
-  assert.match(unavailablePage, /Source copy not archived/);
+  assert.match(unavailablePage, /Source copy not saved/);
 });
 
 test('fails closed for malformed COA match-basis metadata', async () => {
@@ -3064,15 +3089,15 @@ test('renders unavailable, quarantined and alternate evidence states', async (co
   const database = new LocalD1();
   context.after(() => database.close());
   const cases = [
-    ['/records/budget/2026%3Abridge/', /No candidate delivery link/],
+    ['/records/budget/2026%3Abridge/', /No possible delivery link/],
     ['/contracts/26ZERO01/', /No exact office attribution available/],
     ['/records/change/hfep%3A2/', /NEP page not available/],
     ['/records/change/dpwh%3A3/', /No other FY2027 comparison row/],
     ['/records/integrity/24B%3Amissing_coordinate/', /Quezon, 1st District/],
     ['/records/integrity/25C%3Acoordinate_location_conflict/', /No exact office attribution available/],
     ['/contractors/pcab%3A67890/', /not found current regular/],
-    ['/projects/agoncillo-2023/', /No other reviewed dossier/],
-    ['/projects/corazon-2026-completion/', /Quarantined project candidate/],
+    ['/projects/agoncillo-2023/', /No other reviewed project page/],
+    ['/projects/corazon-2026-completion/', /Possible project link held for review/],
   ];
 
   for (const [path, expected] of cases) {
@@ -3123,7 +3148,7 @@ test('renders enriched record relationships and tolerates malformed candidate me
     ['/records/integrity/25O00113%3Amissing_coordinate/', /1 other flag on this contract/],
     ['/records/candidate/2025%3Apump%3A25O00113/', /San Andres Pumping Station/],
     ['/records/candidate/missing-delivery/', /Matching delivery row is not available/],
-    ['/projects/pump-reviewed/', /Reader evidence links/],
+    ['/projects/pump-reviewed/', /Open the records behind this project page/],
   ];
   for (const [path, expected] of paths) {
     const response = await siteWorker.fetch(request(path), environment(database));
@@ -3145,10 +3170,11 @@ test('renders enriched record relationships and tolerates malformed candidate me
 
   const project = await siteWorker.fetch(request('/projects/pump-reviewed/'), environment(database));
   const dossier = await project.text();
+  assertPlainPublicLanguage(dossier, 'reviewed project page');
   for (const expected of [
     'Flood Control', 'On-Going', '62.5%', '2025-01-15', '2025-12-20',
     '14.5995, 120.9842', 'ACME BUILDERS', 'Evidence by public-money stage',
-    'Identifiers and archived source fingerprints', 'San Andres Pumping Station Expansion',
+    'Where this information came from', 'San Andres Pumping Station Expansion',
     'Reviewed project observation match', 'pages 12–13', 'Verify delivery records',
   ]) assert.match(dossier, new RegExp(expected.replace('.', '\\.')));
   assert.doesNotMatch(dossier, /api\.dpwh\.bettergov\.ph|budget\.bettergov\.ph\/api/);
@@ -3197,6 +3223,7 @@ test('serves gated coverage status through the API and public page', async (cont
   assert.match(pageDocument, /No AI model decides whether an image is published/);
   assert.match(pageDocument, /The checked sources have not changed/);
   assert.match(pageDocument, /Commission on Audit report catalogues/);
+  assertPlainPublicLanguage(pageDocument, 'coverage page');
 });
 
 test('renders unavailable and drifted source-monitor coverage states', () => {

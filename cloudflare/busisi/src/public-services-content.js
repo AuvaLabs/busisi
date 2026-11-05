@@ -9,6 +9,12 @@ const html = (value) => String(value ?? '')
 
 const number = (value) => Number(value || 0).toLocaleString('en-PH');
 
+const plainPublicText = (value) => String(value ?? '')
+  .replace(/\bunattended acquisition\b/gi, 'automatic download')
+  .replace(/\bacquisition\b/gi, 'download')
+  .replace(/\bquarantined\b/gi, 'held back for checking')
+  .replace(/\breconciled\b/gi, 'checked');
+
 const option = (value, label) => `<option value="${html(value)}">${html(label)}</option>`;
 
 const flagGuide = () => reviewClassEntries().map(([classification, copy]) => `<article>
@@ -30,7 +36,7 @@ const registryHeading = (status) => {
 };
 
 const registryStatus = (status) => `<section class="services-registry-status" aria-labelledby="facility-registry-status-heading">
-  <div><p class="kicker">Official school identity coverage</p><h2 id="facility-registry-status-heading">${html(registryHeading(status))}</h2><p>${html(status?.status_note || 'Busisi has not received a current automated source check. No official school identity is inferred from this absence.')}</p>${status ? `<small>Last checked ${html(status.checked_at)}</small>` : ''}</div>
+  <div><p class="kicker">Official school identity coverage</p><h2 id="facility-registry-status-heading">${html(registryHeading(status))}</h2><p>${html(plainPublicText(status?.status_note || 'Busisi has not received a current automated source check. No official school identity is inferred from this absence.'))}</p>${status ? `<small>Last checked ${html(status.checked_at)}</small>` : ''}</div>
   <dl><div><dt>Expected schools</dt><dd>${number(status?.expected_facilities)}</dd><small>Scoped indicative DepEd list</small></div><div><dt>Validated schools</dt><dd>${number(status?.validated_facilities)}</dd><small>Original rows that passed source checks</small></div><div><dt>Candidate links</dt><dd>${number(status?.candidate_links)}</dd><small>Still not public identities</small></div><div><dt>Reviewed cases</dt><dd>${number(status?.reviewed_cases)}</dd><small>100 or more required before release</small></div></dl>
 </section>`;
 
@@ -47,7 +53,7 @@ export const publicServicesBody = (summary) => {
   <section class="services-boundary"><strong>What this count means</strong><p>These are records, not separate buildings. One facility can have several budget records or contracts. A record also does not prove that work started or finished.</p></section>
   ${registryStatus(summary?.registry_status)}
   <section class="services-identity" aria-labelledby="facility-identity-heading">
-    <div><p class="kicker">Facility identity</p><h2 id="facility-identity-heading">Separate known facilities from possible groups.</h2><p>An official identity means the record was linked to a published facility ID. A possible facility group only means records share a carefully normalized name and place. It is not a count of buildings.</p></div>
+    <div><p class="kicker">Facility identity</p><h2 id="facility-identity-heading">Separate known facilities from possible groups.</h2><p>An official identity means the record was linked to a published facility ID. A possible facility group only means records have the same cleaned-up name and place. It is not a count of buildings.</p></div>
     <dl><div><dt>Official facilities linked</dt><dd>${number(identity.official_facilities)}</dd><small>${number(identity.official_linked_records)} official facility identity linked record${Number(identity.official_linked_records) === 1 ? '' : 's'}</small></div><div><dt>Possible facility groups</dt><dd>${number(identity.record_groups)}</dd><small>${number(identity.record_groups)} possible facility group${Number(identity.record_groups) === 1 ? '' : 's'} across ${number(identity.grouped_records)} record${Number(identity.grouped_records) === 1 ? '' : 's'}</small></div><div><dt>Held for identity review</dt><dd>${number(identity.ambiguous_records)}</dd><small>More than one identity may fit</small></div><div><dt>Not linked yet</dt><dd>${number(identity.unlinked_records)}</dd><small>No safe identity selected</small></div></dl>
   </section>
   <section class="services-snapshot" aria-label="Title classification summary">

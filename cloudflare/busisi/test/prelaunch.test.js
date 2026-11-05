@@ -8,6 +8,52 @@ const fetchPath = (path, hostname = 'busisi.org') => worker.fetch(
   new Request(`https://${hostname}${path}`),
 );
 
+const visibleText = (document) => document
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&[a-z0-9#]+;/gi, ' ')
+  .replace(/\s+/g, ' ');
+
+const PUBLIC_LANGUAGE_ROUTES = [
+  '/', '/contractors/', '/places/', '/sources/', '/methodology/', '/explore/',
+  '/contracts/', '/signals/', '/integrity/', '/changes/', '/agencies/', '/releases/',
+  '/sulit/', '/budget-trail/', '/research/', '/research/multipurpose-buildings/',
+  '/research/multipurpose-buildings/evidence/', '/research/fy2027-nep-house-changes/',
+  '/research/fy2027-change-concentration/', '/research/releases/',
+];
+
+const PUBLIC_JARGON = [
+  /\bacquired\b/i,
+  /\bprovenance\b/i,
+  /\bdeterministic\b/i,
+  /\bquarantined\b|\bquarantine (?:state|status|row|record|match|release|candidate|means)\b/i,
+  /\bevidence dossier\b/i,
+  /\bacquisition\b/i,
+  /\bfull-universe\b/i,
+  /\bnormalized family\b/i,
+  /\bgated\b/i,
+  /\brelease gate\b/i,
+  /\bmachine-readable\b/i,
+  /\bimmutable\b/i,
+  /\bartifact\b/i,
+  /\blifecycle\b/i,
+  /\bfingerprint(?:ed)?\b/i,
+  /\breconciled\b/i,
+  /\bledger\b/i,
+  /\bsnapshot\b/i,
+];
+
+test('keeps public pages free of unexplained internal data jargon', async () => {
+  for (const path of PUBLIC_LANGUAGE_ROUTES) {
+    const response = await fetchPath(path);
+    const document = await response.text();
+    const text = visibleText(document);
+    assert.equal(response.status, 200, path);
+    for (const term of PUBLIC_JARGON) assert.doesNotMatch(text, term, `${path}: ${term}`);
+  }
+});
+
 test('home publishes canonical prelaunch SEO without exposing records', async () => {
   const response = await fetchPath('/');
   const document = await response.text();
@@ -99,7 +145,7 @@ test('publishes a research library and the multipurpose-building investigation',
   assert.match(articleDocument, /₱88\.79 billion/);
   assert.match(articleDocument, /₱129\.78 billion/);
   assert.match(articleDocument, /Is every project necessary\?/);
-  assert.match(articleDocument, /cannot determine necessity from the current snapshot/i);
+  assert.match(articleDocument, /cannot determine necessity from the current dated records/i);
   assert.match(articleDocument, /25,499 to 32,503/);
   assert.match(articleDocument, /not a cancellation recommendation/i);
   assert.match(articleDocument, /Need and public function/);
@@ -111,7 +157,7 @@ test('publishes a research library and the multipurpose-building investigation',
   assert.match(articleDocument, /Where the records came from/);
   assert.match(articleDocument, /Department of Public Works and Highways/);
   assert.match(articleDocument, /Accessed through<\/dt><dd>BetterGov/);
-  assert.match(articleDocument, /Open the archived source dataset/);
+  assert.match(articleDocument, /Open the saved source dataset/);
   assert.doesNotMatch(articleDocument, /href="https:\/\/(?:www\.)?(?:perplexity|exa)\.ai/i);
   assert.match(articleDocument, /Download the research package/);
   assert.match(articleDocument, /Download the finished story/);
@@ -127,7 +173,7 @@ test('publishes a bounded multipurpose-building public value evidence queue', as
   const document = await response.text();
 
   assert.equal(response.status, 200);
-  assert.match(document, /Public value evidence layer/);
+  assert.match(document, /Project evidence review/);
   assert.match(document, /43.*multipurpose-building records/);
   assert.match(document, /Coordinate-history leads<\/span><strong>31/);
   assert.match(document, /Largest-budget records<\/span><strong>12/);
@@ -136,7 +182,7 @@ test('publishes a bounded multipurpose-building public value evidence queue', as
   assert.match(document, /Official URL leads<\/span><strong>34/);
   assert.match(document, /Identity conflicts<\/span><strong>3/);
   assert.match(document, /19 DPWH document URLs were checked/);
-  assert.match(document, /files are not archived, so none are called verified evidence/i);
+  assert.match(document, /files could not be saved, so none are called verified evidence/i);
   assert.match(document, /Project and facility identity/);
   assert.match(document, /Need and intended public use/);
   assert.match(document, /Location and site suitability/);
@@ -187,7 +233,7 @@ test('publishes an explicit corrections and immutable release history', async ()
   assert.match(document, /No corrections have been filed/);
   assert.match(document, /Editorial expansion/);
   assert.match(document, /underlying calculations/);
-  assert.match(document, /targeted 946-task acquisition ledger/);
+  assert.match(document, /list of 946 document checks/);
   assert.match(document, /multipurpose-buildings\/v1\/manifest\.json/);
 });
 
@@ -266,7 +312,7 @@ test('publishes the ecosystem hubs while preserving established evidence pages',
   const cases = [
     ['/contractors/', /data-contractor-directory/],
     ['/places/', /data-place-directory/],
-    ['/sources/', /Original publisher/],
+    ['/sources/', /Who published it/],
     ['/watch/', /What Busisi is watching/],
   ];
 
@@ -285,8 +331,8 @@ test('publishes the ecosystem hubs while preserving established evidence pages',
   assert.match(sources, /href="\/budget-trail\/"/);
   assert.match(sources, /href="\/procurement\/"/);
   assert.match(sources, /href="\/audit\/"/);
-  assert.match(sources, /Access route/);
-  assert.match(sources, /Busisi processing/);
+  assert.match(sources, /How Busisi accessed it/);
+  assert.match(sources, /What Busisi did/);
 });
 
 test('home scopes its public questions to evidence Busisi currently holds', async () => {
@@ -387,7 +433,7 @@ test('publishes a reconciled FY2027 appropriation-head ledger', async () => {
 
   assert.equal(response.status, 200);
   assert.match(document, /See how agency budgets changed in the House bill/);
-  assert.match(document, /39 appropriation heads/);
+  assert.match(document, /39 national budget groups/);
   assert.match(document, /Senate and House are shown separately/);
   assert.match(document, /data-agency-ledger/);
   assert.match(document, /Automatic Appropriations/);
@@ -400,7 +446,7 @@ test('publishes the official FY2026 allotment-release ledger with spending bound
   const document = await response.text();
 
   assert.equal(response.status, 200);
-  assert.match(document, /See what DBM had released by September/);
+  assert.match(document, /See how much budget authority DBM had released by September/);
   assert.match(document, /30 September 2026/);
   assert.match(document, /data-release-ledger/);
   assert.match(document, /src="\/assets\/releases-v1\.js"/);
@@ -420,7 +466,7 @@ test('publishes a budget trail without claiming missing Senate or GAA stages', a
   assert.match(document, /data-budget-cycle/);
   assert.match(document, /House bill, third reading/);
   assert.match(document, /Senate committee stage/);
-  assert.match(document, /Not yet acquired/);
+  assert.match(document, /Not yet found/);
   assert.match(document, /A Senate-hosted document is not automatically a Senate-stage document/);
   assert.match(document, /src="\/assets\/budget-cycle-v1\.js"/);
 });
@@ -463,7 +509,7 @@ test('methodology is canonical and explains the publication gate', async () => {
 
   assert.equal(response.status, 200);
   assert.match(document, /https:\/\/busisi\.org\/methodology\//);
-  assert.match(document, /100 reviewed linkage cases/);
+  assert.match(document, /100 reviewed record links/);
   assert.match(document, /not evidence of wrongdoing/i);
   assert.match(document, /href="#pipeline"/);
   assert.match(document, /href="#plain-language"/);
@@ -475,8 +521,8 @@ test('methodology is canonical and explains the publication gate', async () => {
   assert.match(document, /href="#source-policy"/);
   assert.match(document, /href="#corrections"/);
   assert.match(document, /Congressional district context/);
-  assert.match(document, /Machine-readable provenance stays in the JSON API/);
-  assert.match(document, /not a coordinate or boundary-polygon determination/);
+  assert.match(document, /Technical source history remains available in downloadable data/);
+  assert.match(document, /not based on a project's coordinates or map boundary/);
   assert.match(document, /Built and maintained by/);
   assert.match(document, /id="editorial-independence"/);
   assert.match(document, /no affiliation with any politician, political party, candidate/);
@@ -652,9 +698,9 @@ test('renders a reviewed evidence dossier when the publication database is bound
 
   assert.equal(response.status, 200);
   assert.match(document, /Reviewed public project/);
-  assert.match(document, /Reviewed project evidence dossier/);
-  assert.match(document, /Authority to spend/);
-  assert.match(document, /Reader evidence links/);
+  assert.match(document, /Reviewed project evidence/);
+  assert.match(document, /Legal authority to spend/);
+  assert.match(document, /Open the records behind this project page/);
   assert.doesNotMatch(document, /budget\.example|dpwh\.example/);
 });
 
