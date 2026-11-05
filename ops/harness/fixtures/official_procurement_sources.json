@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "source_id": "dpwh-batangas-iv-app-2024",
+      "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/GAA/APP/batangas_iv_updated_app_fy_2024_changes_within_2nd_semester.pdf",
+      "document_type": "annual_procurement_plan",
+      "bindings": [
+        {"contract_id": "24DD0064", "evidence_type": "procurement_plan", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "TAYSAN", "BATANGAS"]},
+        {"contract_id": "24DD0136", "evidence_type": "procurement_plan", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "DAGATAN", "SAN JOSE"]},
+        {"contract_id": "24DD0174", "evidence_type": "procurement_plan", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "SAN JOSE", "BATANGAS"]},
+        {"contract_id": "24DD0204", "evidence_type": "procurement_plan", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "POBLACION B", "ROSARIO"]}
+      ]
+    },
+    {
+      "source_id": "dpwh-batangas-iv-pmr-2024",
+      "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/pmr/procurementmonitoringreport2ndsemesterfy2024.pdf",
+      "document_type": "procurement_monitoring_report",
+      "bindings": [
+        {"contract_id": "24DD0064", "evidence_type": "procurement_monitoring_report", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "TAYSAN", "BATANGAS"]},
+        {"contract_id": "24DD0064", "evidence_type": "award_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "TAYSAN", "BATANGAS"], "limitation": "The PMR reports an award date but is not the underlying Notice of Award."},
+        {"contract_id": "24DD0136", "evidence_type": "procurement_monitoring_report", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "DAGATAN", "SAN JOSE"]},
+        {"contract_id": "24DD0136", "evidence_type": "award_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "DAGATAN", "SAN JOSE"], "limitation": "The PMR reports an award date but is not the underlying Notice of Award."},
+        {"contract_id": "24DD0174", "evidence_type": "procurement_monitoring_report", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "SAN JOSE", "BATANGAS"]},
+        {"contract_id": "24DD0174", "evidence_type": "award_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "SAN JOSE", "BATANGAS"], "limitation": "The PMR reports an award date but is not the underlying Notice of Award."},
+        {"contract_id": "24DD0204", "evidence_type": "procurement_monitoring_report", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "POBLACION B", "ROSARIO"]},
+        {"contract_id": "24DD0204", "evidence_type": "award_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "POBLACION B", "ROSARIO"], "limitation": "The PMR reports an award date but is not the underlying Notice of Award."}
+      ]
+    },
+    {
+      "source_id": "dpwh-bulacan-ii-pcad-2024-09",
+      "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/webform/civil_works/pcad/pdf/post_contract_award_september_2024-bul2nddeo.pdf",
+      "document_type": "post_contract_award_disclosure",
+      "bindings": [
+        {"contract_id": "24CD0251", "evidence_type": "award_notice", "evidence_class": "official_summary", "identity_terms": ["GAD BUILDING", "POBLACION", "SAN JOSE DEL MONTE"], "limitation": "The disclosure summary reports the award but is not the underlying Notice of Award."}
+      ]
+    },
+    {
+      "source_id": "dpwh-camiguin-pcad-2024",
+      "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/webform/civil_works/pcad/pdf/camiguin_deo_post_contract_award_disclosure.pdf",
+      "document_type": "post_contract_award_disclosure",
+      "bindings": [
+        {"contract_id": "24KE0087", "evidence_type": "award_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "BALBAGON", "MAMBAJAO"], "limitation": "The disclosure summary reports the award but is not the underlying Notice of Award."}
+      ]
+    },
+    {
+      "source_id": "dpwh-camiguin-app-2024",
+      "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/GAA/APP/a3_updated_app_format_2024_as_of_december_2024.pdf",
+      "document_type": "annual_procurement_plan",
+      "bindings": [
+        {"contract_id": "24KE0087", "evidence_type": "procurement_plan", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "BALBAGON", "MAMBAJAO"]}
+      ]
+    },
+    {
+      "source_id": "dpwh-cpes-2024-q4",
+      "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/references/CPES%20CONSOLIDATION%20IMS%204th%20QTR.pdf",
+      "document_type": "constructors_performance_report",
+      "bindings": [
+        {"contract_id": "24DD0136", "evidence_type": "completion_certificate", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "DAGATAN", "SAN JOSE"], "limitation": "CPES reports evaluation and delivery fields but is not a completion certificate."},
+        {"contract_id": "24EE0129", "evidence_type": "completion_certificate", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "PALAWAN"], "limitation": "CPES reports evaluation and delivery fields but is not a completion certificate."}
+      ]
+    },
+    {
+      "source_id": "dpwh-iloilo-iii-app-2024",
+      "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/GAA/APP/updated_fapp_2024_iloilo_3rd_deo.pdf",
+      "document_type": "annual_procurement_plan",
+      "bindings": [
+        {"contract_id": "24GH0185", "evidence_type": "procurement_plan", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "MUNICIPAL HALL", "ESTANCIA"]}
+      ]
+    },
+    {
+      "source_id": "dpwh-iloilo-iii-pmr-2024",
+      "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/pmr/dpwhiloilo3rd2ndsemesteroffy2024.pdf",
+      "document_type": "procurement_monitoring_report",
+      "bindings": [
+        {"contract_id": "24GH0185", "evidence_type": "procurement_monitoring_report", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "MUNICIPAL HALL", "ESTANCIA"]},
+        {"contract_id": "24GH0185", "evidence_type": "award_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "MUNICIPAL HALL", "ESTANCIA"], "limitation": "The PMR reports an award date but is not the underlying Notice of Award."}
+      ]
+    },
+    {
+      "source_id": "dpwh-palawan-ii-indicative-app-2024",
+      "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/GAA/APP/indicative_app_2024_cw.pdf",
+      "document_type": "annual_procurement_plan",
+      "bindings": [
+        {"contract_id": "24EF0068", "evidence_type": "procurement_plan", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "BANGCALAAN", "BALABAC"], "limitation": "This is an indicative procurement plan and does not prove the final procurement schedule."}
+      ]
+    },
+    {
+      "source_id": "dpwh-cpes-2024-q3",
+      "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/references/cpes_consolidation_ims_3rd_qtr.pdf",
+      "document_type": "constructors_performance_report",
+      "bindings": [
+        {"contract_id": "24IH0050", "evidence_type": "completion_certificate", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "DATAG", "LAVEZARES"], "limitation": "CPES reports evaluation and delivery fields but is not a completion certificate."}
+      ]
+    },
+    {
+      "source_id": "dpwh-palawan-i-pmr-2024-h1",
+      "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/pmr/palawan1stdeopmrcivilworksandgoodsconsultingservices1stsemester2024revised.pdf",
+      "document_type": "procurement_monitoring_report",
+      "bindings": [
+        {"contract_id": "24EE0090", "evidence_type": "procurement_monitoring_report", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "CULASIAN", "DUMARAN"]},
+        {"contract_id": "24EE0090", "evidence_type": "award_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "CULASIAN", "DUMARAN"], "limitation": "The PMR reports an award date but is not the underlying Notice of Award."},
+        {"contract_id": "24EE0090", "evidence_type": "completion_certificate", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "CULASIAN", "DUMARAN"], "limitation": "The PMR reports completion fields but is not a completion certificate."}
+      ]
+    },
+    {
+      "source_id": "dpwh-bulacan-i-app-2024-h1",
+      "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/GAA/APP/fy_2024_final_app_non-cse_dpwh_bulacan_1st_deo_updated_1st_semester.pdf",
+      "document_type": "annual_procurement_plan",
+      "bindings": [
+        {"contract_id": "24CC0442", "evidence_type": "procurement_plan", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "TIAONG", "GUIGUINTO"]}
+      ]
+    },
+    {
+      "source_id": "dpwh-bulacan-i-pmr-2024-h1",
+      "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/pmr/pmr1stsemestercy2024dpwhbulacan1stdeo.pdf",
+      "document_type": "procurement_monitoring_report",
+      "bindings": [
+        {"contract_id": "24CC0442", "evidence_type": "procurement_monitoring_report", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "TIAONG", "GUIGUINTO"]},
+        {"contract_id": "24CC0442", "evidence_type": "award_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "TIAONG", "GUIGUINTO"], "limitation": "The PMR reports an award date but is not the underlying Notice of Award."}
+      ]
+    },
+    {
+      "source_id": "dpwh-quezon-i-pmr-2025-h1",
+      "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/pmr/07062023gppb-prescribed-pmr-fy-2025-civilworks.pdf",
+      "document_type": "procurement_monitoring_report",
+      "bindings": [
+        {"contract_id": "25DK0018", "evidence_type": "procurement_monitoring_report", "evidence_class": "official_artifact", "identity_terms": ["MULTI-PURPOSE BUILDING", "CABUNGALUNAN", "BURDEOS"]},
+        {"contract_id": "25DK0018", "evidence_type": "award_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "CABUNGALUNAN", "BURDEOS"], "limitation": "The PMR reports an award date but is not the underlying Notice of Award."},
+        {"contract_id": "25DK0018", "evidence_type": "completion_certificate", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "CABUNGALUNAN", "BURDEOS"], "limitation": "The PMR reports completion fields but is not a completion certificate."}
+      ]
+    },
+    {
+      "source_id": "dpwh-mm-iii-app-2024-h2",
+      "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/GAA/APP/mm3deo_updated_annual_procurement_plan_fy2024_as_of_second_semester.pdf",
+      "document_type": "annual_procurement_plan",
+      "bindings": [
+        {"contract_id": "24OD0280", "evidence_type": "procurement_plan", "evidence_class": "identity_conflict", "identity_terms": ["WATER SUPPLY SYSTEM", "BIGNAY"], "limitation": "The APP assigns 24OD0280 to a water-supply project while a DPWH bidding document uses it for the Laon multipurpose building."},
+        {"contract_id": "24OD0281", "evidence_type": "procurement_plan", "evidence_class": "identity_conflict", "identity_terms": ["MULTI-PURPOSE BUILDING", "ACES CODE", "UGONG"], "limitation": "The APP assigns the DepEd Malinta project to 24OD0279 and assigns 24OD0281 to a different Ugong project."}
+      ]
+    },
+    {
+      "source_id": "dpwh-mm-iii-bidding-24od0280",
+      "source_url": "https://www.dpwh.gov.ph/DPWH/sites/default/files/webform/civil_works/advertisement/2024_bid_docs_pbd_24.0280.pdf",
+      "document_type": "bidding_documents",
+      "bindings": [
+        {"contract_id": "24OD0280", "evidence_type": "bid_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "LAON", "VEIENTE REALES"], "limitation": "The archived bidding document is not the bid notice and conflicts with the APP identity for this contract number."}
+      ]
+    },
+    {
+      "source_id": "dpwh-mm-iii-bidding-25od0267",
+      "source_url": "https://www.dpwh.gov.ph/dpwh/sites/default/files/webform/civil_works/advertisement/2025_bid_docs_25.0267.pdf",
+      "document_type": "bidding_documents",
+      "bindings": [
+        {"contract_id": "25OD0267", "evidence_type": "bid_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "VILLA REFORM", "CALOOCAN"], "limitation": "The archived bidding document is not the bid notice and conflicts with the APP identity for this contract number."}
+      ]
+    },
+    {
+      "source_id": "dpwh-mm-iii-app-2025",
+      "source_url": "https://dpwh.gov.ph/dpwh/sites/default/files/GAA/APP/mm3deo_final_annual_procurement_plan_fy2025.pdf",
+      "document_type": "annual_procurement_plan",
+      "bindings": [
+        {"contract_id": "25OD0267", "evidence_type": "procurement_plan", "evidence_class": "identity_conflict", "identity_terms": ["FLOOD CONTROL", "POLO RIVER", "VALENZUELA"], "limitation": "The APP assigns 25OD0267 to flood-control work while a DPWH bidding document uses it for a Caloocan multipurpose building."}
+      ]
+    },
+    {
+      "source_id": "dpwh-region-viii-bidding-24i00375",
+      "source_url": "https://dpwh.gov.ph/dpwh/sites/default/files/webform/civil_works/advertisement/24i00375_-bidding_documents.pdf",
+      "document_type": "bidding_documents",
+      "bindings": [
+        {"contract_id": "24I00375", "evidence_type": "bid_notice", "evidence_class": "official_summary", "identity_terms": ["MULTI-PURPOSE BUILDING", "SPORTS CENTER", "TOLOSA"], "limitation": "The archived bidding document is not the bid notice."}
+      ]
+    }
+  ]
+}

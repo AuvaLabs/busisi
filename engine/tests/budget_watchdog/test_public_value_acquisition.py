@@ -58,9 +58,11 @@ def test_builds_complete_targeted_queue_without_promoting_leads() -> None:
         "candidate_count": 2,
         "task_count": 44,
         "verified_archived": 0,
+        "official_summary_archived": 0,
         "secondary_exact": 1,
         "source_media_archived": 1,
         "pending": 42,
+        "quarantined": 0,
     }
     candidates = {item["contract_id"]: item for item in snapshot["candidates"]}
     assert candidates["25AA0001"]["gate_counts"]["cost_delivery"] == {
@@ -130,3 +132,68 @@ def test_writes_private_queue_with_integrity_metadata(tmp_path: Path) -> None:
         assert json.loads(metadata["source_identities"])["lifecycle_queue_sha256"] == "b" * 64
     finally:
         connection.close()
+
+
+def test_applies_official_records_and_quarantines_conflicts() -> None:
+    lifecycle = _lifecycle("24DD0136", award_status="secondary_exact")
+    lifecycle.extend(_lifecycle("24OD0280", award_status="secondary_exact"))
+    review = {
+        "contracts": {
+            "24DD0136": {"state": "official_source_archived"},
+            "24OD0280": {"state": "source_conflict_quarantined"},
+        },
+        "records": [
+            {
+                "contract_id": "24DD0136",
+                "evidence_type": "procurement_monitoring_report",
+                "status": "official_artifact_archived",
+                "source_url": "https://www.dpwh.gov.ph/dpwh/pmr.pdf",
+                "artifact_sha256": "c" * 64,
+            },
+            {
+                "contract_id": "24DD0136",
+                "evidence_type": "award_notice",
+                "status": "official_summary_archived",
+                "source_url": "https://www.dpwh.gov.ph/dpwh/pmr.pdf",
+                "artifact_sha256": "c" * 64,
+            },
+            {
+                "contract_id": "24OD0280",
+                "evidence_type": "procurement_plan",
+                "status": "source_conflict_quarantined",
+                "source_url": "https://www.dpwh.gov.ph/dpwh/app.pdf",
+                "artifact_sha256": "d" * 64,
+                "limitation": "Official sources associate the ID with different projects.",
+            },
+        ],
+    }
+
+    snapshot = build_public_value_acquisition(
+        [_candidate("24DD0136"), _candidate("24OD0280")],
+        lifecycle,
+        project_media={},
+        checked_at="2026-11-05T04:00:00+00:00",
+        source_identities={"lifecycle_queue_sha256": "b" * 64},
+        official_review=review,
+    )
+
+    assert snapshot["summary"] == {
+        "candidate_count": 2,
+        "task_count": 44,
+        "verified_archived": 1,
+        "official_summary_archived": 1,
+        "secondary_exact": 1,
+        "source_media_archived": 0,
+        "pending": 40,
+        "quarantined": 1,
+    }
+    candidates = {item["contract_id"]: item for item in snapshot["candidates"]}
+    assert candidates["24DD0136"]["assessment_state"] == "cannot_assess_from_current_evidence"
+    assert candidates["24OD0280"]["assessment_state"] == "source_conflict_quarantined"
+    conflict = next(
+        item
+        for item in snapshot["tasks"]
+        if item["task_id"] == "24OD0280:procurement_plan"
+    )
+    assert conflict["status"] == "quarantined"
+    assert conflict["artifact_sha256"] == "d" * 64

@@ -188,10 +188,86 @@ def _apply_project_media(
     return result
 
 
+def _official_status(status: str) -> str:
+    return {
+        "official_artifact_archived": "verified_archived",
+        "official_summary_archived": "official_summary_archived",
+        "source_conflict_quarantined": "quarantined",
+    }.get(status, "")
+
+
+def _official_note(record: dict[str, Any], status: str) -> str:
+    if status == "verified_archived":
+        return "The exact official artifact was archived and passed identity checks."
+    if status == "official_summary_archived":
+        return (
+            "An archived official summary reports this stage. It is not the underlying "
+            "notice, signed contract, certificate, or receipt."
+        )
+    return str(record.get("limitation") or "Conflicting official identity evidence is quarantined.")
+
+
+def _official_records(
+    review: dict[str, Any] | None,
+    candidate_ids: tuple[str, ...],
+) -> dict[tuple[str, str], list[dict[str, Any]]]:
+    if review is None:
+        return {}
+    contracts = review.get("contracts")
+    records = review.get("records")
+    if not isinstance(contracts, dict) or set(contracts) != set(candidate_ids):
+        raise ValueError("official review contract set must match the targeted queue")
+    if not isinstance(records, list):
+        raise ValueError("official review records must be a list")
+    indexed: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for record in records:
+        if not isinstance(record, dict):
+            raise ValueError("official review records must be objects")
+        key = (record.get("contract_id"), record.get("evidence_type"))
+        if key[0] not in candidate_ids or key[1] not in TASK_INDEX:
+            raise ValueError("official review record is outside the targeted queue")
+        status = _official_status(str(record.get("status") or ""))
+        source_url = record.get("source_url")
+        sha256 = record.get("artifact_sha256")
+        if not status or not isinstance(source_url, str) or not source_url.startswith("https://"):
+            raise ValueError("official review record has an invalid state or source URL")
+        if not isinstance(sha256, str) or SHA256.fullmatch(sha256) is None:
+            raise ValueError("official review record requires an archived artifact digest")
+        indexed[(str(key[0]), str(key[1]))].append(record)
+    return indexed
+
+
+def _apply_official_records(
+    tasks: list[dict[str, Any]],
+    records: dict[tuple[str, str], list[dict[str, Any]]],
+    contract_id: str,
+) -> list[dict[str, Any]]:
+    priority = {"verified_archived": 1, "official_summary_archived": 2, "quarantined": 3}
+    result = []
+    for task in tasks:
+        matches = records.get((contract_id, task["evidence_type"]), [])
+        if not matches:
+            result.append(task)
+            continue
+        selected = max(matches, key=lambda row: priority[_official_status(row["status"])])
+        status = _official_status(selected["status"])
+        result.append(
+            {
+                **task,
+                "status": status,
+                "source_url": selected["source_url"],
+                "artifact_sha256": selected["artifact_sha256"],
+                "evidence_note": _official_note(selected, status),
+            }
+        )
+    return result
+
+
 def _project_tasks(
     contract_id: str,
     lifecycle: dict[tuple[str, str], dict[str, Any]],
     media: dict[str, Any] | None,
+    official_records: dict[tuple[str, str], list[dict[str, Any]]],
 ) -> list[dict[str, Any]]:
     tasks = []
     for order, (task_id, gate, label) in enumerate(TASK_DEFINITIONS, start=1):
@@ -199,13 +275,15 @@ def _project_tasks(
         if task_id in LIFECYCLE_STAGES:
             task = _lifecycle_task(task, lifecycle[(contract_id, task_id)])
         tasks.append(task)
-    return _apply_project_media(tasks, media)
+    with_media = _apply_project_media(tasks, media)
+    return _apply_official_records(with_media, official_records, contract_id)
 
 
 def _counts(tasks: list[dict[str, Any]]) -> dict[str, int]:
     counts = Counter(item["status"] for item in tasks)
     ordered = (
         "verified_archived",
+        "official_summary_archived",
         "secondary_exact",
         "source_media_archived",
         "pending",
@@ -228,7 +306,11 @@ def _candidate_summary(candidate: dict[str, Any], tasks: list[dict[str, Any]]) -
         "task_count": len(tasks),
         "status_counts": _counts(tasks),
         "gate_counts": {gate: _counts(gate_tasks[gate]) for gate in GATE_ORDER},
-        "assessment_state": "cannot_assess_from_current_evidence",
+        "assessment_state": (
+            "source_conflict_quarantined"
+            if any(item["status"] == "quarantined" for item in tasks)
+            else "cannot_assess_from_current_evidence"
+        ),
     }
 
 
@@ -239,6 +321,7 @@ def build_public_value_acquisition(
     project_media: dict[str, dict[str, Any]],
     checked_at: str,
     source_identities: dict[str, str],
+    official_review: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the private task inventory and its public-safe coverage summary."""
 
@@ -247,11 +330,17 @@ def build_public_value_acquisition(
     unknown_media = set(project_media) - set(candidate_ids)
     if unknown_media:
         raise ValueError(f"project media is outside the targeted queue: {sorted(unknown_media)}")
+    official_records = _official_records(official_review, candidate_ids)
     all_tasks: list[dict[str, Any]] = []
     summaries = []
     for candidate in candidates:
         contract_id = candidate["contract_id"]
-        tasks = _project_tasks(contract_id, lifecycle, project_media.get(contract_id))
+        tasks = _project_tasks(
+            contract_id,
+            lifecycle,
+            project_media.get(contract_id),
+            official_records,
+        )
         all_tasks.extend(tasks)
         summaries.append(_candidate_summary(candidate, tasks))
     gate_tasks = {gate: [task for task in all_tasks if task["gate"] == gate] for gate in GATE_ORDER}
@@ -267,9 +356,13 @@ def build_public_value_acquisition(
             "candidate_count": len(candidates),
             "task_count": len(all_tasks),
             "verified_archived": _counts(all_tasks).get("verified_archived", 0),
+            "official_summary_archived": _counts(all_tasks).get(
+                "official_summary_archived", 0
+            ),
             "secondary_exact": _counts(all_tasks).get("secondary_exact", 0),
             "source_media_archived": _counts(all_tasks).get("source_media_archived", 0),
             "pending": _counts(all_tasks).get("pending", 0),
+            "quarantined": _counts(all_tasks).get("quarantined", 0),
         },
         "gate_counts": {gate: _counts(gate_tasks[gate]) for gate in GATE_ORDER},
         "candidates": sorted(summaries, key=lambda item: item["contract_id"]),

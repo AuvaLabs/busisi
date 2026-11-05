@@ -31,6 +31,7 @@ IMAGE_MANIFEST = DATA / "project-image-d1-bundle" / "manifest.json"
 OUTPUT = DATA / "public-value-acquisition"
 SNAPSHOT_PATH = OUTPUT / "snapshot.json"
 QUEUE_PATH = OUTPUT / "queue.sqlite3"
+OFFICIAL_REVIEW = DATA / "official-procurement-evidence" / "review.json"
 DELIVERY_SHA256 = "5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123"
 AWARD_SHA256 = "9bfa9e7cbf5041dc3b51a4c2742e60a43d1615f119955581d4b155bf3a6d4a8b"
 ARCHIVE_HASH = re.compile(r"-([0-9a-f]{64})\.jpg$")
@@ -106,17 +107,29 @@ def build_snapshot() -> dict[str, Any]:
     lifecycle = _lifecycle_tasks(candidate_ids)
     project_media, image_release_id, released_at = _project_media(set(candidate_ids))
     lifecycle_digest = _canonical_digest(lifecycle)
+    official_review = None
+    checked_at = released_at
+    official_identities: dict[str, str] = {}
+    if OFFICIAL_REVIEW.is_file():
+        official_review = json.loads(OFFICIAL_REVIEW.read_text(encoding="utf-8"))
+        checked_at = str(official_review["checked_at"])
+        official_identities = {
+            "official_procurement_catalog_sha256": str(official_review["catalog_sha256"]),
+            "official_procurement_review_sha256": _canonical_digest(official_review),
+        }
     return build_public_value_acquisition(
         candidates,
         lifecycle,
         project_media=project_media,
-        checked_at=released_at,
+        checked_at=checked_at,
         source_identities={
             "award_snapshot_sha256": AWARD_SHA256,
             "delivery_snapshot_sha256": DELIVERY_SHA256,
             "project_image_release_id": image_release_id,
             "targeted_lifecycle_state_sha256": lifecycle_digest,
+            **official_identities,
         },
+        official_review=official_review,
     )
 
 

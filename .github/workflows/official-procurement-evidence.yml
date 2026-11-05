@@ -1,0 +1,40 @@
+name: Official procurement evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-and-reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install acquisition dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes poppler-utils
+          pip install -r requirements.txt
+
+      - name: Acquire and reconcile official documents
+        run: >-
+          PYTHONPATH=. python3 ops/harness/budget_watchdog_official_procurement.py
+          --output evidence-output
+
+      - name: Upload immutable evidence package
+        uses: actions/upload-artifact@v6
+        with:
+          name: official-procurement-evidence
+          retention-days: 3
+          if-no-files-found: error
+          path: |
+            evidence-output/review.json
+            evidence-output/archive
