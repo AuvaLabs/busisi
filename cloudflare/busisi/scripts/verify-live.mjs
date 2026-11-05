@@ -27,6 +27,11 @@ const expectedStageResearch = Object.freeze({
   package_sha256: '7cd2b9fc154cdae4228232fae5fd2446bb2b88c5bd82f56823d9e1afd77cca1a',
   story_id: 'fy2027-nep-house-changes-2026',
 });
+const expectedConcentrationResearch = Object.freeze({
+  version: 1,
+  package_sha256: 'b2a09440ee641fd5f6693401e7f18ed0392b83451e0afd94361a8dc5d6f979ed',
+  story_id: 'fy2027-change-concentration-2026',
+});
 const expectedChanges = Object.freeze({
   record_count: 20_431,
   quarantine_count: 426,
@@ -462,6 +467,28 @@ const verifyPages = async () => {
   expectIncludes(stageResearchText, 'not proof of an insertion', 'stage research boundary');
   expectIncludes(stageResearchText, '/data/research/fy2027-nep-house-changes/v1/', 'stage research version');
 
+  const concentrationResearch = await request('/research/fy2027-change-concentration/');
+  expectStatus(concentrationResearch, 200, '/research/fy2027-change-concentration/');
+  const concentrationResearchText = await concentrationResearch.text();
+  expectIncludes(concentrationResearchText, '20,431', 'concentration research row control');
+  expectIncludes(concentrationResearchText, '9,283', 'concentration research changed-row control');
+  expectIncludes(
+    concentrationResearchText,
+    'not evidence of wrongdoing',
+    'concentration research boundary',
+  );
+  expectIncludes(
+    concentrationResearchText,
+    '/data/research/fy2027-change-concentration/v1/',
+    'concentration research version',
+  );
+
+  const researchHistory = await request('/research/releases/');
+  expectStatus(researchHistory, 200, '/research/releases/');
+  const researchHistoryText = await researchHistory.text();
+  expectIncludes(researchHistoryText, '4 published packages', 'research release history');
+  expectIncludes(researchHistoryText, 'No corrections have been filed', 'research corrections state');
+
   const robots = await request('/robots.txt');
   expectStatus(robots, 200, '/robots.txt');
   const robotsText = await robots.text();
@@ -473,7 +500,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/fy2027-nep-house-changes/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${publicOrigin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -499,12 +526,22 @@ const verifyPages = async () => {
     '/data/research/fy2027-nep-house-changes/v1/editorial-package.json',
     'llms stage-change editorial package',
   );
+  expectIncludes(
+    llmsText,
+    '/data/research/fy2027-change-concentration/v1/editorial-package.json',
+    'llms concentration editorial package',
+  );
+  expectIncludes(
+    llmsText,
+    '/data/research/release-history.json',
+    'llms research release history',
+  );
 
   const indexNow = await request(`/${indexNowKey}.txt`);
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -669,6 +706,38 @@ const verifyData = async () => {
     || stageRelease.data?.story?.editorial_status !== 'ready'
     || stageManifest.package_sha256 !== expectedStageResearch.package_sha256) {
     fail('stage research release: story, package, or static manifest is inconsistent');
+  }
+  const concentrationResearchEntry = researchCatalogue.data?.find(({ story_id: id }) => (
+    id === expectedConcentrationResearch.story_id
+  ));
+  if (concentrationResearchEntry?.version !== expectedConcentrationResearch.version
+    || concentrationResearchEntry?.package_sha256 !== expectedConcentrationResearch.package_sha256
+    || !concentrationResearchEntry?.editorial_package_url?.endsWith('/v1/editorial-package.json')) {
+    fail('concentration research catalogue: current package identity is missing');
+  }
+  const concentrationRelease = await readJson('/api/v1/research/fy2027-change-concentration');
+  const concentrationManifest = await readJson(
+    '/data/research/fy2027-change-concentration/v1/manifest.json',
+  );
+  if (concentrationRelease.data?.manifest?.package_sha256
+      !== expectedConcentrationResearch.package_sha256
+    || concentrationRelease.data?.story?.editorial_status !== 'ready'
+    || concentrationManifest.package_sha256 !== expectedConcentrationResearch.package_sha256) {
+    fail('concentration research release: story, package, or static manifest is inconsistent');
+  }
+  const researchHistory = await readJson('/api/v1/research/history');
+  const staticResearchHistory = await readJson('/data/research/release-history.json');
+  for (const [key, expected] of Object.entries({
+    release_count: 4,
+    story_count: 3,
+    correction_count: 0,
+  })) {
+    if (researchHistory.data?.[key] !== expected || staticResearchHistory[key] !== expected) {
+      fail(`research release history: ${key} expected ${expected}`);
+    }
+  }
+  if (JSON.stringify(researchHistory.data) !== JSON.stringify(staticResearchHistory)) {
+    fail('research release history: API and static publication differ');
   }
 
   const imageCoverage = (await readJson('/api/v1/coverage-status')).data;

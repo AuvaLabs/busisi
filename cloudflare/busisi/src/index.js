@@ -83,9 +83,11 @@ import {
 } from './accountability-query.js';
 import { getAlertFeed } from './alerts-query.js';
 import {
+  fy2027ChangeConcentrationRelease,
   fy2027StageChangesRelease,
   multipurposeBuildingsRelease,
   researchCatalogue,
+  researchReleaseHistory,
 } from './research-data.js';
 
 const API_PREFIX = '/api/v1/projects';
@@ -208,6 +210,16 @@ const apiResponse = async (request, environment, url) => {
       data: researchCatalogue,
     });
   }
+  if (url.pathname === '/api/v1/research/history') {
+    return jsonResponse({
+      meta: {
+        release_count: researchReleaseHistory.release_count,
+        story_count: researchReleaseHistory.story_count,
+        review_scope: 'published_research_release_history',
+      },
+      data: researchReleaseHistory,
+    });
+  }
   if (url.pathname === '/api/v1/research/multipurpose-buildings') {
     return jsonResponse({
       meta: {
@@ -226,6 +238,16 @@ const apiResponse = async (request, environment, url) => {
         review_scope: 'published_fy2027_nep_house_project_list_comparison',
       },
       data: fy2027StageChangesRelease,
+    });
+  }
+  if (url.pathname === '/api/v1/research/fy2027-change-concentration') {
+    return jsonResponse({
+      meta: {
+        story_id: fy2027ChangeConcentrationRelease.manifest.story_id,
+        version: fy2027ChangeConcentrationRelease.manifest.version,
+        review_scope: 'published_fy2027_project_list_concentration',
+      },
+      data: fy2027ChangeConcentrationRelease,
     });
   }
   if (url.pathname === '/api/v1/public-services-summary') {

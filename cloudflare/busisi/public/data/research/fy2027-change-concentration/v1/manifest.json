@@ -1,0 +1,66 @@
+{
+  "canonical_url": "https://busisi.org/research/fy2027-change-concentration/",
+  "data_cutoff": "2026-10-26",
+  "editorial_ready": true,
+  "files": [
+    {
+      "bytes": 53356,
+      "path": "chart-data.json",
+      "sha256": "3f5e8b00f4686024bab662e74b4fd60f1aa6662868a2cd9a077c690039d2a654"
+    },
+    {
+      "bytes": 2906,
+      "path": "claims.json",
+      "sha256": "3572d919e7ba182bca66501879d0dd041192cc86b4960452e75ea50be59c5710"
+    },
+    {
+      "bytes": 2437,
+      "path": "editorial-package.json",
+      "sha256": "e4bed5e735c567ef11939e8aa86a6dcf99290f6304ab7caf1a8fed778653ce9e"
+    },
+    {
+      "bytes": 585,
+      "path": "findings.json",
+      "sha256": "77a8ae36f2cd51c62ff8ecc1d3343b88eb563213c88e4ed18ff7dfd3cc0143fb"
+    },
+    {
+      "bytes": 726,
+      "path": "investigations.json",
+      "sha256": "cc51fadeba36ac0b1641221efe07204610004c0400abdf08b3ee5181e7814157"
+    },
+    {
+      "bytes": 1286,
+      "path": "limitations.json",
+      "sha256": "c8160ca582efe1fdd9b11f3ac1a604c04bedb8c7644662ae58fc0eb9f85b9b90"
+    },
+    {
+      "bytes": 25986,
+      "path": "project-examples.json",
+      "sha256": "12fb7f4f3e2fd235a938569d166346b184a268808bf78dfd2be47629d74b54f4"
+    },
+    {
+      "bytes": 4632,
+      "path": "sources.json",
+      "sha256": "c2f50ad88acc7e9c49c8924af6ac4db85ac392df3fc3c12710672c0f27ef01e0"
+    },
+    {
+      "bytes": 3286,
+      "path": "story.json",
+      "sha256": "0fcbf4dde4fdd1230d3dbe0a7df3b42565f956ea56f49f98658b70fea5215f65"
+    }
+  ],
+  "headline": "Where are FY2027 House-stage project-list changes concentrated?",
+  "max_source_age_days": 7,
+  "methodology_version": "fy2027-change-concentration-v1",
+  "package_sha256": "b2a09440ee641fd5f6693401e7f18ed0392b83451e0afd94361a8dc5d6f979ed",
+  "published_at": "2026-11-05",
+  "schema_version": "1.1",
+  "slug": "fy2027-change-concentration",
+  "source_artifact_sha256": "f47cc042ae08efb6883854b23b230dda25cba073765edfe7aeb84ce509b32177",
+  "source_checked_at": "2026-11-03",
+  "source_commit": "a0caa778442cdae5583f5a006ea7401dab00e5ac",
+  "status": "published",
+  "story_id": "fy2027-change-concentration-2026",
+  "supersedes": null,
+  "version": 1
+}

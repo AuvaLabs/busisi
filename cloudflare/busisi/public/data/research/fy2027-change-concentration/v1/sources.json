@@ -1,0 +1,98 @@
+[
+  {
+    "access_provider": "BetterGov",
+    "id": "bettergov-hgab-overview-2027",
+    "origin_url": "https://github.com/csiiiv/DPWH-NEP-HB-2027-ANALYSIS",
+    "publisher": "BetterGov PH",
+    "retrieved_at": "2026-11-03",
+    "scope": "FY2027 NEP-to-House comparison overview and control totals",
+    "sha256": "f47cc042ae08efb6883854b23b230dda25cba073765edfe7aeb84ce509b32177",
+    "source_kind": "curated_official_extract",
+    "source_url": "https://budget.bettergov.ph/api/v1/hgab/2027"
+  },
+  {
+    "access_provider": "BetterGov",
+    "id": "document-hb10858-2r-vol-ib",
+    "origin_url": "https://www.congress.gov.ph/cso",
+    "publisher": "House of Representatives",
+    "retrieved_at": "2026-11-03",
+    "scope": "House Bill 10858, Volume I-B: the three project lists, second reading",
+    "sha256": "a82800c4cc2684566a37f7780d8f9131d2e7b2c97444d335d94df012dec065b6",
+    "source_kind": "curated_official_extract",
+    "source_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-2r-vol-ib.pdf"
+  },
+  {
+    "access_provider": "BetterGov",
+    "id": "document-hb10858-2r-vol-ic",
+    "origin_url": "https://www.congress.gov.ph/cso",
+    "publisher": "House of Representatives",
+    "retrieved_at": "2026-11-03",
+    "scope": "House Bill 10858, Volume I-C: DPWH project list and program totals, second reading",
+    "sha256": "0b790d6018db59abab648486c5068108a42ff20a33facc8e21ace0bbedf2d15f",
+    "source_kind": "curated_official_extract",
+    "source_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-2r-vol-ic.pdf"
+  },
+  {
+    "access_provider": "BetterGov",
+    "id": "document-hb10858-3r-vol-ib",
+    "origin_url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027",
+    "publisher": "House of Representatives",
+    "retrieved_at": "2026-11-03",
+    "scope": "House Bill 10858, Volume I-B: the three project lists, third reading",
+    "sha256": "4cc0f17e472d1af380ea6d3972561f6bb241137826fd85ed7e7e70bcd92986b9",
+    "source_kind": "curated_official_extract",
+    "source_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-3r-vol-ib.pdf"
+  },
+  {
+    "access_provider": "BetterGov",
+    "id": "document-hb10858-3r-vol-ic",
+    "origin_url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027",
+    "publisher": "House of Representatives",
+    "retrieved_at": "2026-11-03",
+    "scope": "House Bill 10858, Volume I-C: DPWH project list and program totals, third reading",
+    "sha256": "48cb7a11e391bd4da89d4f47cf39a2eba8fe9bfe636dba101c8284b224ac1b1b",
+    "source_kind": "curated_official_extract",
+    "source_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-3r-vol-ic.pdf"
+  },
+  {
+    "access_provider": "BetterGov",
+    "id": "document-nep2027-vol-iib",
+    "origin_url": "https://www.dbm.gov.ph/wp-content/uploads/NEP2027/DPWH/DPWH.pdf",
+    "publisher": "Department of Budget and Management",
+    "retrieved_at": "2026-11-03",
+    "scope": "NEP 2027, Volume II-B: DPWH",
+    "sha256": "bfc8282de8e3603f347f82aa2be34c25a38147e30aa34c12b11413766b7e7523",
+    "source_kind": "curated_official_extract",
+    "source_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/nep2027-vol-iib.pdf"
+  },
+  {
+    "access_provider": "BetterGov",
+    "id": "document-nep2027-fmr",
+    "publisher": "Department of Budget and Management",
+    "retrieved_at": "2026-11-03",
+    "scope": "NEP 2027: farm-to-market roads list, Department of Agriculture",
+    "sha256": "07355c115f45a84771b8a8ac22711992ea695ea28f0c9c1b2c71879d4a6dc4ba",
+    "source_kind": "curated_official_extract",
+    "source_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/nep2027-fmr.pdf"
+  },
+  {
+    "access_provider": "BetterGov",
+    "id": "document-nep2027-nia",
+    "publisher": "Department of Budget and Management",
+    "retrieved_at": "2026-11-03",
+    "scope": "NEP 2027: irrigation projects list, National Irrigation Administration",
+    "sha256": "eadad324df8539fcc398650da81170b821f83ddb99342c4347f472169b09b632",
+    "source_kind": "curated_official_extract",
+    "source_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/nep2027-nia.pdf"
+  },
+  {
+    "access_provider": "BetterGov",
+    "id": "document-nep2027-hfep",
+    "publisher": "Department of Budget and Management",
+    "retrieved_at": "2026-11-03",
+    "scope": "NEP 2027, Volume II-A: health facilities list, Department of Health",
+    "sha256": "da27367228af63a68a3e26ef617cf538a9f31705403a559da756ce59046c267d",
+    "source_kind": "curated_official_extract",
+    "source_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/nep2027-hfep.pdf"
+  }
+]

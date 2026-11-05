@@ -1,0 +1,21 @@
+[
+  {
+    "claim_ids": [
+      "concentration-total-rows",
+      "concentration-changed-rows"
+    ],
+    "evidence_state": "verified",
+    "id": "changed-row-count",
+    "result": "9,283 rows are not classified as unchanged in the source comparison.",
+    "title": "Document differences affect a minority of compared rows"
+  },
+  {
+    "claim_ids": [
+      "concentration-quarantined"
+    ],
+    "evidence_state": "verified",
+    "id": "quarantine-preserved",
+    "result": "426 ambiguous or scope-review rows remain quarantined.",
+    "title": "Ambiguous rows remain held back"
+  }
+]

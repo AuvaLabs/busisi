@@ -1,7 +1,9 @@
 import {
+  fy2027ChangeConcentrationRelease,
   fy2027StageChangesRelease,
   multipurposeBuildingsRelease,
   researchCatalogue,
+  researchReleaseHistory,
 } from './research-data.js';
 
 const escapeHtml = (value) => String(value)
@@ -48,7 +50,7 @@ export const researchIndexBody = `
   <section class="research-index-intro"><p class="kicker">Research and investigations</p><h1>One public question. An inspectable answer.</h1><p class="lede">Busisi publishes dated research built from acquired public records. Every release identifies its calculations, evidence state, source cutoff, limitations, and correction path.</p></section>
   <section class="research-index-guide" aria-label="How to read Busisi research"><article><span>01</span><h2>Question</h2><p>Start with a question that matters to Filipino citizens.</p></article><article><span>02</span><h2>Investigation</h2><p>Test the available records and preserve what cannot be established.</p></article><article><span>03</span><h2>Evidence</h2><p>Let readers inspect the data, examples, sources, and limits.</p></article></section>
   <section class="research-list" aria-labelledby="published-research"><div><p class="kicker">Published work</p><h2 id="published-research">Current investigations</h2></div>${researchCatalogue.map(researchCard).join('')}</section>
-  <section class="research-boundary"><div><p class="kicker">Publication boundary</p><h2>Drafts are not findings.</h2></div><p>Unpublished topic queues, working notes, rejected leads, scripts, and production instructions are kept outside this public library. A page appears here only after its data and claims pass the release checks.</p></section>`;
+  <section class="research-boundary"><div><p class="kicker">Publication boundary</p><h2>Drafts are not findings.</h2></div><p>Unpublished topic queues, working notes, rejected leads, scripts, and production instructions are kept outside this public library. A page appears here only after its data and claims pass the release checks. <a href="/research/releases/">See corrections and release history.</a></p></section>`;
 
 const regionRows = multipurposeBuildingsRelease.chart_data.regions.map((region) => `<tr>
   <th scope="row">${escapeHtml(region.region)}</th><td>${number(region.ongoing)}</td><td>${number(region.active_pipeline)}</td><td>${number(region.completed)}</td><td>${compactMoney(region.recorded_budget_centavos)}</td>
@@ -154,3 +156,56 @@ export const fy2027StageChangesBody = `
 
     <section class="research-section research-method"><div><p class="kicker">Reproduce the result</p><h2>The article, API, and editorial package share one immutable release.</h2><p>Busisi authenticated the archived overview and source documents, validated every page, and reconciled row counts and money totals before publication.</p><dl><div><dt>Source artifact</dt><dd><code>${escapeHtml(fy2027StageChangesRelease.manifest.source_artifact_sha256)}</code></dd></div><div><dt>Package</dt><dd><code>${escapeHtml(fy2027StageChangesRelease.manifest.package_sha256)}</code></dd></div></dl></div><div class="research-downloads"><a href="/data/research/fy2027-nep-house-changes/v1/manifest.json">Download the research package</a><a href="/data/research/fy2027-nep-house-changes/v1/story.json">Download the finished story</a><a href="/data/research/fy2027-nep-house-changes/v1/editorial-package.json">Open the consumption index</a><a href="/data/research/fy2027-nep-house-changes/v1/chart-data.json">Download chart data</a><a href="/changes/">Explore the change ledger</a><a href="/methodology/">Read the Busisi method</a></div></section>
   </article>`;
+
+const concentrationClaims = new Map(
+  fy2027ChangeConcentrationRelease.claims.map((item) => [item.id, item]),
+);
+const concentrationClaim = (id) => concentrationClaims.get(id);
+const percentFromBasisPoints = (value) => `${Math.floor(value / 100)}.${String(value % 100).padStart(2, '0')}%`;
+const concentrationRows = (items, limit = items.length) => items.slice(0, limit).map((item) => `<tr>
+  <th scope="row">${escapeHtml(item.label)}</th><td>${number(item.house_only)}</td><td>${number(item.publishable_house_only)}</td><td>${percentFromBasisPoints(item.house_only_share_basis_points)}</td><td>${compactMoney(item.house_only_centavos)}</td>
+</tr>`).join('');
+const concentrationExamples = fy2027ChangeConcentrationRelease.project_examples
+  .largest_matched_amount_changes.slice(0, 6).map((item) => `<tr>
+  <th scope="row"><a href="${escapeHtml(item.reader_url)}">${escapeHtml(item.title)}</a><small>${escapeHtml(item.program)} · ${escapeHtml(item.region)}</small></th><td>${escapeHtml(changeLabels[item.change_type])}</td><td>${money(item.nep_centavos)}</td><td>${money(item.house_centavos)}</td>
+</tr>`).join('');
+
+export const fy2027ChangeConcentrationBody = `
+  <article class="research-article">
+    <header class="research-hero"><div><p class="kicker">Budget concentration investigation</p><h1>Where are FY2027 House-stage project-list changes concentrated?</h1><p class="lede">Busisi compared <strong>${number(concentrationClaim('concentration-total-rows').value)}</strong> rows across four project lists, then grouped the document differences by recorded program, region, office, and dataset labels.</p></div><aside><span>Release v${number(fy2027ChangeConcentrationRelease.manifest.version)}</span><dl><div><dt>Published</dt><dd>${escapeHtml(fy2027ChangeConcentrationRelease.manifest.published_at)}</dd></div><div><dt>Data cutoff</dt><dd>${escapeHtml(fy2027ChangeConcentrationRelease.manifest.data_cutoff)}</dd></div><div><dt>Scope</dt><dd>Four project lists</dd></div></dl></aside></header>
+
+    <section class="research-answer"><div><p class="kicker">Direct answer</p><h2>The differences are unevenly distributed, but a cluster is only a place to check.</h2><p>${escapeHtml(concentrationClaim('concentration-changed-rows').statement)} Of those, ${number(concentrationClaim('concentration-house-only').value)} are classified as House-list only. A repeated label can help prioritize source-page review, but it cannot explain who caused a change or why.</p></div><div class="research-metrics"><article><span>Rows compared</span><strong>${number(concentrationClaim('concentration-total-rows').value)}</strong><small>Four lists</small></article><article><span>Not unchanged</span><strong>${number(concentrationClaim('concentration-changed-rows').value)}</strong><small>All difference classes</small></article><article><span>House-list only</span><strong>${number(concentrationClaim('concentration-house-only').value)}</strong><small>Not an insertion finding</small></article><article><span>Quarantined</span><strong>${number(concentrationClaim('concentration-quarantined').value)}</strong><small>Excluded from review leads</small></article></div></section>
+
+    <section class="research-section split-section"><div><p class="kicker">Largest recorded clusters</p><h2>${escapeHtml(concentrationClaim('concentration-top-region').statement)}</h2><p>${escapeHtml(concentrationClaim('concentration-top-program').statement)}</p></div><aside class="research-source-card"><span>What this means</span><p>These labels contain the most House-only comparison rows in their own dimension.</p><span>What this does not mean</span><p>This concentration is not evidence of wrongdoing, political sponsorship, unfairness, or an improper allocation.</p></aside></section>
+
+    <section class="research-section"><div class="research-heading"><p class="kicker">By region label</p><h2>Regional labels with the most House-only rows.</h2><p>Quarantined rows remain visible in the package but do not become findings.</p></div><div class="research-table-wrap"><table><thead><tr><th>Recorded region</th><th>House-only</th><th>Available for review</th><th>Share of House-only rows</th><th>Recorded amount</th></tr></thead><tbody>${concentrationRows(fy2027ChangeConcentrationRelease.chart_data.regions, 12)}</tbody></table></div></section>
+
+    <section class="research-section"><div class="research-heading"><p class="kicker">By program label</p><h2>Program labels identify a narrower document-review queue.</h2></div><div class="research-table-wrap"><table><thead><tr><th>Recorded program</th><th>House-only</th><th>Available for review</th><th>Share of House-only rows</th><th>Recorded amount</th></tr></thead><tbody>${concentrationRows(fy2027ChangeConcentrationRelease.chart_data.programs)}</tbody></table></div></section>
+
+    <section class="research-section"><div class="research-heading"><p class="kicker">By office label</p><h2>Office labels provide administrative context, not responsibility.</h2><p>“Not stated” is preserved rather than guessed. An office label does not establish sponsorship, authorship, control, or benefit.</p></div><div class="research-table-wrap"><table><thead><tr><th>Recorded office</th><th>House-only</th><th>Available for review</th><th>Share of House-only rows</th><th>Recorded amount</th></tr></thead><tbody>${concentrationRows(fy2027ChangeConcentrationRelease.chart_data.offices, 12)}</tbody></table></div></section>
+
+    <section class="research-section"><div class="research-heading"><p class="kicker">Largest matched amount changes</p><h2>Amount movement ranks records for inspection, not suspicion.</h2><p>Each example matched across both documents. The values are proposed authority, not releases, payments, final cost, or outcome.</p></div><div class="research-table-wrap"><table class="example-table"><thead><tr><th>Project record</th><th>Class</th><th>NEP amount</th><th>House amount</th></tr></thead><tbody>${concentrationExamples}</tbody></table></div></section>
+
+    <section class="research-section evidence-callout"><div><p class="kicker">Evidence boundary</p><h2>A ranking cannot answer motive or final outcome.</h2><p>Busisi still needs later Senate, bicameral, enacted GAA, release, procurement, payment, and implementation evidence to establish whether a House-stage difference survived or produced public value.</p></div><aside><strong>Use this page to</strong><p>Select a bounded group, open its individual records, compare source pages, and document what later evidence confirms or contradicts.</p></aside></section>
+
+    <section class="research-section research-method"><div><p class="kicker">Reproduce the result</p><h2>Every table comes from the same authenticated release.</h2><p>Dimensions overlap and must not be added together. Counts, examples, limitations, and source identities are available in the immutable package.</p><dl><div><dt>Source artifact</dt><dd><code>${escapeHtml(fy2027ChangeConcentrationRelease.manifest.source_artifact_sha256)}</code></dd></div><div><dt>Package</dt><dd><code>${escapeHtml(fy2027ChangeConcentrationRelease.manifest.package_sha256)}</code></dd></div></dl></div><div class="research-downloads"><a href="/data/research/fy2027-change-concentration/v1/manifest.json">Download the research package</a><a href="/data/research/fy2027-change-concentration/v1/story.json">Download the finished story</a><a href="/data/research/fy2027-change-concentration/v1/editorial-package.json">Open the consumption index</a><a href="/data/research/fy2027-change-concentration/v1/chart-data.json">Download chart data</a><a href="/changes/">Explore the change ledger</a><a href="/research/releases/">See release history</a></div></section>
+  </article>`;
+
+const historyLabels = {
+  initial: 'Initial release',
+  editorial_expansion: 'Editorial expansion',
+  correction: 'Correction',
+  data_update: 'Data update',
+};
+const historyRows = researchReleaseHistory.releases.map((item) => `<article class="research-card">
+  <header><span>${escapeHtml(historyLabels[item.change_type])}</span><time datetime="${escapeHtml(item.published_at)}">${escapeHtml(item.published_at)}</time></header>
+  <h2><a href="${escapeHtml(item.canonical_url)}">${escapeHtml(item.headline)}</a></h2><p>${escapeHtml(item.summary)}</p>
+  <dl><div><dt>Version</dt><dd>${number(item.version)}</dd></div><div><dt>Findings changed?</dt><dd>${item.affects_findings ? 'Yes' : 'No'}</dd></div></dl>
+  <a class="research-action" href="${escapeHtml(item.manifest_url)}">Inspect release manifest</a>
+</article>`).join('');
+
+export const researchReleaseHistoryBody = `
+  <section class="research-index-intro"><p class="kicker">Research accountability</p><h1>Corrections and release history</h1><p class="lede">Busisi keeps older packages available and explains whether a new version corrects an error, updates data, or only expands presentation.</p></section>
+  <section class="research-answer"><div><p class="kicker">Current register</p><h2>${number(researchReleaseHistory.release_count)} published packages across ${number(researchReleaseHistory.story_count)} investigations.</h2><p>${escapeHtml(researchReleaseHistory.policy)}</p></div><div class="research-metrics"><article><span>Published packages</span><strong>${number(researchReleaseHistory.release_count)}</strong></article><article><span>Investigations</span><strong>${number(researchReleaseHistory.story_count)}</strong></article><article><span>Corrections</span><strong>${number(researchReleaseHistory.correction_count)}</strong></article></div></section>
+  ${researchReleaseHistory.correction_count === 0 ? '<section class="research-boundary"><div><p class="kicker">Correction status</p><h2>No corrections have been filed.</h2></div><p>An editorial expansion is not counted as a correction when the calculations and supported findings are unchanged.</p></section>' : ''}
+  <section class="research-list" aria-labelledby="release-register"><div><p class="kicker">Immutable register</p><h2 id="release-register">Every published version</h2></div>${historyRows}</section>`;

@@ -70,6 +70,8 @@ test('publishes a research library and the multipurpose-building investigation',
   assert.match(libraryDocument, /Research and investigations/);
   assert.match(libraryDocument, /href="\/research\/multipurpose-buildings\//);
   assert.match(libraryDocument, /href="\/research\/fy2027-nep-house-changes\//);
+  assert.match(libraryDocument, /href="\/research\/fy2027-change-concentration\//);
+  assert.match(libraryDocument, /href="\/research\/releases\//);
   assert.match(libraryDocument, /Data cutoff/);
 
   const article = await fetchPath('/research/multipurpose-buildings/');
@@ -104,6 +106,33 @@ test('publishes the FY2027 NEP-to-House investigation with evidence limits', asy
   assert.match(document, /"@type":"AnalysisNewsArticle"/);
 });
 
+test('publishes the FY2027 change-concentration investigation without political inference', async () => {
+  const article = await fetchPath('/research/fy2027-change-concentration/');
+  const document = await article.text();
+  assert.equal(article.status, 200);
+  assert.match(document, /20,431/);
+  assert.match(document, /9,283/);
+  assert.match(document, /6,954/);
+  assert.match(document, /426/);
+  assert.match(document, /Region IV-A/);
+  assert.match(document, /Convergence and Special Support Program/);
+  assert.match(document, /not evidence of wrongdoing/i);
+  assert.match(document, /fy2027-change-concentration\/v1\/manifest\.json/);
+  assert.match(document, /"@type":"AnalysisNewsArticle"/);
+});
+
+test('publishes an explicit corrections and immutable release history', async () => {
+  const response = await fetchPath('/research/releases/');
+  const document = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(document, /Corrections and release history/);
+  assert.match(document, /4 published packages/);
+  assert.match(document, /No corrections have been filed/);
+  assert.match(document, /Editorial expansion/);
+  assert.match(document, /underlying calculations/);
+  assert.match(document, /multipurpose-buildings\/v1\/manifest\.json/);
+});
+
 test('research routes appear in discovery surfaces', async () => {
   const robotsDocument = await (await fetchPath('/robots.txt')).text();
   const sitemapDocument = await (await fetchPath('/sitemap.xml')).text();
@@ -112,12 +141,16 @@ test('research routes appear in discovery surfaces', async () => {
   assert.match(robotsDocument, /Allow: \/api\/v1\/research/);
   assert.match(sitemapDocument, /\/research\/multipurpose-buildings\//);
   assert.match(sitemapDocument, /\/research\/fy2027-nep-house-changes\//);
+  assert.match(sitemapDocument, /\/research\/fy2027-change-concentration\//);
+  assert.match(sitemapDocument, /\/research\/releases\//);
   assert.match(llmsDocument, /Research library/);
   assert.match(
     llmsDocument,
     /\/data\/research\/multipurpose-buildings\/v2\/editorial-package\.json/,
   );
   assert.match(llmsDocument, /fy2027-nep-house-changes\/v1\/editorial-package\.json/);
+  assert.match(llmsDocument, /fy2027-change-concentration\/v1\/editorial-package\.json/);
+  assert.match(llmsDocument, /data\/research\/release-history\.json/);
 });
 
 test('publishes a machine-readable research release without a database binding', async () => {
@@ -145,6 +178,19 @@ test('publishes a machine-readable research release without a database binding',
   assert.equal(stageRelease.status, 200);
   assert.equal(stagePayload.data.manifest.package_sha256, '7cd2b9fc154cdae4228232fae5fd2446bb2b88c5bd82f56823d9e1afd77cca1a');
   assert.equal(stagePayload.data.claims.find(({ id }) => id === 'stage-total-records').value, 20431);
+
+  const concentration = await fetchPath('/api/v1/research/fy2027-change-concentration');
+  const concentrationPayload = await concentration.json();
+  assert.equal(concentration.status, 200);
+  assert.equal(concentrationPayload.data.manifest.package_sha256, 'b2a09440ee641fd5f6693401e7f18ed0392b83451e0afd94361a8dc5d6f979ed');
+  assert.equal(concentrationPayload.data.claims.find(({ id }) => id === 'concentration-changed-rows').value, 9283);
+
+  const history = await fetchPath('/api/v1/research/history');
+  const historyPayload = await history.json();
+  assert.equal(history.status, 200);
+  assert.equal(historyPayload.data.release_count, 4);
+  assert.equal(historyPayload.data.story_count, 3);
+  assert.equal(historyPayload.data.correction_count, 0);
 });
 
 test('publishes the ecosystem hubs while preserving established evidence pages', async () => {

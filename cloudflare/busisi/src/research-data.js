@@ -18,6 +18,17 @@ import stageManifest from '../public/data/research/fy2027-nep-house-changes/v1/m
 import stageProjectExamples from '../public/data/research/fy2027-nep-house-changes/v1/project-examples.json' with { type: 'json' };
 import stageSources from '../public/data/research/fy2027-nep-house-changes/v1/sources.json' with { type: 'json' };
 import stageStory from '../public/data/research/fy2027-nep-house-changes/v1/story.json' with { type: 'json' };
+import concentrationChartData from '../public/data/research/fy2027-change-concentration/v1/chart-data.json' with { type: 'json' };
+import concentrationClaims from '../public/data/research/fy2027-change-concentration/v1/claims.json' with { type: 'json' };
+import concentrationEditorialPackage from '../public/data/research/fy2027-change-concentration/v1/editorial-package.json' with { type: 'json' };
+import concentrationFindings from '../public/data/research/fy2027-change-concentration/v1/findings.json' with { type: 'json' };
+import concentrationInvestigations from '../public/data/research/fy2027-change-concentration/v1/investigations.json' with { type: 'json' };
+import concentrationLimitations from '../public/data/research/fy2027-change-concentration/v1/limitations.json' with { type: 'json' };
+import concentrationManifest from '../public/data/research/fy2027-change-concentration/v1/manifest.json' with { type: 'json' };
+import concentrationProjectExamples from '../public/data/research/fy2027-change-concentration/v1/project-examples.json' with { type: 'json' };
+import concentrationSources from '../public/data/research/fy2027-change-concentration/v1/sources.json' with { type: 'json' };
+import concentrationStory from '../public/data/research/fy2027-change-concentration/v1/story.json' with { type: 'json' };
+import releaseHistory from '../public/data/research/release-history.json' with { type: 'json' };
 
 export const multipurposeBuildingsRelease = Object.freeze({
   manifest,
@@ -44,6 +55,21 @@ export const fy2027StageChangesRelease = Object.freeze({
   story: stageStory,
   editorial_package: stageEditorialPackage,
 });
+
+export const fy2027ChangeConcentrationRelease = Object.freeze({
+  manifest: concentrationManifest,
+  claims: concentrationClaims,
+  findings: concentrationFindings,
+  investigations: concentrationInvestigations,
+  chart_data: concentrationChartData,
+  project_examples: concentrationProjectExamples,
+  sources: concentrationSources,
+  limitations: concentrationLimitations,
+  story: concentrationStory,
+  editorial_package: concentrationEditorialPackage,
+});
+
+export const researchReleaseHistory = Object.freeze(releaseHistory);
 
 export const researchCatalogue = Object.freeze([
   {
@@ -75,5 +101,20 @@ export const researchCatalogue = Object.freeze([
     story_url: stageEditorialPackage.story_url,
     editorial_package_url: `${stageEditorialPackage.package_base_url}/editorial-package.json`,
     summary: 'A reconciled comparison of four FY2027 NEP and House project lists, separating document changes from claims the records cannot prove.',
+  },
+  {
+    story_id: concentrationManifest.story_id,
+    slug: concentrationManifest.slug,
+    headline: concentrationManifest.headline,
+    status: concentrationManifest.status,
+    version: concentrationManifest.version,
+    published_at: concentrationManifest.published_at,
+    data_cutoff: concentrationManifest.data_cutoff,
+    canonical_url: concentrationManifest.canonical_url,
+    package_sha256: concentrationManifest.package_sha256,
+    manifest_url: concentrationEditorialPackage.manifest_url,
+    story_url: concentrationEditorialPackage.story_url,
+    editorial_package_url: `${concentrationEditorialPackage.package_base_url}/editorial-package.json`,
+    summary: 'A bounded ranking of where FY2027 project-list differences cluster by recorded program, region, office, and dataset labels.',
   },
 ]);

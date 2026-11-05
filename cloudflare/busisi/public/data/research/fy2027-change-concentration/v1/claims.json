@@ -1,0 +1,86 @@
+[
+  {
+    "calculation_id": "fy2027-change-concentration-v1",
+    "evidence_state": "verified",
+    "id": "concentration-total-rows",
+    "limitations": [],
+    "scope": "FY2027 NEP-to-House comparison for four acquired project lists",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "Busisi compared 20,431 rows across four FY2027 project lists.",
+    "unit": "records",
+    "value": 20431
+  },
+  {
+    "calculation_id": "fy2027-change-concentration-v1",
+    "evidence_state": "verified",
+    "id": "concentration-changed-rows",
+    "limitations": [],
+    "scope": "FY2027 NEP-to-House comparison for four acquired project lists",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "9,283 rows are not classified as unchanged in the source comparison.",
+    "unit": "records",
+    "value": 9283
+  },
+  {
+    "calculation_id": "fy2027-change-concentration-v1",
+    "evidence_state": "source_reported",
+    "id": "concentration-house-only",
+    "limitations": [
+      "House-only is a comparison label, not an insertion finding."
+    ],
+    "scope": "FY2027 NEP-to-House comparison for four acquired project lists",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "6,954 rows are classified as House-list only.",
+    "unit": "records",
+    "value": 6954
+  },
+  {
+    "calculation_id": "fy2027-change-concentration-v1",
+    "evidence_state": "review_candidate",
+    "id": "concentration-top-region",
+    "limitations": [
+      "The rank does not establish unfairness, sponsorship, or wrongdoing."
+    ],
+    "scope": "FY2027 NEP-to-House comparison for four acquired project lists",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "Region IV-A has the largest House-only row count in the scoped regional labels at 782.",
+    "unit": "review candidates",
+    "value": 782
+  },
+  {
+    "calculation_id": "fy2027-change-concentration-v1",
+    "evidence_state": "review_candidate",
+    "id": "concentration-top-program",
+    "limitations": [
+      "Program concentration is a review lead, not a finding of impropriety."
+    ],
+    "scope": "FY2027 NEP-to-House comparison for four acquired project lists",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "Convergence and Special Support Program has the largest House-only row count among recorded program labels at 5,053.",
+    "unit": "review candidates",
+    "value": 5053
+  },
+  {
+    "calculation_id": "fy2027-change-concentration-v1",
+    "evidence_state": "verified",
+    "id": "concentration-quarantined",
+    "limitations": [],
+    "scope": "FY2027 NEP-to-House comparison for four acquired project lists",
+    "source_ids": [
+      "bettergov-hgab-overview-2027"
+    ],
+    "statement": "426 ambiguous or scope-review rows remain quarantined.",
+    "unit": "records",
+    "value": 426
+  }
+]

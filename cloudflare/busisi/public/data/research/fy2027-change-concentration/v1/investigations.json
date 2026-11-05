@@ -1,0 +1,20 @@
+[
+  {
+    "calculation_id": "fy2027-change-concentration-v1",
+    "question": "Where do House-only rows cluster in the scoped source labels?",
+    "result": "Ranked by recorded program, region, office, and dataset labels.",
+    "state": "partial"
+  },
+  {
+    "calculation_id": "fy2027-change-concentration-v1",
+    "question": "Does a cluster prove an insertion or improper allocation?",
+    "result": "No. It identifies a bounded set for document review.",
+    "state": "evidence_gap"
+  },
+  {
+    "calculation_id": "fy2027-change-concentration-v1",
+    "question": "Did the changes survive later budget and spending stages?",
+    "result": "Not established by this NEP-to-House release.",
+    "state": "evidence_gap"
+  }
+]

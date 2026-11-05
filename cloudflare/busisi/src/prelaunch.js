@@ -44,9 +44,11 @@ import {
 import { alertsRss } from './alerts-feed.js';
 import { getAlertFeed } from './alerts-query.js';
 import {
+  fy2027ChangeConcentrationBody,
   fy2027StageChangesBody,
   multipurposeBuildingsBody,
   researchIndexBody,
+  researchReleaseHistoryBody,
 } from './research-content.js';
 import {
   budgetRecordBody,
@@ -300,6 +302,30 @@ const FY2027_STAGE_CHANGES_SCHEMA = Object.freeze({
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
 });
 
+const FY2027_CHANGE_CONCENTRATION_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'AnalysisNewsArticle',
+  headline: 'Where are FY2027 House-stage project-list changes concentrated?',
+  url: `${SITE.origin}/research/fy2027-change-concentration/`,
+  description: 'A bounded ranking of FY2027 project-list differences by recorded program, region, office, and dataset labels.',
+  datePublished: '2026-11-05',
+  dateModified: '2026-11-05',
+  inLanguage: ['en-PH', 'fil-PH'],
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
+const RESEARCH_RELEASE_HISTORY_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Busisi corrections and research release history',
+  url: `${SITE.origin}/research/releases/`,
+  description: 'Immutable Busisi research versions, corrections, data updates, and editorial expansions.',
+  dateModified: '2026-11-05',
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
 const page = (html, status = 200) => response(html, {
   status,
   type: 'text/html; charset=utf-8',
@@ -529,6 +555,22 @@ const fy2027StageChanges = () => page(document({
   schema: FY2027_STAGE_CHANGES_SCHEMA,
 }));
 
+const fy2027ChangeConcentration = () => page(document({
+  title: 'Where are FY2027 project-list changes concentrated? | Busisi',
+  description: 'See where FY2027 House-stage project-list differences cluster by recorded program, region, office, and dataset, with evidence limits.',
+  canonicalPath: '/research/fy2027-change-concentration/',
+  body: fy2027ChangeConcentrationBody,
+  schema: FY2027_CHANGE_CONCENTRATION_SCHEMA,
+}));
+
+const researchReleaseHistory = () => page(document({
+  title: 'Corrections and research release history | Busisi',
+  description: 'Inspect every immutable Busisi research version and see whether a release is a correction, data update, or editorial expansion.',
+  canonicalPath: '/research/releases/',
+  body: researchReleaseHistoryBody,
+  schema: RESEARCH_RELEASE_HISTORY_SCHEMA,
+}));
+
 const facility = (payload) => {
   const { record } = payload;
   const path = `/facilities/${encodeURIComponent(record.facility_id)}/`;
@@ -688,6 +730,8 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/research/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/research/multipurpose-buildings/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/research/fy2027-nep-house-changes/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>${SITE.origin}/research/fy2027-change-concentration/</loc><lastmod>2026-11-05</lastmod></url>
+  <url><loc>${SITE.origin}/research/releases/</loc><lastmod>2026-11-05</lastmod></url>
   <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/corazon-2022-combined/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/agoncillo-2023/</loc><lastmod>2026-11-03</lastmod></url>
@@ -733,6 +777,8 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Research library: ${SITE.origin}/research/
 - Multipurpose-building investigation: ${SITE.origin}/research/multipurpose-buildings/
 - FY2027 NEP-to-House project-list investigation: ${SITE.origin}/research/fy2027-nep-house-changes/
+- FY2027 change-concentration investigation: ${SITE.origin}/research/fy2027-change-concentration/
+- Corrections and research release history: ${SITE.origin}/research/releases/
 - Methodology: ${SITE.origin}/methodology/
 
 ## Machine-readable catalogue
@@ -747,6 +793,8 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Published research packages: ${SITE.origin}/api/v1/research
 - Ready multipurpose-building editorial package: ${SITE.origin}/data/research/multipurpose-buildings/v2/editorial-package.json
 - Ready FY2027 stage-change editorial package: ${SITE.origin}/data/research/fy2027-nep-house-changes/v1/editorial-package.json
+- Ready FY2027 concentration editorial package: ${SITE.origin}/data/research/fy2027-change-concentration/v1/editorial-package.json
+- Research release history: ${SITE.origin}/data/research/release-history.json
 
 ## Evidence and publication rules
 
@@ -827,6 +875,8 @@ const route = (path) => {
   if (path === '/research' || path === '/research/') return research();
   if (path === '/research/multipurpose-buildings' || path === '/research/multipurpose-buildings/') return multipurposeBuildings();
   if (path === '/research/fy2027-nep-house-changes' || path === '/research/fy2027-nep-house-changes/') return fy2027StageChanges();
+  if (path === '/research/fy2027-change-concentration' || path === '/research/fy2027-change-concentration/') return fy2027ChangeConcentration();
+  if (path === '/research/releases' || path === '/research/releases/') return researchReleaseHistory();
   if (path === '/sources' || path === '/sources/') return sources();
   if (path === '/watch' || path === '/watch/') return watch();
   if (path === '/changes' || path === '/changes/') return changes();
@@ -865,8 +915,10 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
     if ((url.pathname === '/api/v1/research'
+      || url.pathname === '/api/v1/research/history'
       || url.pathname === '/api/v1/research/multipurpose-buildings'
       || url.pathname === '/api/v1/research/fy2027-nep-house-changes'
+      || url.pathname === '/api/v1/research/fy2027-change-concentration'
       || ((url.pathname === '/healthz' || url.pathname.startsWith('/api/')) && env.DB))) {
       return dataWorker.fetch(request, env);
     }

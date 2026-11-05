@@ -53,13 +53,23 @@ examples. Discovery services may help locate documents privately, but public
 claims identify and archive the underlying publisher's evidence. Published
 work currently examines multipurpose-building records at
 `/research/multipurpose-buildings/` and FY2027 NEP-to-House project-list
-changes at `/research/fy2027-nep-house-changes/`.
+changes at `/research/fy2027-nep-house-changes/`. A separate concentration
+investigation at `/research/fy2027-change-concentration/` groups the same
+authenticated comparison by recorded program, region, office and dataset
+labels without inferring political responsibility or wrongdoing.
 
 Its immutable downstream editorial package is published under
 `/data/research/multipurpose-buildings/v2/`. The consumption index provides the
 finished story, checked claims, chart data, project examples, direct source
 links, limitations, API route, and SHA-256 manifest without requiring changes
 in a downstream production repository.
+
+The public correction and release register is `/research/releases/`. It keeps
+every immutable version visible and distinguishes a correction from a data
+update or an editorial expansion. Research ideas, evidence gaps and production
+readiness remain in the ignored private queue under
+`data/budget_watchdog/research-editor/`; only completed editorial packages are
+available for downstream consumption.
 
 The public update feed at `/feeds/updates.xml` and `/api/v1/alerts` reports
 checked source status, gated coverage releases, newly checked contract evidence

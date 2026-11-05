@@ -1,0 +1,30 @@
+[
+  {
+    "affects_findings": false,
+    "change_type": "initial",
+    "story_id": "multipurpose-buildings-2026",
+    "summary": "Initial authenticated data release for the multipurpose-building investigation.",
+    "version": 1
+  },
+  {
+    "affects_findings": false,
+    "change_type": "editorial_expansion",
+    "story_id": "multipurpose-buildings-2026",
+    "summary": "Added the finished story, downstream consumption index, and expanded limitations without changing the underlying calculations.",
+    "version": 2
+  },
+  {
+    "affects_findings": false,
+    "change_type": "initial",
+    "story_id": "fy2027-nep-house-changes-2026",
+    "summary": "Initial authenticated comparison of four FY2027 NEP and House project lists.",
+    "version": 1
+  },
+  {
+    "affects_findings": false,
+    "change_type": "initial",
+    "story_id": "fy2027-change-concentration-2026",
+    "summary": "Initial concentration analysis by recorded program, region, office, and dataset labels.",
+    "version": 1
+  }
+]

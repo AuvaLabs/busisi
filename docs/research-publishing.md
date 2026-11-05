@@ -65,6 +65,17 @@ PYTHONPATH=. python3 ops/harness/budget_watchdog_research_editor.py
 
 To publish complete local drafts, place a full release object in the ignored `drafts` directory and run the editor with `--publish-ready`. Invalid drafts are reported as quarantined and nothing from them is copied into the public tree. Existing release directories cannot be overwritten.
 
+The private research queue is initialized once and then validated with:
+
+```bash
+PYTHONPATH=. python3 ops/harness/budget_watchdog_research_queue.py --initialize
+PYTHONPATH=. python3 ops/harness/budget_watchdog_research_queue.py
+```
+
+The queue file and its operational receipt remain under ignored local data. A topic is downstream ready only after it has a published Busisi editorial-package URL. Blocked topics must name the missing evidence. No queue question, source list, working note, or production instruction is copied into the public site.
+
+`release-history.json` is rebuilt from authenticated manifests and the explicit release notes in `ops/harness/fixtures/research_release_notes.json`. Each package must have one note. Later versions must identify the immediately prior package and its SHA-256 digest. Corrections, data updates, and editorial expansions remain separate public labels.
+
 Schema 1.1 releases also fail when their source check is older than the declared maximum age, their story references an unknown claim or source, or a review candidate is marked eligible for factual narration. GitHub verifies every public package weekly. The source monitor separately checks the FY2027 comparison source revision every six hours and reports drift for review. Source changes do not create or publish a new story automatically.
 
 Published packages are never edited in place. A correction or contract expansion creates a new version whose manifest identifies the previous release in `supersedes`. Version 1 remains available after version 2 becomes current.

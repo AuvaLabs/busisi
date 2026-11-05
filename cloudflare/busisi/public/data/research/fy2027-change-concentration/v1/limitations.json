@@ -1,0 +1,34 @@
+[
+  {
+    "id": "stage-scope",
+    "text": "The comparison covers four project-level lists, not the entire national budget."
+  },
+  {
+    "id": "overlapping-dimensions",
+    "text": "Program, region, office, and dataset rankings describe overlapping dimensions and must not be added together."
+  },
+  {
+    "id": "recorded-labels",
+    "text": "Regions and offices are reproduced from source labels and are not determinations of political sponsorship or responsibility."
+  },
+  {
+    "id": "not-an-insertion-finding",
+    "text": "A House-only row can reflect naming, grouping, or scope differences and is not proof of an insertion or wrongdoing."
+  },
+  {
+    "id": "concentration-boundary",
+    "text": "A concentration is a review priority, not evidence that an allocation is unfair, improper, or politically motivated."
+  },
+  {
+    "id": "quarantine-boundary",
+    "text": "Ambiguous and scope-review rows remain quarantined and are not promoted as findings."
+  },
+  {
+    "id": "missing-stages",
+    "text": "The release does not establish Senate, bicameral, enacted GAA, release, payment, implementation, or outcome stages."
+  },
+  {
+    "id": "amounts-not-spending",
+    "text": "Document amounts are proposed authority, not releases, payments, final costs, or outcomes."
+  }
+]

@@ -13,10 +13,12 @@ from engine.budget_watchdog.research_editor import (
     verify_published_package,
     write_research_release,
 )
+from engine.budget_watchdog.research_history import build_release_history
 
 ROOT = Path(__file__).resolve().parents[2]
 PUBLIC_ROOT = ROOT / "cloudflare" / "busisi" / "public" / "data" / "research"
 PRIVATE_ROOT = ROOT / "data" / "budget_watchdog" / "research-editor"
+RELEASE_NOTES = ROOT / "ops" / "harness" / "fixtures" / "research_release_notes.json"
 
 
 def validate_public_packages(public_root: Path) -> list[dict[str, Any]]:
@@ -34,6 +36,22 @@ def validate_public_packages(public_root: Path) -> list[dict[str, Any]]:
     if not packages:
         raise ValueError("no published research packages were found")
     return packages
+
+
+def validate_public_history(public_root: Path) -> dict[str, Any]:
+    notes = json.loads(RELEASE_NOTES.read_text(encoding="utf-8"))
+    expected = build_release_history(public_root, notes)
+    history_path = public_root / "release-history.json"
+    if not history_path.is_file():
+        raise ValueError("public research release history is missing")
+    observed = json.loads(history_path.read_text(encoding="utf-8"))
+    if observed != expected:
+        raise ValueError("public research release history is stale")
+    return {
+        "story_count": observed["story_count"],
+        "release_count": observed["release_count"],
+        "correction_count": observed["correction_count"],
+    }
 
 
 def audit_private_drafts(draft_root: Path) -> dict[str, Any]:
@@ -101,6 +119,7 @@ def arguments() -> argparse.Namespace:
 def main() -> None:
     options = arguments()
     packages = validate_public_packages(options.public_root)
+    history = validate_public_history(options.public_root)
     audit = audit_private_drafts(options.private_root)
     published = (
         publish_ready_drafts(audit, options.public_root)
@@ -110,6 +129,7 @@ def main() -> None:
     report = {
         "passed": audit["quarantined"] == 0,
         "published_packages": packages,
+        "release_history": history,
         "private_editor": _safe_report(audit),
         "newly_published": published,
     }

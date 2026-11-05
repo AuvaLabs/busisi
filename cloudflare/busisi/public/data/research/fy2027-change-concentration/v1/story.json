@@ -1,0 +1,110 @@
+{
+  "audience": "Filipino public",
+  "canonical_url": "https://busisi.org/research/fy2027-change-concentration/",
+  "data_cutoff": "2026-10-26",
+  "deck": "Where FY2027 project-list differences cluster, and what those rankings cannot prove.",
+  "editorial_status": "ready",
+  "headline": "Where are FY2027 House-stage project-list changes concentrated?",
+  "language": "en-PH",
+  "schema_version": "1.0",
+  "sections": [
+    {
+      "claim_ids": [
+        "concentration-total-rows",
+        "concentration-changed-rows"
+      ],
+      "copy": [
+        "Busisi compared 20,431 rows across four FY2027 project lists.",
+        "9,283 rows are not classified as unchanged in the source comparison."
+      ],
+      "heading": "Most rows did not change, while differences cluster unevenly",
+      "id": "direct-answer",
+      "limitation_ids": [
+        "stage-scope",
+        "amounts-not-spending"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "bettergov-hgab-overview-2027"
+      ],
+      "visual_refs": [
+        "chart_data.datasets"
+      ]
+    },
+    {
+      "claim_ids": [
+        "concentration-top-region",
+        "concentration-top-program"
+      ],
+      "copy": [
+        "Region IV-A has the largest House-only row count in the scoped regional labels at 782.",
+        "Convergence and Special Support Program has the largest House-only row count among recorded program labels at 5,053."
+      ],
+      "heading": "The largest clusters are priorities for document review",
+      "id": "concentration-leads",
+      "limitation_ids": [
+        "concentration-boundary",
+        "not-an-insertion-finding",
+        "recorded-labels"
+      ],
+      "narration_eligible": false,
+      "section_type": "investigation_lead",
+      "source_ids": [
+        "bettergov-hgab-overview-2027"
+      ],
+      "visual_refs": [
+        "chart_data.regions",
+        "chart_data.programs"
+      ]
+    },
+    {
+      "claim_ids": [
+        "concentration-quarantined"
+      ],
+      "copy": [
+        "426 ambiguous or scope-review rows remain quarantined."
+      ],
+      "heading": "Ambiguous rows remain outside the rankings used as leads",
+      "id": "quarantine",
+      "limitation_ids": [
+        "quarantine-boundary"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "bettergov-hgab-overview-2027"
+      ],
+      "visual_refs": [
+        "chart_data.review_gate"
+      ]
+    },
+    {
+      "claim_ids": [
+        "concentration-total-rows"
+      ],
+      "copy": [
+        "Concentration can prioritize document review but cannot establish who caused a change or whether it survived later stages."
+      ],
+      "heading": "Later budget and implementation stages remain necessary",
+      "id": "next-evidence",
+      "limitation_ids": [
+        "missing-stages",
+        "concentration-boundary"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "bettergov-hgab-overview-2027"
+      ],
+      "visual_refs": [
+        "project_examples.largest_matched_amount_changes"
+      ]
+    }
+  ],
+  "source_ids": [
+    "bettergov-hgab-overview-2027"
+  ],
+  "story_id": "fy2027-change-concentration-2026",
+  "version": 1
+}
