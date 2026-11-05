@@ -281,9 +281,9 @@ const MULTIPURPOSE_BUILDINGS_SCHEMA = Object.freeze({
   '@type': 'AnalysisNewsArticle',
   headline: 'How many multipurpose buildings are being built?',
   url: `${SITE.origin}/research/multipurpose-buildings/`,
-  description: 'A reproducible investigation of multipurpose-building records, locations, work types, recorded budgets, and evidence gaps in the archived DPWH snapshot.',
+  description: 'A reproducible investigation of the ₱88.79 billion active multipurpose-building pipeline, opportunity cost, necessity, location, design, and evidence gaps.',
   datePublished: '2026-11-04',
-  dateModified: '2026-11-04',
+  dateModified: '2026-11-05',
   inLanguage: ['en-PH', 'fil-PH'],
   isAccessibleForFree: true,
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
@@ -541,7 +541,7 @@ const research = () => page(document({
 
 const multipurposeBuildings = () => page(document({
   title: 'How many multipurpose buildings are being built? | Busisi',
-  description: 'See how many DPWH multipurpose-building records are marked ongoing, where they appear, whether work is new or continuing, and what recorded prices can establish.',
+  description: 'Examine the ₱88.79 billion active multipurpose-building pipeline, whether need can be established, and what location, design, and delivery evidence remains missing.',
   canonicalPath: '/research/multipurpose-buildings/',
   body: multipurposeBuildingsBody,
   schema: MULTIPURPOSE_BUILDINGS_SCHEMA,
@@ -728,7 +728,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/questions/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/public-services/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/research/</loc><lastmod>2026-11-04</lastmod></url>
-  <url><loc>${SITE.origin}/research/multipurpose-buildings/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>${SITE.origin}/research/multipurpose-buildings/</loc><lastmod>2026-11-05</lastmod></url>
   <url><loc>${SITE.origin}/research/fy2027-nep-house-changes/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/research/fy2027-change-concentration/</loc><lastmod>2026-11-05</lastmod></url>
   <url><loc>${SITE.origin}/research/releases/</loc><lastmod>2026-11-05</lastmod></url>
@@ -791,7 +791,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Projects grouped by recorded place: ${SITE.origin}/api/v1/places
 - Bounded evidence updates: ${SITE.origin}/api/v1/alerts
 - Published research packages: ${SITE.origin}/api/v1/research
-- Ready multipurpose-building editorial package: ${SITE.origin}/data/research/multipurpose-buildings/v2/editorial-package.json
+- Ready multipurpose-building editorial package: ${SITE.origin}/data/research/multipurpose-buildings/v3/editorial-package.json
 - Ready FY2027 stage-change editorial package: ${SITE.origin}/data/research/fy2027-nep-house-changes/v1/editorial-package.json
 - Ready FY2027 concentration editorial package: ${SITE.origin}/data/research/fy2027-change-concentration/v1/editorial-package.json
 - Research release history: ${SITE.origin}/data/research/release-history.json

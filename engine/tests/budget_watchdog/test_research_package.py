@@ -275,3 +275,40 @@ def test_published_v2_editorial_package_is_complete_and_authenticated() -> None:
         payload = (package / entry["path"]).read_bytes()
         assert len(payload) == entry["bytes"]
         assert hashlib.sha256(payload).hexdigest() == entry["sha256"]
+
+
+def test_published_v3_reconciles_value_and_evidence_gates() -> None:
+    root = Path(__file__).resolve().parents[3]
+    package = (
+        root
+        / "cloudflare"
+        / "busisi"
+        / "public"
+        / "data"
+        / "research"
+        / "multipurpose-buildings"
+        / "v3"
+    )
+    manifest = json.loads((package / "manifest.json").read_text())
+    claims = {
+        item["id"]: item for item in json.loads((package / "claims.json").read_text())
+    }
+    chart_data = json.loads((package / "chart-data.json").read_text())
+
+    assert manifest["version"] == 3
+    assert manifest["package_sha256"] == (
+        "ac0b7b30a0e353ffe7734e5929af2e12ca1540f2ee6871a6671347c6fcc72519"
+    )
+    assert manifest["supersedes"]["package_sha256"] == (
+        "bdf6fd74d6fc4a53a9c8025cc5e3214b31e61a4f84911020701a3f2709eadec1"
+    )
+    assert claims["mpb-active-budget"]["value"] == 8_878_625_428_536
+    assert claims["mpb-all-recorded-budget"]["value"] == 12_977_915_530_776
+    assert claims["mpb-classroom-equivalent-low"]["value"] == 25_499
+    assert claims["mpb-classroom-equivalent-high"]["value"] == 32_503
+    assert claims["mpb-necessity-assessment"]["evidence_state"] == "not_supported"
+    assert len(chart_data["assessment_gates"]) == 4
+    for entry in manifest["files"]:
+        payload = (package / entry["path"]).read_bytes()
+        assert len(payload) == entry["bytes"]
+        assert hashlib.sha256(payload).hexdigest() == entry["sha256"]

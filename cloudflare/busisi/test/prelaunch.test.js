@@ -79,6 +79,16 @@ test('publishes a research library and the multipurpose-building investigation',
   assert.equal(article.status, 200);
   assert.match(articleDocument, /5,842/);
   assert.match(articleDocument, /7,024/);
+  assert.match(articleDocument, /₱88\.79 billion/);
+  assert.match(articleDocument, /₱129\.78 billion/);
+  assert.match(articleDocument, /Is every project necessary\?/);
+  assert.match(articleDocument, /cannot determine necessity from the current snapshot/i);
+  assert.match(articleDocument, /25,499 to 32,503/);
+  assert.match(articleDocument, /not a cancellation recommendation/i);
+  assert.match(articleDocument, /Need and public function/);
+  assert.match(articleDocument, /Location and hazards/);
+  assert.match(articleDocument, /Design and accessibility/);
+  assert.match(articleDocument, /Cost and delivery/);
   assert.match(articleDocument, /What we investigated/);
   assert.match(articleDocument, /What this does not establish/);
   assert.match(articleDocument, /Where the records came from/);
@@ -89,7 +99,7 @@ test('publishes a research library and the multipurpose-building investigation',
   assert.match(articleDocument, /Download the research package/);
   assert.match(articleDocument, /Download the finished story/);
   assert.match(articleDocument, /Open the consumption index/);
-  assert.match(articleDocument, /data\/research\/multipurpose-buildings\/v2\/story\.json/);
+  assert.match(articleDocument, /data\/research\/multipurpose-buildings\/v3\/story\.json/);
   assert.match(articleDocument, /"@type":"AnalysisNewsArticle"/);
 });
 
@@ -126,7 +136,7 @@ test('publishes an explicit corrections and immutable release history', async ()
   const document = await response.text();
   assert.equal(response.status, 200);
   assert.match(document, /Corrections and release history/);
-  assert.match(document, /4 published packages/);
+  assert.match(document, /5 published packages/);
   assert.match(document, /No corrections have been filed/);
   assert.match(document, /Editorial expansion/);
   assert.match(document, /underlying calculations/);
@@ -146,7 +156,7 @@ test('research routes appear in discovery surfaces', async () => {
   assert.match(llmsDocument, /Research library/);
   assert.match(
     llmsDocument,
-    /\/data\/research\/multipurpose-buildings\/v2\/editorial-package\.json/,
+    /\/data\/research\/multipurpose-buildings\/v3\/editorial-package\.json/,
   );
   assert.match(llmsDocument, /fy2027-nep-house-changes\/v1\/editorial-package\.json/);
   assert.match(llmsDocument, /fy2027-change-concentration\/v1\/editorial-package\.json/);
@@ -159,16 +169,16 @@ test('publishes a machine-readable research release without a database binding',
   assert.equal(catalogue.status, 200);
   const multipurpose = cataloguePayload.data.find(({ slug }) => slug === 'multipurpose-buildings');
   assert.equal(multipurpose.story_id, 'multipurpose-buildings-2026');
-  assert.equal(multipurpose.version, 2);
+  assert.equal(multipurpose.version, 3);
   assert.equal(
     multipurpose.editorial_package_url,
-    'https://busisi.org/data/research/multipurpose-buildings/v2/editorial-package.json',
+    'https://busisi.org/data/research/multipurpose-buildings/v3/editorial-package.json',
   );
 
   const release = await fetchPath('/api/v1/research/multipurpose-buildings');
   const releasePayload = await release.json();
   assert.equal(release.status, 200);
-  assert.equal(releasePayload.data.manifest.version, 2);
+  assert.equal(releasePayload.data.manifest.version, 3);
   assert.equal(releasePayload.data.story.editorial_status, 'ready');
   assert.equal(releasePayload.data.editorial_package.status, 'ready_for_consumption');
   assert.equal(releasePayload.data.claims.find(({ id }) => id === 'mpb-ongoing').value, 5842);
@@ -188,7 +198,7 @@ test('publishes a machine-readable research release without a database binding',
   const history = await fetchPath('/api/v1/research/history');
   const historyPayload = await history.json();
   assert.equal(history.status, 200);
-  assert.equal(historyPayload.data.release_count, 4);
+  assert.equal(historyPayload.data.release_count, 5);
   assert.equal(historyPayload.data.story_count, 3);
   assert.equal(historyPayload.data.correction_count, 0);
 });

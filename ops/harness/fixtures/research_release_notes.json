@@ -14,6 +14,13 @@
     "version": 2
   },
   {
+    "affects_findings": true,
+    "change_type": "editorial_expansion",
+    "story_id": "multipurpose-buildings-2026",
+    "summary": "Added the all-record budget reconciliation, official opportunity-cost benchmarks, and explicit evidence gates for necessity, location, design, cost, and delivery. Core record counts are unchanged.",
+    "version": 3
+  },
+  {
     "affects_findings": false,
     "change_type": "initial",
     "story_id": "fy2027-nep-house-changes-2026",

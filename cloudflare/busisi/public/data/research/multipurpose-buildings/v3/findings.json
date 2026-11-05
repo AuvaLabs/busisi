@@ -1,0 +1,40 @@
+[
+  {
+    "claim_ids": [
+      "mpb-ongoing",
+      "mpb-active-pipeline"
+    ],
+    "evidence_state": "source_reported",
+    "id": "national-count",
+    "result": "5,842 records are marked On-Going and 7,024 sit in the active pipeline.",
+    "title": "Thousands are marked ongoing, but the status is source-reported"
+  },
+  {
+    "claim_ids": [
+      "mpb-existing-work-wording"
+    ],
+    "evidence_state": "verified",
+    "id": "existing-work",
+    "result": "2,812 active titles describe completion, later phases, repair, improvement, replacement, or reconstruction.",
+    "title": "Many titles describe work on an existing or partly built asset"
+  },
+  {
+    "claim_ids": [
+      "mpb-prior-coordinate-candidates"
+    ],
+    "evidence_state": "review_candidate",
+    "id": "same-coordinate",
+    "result": "31 active records at 24 exact coordinates have a completed comparison record.",
+    "title": "Exact coordinate reuse creates a bounded review queue"
+  },
+  {
+    "claim_ids": [
+      "mpb-active-budget",
+      "mpb-all-recorded-budget"
+    ],
+    "evidence_state": "source_reported",
+    "id": "budget-scale",
+    "result": "Budget scale is established, while necessity and value remain unproven.",
+    "title": "The active pipeline carries a large recorded budget"
+  }
+]

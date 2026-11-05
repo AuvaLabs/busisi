@@ -1,0 +1,639 @@
+{
+  "largest_active_recorded_budgets": [
+    {
+      "contract_id": "25I00193",
+      "description": "BIP - MULTI-PURPOSE BUILDINGS/FACILITIES TO SUPPORT SOCIAL SERVICES - CONSTRUCTION (COMPLETION) OF MULTI-PURPOSE BUILDING (SAMAR ISLAND MEDICAL CENTER BUILDING), CALBAYOG CITY, SAMAR",
+      "district_office": "Region VIII",
+      "fiscal_year": 2025,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/25I00193/",
+      "recorded_budget_centavos": 48219957061,
+      "region": "Region VIII",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    },
+    {
+      "contract_id": "24F00361",
+      "description": "CLUSTER XXVI-CONVERGENCE AND SPECIAL SUPPORT PROGRAM-BASIC INFRASTRUCTURE PROGRAM (BIP)-BIP-MULTI-PURPOSE BUILDINGS/FACILITIES TO SUPPORT SOCIAL SERVICES-XXVI-I: CONSTRUCTION OF MULTI-PURPOSE BUILDING (TRAINING AND INSTRUCTIONAL FACILITY/MEETINGS INCENTIV",
+      "district_office": "Region V",
+      "fiscal_year": 2024,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/24F00361/",
+      "recorded_budget_centavos": 34303338202,
+      "region": "Region V",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    },
+    {
+      "contract_id": "24F00327",
+      "description": "CLUSTER XXVII-CONVERGENCE AND SPECIAL SUPPORT PROGRAM-BASIC INFRASTRUCTURE PROGRAM (BIP)-BIP-MULTI-PURPOSE BUILDINGS/FACILITIES TO SUPPORT SOCIAL SERVICES-XXVII-I: CONSTRUCTION OF MULTI-PURPOSE BUILDING (TRAINING AND INSTRUCTIONAL FACILITY/MEETINGS INCENT",
+      "district_office": "Region V",
+      "fiscal_year": 2024,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/24F00327/",
+      "recorded_budget_centavos": 34302921594,
+      "region": "Region V",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    },
+    {
+      "contract_id": "24F00328",
+      "description": "CLUSTER XXVIII-CONVERGENCE AND SPECIAL SUPPORT PROGRAM-BASIC INFRASTRUCTURE PROGRAM (BIP)-BIP-MULTI-PURPOSE BUILDINGS/FACILITIES TO SUPPORT SOCIAL SERVICES-XXVIII-I: CONSTRUCTION OF MULTI-PURPOSE BUILDING (TRAINING AND INSTRUCTIONAL FACILITY/MEETINGS INCE",
+      "district_office": "Region V",
+      "fiscal_year": 2024,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/24F00328/",
+      "recorded_budget_centavos": 33928601807,
+      "region": "Region V",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    },
+    {
+      "contract_id": "24H00046",
+      "description": "CSSP, BASIC INFRASTRUCTURE PROGRAM (BIP)-MULTI-PURPOSE BUILDINGS/FACILITIES TO SUPPORT SOCIAL SERVICES, CONSTRUCTION OF MULTI-PURPOSE BUILDING (NEW MUNICIPAL HALL), POBLACION, DUMANJUG, CEBU",
+      "district_office": "Region VII",
+      "fiscal_year": 2024,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/24H00046/",
+      "recorded_budget_centavos": 31362991982,
+      "region": "Region VII",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    },
+    {
+      "contract_id": "24OD0280",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, LAON, VEINTE REALES, VALENZUELA CITY (SHFC)",
+      "district_office": "Metro Manila 3rd DEO",
+      "fiscal_year": 2024,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/24OD0280/",
+      "recorded_budget_centavos": 29224364570,
+      "region": "National Capital Region",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    },
+    {
+      "contract_id": "24D00233",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (SPORTS CENTER), BARANGAY MAITIM II EAST, TAGAYTAY CITY, CAVITE (PHASE 9)",
+      "district_office": "Region IV-A",
+      "fiscal_year": 2024,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/24D00233/",
+      "recorded_budget_centavos": 29106075837,
+      "region": "Region IV-A",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    },
+    {
+      "contract_id": "24A00359",
+      "description": "BASIC INFRASTRUCTURE PROGRAM, CONSTRUCTION (COMPLETION) OF MULTI-PURPOSE BUILDING (CAPITOL EXTENSION), LAOAG CITY",
+      "district_office": "Region I",
+      "fiscal_year": 2024,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/24A00359/",
+      "recorded_budget_centavos": 29092737549,
+      "region": "Region I",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    },
+    {
+      "contract_id": "24I00328",
+      "description": "BASIC INFRASTRUCTURE PROGRAM (BIP) - MULTI-PURPOSE BUILDINGS/FACILITIES TO SUPPORT SOCIAL SERVICES - CONSTRUCTION OF MULTI-PURPOSE BUILDING (BAGONG PILIPINAS SERBISYO CENTER), ALANGALANG, LEYTE",
+      "district_office": "Region VIII",
+      "fiscal_year": 2024,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/24I00328/",
+      "recorded_budget_centavos": 24739560852,
+      "region": "Region VIII",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    },
+    {
+      "contract_id": "24OD0281",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, (DEPED BUILDING) MALINTA, VALENZUELA CITY",
+      "district_office": "Metro Manila 3rd DEO",
+      "fiscal_year": 2024,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/24OD0281/",
+      "recorded_budget_centavos": 21940706794,
+      "region": "National Capital Region",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    },
+    {
+      "contract_id": "24FI0098",
+      "description": "CONVERGENCE AND SPECIAL SUPPORT PROGRAM (CSSP) - BASIC INFRASTRUCTURE PROGRAM (BIP) - MULTI-PURPOSE BUILDINGS/FACILITIES TO SUPPORT SOCIAL SERVICES - CONSTRUCTION OF MULTI-PURPOSE BUILDING INCLUDING FACILITIES, MASBATE CITY",
+      "district_office": "Masbate 2nd DEO",
+      "fiscal_year": 2024,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/24FI0098/",
+      "recorded_budget_centavos": 19799899437,
+      "region": "Region V",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    },
+    {
+      "contract_id": "24I00375",
+      "description": "BASIC INFRASTRUCTURE PROGRAM (BIP) - MULTI-PURPOSE BUILDINGS/FACILITIES TO SUPPORT SOCIAL SERVICES - CONSTRUCTION OF MULTI-PURPOSE BUILDING (SPORTS CENTER), TOLOSA, LEYTE",
+      "district_office": "Region VIII",
+      "fiscal_year": 2024,
+      "necessity_state": "not_assessable_from_snapshot",
+      "reader_url": "/contracts/24I00375/",
+      "recorded_budget_centavos": 19789946814,
+      "region": "Region VIII",
+      "siting_design_state": "not_assessable_from_snapshot",
+      "status": "On-Going"
+    }
+  ],
+  "prior_coordinate_candidates": [
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "23AI0217",
+          "fiscal_year": 2023
+        }
+      ],
+      "contract_id": "25AI0166",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (SENIOR CITIZEN OFFICE), BARANGAY SUMABNIT, BINALONAN, PANGASINAN",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2025,
+      "latitude": 16.1761019,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.5705844
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "22AI0169",
+          "fiscal_year": 2022
+        }
+      ],
+      "contract_id": "25AI0108",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (CRISIS MANAGEMENT BUILDING) TUMANA WEST, ROSALES, PANGASINAN",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2025,
+      "latitude": 15.9996667,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.7395125
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24EF0067",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24EF0068",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, BARANGAY BANGCALAAN, BALABAC, PALAWAN",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 8.7449108,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 117.4560439
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24DK0114",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "25DK0018",
+      "description": "CONVERGENCE AND SPECIAL SUPPORT PROGRAM - BASIC INFRASTRUCTURE PROGRAM (BIP) - BIP - MULTI-PURPOSE BUILDINGS/ FACILITIES TO SUPPORT SOCIAL SERVICES - CONSTRUCTION (COMPLETION) OF MULTI-PURPOSE BUILDING, BARANGAY CABUNGALUNAN, BURDEOS, QUEZON",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2025,
+      "latitude": 14.9525494,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 121.9965447
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "25GO0064",
+          "fiscal_year": 2025
+        }
+      ],
+      "contract_id": "25GO0134",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, BRGY. MANSILINGAN, BACOLOD CITY, NEGROS OCCIDENTAL",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2025,
+      "latitude": 10.5891282,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 122.9792827
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "21PA0056",
+          "fiscal_year": 2021
+        }
+      ],
+      "contract_id": "24PA0216",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (COVERED COURT), DALIT NATIONAL HIGH SCHOOL, PILAR, ABRA",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 17.3511194,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.5658111
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "23DD0312",
+          "fiscal_year": 2023
+        }
+      ],
+      "contract_id": "24DD0174",
+      "description": "CONVERGENCE AND SPECIAL SUPPORT PROGRAM, BASIC INFRASTRUCTURE PROGRAM (BIP), MULTI-PURPOSE BUILDINGS/ FACILITIES TO SUPPORT SOCIAL SERVICES, IMPROVEMENT OF MULTI-PURPOSE BUILDING AND SITE FACILITIES, SAN JOSE, BATANGAS",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 13.8684472,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 121.1037444
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24IH0006",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24IH0050",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (COVERED COURT), BARANGAY DATAG, LAVEZARES, NORTHERN SAMAR",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 12.5162284,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 124.3537542
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "23OG0098",
+          "fiscal_year": 2023
+        }
+      ],
+      "contract_id": "24OG0076",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, BARANGAY UGONG NORTE, PHASE II QUEZON CITY",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 14.5970722,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 121.0754139
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "23AI0217",
+          "fiscal_year": 2023
+        }
+      ],
+      "contract_id": "25AI0083",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (BARANGAY HALL), BARANGAY SANTO NIÑO, BINALONAN, PANGASINAN",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2025,
+      "latitude": 16.1761019,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.5705844
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "23OC0021",
+          "fiscal_year": 2023
+        }
+      ],
+      "contract_id": "25OC0009",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (EVACUATION CENTER) AT CORONADO STREET (PHASE 3), BARANGAY GUADALUPE VIEJO,MAKATI CITY, METRO MANILA",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2025,
+      "latitude": 14.5648572,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 121.0413017
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24DD0014",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24DD0064",
+      "description": "CONVERGENCE AND SPECIAL SUPPORT PROGRAM, BASIC INFRASTRUCTURE PROGRAM (BIP), MULTI-PURPOSE BUILDINGS/ FACILITIES TO SUPPORT SOCIAL SERVICES, CONSTRUCTION OF MULTI-PURPOSE BUILDING IN TAYSAN, BATANGAS",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 13.7536311,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 121.2437067
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24AI0054",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24AI0046",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING AT POBLACION, BINALONAN, PANGASINAN",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 16.0436053,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.5934867
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "21PA0056",
+          "fiscal_year": 2021
+        }
+      ],
+      "contract_id": "24PA0105",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (BARANGAY HALL), BARANGAY DALIT, PILAR, ABRA",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 17.3511194,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.5658111
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "23PA0076",
+          "fiscal_year": 2023
+        }
+      ],
+      "contract_id": "24PA0001",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (COVERED COURT), SAN JOSE SUR, MANABO, ABRA",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 17.4291278,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.7050889
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24IE0041",
+          "fiscal_year": 2024
+        },
+        {
+          "contract_id": "24IE0087",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24IE0050",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, BARANGAY TABING, TABANGO, LEYTE",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 11.315415,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 124.3846397
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24DD0207",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24DD0204",
+      "description": "CONVERGENCE AND SPECIAL SUPPORT PROGRAM, BASIC INFRASTRUCTURE PROGRAM (BIP), MULTI-PURPOSE BUILDINGS/ FACILITIES TO SUPPORT SOCIAL SERVICES, CONSTRUCTION OF MULTI-PURPOSE BUILDING, POBLACION B, ROSARIO, BATANGAS",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 13.8465236,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 121.2077144
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "23AI0217",
+          "fiscal_year": 2023
+        }
+      ],
+      "contract_id": "25AI0081",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (BARANGAY HALL), BARANGAY CILI, BINALONAN, PANGASINAN",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2025,
+      "latitude": 16.1761019,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.5705844
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "25OD0260",
+          "fiscal_year": 2025
+        }
+      ],
+      "contract_id": "25OD0267",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, VILLA REFORM III (PHASE 2), BRGY. 167, CALOOCAN CITY",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2025,
+      "latitude": 14.7350567,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 121.0132542
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24KE0088",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24KE0087",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, BALBAGON, MAMBAJAO, CAMIGUIN",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 9.2452931,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 124.7268531
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "23DD0312",
+          "fiscal_year": 2023
+        }
+      ],
+      "contract_id": "24DD0136",
+      "description": "CONVERGENCE AND SPECIAL SUPPORT PROGRAM, BASIC INFRASTRUCTURE PROGRAM (BIP), MULTI-PURPOSE BUILDINGS/ FACILITIES TO SUPPORT SOCIAL SERVICES, COMPLETION OF MULTI-PURPOSE BUILDING AND SITE FACILITIES AT BARANGAY DAGATAN, SAN JOSE, BATANGAS",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 13.8684472,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 121.1037444
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24CB0085",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24CB0084",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (TOURISM CENTER), BRGY. BAGONG SILANG, BALANGA CITY, BATAAN (PHASE 5)",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 14.6778611,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.5179444
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "25ME0067",
+          "fiscal_year": 2025
+        }
+      ],
+      "contract_id": "25ME0113",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, (CULTURAL AND TOURISM CENTER-PHASE II), CAPITOL COMPOUND, ALABEL, SARANGANI PROVINCE",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2025,
+      "latitude": 6.1002056,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 125.2751
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24EE0030",
+          "fiscal_year": 2024
+        },
+        {
+          "contract_id": "24EE0066",
+          "fiscal_year": 2024
+        },
+        {
+          "contract_id": "24EE0123",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24EE0129",
+      "description": "PACKAGE IV-CONSTRUCTION OF MULTI-PURPOSE BUILDING & DOJ BUILDING:1. BRGY. MENDOZA, ROXAS2. BRGY. CASIAN, TAYTAY3. PALAWAN STATE UNIVERSITY LINAPACAN CAMPUS, LINAPACAN4. BARANGAY TURDA, CORON5. PALAWAN STATE UNIVERSITY TAYTAY CAMPUS, TAYTAY6. B",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 10.4692858,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 119.3398719
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24CD0188",
+          "fiscal_year": 2024
+        },
+        {
+          "contract_id": "24CD0278",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24CD0251",
+      "description": "CONSTRUCTION OF MULTI - PURPOSE BUILDING (GAD BUILDING), BARANGAY POBLACION, SAN JOSE DEL MONTE, BULACAN",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 14.8128,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 121.044
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24GH0168",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24GH0185",
+      "description": "REHABILITATION OF MULTI-PURPOSE BUILDING (MUNICIPAL HALL), ESTANCIA, ILOILO",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 11.45684,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 123.1511
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24CC0360",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24CC0442",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, BARANGAY TIAONG, GUIGUINTO, BULACAN",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 14.842803,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.893194
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24CB0085",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24CB0081",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, BATAAN TOURISM PARK, BRGY. BAGONG SILANG, BALANGA CITY, BATAAN (PHASE 5)",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 14.6778611,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.5179444
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24CB0085",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24CB0080",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING (TOURISM CENTER), BRGY. BAGONG SILANG, BALANGA CITY, BATAAN",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 14.6778611,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 120.5179444
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "24EE0030",
+          "fiscal_year": 2024
+        },
+        {
+          "contract_id": "24EE0066",
+          "fiscal_year": 2024
+        },
+        {
+          "contract_id": "24EE0123",
+          "fiscal_year": 2024
+        }
+      ],
+      "contract_id": "24EE0090",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, BARANGAY CULASIAN, DUMARAN, PALAWAN",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2024,
+      "latitude": 10.4692858,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 119.3398719
+    },
+    {
+      "completed_contracts": [
+        {
+          "contract_id": "25OB0106",
+          "fiscal_year": 2025
+        }
+      ],
+      "contract_id": "25OB0457",
+      "description": "CONSTRUCTION OF MULTI-PURPOSE BUILDING, BARANGAY ST. JOSEPH, SAN JUAN CITY (PHASE XIV)",
+      "evidence_state": "review_candidate",
+      "fiscal_year": 2025,
+      "latitude": 14.6035889,
+      "limitation": "Exact coordinate reuse can describe a phase, nearby work, or a source error.",
+      "longitude": 121.0318361
+    }
+  ]
+}

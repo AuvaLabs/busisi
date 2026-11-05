@@ -58,8 +58,15 @@ investigation at `/research/fy2027-change-concentration/` groups the same
 authenticated comparison by recorded program, region, office and dataset
 labels without inferring political responsibility or wrongdoing.
 
+The multipurpose-building investigation now reconciles ₱88.79 billion in the
+active pipeline and ₱129.78 billion across all classified FY2024 to FY2026
+records. It also publishes official classroom funding-scale comparisons and
+four evidence gates for need, location, design, cost, and delivery. Missing
+planning evidence is reported as not assessable, never as proof that a project
+is unnecessary or improper.
+
 Its immutable downstream editorial package is published under
-`/data/research/multipurpose-buildings/v2/`. The consumption index provides the
+`/data/research/multipurpose-buildings/v3/`. The consumption index provides the
 finished story, checked claims, chart data, project examples, direct source
 links, limitations, API route, and SHA-256 manifest without requiring changes
 in a downstream production repository.

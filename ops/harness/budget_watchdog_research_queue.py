@@ -25,11 +25,11 @@ def initial_queue() -> dict:
                 "status": "published",
                 "priority": 1,
                 "evidence_sources": [
-                    "https://busisi.org/data/research/multipurpose-buildings/v2/sources.json"
+                    "https://busisi.org/data/research/multipurpose-buildings/v3/sources.json"
                 ],
                 "missing_evidence": [],
                 "target_slug": "multipurpose-buildings",
-                "published_package_url": "https://busisi.org/data/research/multipurpose-buildings/v2/editorial-package.json",
+                "published_package_url": "https://busisi.org/data/research/multipurpose-buildings/v3/editorial-package.json",
                 "downstream_ready": True,
             },
             {

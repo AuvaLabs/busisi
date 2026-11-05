@@ -1,8 +1,23 @@
 {
   "correction_count": 0,
   "policy": "A correction changes an error or supported conclusion. Editorial expansions and data updates are labelled separately. Older immutable packages remain available.",
-  "release_count": 4,
+  "release_count": 5,
   "releases": [
+    {
+      "affects_findings": true,
+      "canonical_url": "https://busisi.org/research/multipurpose-buildings/",
+      "change_type": "editorial_expansion",
+      "data_cutoff": "2026-01-22",
+      "headline": "How many multipurpose buildings are being built?",
+      "manifest_url": "https://busisi.org/data/research/multipurpose-buildings/v3/manifest.json",
+      "package_sha256": "ac0b7b30a0e353ffe7734e5929af2e12ca1540f2ee6871a6671347c6fcc72519",
+      "published_at": "2026-11-05",
+      "slug": "multipurpose-buildings",
+      "story_id": "multipurpose-buildings-2026",
+      "summary": "Added the all-record budget reconciliation, official opportunity-cost benchmarks, and explicit evidence gates for necessity, location, design, cost, and delivery. Core record counts are unchanged.",
+      "supersedes_version": 2,
+      "version": 3
+    },
     {
       "affects_findings": false,
       "canonical_url": "https://busisi.org/research/fy2027-change-concentration/",
