@@ -9,6 +9,9 @@ from pathlib import Path
 
 import pyarrow.parquet as pq
 from engine.budget_watchdog.research_package import write_release_package
+from engine.budget_watchdog.research_public_value_acquisition import (
+    build_public_value_acquisition_release,
+)
 from engine.budget_watchdog.research_public_value_evidence import (
     build_public_value_evidence_release,
 )
@@ -30,7 +33,10 @@ OUTPUT_DIR = (
     / "data"
     / "research"
     / "multipurpose-buildings"
-    / "v4"
+    / "v5"
+)
+ACQUISITION_SNAPSHOT = (
+    ROOT / "data" / "budget_watchdog" / "public-value-acquisition" / "snapshot.json"
 )
 SOURCE_MODIFIED = "2026-01-22"
 PUBLISHED_AT = "2026-11-05"
@@ -52,6 +58,11 @@ EXPECTED_CLAIMS = {
     "mpb-coordinate-history-candidates": 31,
     "mpb-largest-budget-candidates": 12,
     "mpb-fully-assessed-candidates": 0,
+    "mpb-acquisition-tasks": 946,
+    "mpb-official-verified-tasks": 0,
+    "mpb-secondary-award-leads": 38,
+    "mpb-source-media-leads": 1,
+    "mpb-pending-acquisition-tasks": 907,
 }
 
 BENCHMARK_SOURCES = [
@@ -112,6 +123,33 @@ CLASSROOM_BENCHMARKS = [
     },
 ]
 
+ACQUISITION_SOURCES = [
+    {
+        "id": "bettergov-philgeps-snapshot-2026-01-06",
+        "publisher": "Philippine Government Electronic Procurement System",
+        "access_provider": "BetterGov.ph",
+        "source_kind": "civil_society_research",
+        "scope": "Version-pinned mirror used only to locate exact award-row leads",
+        "modified": "2026-01-06",
+        "retrieved_at": "2026-11-03",
+        "origin_url": "https://notices.philgeps.gov.ph/",
+        "source_url": "https://huggingface.co/datasets/bettergovph/philgeps-data",
+        "sha256": "9bfa9e7cbf5041dc3b51a4c2742e60a43d1615f119955581d4b155bf3a6d4a8b",
+    },
+    {
+        "id": "dpwh-project-media-release-2026-11-05",
+        "publisher": "Department of Public Works and Highways",
+        "access_provider": "Department of Public Works and Highways",
+        "source_kind": "official_dataset",
+        "scope": "Gated DPWH project-image acquisition release",
+        "modified": "2026-11-05",
+        "retrieved_at": "2026-11-05",
+        "origin_url": "https://www.dpwh.gov.ph/",
+        "source_url": "https://transparency.dpwh.gov.ph/",
+        "sha256": "244c504f3b2be07a650d44038cade18f73b59c8b9dc6b3ff442380224bf7c87e",
+    },
+]
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -129,6 +167,10 @@ def main() -> None:
     for path in BENCHMARK_SOURCE_PATHS:
         if not path.is_file() or _sha256(path) != path.name:
             raise ValueError(f"archived benchmark source is unavailable or invalid: {path.name}")
+    if not ACQUISITION_SNAPSHOT.is_file():
+        raise FileNotFoundError(
+            f"public-value acquisition snapshot is unavailable: {ACQUISITION_SNAPSHOT}"
+        )
 
     columns = [
         "contractId",
@@ -142,7 +184,7 @@ def main() -> None:
         "hasSatelliteImage",
     ]
     rows = pq.read_table(SOURCE_PATH, columns=columns).to_pylist()
-    release = build_public_value_evidence_release(
+    evidence_release = build_public_value_evidence_release(
         rows,
         source_sha256=SOURCE_SHA256,
         source_modified=SOURCE_MODIFIED,
@@ -155,6 +197,19 @@ def main() -> None:
                 "https://busisi.org/data/research/multipurpose-buildings/v3/manifest.json"
             ),
             "package_sha256": ("ac0b7b30a0e353ffe7734e5929af2e12ca1540f2ee6871a6671347c6fcc72519"),
+        },
+    )
+    acquisition = json.loads(ACQUISITION_SNAPSHOT.read_text(encoding="utf-8"))
+    release = build_public_value_acquisition_release(
+        evidence_release,
+        acquisition,
+        acquisition_sources=ACQUISITION_SOURCES,
+        supersedes={
+            "version": 4,
+            "manifest_url": (
+                "https://busisi.org/data/research/multipurpose-buildings/v4/manifest.json"
+            ),
+            "package_sha256": ("4136d509893112797abbc3f1dd9931fd017276ade6ded8fdfc303d527e98cc4d"),
         },
     )
     claims = {claim["id"]: claim["value"] for claim in release["claims"]}

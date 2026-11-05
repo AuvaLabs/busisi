@@ -18,8 +18,8 @@ const expectedArtifacts = Object.freeze({
   delivery_artifact_sha256: '5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123',
 });
 const expectedResearch = Object.freeze({
-  version: 4,
-  package_sha256: '4136d509893112797abbc3f1dd9931fd017276ade6ded8fdfc303d527e98cc4d',
+  version: 5,
+  package_sha256: '5847526c3954802791e0d79075e31eceb14a477c9d2a5264dcff9301bfe33926',
   story_id: 'multipurpose-buildings-2026',
 });
 const expectedStageResearch = Object.freeze({
@@ -465,7 +465,7 @@ const verifyPages = async () => {
   expectIncludes(researchText, '25,499 to 32,503', 'research opportunity-cost range');
   expectIncludes(researchText, 'not a cancellation recommendation', 'research opportunity-cost boundary');
   expectIncludes(researchText, '43 projects now have a public evidence checklist', 'research evidence queue');
-  expectIncludes(researchText, '/data/research/multipurpose-buildings/v4/', 'research version');
+  expectIncludes(researchText, '/data/research/multipurpose-buildings/v5/', 'research version');
 
   const valueEvidence = await request('/research/multipurpose-buildings/evidence/');
   expectStatus(valueEvidence, 200, '/research/multipurpose-buildings/evidence/');
@@ -474,6 +474,9 @@ const verifyPages = async () => {
   expectIncludes(valueEvidenceText, 'Coordinate-history leads</span><strong>31', 'value evidence coordinate control');
   expectIncludes(valueEvidenceText, 'Largest-budget records</span><strong>12', 'value evidence budget control');
   expectIncludes(valueEvidenceText, 'Fully assessed</span><strong>0', 'value evidence assessment boundary');
+  expectIncludes(valueEvidenceText, '946 evidence checks', 'value evidence acquisition total');
+  expectIncludes(valueEvidenceText, 'Exact secondary award rows</span><strong>38', 'value evidence award leads');
+  expectIncludes(valueEvidenceText, 'Official checks complete</span><strong>0', 'value evidence official boundary');
   expectIncludes(valueEvidenceText, '/contracts/25AI0166/', 'value evidence dossier link');
   expectIncludes(valueEvidenceText, 'not a representative sample, risk score, accusation', 'value evidence selection boundary');
   const stageResearch = await request('/research/fy2027-nep-house-changes/');
@@ -534,7 +537,7 @@ const verifyPages = async () => {
   expectIncludes(llmsText, '/api/v1/facility-registry-status', 'llms facility status API');
   expectIncludes(
     llmsText,
-    '/data/research/multipurpose-buildings/v4/editorial-package.json',
+    '/data/research/multipurpose-buildings/v5/editorial-package.json',
     'llms research editorial package',
   );
   expectIncludes(
@@ -684,7 +687,7 @@ const verifyData = async () => {
   if (researchEntry?.story_id !== expectedResearch.story_id
     || researchEntry?.version !== expectedResearch.version
     || researchEntry?.package_sha256 !== expectedResearch.package_sha256
-    || !researchEntry?.editorial_package_url?.endsWith('/v4/editorial-package.json')) {
+    || !researchEntry?.editorial_package_url?.endsWith('/v5/editorial-package.json')) {
     fail('research catalogue: current editorial package identity is missing');
   }
   const researchRelease = await readJson('/api/v1/research/multipurpose-buildings');
@@ -692,20 +695,22 @@ const verifyData = async () => {
     || researchRelease.data?.story?.editorial_status !== 'ready'
     || researchRelease.data?.editorial_package?.status !== 'ready_for_consumption'
     || researchRelease.data?.chart_data?.public_value_evidence?.candidate_count !== 43
+    || researchRelease.data?.chart_data?.public_value_acquisition?.task_count !== 946
+    || researchRelease.data?.chart_data?.public_value_acquisition?.secondary_exact !== 38
     || researchRelease.data?.project_examples?.public_value_candidates?.length !== 43) {
     fail('research release: story, package, or integrity identity is missing');
   }
   const researchManifest = await readJson(
-    '/data/research/multipurpose-buildings/v4/manifest.json',
+    '/data/research/multipurpose-buildings/v5/manifest.json',
   );
-  const researchStory = await readJson('/data/research/multipurpose-buildings/v4/story.json');
+  const researchStory = await readJson('/data/research/multipurpose-buildings/v5/story.json');
   const editorialPackage = await readJson(
-    '/data/research/multipurpose-buildings/v4/editorial-package.json',
+    '/data/research/multipurpose-buildings/v5/editorial-package.json',
   );
   if (researchManifest.package_sha256 !== expectedResearch.package_sha256
     || researchStory.editorial_status !== 'ready'
     || editorialPackage.status !== 'ready_for_consumption'
-    || editorialPackage.manifest_url !== `${publicOrigin}/data/research/multipurpose-buildings/v4/manifest.json`) {
+    || editorialPackage.manifest_url !== `${publicOrigin}/data/research/multipurpose-buildings/v5/manifest.json`) {
     fail('research static package: files are unavailable or inconsistent');
   }
   const stageResearchEntry = researchCatalogue.data?.find(({ story_id: id }) => (
@@ -746,7 +751,7 @@ const verifyData = async () => {
   const researchHistory = await readJson('/api/v1/research/history');
   const staticResearchHistory = await readJson('/data/research/release-history.json');
   for (const [key, expected] of Object.entries({
-    release_count: 6,
+    release_count: 7,
     story_count: 3,
     correction_count: 0,
   })) {

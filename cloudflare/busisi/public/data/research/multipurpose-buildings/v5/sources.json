@@ -1,0 +1,62 @@
+[
+  {
+    "access_provider": "BetterGov",
+    "id": "dpwh-delivery-snapshot-2026-01-22",
+    "modified": "2026-01-22",
+    "origin_url": "https://transparency.dpwh.gov.ph/",
+    "publisher": "Department of Public Works and Highways",
+    "retrieved_at": "2026-11-02",
+    "scope": "Archived DPWH project and contract snapshot",
+    "sha256": "5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123",
+    "source_kind": "curated_official_extract",
+    "source_url": "https://huggingface.co/datasets/bettergovph/dpwh-transparency-data/resolve/648ea96af4f7625d606fda0b78803917913a26b7/dpwh_transparency_data.parquet"
+  },
+  {
+    "access_provider": "Department of Budget and Management",
+    "id": "dbm-technical-notes-2026",
+    "modified": "2025-08-13",
+    "origin_url": "https://www.dbm.gov.ph/",
+    "publisher": "Department of Budget and Management",
+    "retrieved_at": "2026-11-05",
+    "scope": "Technical notes on the 2026 proposed national budget",
+    "sha256": "79a81214664157b9721a902151240d603e10ac94bc1652d13814b88816083bd6",
+    "source_kind": "official_record",
+    "source_url": "https://www.dbm.gov.ph/images/pdffiles/2026-Technical-Notes.pdf"
+  },
+  {
+    "access_provider": "Department of Budget and Management",
+    "id": "dbm-classroom-release-2026",
+    "modified": "2026-04-20",
+    "origin_url": "https://www.dbm.gov.ph/",
+    "publisher": "Department of Budget and Management",
+    "retrieved_at": "2026-11-05",
+    "scope": "April 2026 release for 4,960 classrooms and essential furniture",
+    "sha256": "6ef90a400adb64211bb4a16b3277242dc9c6615f5e432d5c37302fa3117817d1",
+    "source_kind": "official_record",
+    "source_url": "https://www.dbm.gov.ph/index.php/homepage-2/3953-pbbm-orders-p17-27b-release-to-build-4-960-classrooms-nationwide-close-learning-gaps"
+  },
+  {
+    "access_provider": "BetterGov.ph",
+    "id": "bettergov-philgeps-snapshot-2026-01-06",
+    "modified": "2026-01-06",
+    "origin_url": "https://notices.philgeps.gov.ph/",
+    "publisher": "Philippine Government Electronic Procurement System",
+    "retrieved_at": "2026-11-03",
+    "scope": "Version-pinned mirror used only to locate exact award-row leads",
+    "sha256": "9bfa9e7cbf5041dc3b51a4c2742e60a43d1615f119955581d4b155bf3a6d4a8b",
+    "source_kind": "civil_society_research",
+    "source_url": "https://huggingface.co/datasets/bettergovph/philgeps-data"
+  },
+  {
+    "access_provider": "Department of Public Works and Highways",
+    "id": "dpwh-project-media-release-2026-11-05",
+    "modified": "2026-11-05",
+    "origin_url": "https://www.dpwh.gov.ph/",
+    "publisher": "Department of Public Works and Highways",
+    "retrieved_at": "2026-11-05",
+    "scope": "Gated DPWH project-image acquisition release",
+    "sha256": "244c504f3b2be07a650d44038cade18f73b59c8b9dc6b3ff442380224bf7c87e",
+    "source_kind": "official_dataset",
+    "source_url": "https://transparency.dpwh.gov.ph/"
+  }
+]

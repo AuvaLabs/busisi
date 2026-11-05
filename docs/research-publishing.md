@@ -81,3 +81,11 @@ Schema 1.1 releases also fail when their source check is older than the declared
 Published packages are never edited in place. A correction or contract expansion creates a new version whose manifest identifies the previous release in `supersedes`. Earlier versions remain available after a newer release becomes current.
 
 Project evidence queues publish selection reasons, gate states, direct dossier links, and missing-evidence boundaries in the immutable package. Entry in a queue is never presented as a risk score, accusation, or finding that a project is unnecessary, duplicated, improperly located, overpriced, or associated with wrongdoing.
+
+The multipurpose-building acquisition harness expands each selected record into
+22 deterministic checks across identity, need, location, design, procurement,
+delivery, payment, and use. Its mutable SQLite queue and task-level source URLs
+remain private. The public package exposes only reconciled coverage counts,
+task definitions, source identities, limitations, and per-project gate counts.
+Exact rows from a secondary award mirror and archived DPWH source media remain
+lead states. Neither state satisfies an official evidence requirement.

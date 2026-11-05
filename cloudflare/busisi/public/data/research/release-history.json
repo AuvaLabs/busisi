@@ -1,8 +1,23 @@
 {
   "correction_count": 0,
   "policy": "A correction changes an error or supported conclusion. Editorial expansions and data updates are labelled separately. Older immutable packages remain available.",
-  "release_count": 6,
+  "release_count": 7,
   "releases": [
+    {
+      "affects_findings": false,
+      "canonical_url": "https://busisi.org/research/multipurpose-buildings/",
+      "change_type": "data_update",
+      "data_cutoff": "2026-01-22",
+      "headline": "How many multipurpose buildings are being built?",
+      "manifest_url": "https://busisi.org/data/research/multipurpose-buildings/v5/manifest.json",
+      "package_sha256": "5847526c3954802791e0d79075e31eceb14a477c9d2a5264dcff9301bfe33926",
+      "published_at": "2026-11-05",
+      "slug": "multipurpose-buildings",
+      "story_id": "multipurpose-buildings-2026",
+      "summary": "Added a targeted 946-task acquisition ledger. Exact secondary award rows and archived source media remain evidence leads and are not promoted to complete official evidence.",
+      "supersedes_version": 4,
+      "version": 5
+    },
     {
       "affects_findings": false,
       "canonical_url": "https://busisi.org/research/multipurpose-buildings/",

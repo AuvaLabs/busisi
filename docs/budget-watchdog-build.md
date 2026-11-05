@@ -260,6 +260,11 @@ fiscal years, category groups and both source fingerprints. The full 5,481,161
 row mirror, per-contract scan and mutable acquisition queue remain local and
 are never bound to the Worker. `ops/systemd/busisi-acquisition-retry.timer`
 runs the bounded official-source retry harness daily on the data host.
+The targeted public-value acquisition queue is built under
+`data/budget_watchdog/public-value-acquisition/`. It reconciles the selected
+multipurpose-building records to the full lifecycle queue and the gated project
+media release. Only its public-safe counts are copied into the immutable
+research package.
 `ops/systemd/busisi-project-image-coverage.timer` runs the gated image-evidence
 queue every six hours. It uses a 25-contract canary, 100-contract chunks, four
 worker-local HTTP sessions and a shared two-request-per-second host limiter.

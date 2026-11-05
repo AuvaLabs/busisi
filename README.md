@@ -71,8 +71,14 @@ budgets. The project-level checklist separates source-reported fields from
 missing identity, need, site, design, cost, delivery, and actual-use evidence.
 Selection is not a risk score or finding of wrongdoing.
 
+The targeted acquisition layer expands those 43 records into 946 evidence
+checks. The first reconciliation keeps 38 exact secondary award rows and one
+archived DPWH source-media record as leads, while reporting zero complete
+official evidence checks and 907 checks still to acquire. A lead never passes
+an evidence gate by itself.
+
 Its immutable downstream editorial package is published under
-`/data/research/multipurpose-buildings/v4/`. The consumption index provides the
+`/data/research/multipurpose-buildings/v5/`. The consumption index provides the
 finished story, checked claims, chart data, project examples, direct source
 links, limitations, API route, and SHA-256 manifest without requiring changes
 in a downstream production repository.

@@ -816,7 +816,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Projects grouped by recorded place: ${SITE.origin}/api/v1/places
 - Bounded evidence updates: ${SITE.origin}/api/v1/alerts
 - Published research packages: ${SITE.origin}/api/v1/research
-- Ready multipurpose-building editorial package: ${SITE.origin}/data/research/multipurpose-buildings/v4/editorial-package.json
+- Ready multipurpose-building editorial package: ${SITE.origin}/data/research/multipurpose-buildings/v5/editorial-package.json
 - Ready FY2027 stage-change editorial package: ${SITE.origin}/data/research/fy2027-nep-house-changes/v1/editorial-package.json
 - Ready FY2027 concentration editorial package: ${SITE.origin}/data/research/fy2027-change-concentration/v1/editorial-package.json
 - Research release history: ${SITE.origin}/data/research/release-history.json

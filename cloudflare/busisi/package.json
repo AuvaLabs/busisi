@@ -13,7 +13,7 @@
     "build:public-value": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_public_value.py",
     "build:facilities": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_facilities.py",
     "build:accountability": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_accountability.py --reset-output",
-    "build:research": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_research.py && PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_stage_change_research.py && PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_change_concentration_research.py && PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_research_history.py && npm run verify:research",
+    "build:research": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_public_value_acquisition.py && PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_research.py && PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_stage_change_research.py && PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_change_concentration_research.py && PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_research_history.py && npm run verify:research",
     "verify:research": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_research_editor.py",
     "verify:research-queue": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_research_queue.py",
     "monitor:accountability": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_accountability.py --source-only --reset-output",
