@@ -1,8 +1,23 @@
 {
   "correction_count": 0,
   "policy": "A correction changes an error or supported conclusion. Editorial expansions and data updates are labelled separately. Older immutable packages remain available.",
-  "release_count": 5,
+  "release_count": 6,
   "releases": [
+    {
+      "affects_findings": false,
+      "canonical_url": "https://busisi.org/research/multipurpose-buildings/",
+      "change_type": "editorial_expansion",
+      "data_cutoff": "2026-01-22",
+      "headline": "How many multipurpose buildings are being built?",
+      "manifest_url": "https://busisi.org/data/research/multipurpose-buildings/v4/manifest.json",
+      "package_sha256": "4136d509893112797abbc3f1dd9931fd017276ade6ded8fdfc303d527e98cc4d",
+      "published_at": "2026-11-05",
+      "slug": "multipurpose-buildings",
+      "story_id": "multipurpose-buildings-2026",
+      "summary": "Added a bounded 43-project public-value evidence queue with project-level gate states and dossier links. Selection is not a risk score or finding of wrongdoing.",
+      "supersedes_version": 3,
+      "version": 4
+    },
     {
       "affects_findings": true,
       "canonical_url": "https://busisi.org/research/multipurpose-buildings/",

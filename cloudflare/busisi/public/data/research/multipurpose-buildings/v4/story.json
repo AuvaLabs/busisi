@@ -1,0 +1,242 @@
+{
+  "audience": "Filipino public",
+  "canonical_url": "https://busisi.org/research/multipurpose-buildings/",
+  "data_cutoff": "2026-01-22",
+  "deck": "A reproducible count and budget reconciliation, with explicit tests for need, location, design, cost, and delivery.",
+  "editorial_status": "ready",
+  "headline": "How many multipurpose buildings are being built?",
+  "language": "en-PH",
+  "schema_version": "1.0",
+  "sections": [
+    {
+      "claim_ids": [
+        "mpb-total-records",
+        "mpb-ongoing",
+        "mpb-active-pipeline"
+      ],
+      "copy": [
+        "5,842 conservatively classified records are marked On-Going.",
+        "The wider active pipeline contains 7,024 records when For Procurement and Not Yet Started are included.",
+        "These are source records and source-reported statuses, not an independent count of physical buildings or active construction sites."
+      ],
+      "heading": "The source reports a large active pipeline",
+      "id": "direct-answer",
+      "limitation_ids": [
+        "record-count",
+        "source-status",
+        "classifier-omissions"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.status"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-existing-work-wording"
+      ],
+      "copy": [
+        "2,812 active titles explicitly describe completion, a later phase, repair, improvement, replacement, or reconstruction.",
+        "A title that only says construction does not establish that the structure is new."
+      ],
+      "heading": "Many titles describe work on an existing or partly built asset",
+      "id": "work-type",
+      "limitation_ids": [
+        "record-count",
+        "classifier-omissions"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.work_types"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-active-pipeline",
+        "mpb-ongoing"
+      ],
+      "copy": [
+        "Region totals reconcile to the national classified result.",
+        "District-office labels reproduce the source, while city coverage is partial because locality names are embedded in project titles."
+      ],
+      "heading": "The records can be compared by region, district-office label, and some city names",
+      "id": "location",
+      "limitation_ids": [
+        "location-coverage",
+        "district-labels"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.regions",
+        "chart_data.district_offices",
+        "chart_data.explicit_cities"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-active-budget",
+        "mpb-positive-active-budget"
+      ],
+      "copy": [
+        "The package provides the recorded active budget and price distribution for records with a positive amount.",
+        "A fair comparison still needs floor area, specifications, work scope, award, payment, final cost, year, and location."
+      ],
+      "heading": "Recorded amounts describe scale, not whether a project is fairly priced",
+      "id": "pricing",
+      "limitation_ids": [
+        "budget-meaning"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.pricing",
+        "project_examples.largest_active_recorded_budgets"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-prior-coordinate-candidates"
+      ],
+      "copy": [
+        "31 active records share an exact coordinate with a completed comparison record.",
+        "This is a bounded review queue. It does not prove duplication, a ghost project, or wrongdoing."
+      ],
+      "heading": "Some exact-coordinate matches need a closer look",
+      "id": "coordinate-review",
+      "limitation_ids": [
+        "coordinate-reuse"
+      ],
+      "narration_eligible": false,
+      "section_type": "investigation_lead",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.evidence",
+        "project_examples.prior_coordinate_candidates"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-active-budget",
+        "mpb-all-recorded-budget",
+        "mpb-completed-budget"
+      ],
+      "copy": [
+        "The active pipeline carries 8,878,625,428,536 centavos in recorded budgets.",
+        "All classified FY2024 to FY2026 records carry 12,977,915,530,776 centavos, including completed work.",
+        "Recorded budgets are not payments, final cost, unique-building counts, or proof of value."
+      ],
+      "heading": "The active pipeline carries a large recorded amount",
+      "id": "public-value",
+      "limitation_ids": [
+        "record-count",
+        "budget-meaning"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.budget_reconciliation"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-classroom-equivalent-low",
+        "mpb-classroom-equivalent-high"
+      ],
+      "copy": [
+        "The same nominal active amount equals roughly 25,499 to 32,503 new classrooms under two official 2026 budget benchmarks.",
+        "The comparison does not make projects interchangeable and is not a cancellation recommendation."
+      ],
+      "heading": "Official education targets provide scale, not a cancellation plan",
+      "id": "opportunity-cost",
+      "limitation_ids": [
+        "opportunity-cost-boundary"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "dbm-technical-notes-2026",
+        "dbm-classroom-release-2026"
+      ],
+      "visual_refs": [
+        "chart_data.opportunity_cost"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-necessity-assessment"
+      ],
+      "copy": [
+        "The snapshot lacks needs assessments, nearby-facility utilization, verified parcels, hazard reports, plans, floor area, bills of quantities, and post-completion use.",
+        "Missing evidence is not evidence that a project is unnecessary or improperly designed."
+      ],
+      "heading": "The current snapshot cannot determine whether each project is necessary",
+      "id": "necessity-gate",
+      "limitation_ids": [
+        "necessity-boundary",
+        "siting-design-boundary"
+      ],
+      "narration_eligible": false,
+      "section_type": "investigation_lead",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.assessment_gates"
+      ]
+    },
+    {
+      "claim_ids": [
+        "mpb-public-value-candidates",
+        "mpb-coordinate-history-candidates",
+        "mpb-largest-budget-candidates",
+        "mpb-fully-assessed-candidates"
+      ],
+      "copy": [
+        "The first queue contains 43 distinct records: 31 exact-coordinate history leads and 12 largest recorded-budget projects, with 0 record or records appearing in both selections.",
+        "No queued project currently has enough acquired evidence for a complete judgment about need, location, design, cost, delivery, and actual use.",
+        "Selection identifies where evidence collection starts. It is not a finding that a project is unnecessary, duplicated, improperly located, overpriced, or associated with wrongdoing."
+      ],
+      "heading": "A project-level evidence queue makes the missing proof visible",
+      "id": "public-value-evidence-queue",
+      "limitation_ids": [
+        "public-value-selection-boundary",
+        "necessity-boundary",
+        "siting-design-boundary"
+      ],
+      "narration_eligible": false,
+      "section_type": "investigation_lead",
+      "source_ids": [
+        "dpwh-delivery-snapshot-2026-01-22"
+      ],
+      "visual_refs": [
+        "chart_data.public_value_evidence",
+        "project_examples.public_value_candidates"
+      ]
+    }
+  ],
+  "source_ids": [
+    "dpwh-delivery-snapshot-2026-01-22"
+  ],
+  "story_id": "multipurpose-buildings-2026",
+  "version": 4
+}

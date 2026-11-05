@@ -1,0 +1,67 @@
+{
+  "canonical_url": "https://busisi.org/research/multipurpose-buildings/",
+  "data_cutoff": "2026-01-22",
+  "files": [
+    {
+      "bytes": 14654,
+      "path": "chart-data.json",
+      "sha256": "06e7c4d97faf3cd46e0eb13b296c27523e5938fb8dcbfc51190aa6f6c595885d"
+    },
+    {
+      "bytes": 9242,
+      "path": "claims.json",
+      "sha256": "221eb720f9ac2dbf1e897dd9e686c946ef96b7b4efd13b71f45e554075669224"
+    },
+    {
+      "bytes": 2081,
+      "path": "editorial-package.json",
+      "sha256": "01ced0becfa467dff0fbf684a8f9e667767e42d551b363e6198415b592ba81e2"
+    },
+    {
+      "bytes": 1284,
+      "path": "findings.json",
+      "sha256": "f9feb9ea521c9bd1b122ed4db069c077da3952bb3ea3283daa8eb3e6eadbeeea"
+    },
+    {
+      "bytes": 1850,
+      "path": "investigations.json",
+      "sha256": "ff97f1e47e2bbf7a1ae08f255507c8ead643bce7e45a867485b94c944f4ca169"
+    },
+    {
+      "bytes": 1848,
+      "path": "limitations.json",
+      "sha256": "6c8368d0e7a4a6763baa522382b8562b0f55cdd2dc50e279730efebfda43644b"
+    },
+    {
+      "bytes": 68984,
+      "path": "project-examples.json",
+      "sha256": "807cd3e38da438e006ca66e2a057f1e0ada5280023005a9bc350f9a29759a921"
+    },
+    {
+      "bytes": 1807,
+      "path": "sources.json",
+      "sha256": "48d457f762e47d7639f364fa2f7643a367cad1f2110dfdde566c4b202e6d9f6c"
+    },
+    {
+      "bytes": 8372,
+      "path": "story.json",
+      "sha256": "756d3c2b9b3a480bd0e1e6809502c74159b09e315fa0cf019814e886734b0976"
+    }
+  ],
+  "headline": "How many multipurpose buildings are being built?",
+  "methodology_version": "mpb-public-value-evidence-v1",
+  "package_sha256": "4136d509893112797abbc3f1dd9931fd017276ade6ded8fdfc303d527e98cc4d",
+  "published_at": "2026-11-05",
+  "schema_version": "1.0",
+  "slug": "multipurpose-buildings",
+  "source_artifact_sha256": "5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123",
+  "status": "published",
+  "story_id": "multipurpose-buildings-2026",
+  "supersedes": {
+    "manifest_url": "https://busisi.org/data/research/multipurpose-buildings/v3/manifest.json",
+    "package_sha256": "ac0b7b30a0e353ffe7734e5929af2e12ca1540f2ee6871a6671347c6fcc72519",
+    "version": 3
+  },
+  "version": 4,
+  "video_ready": true
+}

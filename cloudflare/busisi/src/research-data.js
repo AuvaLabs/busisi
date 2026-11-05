@@ -1,13 +1,13 @@
-import chartData from '../public/data/research/multipurpose-buildings/v3/chart-data.json' with { type: 'json' };
-import claims from '../public/data/research/multipurpose-buildings/v3/claims.json' with { type: 'json' };
-import editorialPackage from '../public/data/research/multipurpose-buildings/v3/editorial-package.json' with { type: 'json' };
-import findings from '../public/data/research/multipurpose-buildings/v3/findings.json' with { type: 'json' };
-import investigations from '../public/data/research/multipurpose-buildings/v3/investigations.json' with { type: 'json' };
-import limitations from '../public/data/research/multipurpose-buildings/v3/limitations.json' with { type: 'json' };
-import manifest from '../public/data/research/multipurpose-buildings/v3/manifest.json' with { type: 'json' };
-import projectExamples from '../public/data/research/multipurpose-buildings/v3/project-examples.json' with { type: 'json' };
-import sources from '../public/data/research/multipurpose-buildings/v3/sources.json' with { type: 'json' };
-import story from '../public/data/research/multipurpose-buildings/v3/story.json' with { type: 'json' };
+import chartData from '../public/data/research/multipurpose-buildings/v4/chart-data.json' with { type: 'json' };
+import claims from '../public/data/research/multipurpose-buildings/v4/claims.json' with { type: 'json' };
+import editorialPackage from '../public/data/research/multipurpose-buildings/v4/editorial-package.json' with { type: 'json' };
+import findings from '../public/data/research/multipurpose-buildings/v4/findings.json' with { type: 'json' };
+import investigations from '../public/data/research/multipurpose-buildings/v4/investigations.json' with { type: 'json' };
+import limitations from '../public/data/research/multipurpose-buildings/v4/limitations.json' with { type: 'json' };
+import manifest from '../public/data/research/multipurpose-buildings/v4/manifest.json' with { type: 'json' };
+import projectExamples from '../public/data/research/multipurpose-buildings/v4/project-examples.json' with { type: 'json' };
+import sources from '../public/data/research/multipurpose-buildings/v4/sources.json' with { type: 'json' };
+import story from '../public/data/research/multipurpose-buildings/v4/story.json' with { type: 'json' };
 import stageChartData from '../public/data/research/fy2027-nep-house-changes/v1/chart-data.json' with { type: 'json' };
 import stageClaims from '../public/data/research/fy2027-nep-house-changes/v1/claims.json' with { type: 'json' };
 import stageEditorialPackage from '../public/data/research/fy2027-nep-house-changes/v1/editorial-package.json' with { type: 'json' };
@@ -85,7 +85,7 @@ export const researchCatalogue = Object.freeze([
     manifest_url: editorialPackage.manifest_url,
     story_url: editorialPackage.story_url,
     editorial_package_url: `${editorialPackage.package_base_url}/editorial-package.json`,
-    summary: 'A source-bounded count and ₱88.79 billion active-pipeline reconciliation, with explicit tests for need, location, design, cost, and delivery.',
+    summary: 'A source-bounded count and ₱88.79 billion active-pipeline reconciliation, with a 43-project public-value evidence queue.',
   },
   {
     story_id: stageManifest.story_id,

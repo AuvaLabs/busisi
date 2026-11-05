@@ -312,3 +312,51 @@ def test_published_v3_reconciles_value_and_evidence_gates() -> None:
         payload = (package / entry["path"]).read_bytes()
         assert len(payload) == entry["bytes"]
         assert hashlib.sha256(payload).hexdigest() == entry["sha256"]
+
+
+def test_published_v4_exposes_bounded_project_value_evidence() -> None:
+    root = Path(__file__).resolve().parents[3]
+    package = (
+        root
+        / "cloudflare"
+        / "busisi"
+        / "public"
+        / "data"
+        / "research"
+        / "multipurpose-buildings"
+        / "v4"
+    )
+    manifest = json.loads((package / "manifest.json").read_text())
+    claims = {
+        item["id"]: item for item in json.loads((package / "claims.json").read_text())
+    }
+    chart_data = json.loads((package / "chart-data.json").read_text())
+    examples = json.loads((package / "project-examples.json").read_text())
+
+    assert manifest["version"] == 4
+    assert manifest["package_sha256"] == (
+        "4136d509893112797abbc3f1dd9931fd017276ade6ded8fdfc303d527e98cc4d"
+    )
+    assert manifest["supersedes"]["package_sha256"] == (
+        "ac0b7b30a0e353ffe7734e5929af2e12ca1540f2ee6871a6671347c6fcc72519"
+    )
+    assert claims["mpb-public-value-candidates"]["value"] == 43
+    assert claims["mpb-coordinate-history-candidates"]["value"] == 31
+    assert claims["mpb-largest-budget-candidates"]["value"] == 12
+    assert claims["mpb-fully-assessed-candidates"]["value"] == 0
+    coverage = chart_data["public_value_evidence"]
+    assert coverage["selection_overlap"] == 0
+    assert coverage["gate_counts"]["need"] == {"not_in_snapshot": 43}
+    assert coverage["gate_counts"]["location"] == {
+        "partial": 12,
+        "review_lead": 31,
+    }
+    assert len(examples["public_value_candidates"]) == 43
+    assert all(
+        item["assessment_state"] == "cannot_assess_from_current_evidence"
+        for item in examples["public_value_candidates"]
+    )
+    for entry in manifest["files"]:
+        payload = (package / entry["path"]).read_bytes()
+        assert len(payload) == entry["bytes"]
+        assert hashlib.sha256(payload).hexdigest() == entry["sha256"]

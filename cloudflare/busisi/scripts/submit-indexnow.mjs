@@ -28,6 +28,7 @@ const paths = [
   '/public-services/',
   '/research/',
   '/research/multipurpose-buildings/',
+  '/research/multipurpose-buildings/evidence/',
   '/research/fy2027-nep-house-changes/',
   '/research/fy2027-change-concentration/',
   '/research/releases/',

@@ -61,12 +61,18 @@ labels without inferring political responsibility or wrongdoing.
 The multipurpose-building investigation now reconciles ₱88.79 billion in the
 active pipeline and ₱129.78 billion across all classified FY2024 to FY2026
 records. It also publishes official classroom funding-scale comparisons and
-four evidence gates for need, location, design, cost, and delivery. Missing
+explicit evidence categories for need, location, design, cost, and delivery. Missing
 planning evidence is reported as not assessable, never as proof that a project
 is unnecessary or improper.
 
+Its public-value evidence layer opens a bounded queue of 43 project records:
+31 exact-coordinate history review leads and 12 of the largest active recorded
+budgets. The project-level checklist separates source-reported fields from
+missing identity, need, site, design, cost, delivery, and actual-use evidence.
+Selection is not a risk score or finding of wrongdoing.
+
 Its immutable downstream editorial package is published under
-`/data/research/multipurpose-buildings/v3/`. The consumption index provides the
+`/data/research/multipurpose-buildings/v4/`. The consumption index provides the
 finished story, checked claims, chart data, project examples, direct source
 links, limitations, API route, and SHA-256 manifest without requiring changes
 in a downstream production repository.

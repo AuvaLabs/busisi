@@ -8,10 +8,10 @@ import shutil
 from pathlib import Path
 
 import pyarrow.parquet as pq
-from engine.budget_watchdog.research_multipurpose_value import (
-    build_multipurpose_value_release,
-)
 from engine.budget_watchdog.research_package import write_release_package
+from engine.budget_watchdog.research_public_value_evidence import (
+    build_public_value_evidence_release,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_SHA256 = "5b411cf3f112fabd1913c70681791e5e2b78b43a8393f489f48bd882f154e123"
@@ -30,7 +30,7 @@ OUTPUT_DIR = (
     / "data"
     / "research"
     / "multipurpose-buildings"
-    / "v3"
+    / "v4"
 )
 SOURCE_MODIFIED = "2026-01-22"
 PUBLISHED_AT = "2026-11-05"
@@ -48,6 +48,10 @@ EXPECTED_CLAIMS = {
     "mpb-classroom-equivalent-low": 25_499,
     "mpb-classroom-equivalent-high": 32_503,
     "mpb-necessity-assessment": 0,
+    "mpb-public-value-candidates": 43,
+    "mpb-coordinate-history-candidates": 31,
+    "mpb-largest-budget-candidates": 12,
+    "mpb-fully-assessed-candidates": 0,
 }
 
 BENCHMARK_SOURCES = [
@@ -138,7 +142,7 @@ def main() -> None:
         "hasSatelliteImage",
     ]
     rows = pq.read_table(SOURCE_PATH, columns=columns).to_pylist()
-    release = build_multipurpose_value_release(
+    release = build_public_value_evidence_release(
         rows,
         source_sha256=SOURCE_SHA256,
         source_modified=SOURCE_MODIFIED,
@@ -146,11 +150,11 @@ def main() -> None:
         benchmark_sources=BENCHMARK_SOURCES,
         classroom_benchmarks=CLASSROOM_BENCHMARKS,
         supersedes={
-            "version": 2,
+            "version": 3,
             "manifest_url": (
-                "https://busisi.org/data/research/multipurpose-buildings/v2/manifest.json"
+                "https://busisi.org/data/research/multipurpose-buildings/v3/manifest.json"
             ),
-            "package_sha256": ("bdf6fd74d6fc4a53a9c8025cc5e3214b31e61a4f84911020701a3f2709eadec1"),
+            "package_sha256": ("ac0b7b30a0e353ffe7734e5929af2e12ca1540f2ee6871a6671347c6fcc72519"),
         },
     )
     claims = {claim["id"]: claim["value"] for claim in release["claims"]}

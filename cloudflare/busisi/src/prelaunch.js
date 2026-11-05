@@ -47,6 +47,7 @@ import {
   fy2027ChangeConcentrationBody,
   fy2027StageChangesBody,
   multipurposeBuildingsBody,
+  multipurposeEvidenceBody,
   researchIndexBody,
   researchReleaseHistoryBody,
 } from './research-content.js';
@@ -285,6 +286,20 @@ const MULTIPURPOSE_BUILDINGS_SCHEMA = Object.freeze({
   datePublished: '2026-11-04',
   dateModified: '2026-11-05',
   inLanguage: ['en-PH', 'fil-PH'],
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
+const MULTIPURPOSE_EVIDENCE_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi multipurpose-building public-value evidence queue',
+  url: `${SITE.origin}/research/multipurpose-buildings/evidence/`,
+  description: 'Project-level evidence states for 43 selected multipurpose-building records, covering identity, need, location, design, cost, delivery, and actual use.',
+  datePublished: '2026-11-05',
+  dateModified: '2026-11-05',
+  temporalCoverage: '2024/2026',
+  spatialCoverage: 'Philippines',
   isAccessibleForFree: true,
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
 });
@@ -547,6 +562,14 @@ const multipurposeBuildings = () => page(document({
   schema: MULTIPURPOSE_BUILDINGS_SCHEMA,
 }));
 
+const multipurposeEvidence = () => page(document({
+  title: 'Multipurpose-building public value evidence | Busisi',
+  description: 'Inspect project-level evidence states for 43 selected multipurpose-building records and see what is still needed to assess need, location, design, cost, delivery, and actual use.',
+  canonicalPath: '/research/multipurpose-buildings/evidence/',
+  body: multipurposeEvidenceBody,
+  schema: MULTIPURPOSE_EVIDENCE_SCHEMA,
+}));
+
 const fy2027StageChanges = () => page(document({
   title: 'What changed from the FY2027 NEP to the House lists? | Busisi',
   description: 'Compare four FY2027 project lists and see which rows were added, removed, changed, unchanged, or quarantined, with careful evidence limits.',
@@ -729,6 +752,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/public-services/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/research/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/research/multipurpose-buildings/</loc><lastmod>2026-11-05</lastmod></url>
+  <url><loc>${SITE.origin}/research/multipurpose-buildings/evidence/</loc><lastmod>2026-11-05</lastmod></url>
   <url><loc>${SITE.origin}/research/fy2027-nep-house-changes/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/research/fy2027-change-concentration/</loc><lastmod>2026-11-05</lastmod></url>
   <url><loc>${SITE.origin}/research/releases/</loc><lastmod>2026-11-05</lastmod></url>
@@ -776,6 +800,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Public services inventory: ${SITE.origin}/public-services/
 - Research library: ${SITE.origin}/research/
 - Multipurpose-building investigation: ${SITE.origin}/research/multipurpose-buildings/
+- Multipurpose-building public-value evidence queue: ${SITE.origin}/research/multipurpose-buildings/evidence/
 - FY2027 NEP-to-House project-list investigation: ${SITE.origin}/research/fy2027-nep-house-changes/
 - FY2027 change-concentration investigation: ${SITE.origin}/research/fy2027-change-concentration/
 - Corrections and research release history: ${SITE.origin}/research/releases/
@@ -791,7 +816,7 @@ Official source records and reconciled FY2027 stage comparisons are public. Cros
 - Projects grouped by recorded place: ${SITE.origin}/api/v1/places
 - Bounded evidence updates: ${SITE.origin}/api/v1/alerts
 - Published research packages: ${SITE.origin}/api/v1/research
-- Ready multipurpose-building editorial package: ${SITE.origin}/data/research/multipurpose-buildings/v3/editorial-package.json
+- Ready multipurpose-building editorial package: ${SITE.origin}/data/research/multipurpose-buildings/v4/editorial-package.json
 - Ready FY2027 stage-change editorial package: ${SITE.origin}/data/research/fy2027-nep-house-changes/v1/editorial-package.json
 - Ready FY2027 concentration editorial package: ${SITE.origin}/data/research/fy2027-change-concentration/v1/editorial-package.json
 - Research release history: ${SITE.origin}/data/research/release-history.json
@@ -874,6 +899,7 @@ const route = (path) => {
   if (path === '/places' || path === '/places/') return places();
   if (path === '/research' || path === '/research/') return research();
   if (path === '/research/multipurpose-buildings' || path === '/research/multipurpose-buildings/') return multipurposeBuildings();
+  if (path === '/research/multipurpose-buildings/evidence' || path === '/research/multipurpose-buildings/evidence/') return multipurposeEvidence();
   if (path === '/research/fy2027-nep-house-changes' || path === '/research/fy2027-nep-house-changes/') return fy2027StageChanges();
   if (path === '/research/fy2027-change-concentration' || path === '/research/fy2027-change-concentration/') return fy2027ChangeConcentration();
   if (path === '/research/releases' || path === '/research/releases/') return researchReleaseHistory();

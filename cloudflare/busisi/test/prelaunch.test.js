@@ -99,8 +99,33 @@ test('publishes a research library and the multipurpose-building investigation',
   assert.match(articleDocument, /Download the research package/);
   assert.match(articleDocument, /Download the finished story/);
   assert.match(articleDocument, /Open the consumption index/);
-  assert.match(articleDocument, /data\/research\/multipurpose-buildings\/v3\/story\.json/);
+  assert.match(articleDocument, /43 projects now have a public evidence checklist/);
+  assert.match(articleDocument, /href="\/research\/multipurpose-buildings\/evidence\//);
+  assert.match(articleDocument, /data\/research\/multipurpose-buildings\/v4\/story\.json/);
   assert.match(articleDocument, /"@type":"AnalysisNewsArticle"/);
+});
+
+test('publishes a bounded multipurpose-building public value evidence queue', async () => {
+  const response = await fetchPath('/research/multipurpose-buildings/evidence/');
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /Public value evidence layer/);
+  assert.match(document, /43.*multipurpose-building records/);
+  assert.match(document, /Coordinate-history leads<\/span><strong>31/);
+  assert.match(document, /Largest-budget records<\/span><strong>12/);
+  assert.match(document, /Fully assessed<\/span><strong>0/);
+  assert.match(document, /Project and facility identity/);
+  assert.match(document, /Need and intended public use/);
+  assert.match(document, /Location and site suitability/);
+  assert.match(document, /Design, capacity, and accessibility/);
+  assert.match(document, /Cost, delivery, and actual use/);
+  assert.match(document, /25AI0166/);
+  assert.match(document, /href="\/contracts\/25AI0166\//);
+  assert.match(document, /Selection is not suspicion/);
+  assert.match(document, /not a representative sample, risk score, accusation/i);
+  assert.match(document, /data\/research\/multipurpose-buildings\/v4\/project-examples\.json/);
+  assert.match(document, /"@type":"Dataset"/);
 });
 
 test('publishes the FY2027 NEP-to-House investigation with evidence limits', async () => {
@@ -136,7 +161,7 @@ test('publishes an explicit corrections and immutable release history', async ()
   const document = await response.text();
   assert.equal(response.status, 200);
   assert.match(document, /Corrections and release history/);
-  assert.match(document, /5 published packages/);
+  assert.match(document, /6 published packages/);
   assert.match(document, /No corrections have been filed/);
   assert.match(document, /Editorial expansion/);
   assert.match(document, /underlying calculations/);
@@ -156,8 +181,10 @@ test('research routes appear in discovery surfaces', async () => {
   assert.match(llmsDocument, /Research library/);
   assert.match(
     llmsDocument,
-    /\/data\/research\/multipurpose-buildings\/v3\/editorial-package\.json/,
+    /\/data\/research\/multipurpose-buildings\/v4\/editorial-package\.json/,
   );
+  assert.match(sitemapDocument, /\/research\/multipurpose-buildings\/evidence\//);
+  assert.match(llmsDocument, /Multipurpose-building public-value evidence queue/);
   assert.match(llmsDocument, /fy2027-nep-house-changes\/v1\/editorial-package\.json/);
   assert.match(llmsDocument, /fy2027-change-concentration\/v1\/editorial-package\.json/);
   assert.match(llmsDocument, /data\/research\/release-history\.json/);
@@ -169,16 +196,18 @@ test('publishes a machine-readable research release without a database binding',
   assert.equal(catalogue.status, 200);
   const multipurpose = cataloguePayload.data.find(({ slug }) => slug === 'multipurpose-buildings');
   assert.equal(multipurpose.story_id, 'multipurpose-buildings-2026');
-  assert.equal(multipurpose.version, 3);
+  assert.equal(multipurpose.version, 4);
   assert.equal(
     multipurpose.editorial_package_url,
-    'https://busisi.org/data/research/multipurpose-buildings/v3/editorial-package.json',
+    'https://busisi.org/data/research/multipurpose-buildings/v4/editorial-package.json',
   );
 
   const release = await fetchPath('/api/v1/research/multipurpose-buildings');
   const releasePayload = await release.json();
   assert.equal(release.status, 200);
-  assert.equal(releasePayload.data.manifest.version, 3);
+  assert.equal(releasePayload.data.manifest.version, 4);
+  assert.equal(releasePayload.data.chart_data.public_value_evidence.candidate_count, 43);
+  assert.equal(releasePayload.data.project_examples.public_value_candidates.length, 43);
   assert.equal(releasePayload.data.story.editorial_status, 'ready');
   assert.equal(releasePayload.data.editorial_package.status, 'ready_for_consumption');
   assert.equal(releasePayload.data.claims.find(({ id }) => id === 'mpb-ongoing').value, 5842);
@@ -198,7 +227,7 @@ test('publishes a machine-readable research release without a database binding',
   const history = await fetchPath('/api/v1/research/history');
   const historyPayload = await history.json();
   assert.equal(history.status, 200);
-  assert.equal(historyPayload.data.release_count, 5);
+  assert.equal(historyPayload.data.release_count, 6);
   assert.equal(historyPayload.data.story_count, 3);
   assert.equal(historyPayload.data.correction_count, 0);
 });

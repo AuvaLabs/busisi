@@ -79,3 +79,5 @@ The queue file and its operational receipt remain under ignored local data. A to
 Schema 1.1 releases also fail when their source check is older than the declared maximum age, their story references an unknown claim or source, or a review candidate is marked eligible for factual narration. GitHub verifies every public package weekly. The source monitor separately checks the FY2027 comparison source revision every six hours and reports drift for review. Source changes do not create or publish a new story automatically.
 
 Published packages are never edited in place. A correction or contract expansion creates a new version whose manifest identifies the previous release in `supersedes`. Earlier versions remain available after a newer release becomes current.
+
+Project evidence queues publish selection reasons, gate states, direct dossier links, and missing-evidence boundaries in the immutable package. Entry in a queue is never presented as a risk score, accusation, or finding that a project is unnecessary, duplicated, improperly located, overpriced, or associated with wrongdoing.

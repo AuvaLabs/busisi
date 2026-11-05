@@ -1,0 +1,32 @@
+{
+  "api_url": "https://busisi.org/api/v1/research/multipurpose-buildings",
+  "attribution": "Busisi, built and maintained by Auva Labs. Source publishers remain identified in sources.json.",
+  "canonical_article_url": "https://busisi.org/research/multipurpose-buildings/",
+  "contact": "dev@auvalabs.com",
+  "direct_source_urls": [
+    "https://huggingface.co/datasets/bettergovph/dpwh-transparency-data/resolve/648ea96af4f7625d606fda0b78803917913a26b7/dpwh_transparency_data.parquet",
+    "https://www.dbm.gov.ph/images/pdffiles/2026-Technical-Notes.pdf",
+    "https://www.dbm.gov.ph/index.php/homepage-2/3953-pbbm-orders-p17-27b-release-to-build-4-960-classrooms-nationwide-close-learning-gaps"
+  ],
+  "evidence_boundary": "Only verified and source-reported claims are eligible for factual narration. Investigation leads must retain their limitations.",
+  "files": {
+    "chart_data": "https://busisi.org/data/research/multipurpose-buildings/v4/chart-data.json",
+    "claims": "https://busisi.org/data/research/multipurpose-buildings/v4/claims.json",
+    "findings": "https://busisi.org/data/research/multipurpose-buildings/v4/findings.json",
+    "investigations": "https://busisi.org/data/research/multipurpose-buildings/v4/investigations.json",
+    "limitations": "https://busisi.org/data/research/multipurpose-buildings/v4/limitations.json",
+    "project_examples": "https://busisi.org/data/research/multipurpose-buildings/v4/project-examples.json",
+    "sources": "https://busisi.org/data/research/multipurpose-buildings/v4/sources.json"
+  },
+  "integrity": {
+    "instruction": "Verify every downloaded file against manifest.json before use.",
+    "method": "sha256-manifest"
+  },
+  "manifest_url": "https://busisi.org/data/research/multipurpose-buildings/v4/manifest.json",
+  "package_base_url": "https://busisi.org/data/research/multipurpose-buildings/v4",
+  "schema_version": "1.0",
+  "status": "ready_for_consumption",
+  "story_id": "multipurpose-buildings-2026",
+  "story_url": "https://busisi.org/data/research/multipurpose-buildings/v4/story.json",
+  "version": 4
+}

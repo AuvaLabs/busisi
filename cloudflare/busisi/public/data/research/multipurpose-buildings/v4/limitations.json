@@ -1,0 +1,46 @@
+[
+  {
+    "id": "record-count",
+    "text": "The release counts source records, not independently observed physical buildings."
+  },
+  {
+    "id": "source-status",
+    "text": "Source status does not prove present-day activity, completion, acceptance, payment, quality, or public value."
+  },
+  {
+    "id": "location-coverage",
+    "text": "City labels are partial because city and municipality names are embedded in free-text descriptions."
+  },
+  {
+    "id": "district-labels",
+    "text": "DPWH district-office labels are not geographic or congressional-boundary determinations."
+  },
+  {
+    "id": "coordinate-reuse",
+    "text": "Exact coordinate reuse is a review lead and can describe phases, nearby work, reused coordinates, or source errors."
+  },
+  {
+    "id": "budget-meaning",
+    "text": "Recorded budgets are not award amounts, payments, final costs, or unit-price comparisons."
+  },
+  {
+    "id": "classifier-omissions",
+    "text": "The conservative classifier can omit misspelled or abbreviated multipurpose-building descriptions."
+  },
+  {
+    "id": "opportunity-cost-boundary",
+    "text": "Classroom equivalents compare nominal funding scale only; different land, design, location, procurement, and operating needs make projects non-interchangeable."
+  },
+  {
+    "id": "necessity-boundary",
+    "text": "Missing needs evidence in this snapshot does not prove that a project is unnecessary."
+  },
+  {
+    "id": "siting-design-boundary",
+    "text": "Coordinates and titles do not establish safe siting, compliant design, construction quality, accessibility, or fitness for purpose."
+  },
+  {
+    "id": "public-value-selection-boundary",
+    "text": "The queue is selected from exact-coordinate history and the largest active recorded budgets. It is not a risk score, accusation, or representative sample of all projects."
+  }
+]
