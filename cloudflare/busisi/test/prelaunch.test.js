@@ -63,6 +63,23 @@ test('home provides task-led navigation and a data-led editorial masthead', asyn
   assert.equal((document.match(/data-nav-group=/g) ?? []).length, 7);
 });
 
+test('groups the footer into compact, readable navigation sections', async () => {
+  const response = await fetchPath('/research/');
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.equal((document.match(/class="footer-group"/g) ?? []).length, 4);
+  assert.match(document, /<h2>Explore<\/h2>/);
+  assert.match(document, /<h2>Follow the money<\/h2>/);
+  assert.match(document, /<h2>Check evidence<\/h2>/);
+  assert.match(document, /<h2>About Busisi<\/h2>/);
+  assert.match(document, /class="footer-meta"/);
+  assert.match(document, /class="footer-note"/);
+  const footerNavigation = document.match(/<nav class="footer-nav"[\s\S]*?<\/nav>/)?.[0] ?? '';
+  assert.equal((footerNavigation.match(/<a href=/g) ?? []).length, 21);
+  assert.doesNotMatch(footerNavigation, /href="\/api\//);
+});
+
 test('publishes a research library and the multipurpose-building investigation', async () => {
   const library = await fetchPath('/research/');
   const libraryDocument = await library.text();

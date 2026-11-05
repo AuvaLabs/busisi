@@ -41,10 +41,15 @@ const navigation = (canonicalPath) => {
   </div>`;
 };
 
-const footer = `<footer class="site-footer"><div class="footer-inner">
+const footer = `<footer class="site-footer" id="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent, nonpartisan evidence desk helping Filipino citizens examine public projects and the records behind them.</p></div>
-  <nav class="footer-nav" aria-label="Footer navigation"><a href="/contracts/">Projects</a><a href="/contractors/">Contractors</a><a href="/places/">Places</a><a href="/research/">Research</a><a href="/signals/">Needs checking</a><a href="/sources/">Sources</a><a href="/watch/">Watch</a><a href="/questions/">Questions</a><a href="/public-services/">Public services</a><a href="/sulit/">Sulit Ba?</a><a href="/releases/">Releases</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a><a href="/audit/">COA audit</a><a href="/integrity/">Integrity</a><a href="/accountability/">Contractor accountability</a><a href="/coverage/">Coverage</a><a href="/methodology/">Method</a></nav>
-  <p class="footer-note">Official source records are public. Inferred links remain labelled by review status.<br><small>Built and maintained by <a href="https://auvalabs.com/" target="_blank" rel="noopener noreferrer">Auva Labs</a>. Questions and corrections: <a href="mailto:dev@auvalabs.com">dev@auvalabs.com</a></small></p>
+  <nav class="footer-nav" aria-label="Footer navigation">
+    <section class="footer-group"><h2>Explore</h2><div><a href="/contracts/">Projects</a><a href="/contractors/">Contractors</a><a href="/places/">Places</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a></div></section>
+    <section class="footer-group"><h2>Follow the money</h2><div><a href="/sulit/">Sulit Ba?</a><a href="/releases/">Releases</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a></div></section>
+    <section class="footer-group"><h2>Check evidence</h2><div><a href="/signals/">Needs checking</a><a href="/sources/">Sources</a><a href="/audit/">COA audit</a><a href="/integrity/">Integrity</a><a href="/accountability/">Contractor accountability</a><a href="/coverage/">Coverage</a></div></section>
+    <section class="footer-group"><h2>About Busisi</h2><div><a href="/research/">Research</a><a href="/watch/">Watch</a><a href="/questions/">Questions</a><a href="/public-services/">Public services</a><a href="/methodology/">Method</a></div></section>
+  </nav>
+  <div class="footer-meta"><p class="footer-note">Official source records are public. Inferred links remain labelled by review status.</p><p class="footer-credit"><small>Built and maintained by <a href="https://auvalabs.com/" target="_blank" rel="noopener noreferrer">Auva Labs</a>. Questions and corrections: <a href="mailto:dev@auvalabs.com">dev@auvalabs.com</a></small></p></div>
 </div></footer>`;
 
 const escapeJson = (value) => JSON.stringify(value).replaceAll('<', '\\u003c');

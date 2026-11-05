@@ -276,6 +276,9 @@ const verifyPages = async () => {
   );
   expectIncludes(homeText, 'https://auvalabs.com/', 'Auva Labs project credit');
   expectIncludes(homeText, 'mailto:dev@auvalabs.com', 'project contact');
+  expectIncludes(homeText, 'class="footer-group"', 'grouped footer navigation');
+  expectIncludes(homeText, '<h2>Follow the money</h2>', 'footer information architecture');
+  expectIncludes(homeText, 'class="footer-meta"', 'compact footer evidence note');
   const csp = home.headers.get('content-security-policy') ?? '';
   expectIncludes(csp, "default-src 'self'", 'home CSP');
   expectIncludes(csp, "connect-src 'self'", 'home CSP');
@@ -593,7 +596,7 @@ const verifyDesign = async () => {
     '.lifecycle-grid', '.lifecycle-item', '.contract-explorer', '.contract-card',
     '.release-shell', '.release-card', '.questions-hero', '.question-grid',
     '.services-hero', '.services-desk', '.services-card',
-    '.place-controls', '.source-role-grid', '.watch-grid',
+    '.place-controls', '.source-role-grid', '.watch-grid', '.footer-group', '.footer-meta',
   ]) {
     expectIncludes(cssText, value, 'design CSS');
   }
