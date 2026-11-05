@@ -77,6 +77,17 @@ district and representative, while unmatched offices stay unassigned. This is
 office context, not coordinate-based boundary validation, political authorship
 or evidence that a representative requested or controls the project.
 
+A private project-link review workspace now holds a balanced first batch of 120
+possible links from the 20,877 high-confidence FY2024 and FY2025 candidate pool.
+The batch contains 60 cases per year, 20 per major project type, 30 per project
+value band, all 17 recorded regions, 22 joint records, 36 records with an
+existing question to check and 119 distinct recorded contractors. Every case
+retains the two source links and saved-file check codes. Each case requires two
+independent decisions. No new link becomes a public reviewed project until at
+least 100 cases are checked, at least 95 percent of proposed links are
+confirmed, reviewer agreement reaches 95 percent and source totals have no
+critical failure.
+
 ## Release gates
 
 | Area | Gate |
@@ -91,9 +102,12 @@ or evidence that a representative requested or controls the project.
 
 ## Next practical work
 
-1. Review and label representative candidates from each deterministic FY2027
-   queue without treating queue position as a risk score.
-2. Expand the cross-source reviewed golden set from 6 to 100 cases.
+1. Complete two independent decisions for at least 100 cases in the balanced
+   120-case project-link review batch. Unclear and conflicting cases stay out
+   of the public reviewed-project list.
+2. Publish only confirmed project links after the review, accuracy, agreement
+   and source-total checks all pass. Then add those links to place and district
+   summaries without changing unreviewed source records.
 3. Refresh the FY2027 publication catalogue and extend the comparison ledger
    when stable Senate, bicameral and final GAA artifacts can be acquired and
    reconciled.
@@ -125,4 +139,4 @@ or evidence that a representative requested or controls the project.
   several districts.
 - Prefer a smaller verified publication over a larger uncertain one.
 
-Last updated: 2026-11-03.
+Last updated: 2026-11-06.

@@ -91,6 +91,13 @@ As of 2026-11-03:
   with `noindex` as a quarantined example. The 100-case gate continues to block
   automatic publication of inferred cross-source links. It does not block
   direct publication of official source records with clear labels.
+- A private 120-case review batch is ready for the next expansion. It is
+  balanced across year, recorded region, project type and project value, and
+  deliberately includes joint records and records with existing questions to
+  check. The local SQLite workspace accepts exactly two independent decisions
+  per case and measures confirmation and reviewer agreement. Rebuilding the
+  same selection preserves recorded decisions; a changed selection requires a
+  new output folder. The public count remains six until the release checks pass.
 - Repeat-funding evaluation aggregates separate phases within a fiscal year and
   requires positive funding in at least two distinct fiscal years.
 - The public identity is **Busisi** with a documented public-records design

@@ -40,6 +40,15 @@ The public review desk ranks stage changes, groups monetary movement by region,
 office, program or dataset, identifies conservative cross-year project-family
 candidates, and exports source-linked CSV evidence.
 
+The private project-link review workspace prepares the next reviewed-project
+expansion without weakening the publication rules. Its first batch selects 120
+possible FY2024 and FY2025 links across recorded regions, project types, values,
+contractors, joint records and existing questions to check. Each case includes
+the two source links and saved-file check codes. Two independent decisions are
+required. Unclear cases stay private, and no new link is published until the
+100-case, 95 percent confirmation, 95 percent agreement and source-total checks
+all pass.
+
 The public evidence question catalogue states what the current publication can
 answer, what remains only partially answerable, and what cannot yet be
 established. Its counts and dates are derived from the same D1 release controls,
@@ -209,6 +218,7 @@ golden set reaches the documented precision gate.
 python -m pip install -r requirements-dev.txt
 PYTHONPATH=. pytest engine/tests/budget_watchdog -q
 PYTHONPATH=. python3 ops/harness/budget_watchdog_golden.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_review_expansion.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_hgab.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_agencies.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_allotment_releases.py

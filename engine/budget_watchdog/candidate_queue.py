@@ -29,6 +29,11 @@ class ReviewCandidate:
     delivery_budget_centavos: int
     budget_evidence_url: str
     delivery_evidence_url: str
+    budget_artifact_sha256: str = ""
+    delivery_artifact_sha256: str = ""
+    budget_location: str = ""
+    delivery_location: str = ""
+    source_of_funds: str = ""
 
 
 def _query(database_path: Path, fiscal_years: tuple[int, ...], limit: int) -> list[sqlite3.Row]:
@@ -58,7 +63,9 @@ def _query(database_path: Path, fiscal_years: tuple[int, ...], limit: int) -> li
             d.description AS delivery_description,
             d.budget_centavos,
             d.location AS delivery_location,
-            d.source_of_funds
+            d.source_of_funds,
+            b.artifact_sha256 AS budget_artifact_sha256,
+            d.artifact_sha256 AS delivery_artifact_sha256
         FROM budget_candidates b
         JOIN delivery_candidates d
           ON d.project_family_id = b.project_family_id
@@ -135,6 +142,11 @@ def generate_review_candidates(
                 delivery_evidence_url=(
                     f"https://api.dpwh.bettergov.ph/projects/{delivery.contract_id}"
                 ),
+                budget_artifact_sha256=row["budget_artifact_sha256"],
+                delivery_artifact_sha256=row["delivery_artifact_sha256"],
+                budget_location=row["budget_location"],
+                delivery_location=row["delivery_location"],
+                source_of_funds=row["source_of_funds"],
             )
         )
     return tuple(output)
