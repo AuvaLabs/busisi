@@ -89,6 +89,16 @@ least 100 cases are checked, at least 95 percent of proposed links are
 confirmed, reviewer agreement reaches 95 percent and source totals have no
 critical failure.
 
+The private workspace also has a three-seat offline review council for
+pre-screening and quality control. Kimi K3 audits source support, Claude Fable
+tries to disprove identity, and GPT-6 Astra checks wording and evidence limits.
+The orchestrator is deterministic and does not vote. It sends one project per
+request, requires exact evidence-packet paths for material claims, keeps each
+model's first vote, and runs a separate dissent round only for unresolved
+cases. A blocking evidence finding prevents confirmation. Council votes remain
+separate from the two human decisions and cannot open the publication gate.
+The public Worker has no model dependency.
+
 ## Release gates
 
 | Area | Gate |

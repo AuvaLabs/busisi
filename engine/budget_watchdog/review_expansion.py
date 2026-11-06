@@ -16,6 +16,7 @@ from engine.budget_watchdog.candidate_queue import ReviewCandidate
 MINIMUM_REVIEWED_CASES = 100
 MINIMUM_PRECISION_BPS = 9_500
 MINIMUM_AGREEMENT_BPS = 9_500
+WORKSPACE_SCHEMA_VERSION = 6
 TEN_MILLION_PESOS_CENTAVOS = 1_000_000_000
 FIFTY_MILLION_PESOS_CENTAVOS = 5_000_000_000
 ONE_HUNDRED_MILLION_PESOS_CENTAVOS = 10_000_000_000
@@ -85,6 +86,70 @@ CREATE TABLE review_prechecks (
     passed INTEGER NOT NULL CHECK (passed IN (0, 1)),
     checks_json TEXT NOT NULL CHECK (json_valid(checks_json)),
     failures_json TEXT NOT NULL CHECK (json_valid(failures_json))
+);
+CREATE TABLE council_verdicts (
+    case_id TEXT NOT NULL REFERENCES review_cases(case_id),
+    round_number INTEGER NOT NULL CHECK (round_number IN (1, 2)),
+    seat TEXT NOT NULL CHECK (seat IN (
+        'source_auditor', 'identity_skeptic', 'quality_reviewer'
+    )),
+    model TEXT NOT NULL,
+    packet_sha256 TEXT NOT NULL,
+    prompt_sha256 TEXT NOT NULL,
+    decision TEXT NOT NULL CHECK (decision IN ('confirm', 'reject', 'unclear')),
+    confidence TEXT NOT NULL CHECK (confidence IN ('high', 'medium', 'low')),
+    summary TEXT NOT NULL,
+    identity_basis_json TEXT NOT NULL CHECK (json_valid(identity_basis_json)),
+    findings_json TEXT NOT NULL CHECK (json_valid(findings_json)),
+    gaps_json TEXT NOT NULL CHECK (json_valid(gaps_json)),
+    does_not_prove_json TEXT NOT NULL CHECK (json_valid(does_not_prove_json)),
+    recommendation TEXT NOT NULL,
+    output_sha256 TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    duration_seconds REAL NOT NULL CHECK (duration_seconds >= 0),
+    input_tokens INTEGER,
+    cached_input_tokens INTEGER,
+    cache_write_input_tokens INTEGER,
+    output_tokens INTEGER,
+    reasoning_tokens INTEGER,
+    PRIMARY KEY (case_id, round_number, seat)
+);
+CREATE TABLE council_attempts (
+    case_id TEXT NOT NULL REFERENCES review_cases(case_id),
+    round_number INTEGER NOT NULL CHECK (round_number IN (1, 2)),
+    seat TEXT NOT NULL CHECK (seat IN (
+        'source_auditor', 'identity_skeptic', 'quality_reviewer'
+    )),
+    attempt_number INTEGER NOT NULL CHECK (attempt_number >= 1),
+    model TEXT NOT NULL,
+    packet_sha256 TEXT NOT NULL,
+    prompt_sha256 TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    duration_seconds REAL NOT NULL CHECK (duration_seconds >= 0),
+    exit_code INTEGER,
+    valid INTEGER NOT NULL CHECK (valid IN (0, 1)),
+    output_path TEXT NOT NULL,
+    output_sha256 TEXT NOT NULL,
+    error TEXT NOT NULL,
+    input_tokens INTEGER,
+    cached_input_tokens INTEGER,
+    cache_write_input_tokens INTEGER,
+    output_tokens INTEGER,
+    reasoning_tokens INTEGER,
+    PRIMARY KEY (case_id, round_number, seat, attempt_number)
+);
+CREATE TABLE council_outcomes (
+    case_id TEXT NOT NULL REFERENCES review_cases(case_id),
+    round_number INTEGER NOT NULL CHECK (round_number IN (1, 2)),
+    outcome TEXT NOT NULL CHECK (outcome IN (
+        'confirmed', 'rejected', 'unclear', 'incomplete'
+    )),
+    reason TEXT NOT NULL,
+    votes_json TEXT NOT NULL CHECK (json_valid(votes_json)),
+    blocking_findings_json TEXT NOT NULL CHECK (json_valid(blocking_findings_json)),
+    decided_at TEXT NOT NULL,
+    packet_sha256 TEXT NOT NULL,
+    PRIMARY KEY (case_id, round_number)
 );
 """
 
@@ -400,6 +465,8 @@ def build_review_workspace(
     existing_database = output_dir / "project-link-review.sqlite3"
     if existing_manifest.is_file() and existing_database.is_file():
         current = json.loads(existing_manifest.read_text(encoding="utf-8"))
+        if current.get("schema_version") != WORKSPACE_SCHEMA_VERSION:
+            raise ValueError("review workspace schema changed; use a new output folder")
         if current.get("selection_sha256") != selection_sha256:
             raise ValueError("review selection changed; use a new output folder")
         return ReviewWorkspaceResult(
@@ -417,7 +484,7 @@ def build_review_workspace(
     _write_case_packet(cases, building / "cases.json")
     status = evaluate_review_workspace(database)
     manifest = {
-        "schema_version": 1,
+        "schema_version": WORKSPACE_SCHEMA_VERSION,
         "case_count": len(cases),
         "reviewed_cases": status.reviewed_cases,
         "release_ready": status.release_ready,

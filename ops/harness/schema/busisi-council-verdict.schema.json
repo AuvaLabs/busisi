@@ -1,0 +1,96 @@
+{
+  "title": "Busisi project link council verdict",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "seat",
+    "decision",
+    "confidence",
+    "summary",
+    "identity_basis",
+    "findings",
+    "gaps",
+    "does_not_prove",
+    "recommendation"
+  ],
+  "properties": {
+    "schema_version": {"const": 2},
+    "case_id": {"type": "string", "minLength": 1},
+    "seat": {
+      "enum": ["source_auditor", "identity_skeptic", "quality_reviewer"]
+    },
+    "decision": {"enum": ["confirm", "reject", "unclear"]},
+    "confidence": {"enum": ["high", "medium", "low"]},
+    "summary": {"type": "string", "minLength": 1},
+    "identity_basis": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim", "evidence_paths"],
+        "properties": {
+          "claim": {"type": "string", "minLength": 1},
+          "evidence_paths": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "pattern": "^/"}
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "severity",
+          "claim",
+          "evidence",
+          "what_to_check",
+          "evidence_paths"
+        ],
+        "properties": {
+          "code": {"type": "string", "minLength": 1},
+          "severity": {"enum": ["blocking", "important", "note"]},
+          "claim": {"type": "string", "minLength": 1},
+          "evidence": {"type": "string", "minLength": 1},
+          "what_to_check": {"type": "string", "minLength": 1},
+          "evidence_paths": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "pattern": "^/"}
+          }
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "label", "why_it_matters", "evidence_paths"],
+        "properties": {
+          "code": {"type": "string", "minLength": 1},
+          "label": {"type": "string", "minLength": 1},
+          "why_it_matters": {"type": "string", "minLength": 1},
+          "evidence_paths": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "pattern": "^/"}
+          }
+        }
+      }
+    },
+    "does_not_prove": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "recommendation": {"type": "string", "minLength": 1}
+  }
+}

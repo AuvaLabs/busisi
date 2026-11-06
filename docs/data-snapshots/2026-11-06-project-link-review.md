@@ -42,3 +42,33 @@ conditions pass:
 
 Unclear, rejected or conflicting cases remain outside the public
 reviewed-project list.
+
+## Offline council calibration
+
+Busisi also ran a private model-assisted quality-control pilot on the first 20
+cases. This is a pre-screening layer, not human review and not a publication
+decision.
+
+- source-support seat: Kimi K3
+- identity-skeptic seat: Claude Fable
+- public-quality seat: GPT-6 Astra
+- one project per request, scheduled through a bounded three-worker queue
+- 60 valid first-round votes
+- one invalid first-round response rejected for an unsupported generalization,
+  then replaced by one valid retry
+- nine valid dissent-round votes across three unclear cases
+- 17 confirmed cases and three unclear cases after the dissent round
+- zero rejected or incomplete cases
+- 19 of 20 cases ended with unanimous final votes; the remaining case stayed
+  unclear with a blocking finding
+- zero human decisions recorded
+
+Every identity basis, finding and gap must cite an exact JSON Pointer path in
+the evidence packet. The runner rejects nonexistent paths and wording that
+uses unsupported claims about what is normal, common, usual or typical.
+BetterGov records are labelled as civic mirrors rather than official
+government pages. A blocking evidence finding prevents confirmation.
+
+The council is fail-closed and remains private. Its 69 valid votes do not count
+as the two independent human decisions required by the publication gate. The
+public Worker has no model or model API dependency.

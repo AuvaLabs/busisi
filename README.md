@@ -50,6 +50,16 @@ private, and no new link is published until the
 100-case, 95 percent confirmation, 95 percent agreement and source-total checks
 all pass.
 
+An offline three-seat review council now pre-screens that private batch. Kimi
+K3 checks source support, Claude Fable challenges identity, and GPT-6 Astra
+checks public wording and evidence limits. Each request contains one project,
+every material claim cites a machine-checked path in the same evidence packet,
+and a blocking evidence finding prevents confirmation. The first 20-case
+calibration ended with 17 confirmed and three unclear cases after a dissent
+round. These model votes are quality-control evidence only. They do not count
+as the two independent human decisions required for publication, and no model
+is called by the public Worker.
+
 The public evidence question catalogue states what the current publication can
 answer, what remains only partially answerable, and what cannot yet be
 established. Its counts and dates are derived from the same D1 release controls,
@@ -220,6 +230,7 @@ python -m pip install -r requirements-dev.txt
 PYTHONPATH=. pytest engine/tests/budget_watchdog -q
 PYTHONPATH=. python3 ops/harness/budget_watchdog_golden.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_review_expansion.py
+PYTHONPATH=. python3 ops/harness/budget_watchdog_review_council.py --dry-run
 PYTHONPATH=. python3 ops/harness/budget_watchdog_hgab.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_agencies.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_allotment_releases.py

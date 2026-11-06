@@ -98,6 +98,13 @@ As of 2026-11-03:
   per case and measures confirmation and reviewer agreement. Rebuilding the
   same selection preserves recorded decisions; a changed selection requires a
   new output folder. The public count remains six until the release checks pass.
+- The same private workspace has an offline three-seat model council for
+  pre-screening. Kimi K3 audits source support, Claude Fable challenges record
+  identity, and GPT-6 Astra checks reader-facing wording and limitations. A
+  deterministic non-voting runner sends one project per request, validates
+  exact evidence-packet paths, records every attempt and runs a separate
+  dissent round for unclear cases. These votes do not enter the human review
+  table and cannot satisfy the publication gate.
 - Repeat-funding evaluation aggregates separate phases within a fiscal year and
   requires positive funding in at least two distinct fiscal years.
 - The public identity is **Busisi** with a documented public-records design
