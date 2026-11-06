@@ -16,10 +16,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from engine.budget_watchdog.evidence_retrieval import (
+    lexical_search,
+    retrieval_manifest_sha256,
+)
 from engine.budget_watchdog.review_council import (
     COUNCIL_SEATS,
     CouncilVerdict,
     adjudicate_case,
+    attach_document_evidence,
     build_evidence_packet,
     council_status,
     packet_sha256,
@@ -284,12 +289,12 @@ def _build_prompt(
 
 def _run_seat(
     database: Path,
-    case_id: str,
+    packet: dict[str, Any],
     seat: str,
     round_number: int,
     runtime: Runtime,
 ) -> CouncilRun:
-    packet = build_evidence_packet(database, case_id)
+    case_id = packet["case_id"]
     packet_hash = packet_sha256(packet)
     prior = _prior_verdicts(database, case_id) if round_number == DISSENT_ROUND else ()
     prompt = _build_prompt(seat, packet, round_number, prior)
@@ -329,6 +334,42 @@ def _run_seat(
         tuple(attempts),
         verdict,
     )
+
+
+def _materialize_packets(
+    database: Path,
+    case_ids: tuple[str, ...],
+    retrieval_database: Path | None,
+    retrieval_limit: int,
+) -> dict[str, dict[str, Any]]:
+    manifest = (
+        retrieval_manifest_sha256(retrieval_database)
+        if retrieval_database is not None
+        else None
+    )
+    packets: dict[str, dict[str, Any]] = {}
+    for case_id in case_ids:
+        packet = build_evidence_packet(database, case_id)
+        if retrieval_database is not None and manifest is not None:
+            query = " ".join(
+                (
+                    packet["budget_record"]["description"],
+                    packet["project_record"]["description"],
+                    packet["budget_record"]["location"],
+                    packet["project_record"]["contract_id"],
+                )
+            )
+            results = lexical_search(retrieval_database, query, limit=retrieval_limit)
+            packet = attach_document_evidence(
+                packet,
+                query=query,
+                results=results,
+                index_manifest_sha256=manifest,
+            )
+        packets[case_id] = packet
+    if retrieval_database is not None and retrieval_manifest_sha256(retrieval_database) != manifest:
+        raise ValueError("retrieval index changed while council packets were materialized")
+    return packets
 
 
 def _selected_cases(
@@ -482,12 +523,24 @@ def _run_round(
     round_number: int,
     runtime: Runtime,
     workers: int,
+    retrieval_database: Path | None,
+    retrieval_limit: int,
 ) -> list[dict[str, str]]:
     tasks = _missing_tasks(database, case_ids, round_number)
+    packets = _materialize_packets(
+        database, case_ids, retrieval_database, retrieval_limit
+    )
     errors: list[dict[str, str]] = []
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
-            executor.submit(_run_seat, database, case_id, seat, round_number, runtime): (
+            executor.submit(
+                _run_seat,
+                database,
+                packets[case_id],
+                seat,
+                round_number,
+                runtime,
+            ): (
                 case_id,
                 seat,
             )
@@ -526,6 +579,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--with-dissent", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--timeout", type=int, default=600)
+    parser.add_argument("--retrieval-database", type=Path)
+    parser.add_argument("--retrieval-limit", type=int, default=5)
     parser.add_argument("--kimi-bin", type=Path, default=Path("/home/deploy/.kimi-code/bin/kimi"))
     parser.add_argument("--claude-bin", type=Path, default=Path("/home/deploy/.local/bin/claude"))
     parser.add_argument("--codex-bin", type=Path, default=Path("/home/deploy/.local/bin/codex"))
@@ -534,11 +589,13 @@ def _parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = _parser().parse_args()
-    if args.limit < 1 or args.workers < 1 or args.timeout < 1:
-        raise ValueError("limit, workers, and timeout must be positive")
+    if args.limit < 1 or args.workers < 1 or args.timeout < 1 or args.retrieval_limit < 1:
+        raise ValueError("limit, workers, timeout, and retrieval limit must be positive")
     database = args.workspace / "project-link-review.sqlite3"
     if not database.is_file():
         raise ValueError("review workspace database does not exist")
+    if args.retrieval_database is not None and not args.retrieval_database.is_file():
+        raise ValueError("retrieval database does not exist")
     runtime = _runtime(args)
     case_ids = _selected_cases(database, args.round, args.limit, tuple(args.case_id))
     tasks = _missing_tasks(database, case_ids, args.round)
@@ -550,13 +607,21 @@ def main() -> int:
                     "cases": len(case_ids),
                     "requests": len(tasks),
                     "models": MODEL_BY_SEAT,
+                    "document_retrieval": args.retrieval_database is not None,
                 },
                 indent=2,
             )
         )
         return 0
     errors = _run_round(
-        args.workspace, database, case_ids, args.round, runtime, min(args.workers, len(tasks) or 1)
+        args.workspace,
+        database,
+        case_ids,
+        args.round,
+        runtime,
+        min(args.workers, len(tasks) or 1),
+        args.retrieval_database,
+        args.retrieval_limit,
     )
     if args.with_dissent and args.round == 1:
         dissent_cases = _selected_cases(database, 2, args.limit, ())
@@ -568,6 +633,8 @@ def main() -> int:
                 2,
                 runtime,
                 min(args.workers, len(dissent_cases) * len(COUNCIL_SEATS) or 1),
+                args.retrieval_database,
+                args.retrieval_limit,
             )
         )
     _write_status(args.workspace, database, errors)

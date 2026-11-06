@@ -89,3 +89,16 @@ remain private. The public package exposes only reconciled coverage counts,
 task definitions, source identities, limitations, and per-project gate counts.
 Exact rows from a secondary award mirror and archived DPWH source media remain
 lead states. Neither state satisfies an official evidence requirement.
+
+## Private document retrieval
+
+The research editor may use the private evidence-retrieval index to locate
+passages in archived, hash-verified budget documents. The retrieval command
+writes a private packet under `data/budget_watchdog/research-editor/` and marks
+every passage `review_candidate`. An editor must check the cited page and
+archived source before moving a claim to `verified` or `source_reported`.
+
+Retrieval packets, search scores, optional vectors, and working questions are
+not public release files. A missing search result is an evidence gap, not proof
+that no budget record exists. See `docs/evidence-retrieval.md` for commands and
+the complete boundary.

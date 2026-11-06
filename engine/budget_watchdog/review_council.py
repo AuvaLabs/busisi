@@ -11,6 +11,9 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from engine.budget_watchdog.evidence_retrieval import RetrievalResult
+from engine.budget_watchdog.research_evidence import passage_payload
+
 COUNCIL_SEATS = ("source_auditor", "identity_skeptic", "quality_reviewer")
 DECISIONS = frozenset({"confirm", "reject", "unclear"})
 CONFIDENCE_LEVELS = frozenset({"high", "medium", "low"})
@@ -271,6 +274,37 @@ def build_evidence_packet(database_path: Path, case_id: str) -> dict[str, Any]:
             "Missing evidence must remain a gap and must not be guessed.",
         ],
     }
+
+
+def attach_document_evidence(
+    packet: dict[str, Any],
+    *,
+    query: str,
+    results: tuple[RetrievalResult, ...],
+    index_manifest_sha256: str,
+) -> dict[str, Any]:
+    """Return a new council packet with one fixed set of cited document passages."""
+
+    if packet.get("schema_version") != PACKET_SCHEMA_VERSION:
+        raise ValueError("document evidence can only be attached to a base council packet")
+    if not query.strip():
+        raise ValueError("document evidence query must be non-empty")
+    if re.fullmatch(r"[a-f0-9]{64}", index_manifest_sha256) is None:
+        raise ValueError("index manifest SHA-256 is invalid")
+    copied = json.loads(json.dumps(packet, ensure_ascii=False))
+    copied["schema_version"] = 3
+    copied["document_evidence"] = {
+        "query": query.strip(),
+        "index_manifest_sha256": index_manifest_sha256,
+        "retrieval_method": "fts5-bm25 with explicit metadata filters",
+        "passages": [passage_payload(result) for result in results],
+        "limits": [
+            "A search match is supporting context, not proof that two records are the same work.",
+            "Every factual statement must point to a field or cited passage in this packet.",
+            "No passage may be added or replaced after review seats receive this packet.",
+        ],
+    }
+    return copied
 
 
 def packet_sha256(packet: dict[str, Any]) -> str:

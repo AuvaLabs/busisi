@@ -26,6 +26,11 @@ COMMANDS = {
         ROOT,
         3_600,
     ),
+    "retrieval": (
+        ["python3", "ops/harness/budget_watchdog_evidence_retrieval.py", "audit"],
+        ROOT,
+        3_600,
+    ),
     "worker": (["npm", "run", "check"], WORKER, 3_600),
 }
 
@@ -82,7 +87,7 @@ def arguments() -> argparse.Namespace:
 def main() -> int:
     options = arguments()
     now = datetime.now(UTC)
-    names = ("operations",) if options.cadence == "weekly" else tuple(COMMANDS)
+    names = ("operations", "retrieval") if options.cadence == "weekly" else tuple(COMMANDS)
     results = {
         name: _run(*COMMANDS[name])
         for name in names

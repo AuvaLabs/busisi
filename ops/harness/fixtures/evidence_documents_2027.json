@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "documents": [
+    {
+      "document_id": "house-2027-third-reading-volume-ia",
+      "title": "House Bill 10858, Third Reading, Volume I-A",
+      "publisher": "CSIIIV archive of the House bill",
+      "source_url": "https://raw.githubusercontent.com/csiiiv/DPWH-NEP-HB-2027-ANALYSIS/a0caa778442cdae5583f5a006ea7401dab00e5ac/HB_BUDGET_3rd_reading/1-%20HB%2010858%20FOR%203RD%20READING%20VOL%20I-A.pdf",
+      "artifact_path": "data/budget_watchdog/agency-2027-snapshot/documents/hb10858-3r-vol-ia.pdf",
+      "artifact_sha256": "79f56b8d577246342b59cc996afdd707523268f0bde10378e3c1b5ef844451fd",
+      "media_type": "application/pdf",
+      "fiscal_year": 2027,
+      "stage": "house_third_reading",
+      "agency": null
+    },
+    {
+      "document_id": "house-2027-second-reading-volume-ib",
+      "title": "House Bill 10858, Second Reading, Volume I-B",
+      "publisher": "House of Representatives",
+      "source_url": "https://www.congress.gov.ph/cso",
+      "artifact_path": "data/budget_watchdog/hgab-2027-snapshot/documents/hb10858-2r-vol-ib.pdf",
+      "artifact_sha256": "a82800c4cc2684566a37f7780d8f9131d2e7b2c97444d335d94df012dec065b6",
+      "media_type": "application/pdf",
+      "fiscal_year": 2027,
+      "stage": "house_second_reading",
+      "agency": null
+    },
+    {
+      "document_id": "house-2027-second-reading-volume-ic",
+      "title": "House Bill 10858, Second Reading, Volume I-C",
+      "publisher": "House of Representatives",
+      "source_url": "https://www.congress.gov.ph/cso",
+      "artifact_path": "data/budget_watchdog/hgab-2027-snapshot/documents/hb10858-2r-vol-ic.pdf",
+      "artifact_sha256": "0b790d6018db59abab648486c5068108a42ff20a33facc8e21ace0bbedf2d15f",
+      "media_type": "application/pdf",
+      "fiscal_year": 2027,
+      "stage": "house_second_reading",
+      "agency": null
+    },
+    {
+      "document_id": "house-2027-third-reading-volume-ib",
+      "title": "House Bill 10858, Third Reading, Volume I-B",
+      "publisher": "Senate Budget Transparency Portal",
+      "source_url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027",
+      "artifact_path": "data/budget_watchdog/hgab-2027-snapshot/documents/hb10858-3r-vol-ib.pdf",
+      "artifact_sha256": "4cc0f17e472d1af380ea6d3972561f6bb241137826fd85ed7e7e70bcd92986b9",
+      "media_type": "application/pdf",
+      "fiscal_year": 2027,
+      "stage": "house_third_reading",
+      "agency": null
+    },
+    {
+      "document_id": "house-2027-third-reading-volume-ic",
+      "title": "House Bill 10858, Third Reading, Volume I-C",
+      "publisher": "Senate Budget Transparency Portal",
+      "source_url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027",
+      "artifact_path": "data/budget_watchdog/hgab-2027-snapshot/documents/hb10858-3r-vol-ic.pdf",
+      "artifact_sha256": "48cb7a11e391bd4da89d4f47cf39a2eba8fe9bfe636dba101c8284b224ac1b1b",
+      "media_type": "application/pdf",
+      "fiscal_year": 2027,
+      "stage": "house_third_reading",
+      "agency": null
+    },
+    {
+      "document_id": "nep-2027-dpwh-volume-iib",
+      "title": "2027 National Expenditure Program, DPWH, Volume II-B",
+      "publisher": "Department of Budget and Management",
+      "source_url": "https://www.dbm.gov.ph/wp-content/uploads/NEP2027/DPWH/DPWH.pdf",
+      "artifact_path": "data/budget_watchdog/hgab-2027-snapshot/documents/nep2027-vol-iib.pdf",
+      "artifact_sha256": "bfc8282de8e3603f347f82aa2be34c25a38147e30aa34c12b11413766b7e7523",
+      "media_type": "application/pdf",
+      "fiscal_year": 2027,
+      "stage": "nep",
+      "agency": "DPWH"
+    },
+    {
+      "document_id": "nep-2027-farm-to-market-roads",
+      "title": "2027 National Expenditure Program, Farm-to-Market Roads",
+      "publisher": "BetterGov budget archive",
+      "source_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/nep2027-fmr.pdf",
+      "artifact_path": "data/budget_watchdog/hgab-2027-snapshot/documents/nep2027-fmr.pdf",
+      "artifact_sha256": "07355c115f45a84771b8a8ac22711992ea695ea28f0c9c1b2c71879d4a6dc4ba",
+      "media_type": "application/pdf",
+      "fiscal_year": 2027,
+      "stage": "nep",
+      "agency": "DA"
+    },
+    {
+      "document_id": "nep-2027-national-irrigation-administration",
+      "title": "2027 National Expenditure Program, National Irrigation Administration",
+      "publisher": "BetterGov budget archive",
+      "source_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/nep2027-nia.pdf",
+      "artifact_path": "data/budget_watchdog/hgab-2027-snapshot/documents/nep2027-nia.pdf",
+      "artifact_sha256": "eadad324df8539fcc398650da81170b821f83ddb99342c4347f472169b09b632",
+      "media_type": "application/pdf",
+      "fiscal_year": 2027,
+      "stage": "nep",
+      "agency": "NIA"
+    },
+    {
+      "document_id": "nep-2027-health-facilities-enhancement-program",
+      "title": "2027 National Expenditure Program, Health Facilities Enhancement Program",
+      "publisher": "BetterGov budget archive",
+      "source_url": "https://budget-assets.bettergov.ph/hgab/2027/pdf/nep2027-hfep.pdf",
+      "artifact_path": "data/budget_watchdog/hgab-2027-snapshot/documents/nep2027-hfep.pdf",
+      "artifact_sha256": "da27367228af63a68a3e26ef617cf538a9f31705403a559da756ce59046c267d",
+      "media_type": "application/pdf",
+      "fiscal_year": 2027,
+      "stage": "nep",
+      "agency": "DOH"
+    }
+  ]
+}

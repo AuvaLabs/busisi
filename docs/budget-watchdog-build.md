@@ -69,7 +69,7 @@ publication service described below.
 
 ## Implementation status
 
-As of 2026-11-03:
+As of 2026-11-07:
 
 - The initial source, archive, normalization, reconciliation, matching and
   red-flag foundation is implemented.
@@ -105,6 +105,12 @@ As of 2026-11-03:
   exact evidence-packet paths, records every attempt and runs a separate
   dissent round for unclear cases. These votes do not enter the human review
   table and cannot satisfy the publication gate.
+- A private document-evidence index covers nine archived FY2027 budget
+  documents, 5,999 extracted pages and 9,838 hash-bound passages. Its FTS5/BM25
+  evaluation has 34 cases, including six questions that must return no result.
+  Optional semantic vectors remain private, disposable and subordinate to the
+  archived source. Council and research packets can include the same fixed,
+  cited passages. No retrieval database or model is bound to the public Worker.
 - Repeat-funding evaluation aggregates separate phases within a fiscal year and
   requires positive funding in at least two distinct fiscal years.
 - The public identity is **Busisi** with a documented public-records design

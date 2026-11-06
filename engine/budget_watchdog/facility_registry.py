@@ -18,6 +18,7 @@ DEPED_PPP_SOURCE_URL = "https://www.deped.gov.ph/wp-content/uploads/List-of-PSIP
 EXPECTED_DEPED_PPP_SCHOOLS = 1_095
 SOURCE_ID = "deped-ppp-2025"
 SPREADSHEET_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+MAX_WORKBOOK_SHEETS = 8
 ALLOWED_REGIONS = {"car", "ncr", "region i", "region ii", "region iii", "region iv a", "region iv b", "region v"}
 PHILIPPINE_LATITUDE = (Decimal("4"), Decimal("22"))
 PHILIPPINE_LONGITUDE = (Decimal("116"), Decimal("127"))
@@ -50,7 +51,7 @@ def _sheet_names(payload: bytes) -> tuple[str, ...]:
         sheet.attrib.get("name", "").strip()
         for sheet in root.findall(f".//{{{SPREADSHEET_NS}}}sheet")
     )
-    if not names or len(names) > 8 or any(not name for name in names):
+    if not names or len(names) > MAX_WORKBOOK_SHEETS or any(not name for name in names):
         raise ValueError("DepEd workbook sheet catalogue is invalid")
     return names
 
