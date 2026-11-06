@@ -44,8 +44,9 @@ The private project-link review workspace prepares the next reviewed-project
 expansion without weakening the publication rules. Its first batch selects 120
 possible FY2024 and FY2025 links across recorded regions, project types, values,
 contractors, joint records and existing questions to check. Each case includes
-the two source links and saved-file check codes. Two independent decisions are
-required. Unclear cases stay private, and no new link is published until the
+the two source links and saved-file check codes. Automated source reconciliation
+must pass before two independent decisions are accepted. Unclear cases stay
+private, and no new link is published until the
 100-case, 95 percent confirmation, 95 percent agreement and source-total checks
 all pass.
 

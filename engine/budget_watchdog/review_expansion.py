@@ -79,6 +79,13 @@ CREATE TABLE review_metadata (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+CREATE TABLE review_prechecks (
+    case_id TEXT PRIMARY KEY REFERENCES review_cases(case_id),
+    checked_at TEXT NOT NULL,
+    passed INTEGER NOT NULL CHECK (passed IN (0, 1)),
+    checks_json TEXT NOT NULL CHECK (json_valid(checks_json)),
+    failures_json TEXT NOT NULL CHECK (json_valid(failures_json))
+);
 """
 
 

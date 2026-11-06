@@ -21,6 +21,9 @@ selection. It does not claim that any newly selected link has passed review.
 - 22 joint records
 - 36 cases with at least one existing question to check
 - 119 distinct recorded contractors
+- 120 of 120 cases passed the automated source reconciliation for titles,
+  years, amounts, places, funding source, allowed source links and both
+  saved-file check codes
 
 Selection SHA-256:
 `569934aa207c5d4d9430d835c0f708bc6a1eb1d58aef6a7fcfa1f7b8252b1bfa`

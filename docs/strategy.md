@@ -82,8 +82,9 @@ possible links from the 20,877 high-confidence FY2024 and FY2025 candidate pool.
 The batch contains 60 cases per year, 20 per major project type, 30 per project
 value band, all 17 recorded regions, 22 joint records, 36 records with an
 existing question to check and 119 distinct recorded contractors. Every case
-retains the two source links and saved-file check codes. Each case requires two
-independent decisions. No new link becomes a public reviewed project until at
+retains the two source links and saved-file check codes. All 120 cases pass the
+automated comparison against the saved budget and project records. Each case
+still requires two independent decisions. No new link becomes a public reviewed project until at
 least 100 cases are checked, at least 95 percent of proposed links are
 confirmed, reviewer agreement reaches 95 percent and source totals have no
 critical failure.
