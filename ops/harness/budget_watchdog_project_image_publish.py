@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,7 @@ DATA = ROOT / "data" / "budget_watchdog"
 DEFAULT_BUNDLE = DATA / "project-image-d1-bundle"
 PUBLICATIONS = DATA / "project-image-publications"
 CLOUDFLARE = ROOT / "cloudflare" / "busisi"
+R2_UPLOAD_WORKERS = 6
 
 
 def _digest(path: Path) -> str:
@@ -54,13 +56,9 @@ def _run(arguments: list[str]) -> None:
     subprocess.run(arguments, cwd=CLOUDFLARE, check=True)  # noqa: S603
 
 
-def publish_bundle(bundle: Path = DEFAULT_BUNDLE) -> str:
-    manifest, uploads = _load_verified_bundle(bundle)
-    release_id = manifest["coverage_release"]["release_id"]
-    marker = PUBLICATIONS / f"{release_id}.json"
-    if marker.is_file():
-        return release_id
-    for key, path in uploads:
+def _upload_media(uploads: list[tuple[str, Path]]) -> None:
+    def upload(item: tuple[str, Path]) -> None:
+        key, path = item
         _run(
             [
                 "npx",
@@ -75,6 +73,21 @@ def publish_bundle(bundle: Path = DEFAULT_BUNDLE) -> str:
                 "wrangler.jsonc",
             ]
         )
+
+    if not uploads:
+        return
+    worker_count = min(R2_UPLOAD_WORKERS, len(uploads))
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        tuple(executor.map(upload, uploads))
+
+
+def publish_bundle(bundle: Path = DEFAULT_BUNDLE) -> str:
+    manifest, uploads = _load_verified_bundle(bundle)
+    release_id = manifest["coverage_release"]["release_id"]
+    marker = PUBLICATIONS / f"{release_id}.json"
+    if marker.is_file():
+        return release_id
+    _upload_media(uploads)
     _run(
         [
             "npx",

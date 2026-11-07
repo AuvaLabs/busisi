@@ -99,7 +99,7 @@ correct path for blocked or not-located official documents.
 
 The seven open dependency updates were reproduced together in an isolated
 Python 3.12 environment. The updated runtime and development requirements
-installed successfully. The full Python suite passed with 635 tests and 90.53
+installed successfully. The full Python suite passed with 638 tests and 90.53
 percent combined coverage. The Worker suite passed with 115 tests, 98.94
 percent line coverage and 90.08 percent branch coverage. Strict type checking
 passes all 98 engine modules, and GitHub now requires both Ruff and mypy in the
@@ -109,15 +109,16 @@ The cumulative project-image bundle now reuses verified content-addressed
 archive bytes with same-filesystem hard links and falls back to a byte copy
 when links are unavailable. This removes the repeated 14 GB media copy from
 normal coverage cycles without changing the file digest checks or publication
-gate.
+gate. Verified media uploads use six bounded workers, while the D1 update still
+waits until every upload succeeds.
 
 The read-only production audit passed with no issues. It verified 68,608
 budget records, 56,887 delivery records, 20,431 stage changes, 16,814
 integrity signals, 4,297 contractor identities and 96 allotment-release
-records. The gated image-coverage release now contains 9,649 completed
-contract checks: 3,184 exact image sets, 817 records reporting no images and
-5,648 count conflicts. The remaining private queue has 43,427 pending, 3,812
-blocked and two retry records. All four unattended pipeline timers are active,
+records. The gated image-coverage release now contains 10,491 completed
+contract checks: 3,458 exact image sets, 826 records reporting no images and
+6,207 count conflicts. The remaining private queue has 42,428 pending, 3,968
+blocked and three retry records. All four unattended pipeline timers are active,
 the private queue passes SQLite integrity checking and no lease is expired.
 
 ## Remaining publication decisions
