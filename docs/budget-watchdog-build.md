@@ -107,7 +107,9 @@ As of 2026-11-07:
   table and cannot satisfy the publication gate.
 - A private document-evidence index covers nine archived FY2027 budget
   documents, 5,999 extracted pages and 9,838 hash-bound passages. Its FTS5/BM25
-  evaluation has 34 cases, including six questions that must return no result.
+  evaluation has 40 cases: 28 answerable questions, six synthetic no-match
+  questions and six ordinary questions that require evidence the index does
+  not contain. All 12 unsupported questions are correctly refused.
   Optional semantic vectors remain private, disposable and subordinate to the
   archived source. Council and research packets can include the same fixed,
   cited passages. No retrieval database or model is bound to the public Worker.
