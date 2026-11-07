@@ -274,9 +274,12 @@ credential-free and read-only.
 The private evidence-retrieval subsystem indexes hash-verified archived budget
 documents by page using SQLite FTS5 and BM25. Its current FY2027 catalogue has
 nine documents, 5,999 extracted pages, and 9,838 searchable passages. A tracked
-34-question evaluation set checks document recall, citation integrity, and
-unanswerable questions. Optional vectors are accepted only as precomputed,
-hash-bound inputs. The public Worker has no retrieval or model binding. See
+40-question evaluation set checks document recall, citation integrity, and
+unsupported questions. The current index retrieves every expected document and
+passes every citation hash check, but rejects only half of the unsupported
+questions. The private pilot is therefore on hold. Optional vectors are
+accepted only as precomputed, hash-bound inputs. The public Worker has no
+retrieval or model binding. See
 [`docs/evidence-retrieval.md`](docs/evidence-retrieval.md).
 
 The Senate catalogue monitor runs every six hours, preserves its bounded source

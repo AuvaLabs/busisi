@@ -239,6 +239,48 @@
       "expected_document_ids": [],
       "unanswerable": true,
       "filters": {}
+    },
+    {
+      "case_id": "unsupported-final-payment-receipt",
+      "question": "What official receipt proves final payment for the DPWH project?",
+      "expected_document_ids": [],
+      "unanswerable": true,
+      "filters": {"agency": "DPWH"}
+    },
+    {
+      "case_id": "unsupported-completion-certificate",
+      "question": "What date appears on the signed completion certificate for the project?",
+      "expected_document_ids": [],
+      "unanswerable": true,
+      "filters": {"agency": "DPWH"}
+    },
+    {
+      "case_id": "unsupported-coa-disallowance",
+      "question": "Which COA notice of disallowance names this multipurpose building?",
+      "expected_document_ids": [],
+      "unanswerable": true,
+      "filters": {"agency": "DPWH"}
+    },
+    {
+      "case_id": "unsupported-contractor-owner",
+      "question": "Who is the beneficial owner of the contractor awarded the road project?",
+      "expected_document_ids": [],
+      "unanswerable": true,
+      "filters": {"agency": "DPWH"}
+    },
+    {
+      "case_id": "unsupported-inspection-photo",
+      "question": "Show the dated inspection photo proving the hospital project was delivered.",
+      "expected_document_ids": [],
+      "unanswerable": true,
+      "filters": {"agency": "DOH"}
+    },
+    {
+      "case_id": "unsupported-coordinate-proof",
+      "question": "What surveyed latitude and longitude prove the school building location?",
+      "expected_document_ids": [],
+      "unanswerable": true,
+      "filters": {"agency": "DPWH"}
     }
   ]
 }

@@ -164,8 +164,11 @@ def test_tracked_evaluation_covers_the_tracked_document_catalog() -> None:
         for document_id in case.expected_document_ids
     }
 
-    assert len(cases) >= 30
-    assert sum(case.unanswerable for case in cases) >= 5
+    assert len(cases) >= 40
+    assert sum(case.unanswerable for case in cases) >= 10
+    assert sum(
+        case.unanswerable and case.case_id.startswith("unsupported-") for case in cases
+    ) >= 6
     assert expected_ids == document_ids
 
 

@@ -32,9 +32,38 @@ jobs:
       - name: Check the FY2027 Senate catalogue
         run: PYTHONPATH=. python3 ops/harness/budget_watchdog_senate_monitor.py
 
+      - name: Summarize the catalogue check
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("data/budget_watchdog/senate-monitor/report.json")
+          lines = ["## FY2027 Senate catalogue check", ""]
+          if not path.is_file():
+              lines.append("The monitor did not produce a report.")
+          else:
+              report = json.loads(path.read_text(encoding="utf-8"))
+              lines.extend(
+                  [
+                      f"- Status: `{report.get('status', 'unknown')}`",
+                      f"- Official portal: `{report.get('direct_status', 'unknown')}`",
+                      f"- Check method: `{report.get('discovery_mode', 'unknown')}`",
+                      f"- Saved responses: `{len(report.get('response_artifacts', []))}`",
+                  ]
+              )
+              if report.get("error"):
+                  lines.append(f"- Reason: {report['error']}")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("\n".join(lines) + "\n")
+          PY
+
       - name: Preserve the monitor evidence
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: senate-budget-catalogue-${{ github.run_id }}
           path: data/budget_watchdog/senate-monitor/

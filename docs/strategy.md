@@ -99,6 +99,15 @@ cases. A blocking evidence finding prevents confirmation. Council votes remain
 separate from the two human decisions and cannot open the publication gate.
 The public Worker has no model dependency.
 
+The private evidence index now covers nine archived FY2027 documents, 5,999
+pages and 9,838 searchable passages. Every answerable case in the expanded
+40-question evaluation retrieves an expected document, and every citation
+passes its file and passage hash check. Six ordinary unsupported questions
+still retrieve related passages, so unsupported-question rejection is only 50
+percent. The private question-answering pilot is on hold, and no public
+question-answering endpoint exists. Retrieval remains available only to the
+private council and research editor as a way to find passages for review.
+
 ## Release gates
 
 | Area | Gate |
@@ -113,7 +122,7 @@ The public Worker has no model dependency.
 
 ## Next practical work
 
-1. Complete two independent decisions for at least 100 cases in the balanced
+1. Complete two independent human decisions for at least 100 cases in the balanced
    120-case project-link review batch. Unclear and conflicting cases stay out
    of the public reviewed-project list.
 2. Publish only confirmed project links after the review, accuracy, agreement
@@ -126,11 +135,13 @@ The public Worker has no model dependency.
    signed contracts, completion certificates, inspection and acceptance
    records, payment records and COA findings only when reproducible official
    artifacts can be retained and their identifier limitations modeled.
-5. Acquire an authoritative, reusable administrative-boundary artifact before
+5. Obtain a licensed, reusable NAMRIA administrative-boundary artifact before
    adding point-in-polygon coordinate validation. Until then, keep exact source
-   coordinate checks visibly separate from geographic verification. Geoportal
-   boundary services are discoverable, but broad downloadable feature access
-   remains conditional and no unofficial polygon substitute is published.
+   coordinate checks visibly separate from geographic verification. The
+   official Geoportal catalogue labels the available regional, provincial and
+   municipal layers approximate and not downloadable, and its WFS endpoint
+   currently requires authorization. No unofficial polygon substitute is
+   published.
 6. Review high-volume name-only contractor identities and quarantine ambiguous
    mergers instead of collapsing similar business names.
 7. Add alerts for source drift and publication mismatch without granting the
@@ -150,4 +161,4 @@ The public Worker has no model dependency.
   several districts.
 - Prefer a smaller verified publication over a larger uncertain one.
 
-Last updated: 2026-11-06.
+Last updated: 2026-11-07.

@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
+from ops.harness import budget_watchdog_senate_monitor as senate_monitor_cli
 
 from engine.budget_watchdog import senate_monitor
 from engine.budget_watchdog.senate_monitor import (
@@ -207,6 +208,40 @@ def test_monitor_retries_transient_challenges(monkeypatch) -> None:
     assert calls == 3
 
 
+def test_monitor_preserves_exhausted_secondary_response_and_failure_report(
+    tmp_path, monkeypatch
+) -> None:
+    def fetch(url: str, _headers: dict[str, str]) -> HttpPayload:
+        if url.startswith("https://budget-transparency-portal.senate.gov.ph"):
+            return HttpPayload(403, url, b"blocked", "text/html")
+        return HttpPayload(
+            200,
+            url,
+            b"<title>Just a moment</title> Cloudflare challenge",
+            "text/html",
+        )
+
+    monkeypatch.setattr(senate_monitor.time, "sleep", lambda _seconds: None)
+
+    with pytest.raises(SenateMonitorError, match="remained unavailable"):
+        run_senate_monitor(_baseline(), tmp_path, fetch=fetch)
+
+    report = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert report["passed"] is False
+    assert report["status"] == "acquisition_failure"
+    assert report["direct_status"] == "blocked"
+    assert report["discovery_mode"] == "secondary_renderer"
+    assert report["expected_document_count"] == 4
+    assert report["observed_document_count"] is None
+    assert [item["name"] for item in report["response_artifacts"]] == [
+        "direct-root.html",
+        "secondary-root-unavailable.html",
+    ]
+    assert (tmp_path / "responses" / "secondary-root-unavailable.html").read_bytes() == (
+        b"<title>Just a moment</title> Cloudflare challenge"
+    )
+
+
 def test_monitor_records_forbidden_challenge_without_retry(monkeypatch) -> None:
     calls = 0
 
@@ -293,3 +328,29 @@ def test_bounded_http_fetcher_rejects_oversize_and_origin_escape(monkeypatch) ->
     )
     with pytest.raises(SenateMonitorError, match="escaped"):
         senate_monitor._request(url, {})
+
+
+def test_cli_preserves_detailed_failure_report(tmp_path, monkeypatch) -> None:
+    output = tmp_path / "monitor"
+    detailed = {
+        "passed": False,
+        "status": "acquisition_failure",
+        "error": "source blocked",
+        "response_artifacts": [{"name": "blocked.html"}],
+    }
+
+    def fail(_baseline: Path, output_dir: Path):
+        output_dir.mkdir(parents=True)
+        (output_dir / "report.json").write_text(
+            json.dumps(detailed), encoding="utf-8"
+        )
+        raise SenateMonitorError("source blocked")
+
+    monkeypatch.setattr(senate_monitor_cli, "run_senate_monitor", fail)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["budget_watchdog_senate_monitor.py", "--output", str(output)],
+    )
+
+    assert senate_monitor_cli.main() == 3
+    assert json.loads((output / "report.json").read_text(encoding="utf-8")) == detailed

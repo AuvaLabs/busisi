@@ -24,10 +24,19 @@ def main() -> int:
         result = run_senate_monitor(args.baseline, args.output)
     except SenateMonitorError as exc:
         args.output.mkdir(parents=True, exist_ok=True)
-        failure = {"passed": False, "status": "acquisition_failure", "error": str(exc)}
-        (args.output / "report.json").write_text(
-            json.dumps(failure, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+        report_path = args.output / "report.json"
+        if report_path.is_file():
+            failure = json.loads(report_path.read_text(encoding="utf-8"))
+        else:
+            failure = {
+                "passed": False,
+                "status": "acquisition_failure",
+                "error": str(exc),
+            }
+            report_path.write_text(
+                json.dumps(failure, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
         print(json.dumps(failure, indent=2))
         return 3
     payload = {

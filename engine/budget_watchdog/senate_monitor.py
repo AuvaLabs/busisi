@@ -92,9 +92,18 @@ def _challenge(payload: HttpPayload) -> bool:
     return b"just a moment" in lowered and b"cloudflare" in lowered
 
 
-def _fetch_checked(fetch: Fetch, url: str, headers: dict[str, str]) -> HttpPayload:
+def _fetch_checked(
+    fetch: Fetch,
+    url: str,
+    headers: dict[str, str],
+    *,
+    failure_recorder: _ArtifactRecorder | None = None,
+    failure_name: str | None = None,
+) -> HttpPayload:
+    last_payload: HttpPayload | None = None
     for attempt in range(MAX_FETCH_ATTEMPTS):
         payload = fetch(url, headers)
+        last_payload = payload
         retryable = payload.status_code in {429, 500, 502, 503, 504} or (
             payload.status_code == HTTP_OK and _challenge(payload)
         )
@@ -102,6 +111,8 @@ def _fetch_checked(fetch: Fetch, url: str, headers: dict[str, str]) -> HttpPaylo
             return payload
         if attempt < MAX_FETCH_ATTEMPTS - 1:
             time.sleep(0.25 * (2**attempt))
+    if failure_recorder is not None and failure_name is not None and last_payload:
+        failure_recorder.store(failure_name, last_payload)
     raise SenateMonitorError(f"source remained unavailable after retries: {url}")
 
 
@@ -177,7 +188,13 @@ def _secondary_root_rows(
         return parse_portal_rows(rendered.content)
     except SenateCatalogError:
         listing_url = _proxy_url(_folder_url("", 0).replace("limit=1", "limit=200"))
-        listing = _fetch_checked(fetch, listing_url, {"X-Return-Format": "html"})
+        listing = _fetch_checked(
+            fetch,
+            listing_url,
+            {"X-Return-Format": "html"},
+            failure_recorder=recorder,
+            failure_name="secondary-root-listing-unavailable.html",
+        )
         if listing.status_code != HTTP_OK:
             raise SenateMonitorError("secondary root listing discovery failed") from None
         recorder.store("secondary-root-listing.html", listing)
@@ -234,13 +251,19 @@ def _secondary_documents(
     recorder: _ArtifactRecorder,
 ) -> tuple[PortalRow, ...]:
     documents = [row for row in root if row.kind == "document"]
-    expected_by_title = {}
+    expected_by_title: dict[str, list[SenateDocument]] = {}
     for document in expected:
         expected_by_title.setdefault(_canonical_title(document.title), []).append(document)
     folders = [row for row in root if row.kind == "folder"]
     for folder in folders:
         markdown_url = _proxy_url(_folder_url(folder.record_id, 0).replace("limit=1", "limit=200"))
-        markdown = _fetch_checked(fetch, markdown_url, {})
+        markdown = _fetch_checked(
+            fetch,
+            markdown_url,
+            {},
+            failure_recorder=recorder,
+            failure_name=f"folder-{folder.record_id}-listing-unavailable.md",
+        )
         if markdown.status_code != HTTP_OK:
             raise SenateMonitorError("secondary folder discovery failed")
         recorder.store(f"folder-{folder.record_id}-listing.md", markdown)
@@ -273,7 +296,13 @@ def _direct_documents(
     for folder in (row for row in root if row.kind == "folder"):
         for offset in range(MAX_DIRECT_FOLDER_ROWS):
             url = _folder_url(folder.record_id, offset)
-            payload = _fetch_checked(fetch, url, {})
+            payload = _fetch_checked(
+                fetch,
+                url,
+                {},
+                failure_recorder=recorder,
+                failure_name=f"direct-folder-{folder.record_id}-{offset:03d}-unavailable.html",
+            )
             recorder.store(f"direct-folder-{folder.record_id}-{offset:03d}.html", payload)
             if payload.status_code != HTTP_OK:
                 raise SenateMonitorError("official folder discovery failed")
@@ -291,7 +320,9 @@ def _direct_documents(
     return tuple(documents)
 
 
-def _compare(expected, observed: tuple[PortalRow, ...]) -> tuple[str, ...]:
+def _compare(
+    expected: tuple[SenateDocument, ...], observed: tuple[PortalRow, ...]
+) -> tuple[str, ...]:
     expected_by_id = {document.source_record_id: document for document in expected}
     observed_by_id = {row.record_id: row for row in observed}
     if len(observed_by_id) != len(observed):
@@ -345,29 +376,58 @@ def run_senate_monitor(
     expected = _expected_documents(baseline_payload, catalog.documents)
     output_dir.mkdir(parents=True, exist_ok=True)
     recorder = _ArtifactRecorder(output_dir)
-    direct = _fetch_checked(fetch, PORTAL_URL, {})
-    recorder.store("direct-root.html", direct)
-    if direct.status_code == HTTP_OK and not _challenge(direct):
-        direct_status = "available"
-        discovery_mode = "official_direct"
-        try:
-            root_rows = parse_portal_rows(direct.content)
-        except SenateCatalogError as exc:
-            raise SenateMonitorError("official root response is invalid") from exc
-        observed = _direct_documents(root_rows, fetch, recorder)
-    else:
-        direct_status = "blocked" if direct.status_code in {401, 403} else "unavailable"
-        discovery_mode = "secondary_renderer"
-        rendered = _fetch_checked(
+    direct_status = "not_checked"
+    discovery_mode = "not_started"
+    try:
+        direct = _fetch_checked(
             fetch,
-            _proxy_url(PORTAL_URL),
-            {"X-Return-Format": "html"},
+            PORTAL_URL,
+            {},
+            failure_recorder=recorder,
+            failure_name="direct-root-unavailable.html",
         )
-        if rendered.status_code != HTTP_OK:
-            raise SenateMonitorError("secondary root discovery failed")
-        recorder.store("secondary-root.html", rendered)
-        root_rows = _secondary_root_rows(rendered, fetch, recorder)
-        observed = _secondary_documents(root_rows, expected, fetch, recorder)
+        recorder.store("direct-root.html", direct)
+        if direct.status_code == HTTP_OK and not _challenge(direct):
+            direct_status = "available"
+            discovery_mode = "official_direct"
+            try:
+                root_rows = parse_portal_rows(direct.content)
+            except SenateCatalogError as exc:
+                raise SenateMonitorError("official root response is invalid") from exc
+            observed = _direct_documents(root_rows, fetch, recorder)
+        else:
+            direct_status = (
+                "blocked" if direct.status_code in {401, 403} else "unavailable"
+            )
+            discovery_mode = "secondary_renderer"
+            rendered = _fetch_checked(
+                fetch,
+                _proxy_url(PORTAL_URL),
+                {"X-Return-Format": "html"},
+                failure_recorder=recorder,
+                failure_name="secondary-root-unavailable.html",
+            )
+            if rendered.status_code != HTTP_OK:
+                raise SenateMonitorError("secondary root discovery failed")
+            recorder.store("secondary-root.html", rendered)
+            root_rows = _secondary_root_rows(rendered, fetch, recorder)
+            observed = _secondary_documents(root_rows, expected, fetch, recorder)
+    except SenateMonitorError as exc:
+        failure = {
+            "checked_at": datetime.now(UTC).isoformat(),
+            "passed": False,
+            "status": "acquisition_failure",
+            "error": str(exc),
+            "direct_status": direct_status,
+            "discovery_mode": discovery_mode,
+            "expected_document_count": len(expected),
+            "observed_document_count": None,
+            "response_artifacts": [asdict(artifact) for artifact in recorder.artifacts],
+        }
+        (output_dir / "report.json").write_text(
+            json.dumps(failure, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        raise
     differences = _compare(expected, observed)
     result = SenateMonitorResult(
         checked_at=datetime.now(UTC).isoformat(),
