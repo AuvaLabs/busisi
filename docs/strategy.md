@@ -156,6 +156,13 @@ private council and research editor as a way to find passages for review.
    monitor deployment or database mutation credentials.
 8. Reconcile district and representative changes against a newly archived
    roster snapshot before updating public names, keeping prior snapshot hashes.
+9. Add an answer-support evaluation layer for ordinary unsupported questions.
+   Keep public evidence question answering disabled until that layer has a
+   separately reviewed answer set, reliable refusal behavior and citation
+   checks that verify the answer rather than only the retrieved passage.
+10. Reduce the existing strict static-typing backlog to zero before making the
+    repository-wide type check a required GitHub release check. Changed modules
+    should continue to pass focused strict checking in the meantime.
 
 ## Decision rules
 
