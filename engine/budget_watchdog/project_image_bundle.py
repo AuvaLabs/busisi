@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sqlite3
 from dataclasses import dataclass
@@ -115,6 +116,15 @@ def _verify(sql: str, expected_contracts: int, expected_images: int) -> None:
         raise ValueError("project-image D1 bundle verification failed")
 
 
+def _materialize_media(source: Path, destination: Path) -> None:
+    """Reuse immutable archive bytes when possible, with a portable copy fallback."""
+
+    try:
+        os.link(source, destination)
+    except OSError:
+        shutil.copyfile(source, destination)
+
+
 def build_project_image_bundle(
     coverage: tuple[ProjectImageCoverage, ...],
     images: tuple[AcquiredProjectImage, ...],
@@ -165,7 +175,7 @@ def build_project_image_bundle(
         ):
             raise ValueError("project-image media digest collision")
         if not destination.exists():
-            shutil.copyfile(item.source_path, destination)
+            _materialize_media(item.source_path, destination)
 
     sql_path = building / "project-images.sql"
     sql_path.write_text(sql, encoding="utf-8")

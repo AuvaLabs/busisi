@@ -92,7 +92,9 @@ def test_builds_atomic_verified_and_quarantined_image_bundle(tmp_path) -> None:
         images[0].archive_key,
         images[1].archive_key,
     }
-    assert len(tuple((output / "media").iterdir())) == 1
+    media_files = tuple((output / "media").iterdir())
+    assert len(media_files) == 1
+    assert media_files[0].stat().st_ino == source.stat().st_ino
     assert "'verified'" in sql
     assert "'quarantine'" in sql
     assert not (output / "stale").exists()
@@ -124,3 +126,24 @@ def test_rejects_duplicate_missing_empty_and_tampered_inputs(tmp_path) -> None:
     source.write_bytes(JPEG + b"tampered")
     with pytest.raises(ValueError, match="does not match"):
         build_project_image_bundle((exact,), (image,), "2026-11-03T10:00:00+00:00", tmp_path / "d")
+
+
+def test_media_materialization_falls_back_to_copy(tmp_path, monkeypatch) -> None:
+    source = tmp_path / "source.jpg"
+    source.write_bytes(JPEG)
+
+    def unavailable_link(*_args) -> None:
+        raise OSError("hard links unavailable")
+
+    monkeypatch.setattr("engine.budget_watchdog.project_image_bundle.os.link", unavailable_link)
+    output = tmp_path / "bundle"
+    build_project_image_bundle(
+        (_coverage("24EXACT1"),),
+        (_image("24EXACT1", "1" * 64, source),),
+        "2026-11-03T10:00:00+00:00",
+        output,
+    )
+
+    media = next((output / "media").iterdir())
+    assert media.read_bytes() == JPEG
+    assert media.stat().st_ino != source.stat().st_ino

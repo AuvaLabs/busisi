@@ -99,11 +99,17 @@ correct path for blocked or not-located official documents.
 
 The seven open dependency updates were reproduced together in an isolated
 Python 3.12 environment. The updated runtime and development requirements
-installed successfully. The full Python suite passed with 634 tests and 90.53
+installed successfully. The full Python suite passed with 635 tests and 90.53
 percent combined coverage. The Worker suite passed with 115 tests, 98.94
 percent line coverage and 90.08 percent branch coverage. Strict type checking
 passes all 98 engine modules, and GitHub now requires both Ruff and mypy in the
 main test job. The Cloudflare dry deployment also passed.
+
+The cumulative project-image bundle now reuses verified content-addressed
+archive bytes with same-filesystem hard links and falls back to a byte copy
+when links are unavailable. This removes the repeated 14 GB media copy from
+normal coverage cycles without changing the file digest checks or publication
+gate.
 
 The read-only production audit passed with no issues. It verified 68,608
 budget records, 56,887 delivery records, 20,431 stage changes, 16,814
