@@ -10,11 +10,14 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
+from engine.budget_watchdog.evidence_catalog import validated_evidence_kinds
+
 TOKEN = re.compile(r"[^\W_]+(?:[-'][^\W_]+)*", re.UNICODE)
 BOOLEAN_WORDS = frozenset({"and", "or", "not", "near"})
 SHA256 = re.compile(r"[a-f0-9]{64}")
 MAX_RESULTS = 100
 FULL_BASIS_POINTS = 10_000
+EVALUATION_SCHEMA_VERSION = 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +45,7 @@ class RetrievalResult:
     page_end: int
     text: str
     chunk_sha256: str
+    evidence_kinds: tuple[str, ...]
     score: float
     retrieval_modes: tuple[str, ...]
 
@@ -60,6 +64,7 @@ class EvaluationCase:
     expected_document_ids: tuple[str, ...]
     unanswerable: bool
     filters: RetrievalFilters = RetrievalFilters()
+    required_evidence_kinds: tuple[str, ...] = ("budget_document",)
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +77,8 @@ class RetrievalEvaluation:
     recall_bps: int
     unanswerable_accuracy_bps: int
     citation_integrity_bps: int
+    supported_cases: int
+    answer_support_bps: int
     failed_case_ids: tuple[str, ...]
     manifest_sha256: str
 
@@ -142,6 +149,10 @@ def _filter_sql(filters: RetrievalFilters) -> tuple[str, list[Any]]:
 
 
 def _row_result(row: sqlite3.Row, score: float, modes: tuple[str, ...]) -> RetrievalResult:
+    try:
+        raw_evidence_kinds = json.loads(row["evidence_kinds_json"])
+    except (json.JSONDecodeError, TypeError) as error:
+        raise ValueError("retrieval index has invalid evidence kinds") from error
     return RetrievalResult(
         chunk_id=row["chunk_id"],
         document_id=row["document_id"],
@@ -153,6 +164,7 @@ def _row_result(row: sqlite3.Row, score: float, modes: tuple[str, ...]) -> Retri
         page_end=row["page_end"],
         text=row["chunk_text"],
         chunk_sha256=row["chunk_sha256"],
+        evidence_kinds=validated_evidence_kinds(raw_evidence_kinds),
         score=score,
         retrieval_modes=modes,
     )
@@ -175,7 +187,8 @@ def lexical_search(
     filters_sql, values = _filter_sql(filters)
     sql = (
         "SELECT c.chunk_id,c.document_id,c.page_start,c.page_end,c.chunk_text,c.chunk_sha256,"
-        "d.title,d.publisher,d.source_url,d.artifact_sha256,bm25(retrieval_chunks_fts,2.0,1.0,3.0) AS rank "
+        "d.title,d.publisher,d.source_url,d.artifact_sha256,d.evidence_kinds_json,"
+        "bm25(retrieval_chunks_fts,2.0,1.0,3.0) AS rank "
         "FROM retrieval_chunks_fts f JOIN retrieval_chunks c ON c.rowid=f.rowid "
         "JOIN retrieval_documents d ON d.document_id=c.document_id "
         "WHERE retrieval_chunks_fts MATCH ?" + filters_sql + " ORDER BY rank,c.chunk_id LIMIT ?"
@@ -272,7 +285,8 @@ def vector_search(
     filters_sql, values = _filter_sql(filters)
     sql = (
         "SELECT c.chunk_id,c.document_id,c.page_start,c.page_end,c.chunk_text,c.chunk_sha256,"
-        "d.title,d.publisher,d.source_url,d.artifact_sha256,v.vector_json,v.chunk_sha256 AS vector_sha "
+        "d.title,d.publisher,d.source_url,d.artifact_sha256,d.evidence_kinds_json,"
+        "v.vector_json,v.chunk_sha256 AS vector_sha "
         "FROM retrieval_vectors v JOIN retrieval_chunks c ON c.chunk_id=v.chunk_id "
         "JOIN retrieval_documents d ON d.document_id=c.document_id "
         "WHERE v.model_id = ?" + filters_sql
@@ -331,8 +345,13 @@ def load_evaluation_cases(path: Path) -> tuple[EvaluationCase, ...]:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
         raise ValueError("retrieval evaluation set must be valid JSON") from error
-    if not isinstance(payload, dict) or payload.get("schema_version") != 1:
-        raise ValueError("retrieval evaluation schema_version must be 1")
+    if (
+        not isinstance(payload, dict)
+        or payload.get("schema_version") != EVALUATION_SCHEMA_VERSION
+    ):
+        raise ValueError(
+            f"retrieval evaluation schema_version must be {EVALUATION_SCHEMA_VERSION}"
+        )
     raw_cases = payload.get("cases")
     if not isinstance(raw_cases, list) or not raw_cases:
         raise ValueError("retrieval evaluation set must contain cases")
@@ -345,6 +364,9 @@ def load_evaluation_cases(path: Path) -> tuple[EvaluationCase, ...]:
         question = item.get("question")
         expected = item.get("expected_document_ids")
         unanswerable = item.get("unanswerable")
+        required_evidence_kinds = validated_evidence_kinds(
+            item.get("required_evidence_kinds")
+        )
         if not isinstance(case_id, str) or not case_id.strip() or case_id in seen:
             raise ValueError("retrieval evaluation case_id must be unique text")
         if not isinstance(question, str) or not question.strip():
@@ -364,7 +386,16 @@ def load_evaluation_cases(path: Path) -> tuple[EvaluationCase, ...]:
             project_id=raw_filters.get("project_id"),
             document_ids=tuple(raw_filters.get("document_ids", ())),
         )
-        output.append(EvaluationCase(case_id, question, tuple(expected), unanswerable, filters))
+        output.append(
+            EvaluationCase(
+                case_id,
+                question,
+                tuple(expected),
+                unanswerable,
+                filters,
+                required_evidence_kinds,
+            )
+        )
         seen.add(case_id)
     return tuple(output)
 
@@ -389,9 +420,12 @@ def evaluate_retrieval(
     case_ids = [item.case_id for item in cases]
     if len(case_ids) != len(set(case_ids)):
         raise ValueError("retrieval evaluation case IDs must be unique")
+    for item in cases:
+        validated_evidence_kinds(list(item.required_evidence_kinds))
     connection = _readonly(database_path)
     recalled = 0
     correct_empty = 0
+    supported = 0
     valid_citations = 0
     citation_count = 0
     failed = []
@@ -403,30 +437,46 @@ def evaluate_retrieval(
             results = lexical_search(database_path, item.question, filters=item.filters, limit=limit)
             citation_count += len(results)
             valid_citations += sum(_citation_valid(connection, result) for result in results)
+            evidence_matches = tuple(
+                result
+                for result in results
+                if set(result.evidence_kinds) & set(item.required_evidence_kinds)
+            )
             if item.unanswerable:
-                if not results:
+                if not evidence_matches:
                     correct_empty += 1
+                    supported += 1
                 else:
                     failed.append(item.case_id)
-            elif set(item.expected_document_ids) & {result.document_id for result in results}:
-                recalled += 1
             else:
-                failed.append(item.case_id)
+                expected_ids = set(item.expected_document_ids)
+                if expected_ids & {result.document_id for result in results}:
+                    recalled += 1
+                if expected_ids & {result.document_id for result in evidence_matches}:
+                    supported += 1
+                else:
+                    failed.append(item.case_id)
     finally:
         connection.close()
     answerable = sum(not item.unanswerable for item in cases)
     unanswerable = len(cases) - answerable
     return RetrievalEvaluation(
-        len(cases),
-        answerable,
-        unanswerable,
-        recalled,
-        correct_empty,
-        (recalled * 10_000) // answerable if answerable else 10_000,
-        (correct_empty * 10_000) // unanswerable if unanswerable else 10_000,
-        (valid_citations * 10_000) // citation_count if citation_count else 10_000,
-        tuple(failed),
-        manifest_sha256,
+        case_count=len(cases),
+        answerable_cases=answerable,
+        unanswerable_cases=unanswerable,
+        recalled_cases=recalled,
+        correctly_unanswered_cases=correct_empty,
+        recall_bps=(recalled * FULL_BASIS_POINTS) // answerable if answerable else FULL_BASIS_POINTS,
+        unanswerable_accuracy_bps=(correct_empty * FULL_BASIS_POINTS) // unanswerable
+        if unanswerable
+        else FULL_BASIS_POINTS,
+        citation_integrity_bps=(valid_citations * FULL_BASIS_POINTS) // citation_count
+        if citation_count
+        else FULL_BASIS_POINTS,
+        supported_cases=supported,
+        answer_support_bps=(supported * FULL_BASIS_POINTS) // len(cases),
+        failed_case_ids=tuple(failed),
+        manifest_sha256=manifest_sha256,
     )
 
 
@@ -436,6 +486,7 @@ def public_qa_readiness(
     minimum_cases: int = 30,
     minimum_recall_bps: int = 9_000,
     minimum_unanswerable_bps: int = 9_000,
+    minimum_answer_support_bps: int = 9_000,
 ) -> PublicQaReadiness:
     """Decide private-pilot eligibility while keeping public model Q&A disabled."""
 
@@ -446,6 +497,8 @@ def public_qa_readiness(
         reasons.append("retrieval recall is below the required score")
     if evaluation.unanswerable_accuracy_bps < minimum_unanswerable_bps:
         reasons.append("unanswerable questions are not rejected reliably enough")
+    if evaluation.answer_support_bps < minimum_answer_support_bps:
+        reasons.append("retrieved passages do not support enough evaluation answers")
     if evaluation.citation_integrity_bps != FULL_BASIS_POINTS:
         reasons.append("one or more retrieved passages failed its source integrity check")
     return PublicQaReadiness(not reasons, False, tuple(reasons), evaluation)

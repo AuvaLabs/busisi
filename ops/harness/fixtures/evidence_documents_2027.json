@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "documents": [
     {
       "document_id": "house-2027-third-reading-volume-ia",
@@ -11,7 +11,10 @@
       "media_type": "application/pdf",
       "fiscal_year": 2027,
       "stage": "house_third_reading",
-      "agency": null
+      "agency": null,
+      "evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "document_id": "house-2027-second-reading-volume-ib",
@@ -23,7 +26,10 @@
       "media_type": "application/pdf",
       "fiscal_year": 2027,
       "stage": "house_second_reading",
-      "agency": null
+      "agency": null,
+      "evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "document_id": "house-2027-second-reading-volume-ic",
@@ -35,7 +41,10 @@
       "media_type": "application/pdf",
       "fiscal_year": 2027,
       "stage": "house_second_reading",
-      "agency": null
+      "agency": null,
+      "evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "document_id": "house-2027-third-reading-volume-ib",
@@ -47,7 +56,10 @@
       "media_type": "application/pdf",
       "fiscal_year": 2027,
       "stage": "house_third_reading",
-      "agency": null
+      "agency": null,
+      "evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "document_id": "house-2027-third-reading-volume-ic",
@@ -59,7 +71,10 @@
       "media_type": "application/pdf",
       "fiscal_year": 2027,
       "stage": "house_third_reading",
-      "agency": null
+      "agency": null,
+      "evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "document_id": "nep-2027-dpwh-volume-iib",
@@ -71,7 +86,10 @@
       "media_type": "application/pdf",
       "fiscal_year": 2027,
       "stage": "nep",
-      "agency": "DPWH"
+      "agency": "DPWH",
+      "evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "document_id": "nep-2027-farm-to-market-roads",
@@ -83,7 +101,10 @@
       "media_type": "application/pdf",
       "fiscal_year": 2027,
       "stage": "nep",
-      "agency": "DA"
+      "agency": "DA",
+      "evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "document_id": "nep-2027-national-irrigation-administration",
@@ -95,7 +116,10 @@
       "media_type": "application/pdf",
       "fiscal_year": 2027,
       "stage": "nep",
-      "agency": "NIA"
+      "agency": "NIA",
+      "evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "document_id": "nep-2027-health-facilities-enhancement-program",
@@ -107,7 +131,10 @@
       "media_type": "application/pdf",
       "fiscal_year": 2027,
       "stage": "nep",
-      "agency": "DOH"
+      "agency": "DOH",
+      "evidence_kinds": [
+        "budget_document"
+      ]
     }
   ]
 }

@@ -111,10 +111,13 @@ The private evidence index now covers nine archived FY2027 documents, 5,999
 pages and 9,838 searchable passages. Every answerable case in the expanded
 40-question evaluation retrieves an expected document, and every citation
 passes its file and passage hash check. Six ordinary unsupported questions
-still retrieve related passages, so unsupported-question rejection is only 50
-percent. The private question-answering pilot is on hold, and no public
-question-answering endpoint exists. Retrieval remains available only to the
-private council and research editor as a way to find passages for review.
+still retrieve related passages, but the support gate correctly refuses them
+because budget documents are not proof of payment, delivery, audit findings,
+ownership, images, or coordinates. Recall, answer support, refusal accuracy,
+and citation integrity each measure 100 percent. This permits private testing
+only. No public question-answering endpoint exists. Retrieval remains available
+only to the private council and research editor as a way to find passages for
+review.
 
 ## Release gates
 
@@ -156,10 +159,10 @@ private council and research editor as a way to find passages for review.
    monitor deployment or database mutation credentials.
 8. Reconcile district and representative changes against a newly archived
    roster snapshot before updating public names, keeping prior snapshot hashes.
-9. Add an answer-support evaluation layer for ordinary unsupported questions.
-   Keep public evidence question answering disabled until that layer has a
-   separately reviewed answer set, reliable refusal behavior and citation
-   checks that verify the answer rather than only the retrieved passage.
+9. Expand the completed answer-support evaluation beyond the current 40
+   questions, have the answer set reviewed independently, and test exact claim
+   citations. Keep public evidence question answering disabled until a separate
+   release decision approves the answer-quality and safety contract.
 10. Reduce the existing strict static-typing backlog to zero before making the
     repository-wide type check a required GitHub release check. Changed modules
     should continue to pass focused strict checking in the meantime.

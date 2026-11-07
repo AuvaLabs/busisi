@@ -56,10 +56,11 @@ def _index(tmp_path):
                 "agency": agency,
                 "contract_id": "C-DPWH" if agency == "DPWH" else None,
                 "project_id": "P-DEPED" if agency == "DepEd" else None,
+                "evidence_kinds": ["budget_document"],
             }
         )
     manifest = tmp_path / "manifest.json"
-    manifest.write_text(json.dumps({"schema_version": 1, "documents": documents}))
+    manifest.write_text(json.dumps({"schema_version": 2, "documents": documents}))
     database = tmp_path / "retrieval.sqlite3"
     build_evidence_index(manifest, database)
     return database
@@ -81,6 +82,7 @@ def test_fts_search_is_ranked_filtered_and_citation_complete(tmp_path) -> None:
     assert len(results[0].artifact_sha256) == 64
     assert len(results[0].chunk_sha256) == 64
     assert results[0].source_url.startswith("https://")
+    assert results[0].evidence_kinds == ("budget_document",)
     assert [item.document_id for item in filtered] == ["deped-nep"]
 
 
@@ -144,10 +146,39 @@ def test_evaluation_and_public_readiness_fail_closed(tmp_path) -> None:
     assert report.recall_bps == 10_000
     assert report.citation_integrity_bps == 10_000
     assert report.unanswerable_accuracy_bps == 10_000
+    assert report.answer_support_bps == 10_000
     assert held.public_endpoint_allowed is False
     assert "evaluation cases" in " ".join(held.reasons)
     assert eligible.eligible_for_private_pilot is True
     assert eligible.public_endpoint_allowed is False
+
+
+def test_evaluation_rejects_related_passages_without_required_evidence(tmp_path) -> None:
+    database = _index(tmp_path)
+    cases = (
+        EvaluationCase(
+            "receipt",
+            "What receipt proves payment for the flood program?",
+            (),
+            True,
+            required_evidence_kinds=("payment_receipt",),
+        ),
+        EvaluationCase(
+            "budget",
+            "What flood program is listed in the budget?",
+            ("dpwh-nep",),
+            False,
+            required_evidence_kinds=("budget_document",),
+        ),
+    )
+
+    report = evaluate_retrieval(database, cases, limit=3)
+
+    assert report.recalled_cases == 1
+    assert report.correctly_unanswered_cases == 1
+    assert report.supported_cases == 2
+    assert report.answer_support_bps == 10_000
+    assert report.failed_case_ids == ()
 
 
 def test_tracked_evaluation_covers_the_tracked_document_catalog() -> None:
@@ -164,7 +195,10 @@ def test_tracked_evaluation_covers_the_tracked_document_catalog() -> None:
         for document_id in case.expected_document_ids
     }
 
+    assert manifest["schema_version"] == 2
+    assert all(item["evidence_kinds"] == ["budget_document"] for item in manifest["documents"])
     assert len(cases) >= 40
+    assert all(case.required_evidence_kinds for case in cases)
     assert sum(case.unanswerable for case in cases) >= 10
     assert sum(
         case.unanswerable and case.case_id.startswith("unsupported-") for case in cases
@@ -274,19 +308,20 @@ def test_vector_boundaries_fail_closed(tmp_path) -> None:
     ("payload", "message"),
     [
         ("not json", "valid JSON"),
-        (json.dumps({"schema_version": 2, "cases": []}), "schema_version"),
-        (json.dumps({"schema_version": 1, "cases": []}), "contain cases"),
-        (json.dumps({"schema_version": 1, "cases": ["bad"]}), "must be objects"),
+        (json.dumps({"schema_version": 1, "cases": []}), "schema_version"),
+        (json.dumps({"schema_version": 2, "cases": []}), "contain cases"),
+        (json.dumps({"schema_version": 2, "cases": ["bad"]}), "must be objects"),
         (
             json.dumps(
                 {
-                    "schema_version": 1,
+                    "schema_version": 2,
                     "cases": [
                         {
                             "case_id": "x",
                             "question": "q",
                             "expected_document_ids": [],
                             "unanswerable": False,
+                            "required_evidence_kinds": ["budget_document"],
                         }
                     ],
                 }
@@ -296,19 +331,37 @@ def test_vector_boundaries_fail_closed(tmp_path) -> None:
         (
             json.dumps(
                 {
-                    "schema_version": 1,
+                    "schema_version": 2,
                     "cases": [
                         {
                             "case_id": "x",
                             "question": "q",
                             "expected_document_ids": ["doc"],
                             "unanswerable": False,
+                            "required_evidence_kinds": ["budget_document"],
                             "filters": "bad",
                         }
                     ],
                 }
             ),
             "filters",
+        ),
+        (
+            json.dumps(
+                {
+                    "schema_version": 2,
+                    "cases": [
+                        {
+                            "case_id": "x",
+                            "question": "q",
+                            "expected_document_ids": [],
+                            "unanswerable": True,
+                            "required_evidence_kinds": ["unknown_kind"],
+                        }
+                    ],
+                }
+            ),
+            "recognized",
         ),
     ],
 )
@@ -338,7 +391,7 @@ def test_evaluation_reports_misses_false_answers_and_bad_citations(tmp_path, mon
     assert report.unanswerable_accuracy_bps == 0
     assert report.citation_integrity_bps == 0
     assert report.failed_case_ids == ("miss", "false-answer")
-    assert len(held.reasons) == 3
+    assert len(held.reasons) == 4
 
 
 def test_evaluation_requires_unique_nonempty_cases(tmp_path) -> None:

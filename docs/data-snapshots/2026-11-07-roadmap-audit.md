@@ -30,12 +30,13 @@ The index contains nine archived FY2027 documents, 5,999 extracted pages and
 - 28 of 28 answerable questions retrieved an expected document;
 - every returned passage matched its stored file and passage hashes;
 - six synthetic no-match questions returned no result;
-- six ordinary unsupported questions retrieved related passages and therefore
-  failed the rejection check; and
-- unsupported-question rejection measured 50 percent.
+- six ordinary unsupported questions retrieved related passages, but every
+  passage was correctly recognized as the wrong kind of evidence; and
+- answer support and unsupported-question refusal both measured 100 percent.
 
-Retrieval remains useful for finding review candidates, but the private pilot
-is on hold and no public question-answering endpoint exists.
+The support gate permits private testing of retrieval packets. It does not
+approve generated answers or public release, and no public question-answering
+endpoint exists.
 
 ## Private council completion
 
@@ -118,8 +119,8 @@ the private queue passes SQLite integrity checking and no lease is expired.
   human review.
 - New project links still require two independent human decisions for at least
   100 cases and the existing accuracy, agreement and source-total thresholds.
-- Public evidence question answering remains disabled until unsupported
-  questions can be rejected reliably and a separate answer-quality review
-  passes.
+- Public evidence question answering remains disabled until a separately
+  reviewed answer set passes and a release decision approves the public safety
+  and answer-quality contract.
 - Geographic validation remains disabled until a licensed, versioned official
   polygon file can be retained and reproduced.

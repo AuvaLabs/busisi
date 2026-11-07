@@ -1,286 +1,544 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "description": "Curated retrieval checks for archived 2027 Philippine budget documents. Expected documents identify where the cited wording was manually confirmed in the indexed archive.",
   "cases": [
     {
       "case_id": "hfep-program",
       "question": "Health Facilities Enhancement Program",
-      "expected_document_ids": ["nep-2027-health-facilities-enhancement-program"],
+      "expected_document_ids": [
+        "nep-2027-health-facilities-enhancement-program"
+      ],
       "unanswerable": false,
-      "filters": {"fiscal_year": 2027, "agency": "DOH"}
+      "filters": {
+        "fiscal_year": 2027,
+        "agency": "DOH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "nia-program",
       "question": "National Irrigation Administration programs activities projects",
-      "expected_document_ids": ["nep-2027-national-irrigation-administration"],
+      "expected_document_ids": [
+        "nep-2027-national-irrigation-administration"
+      ],
       "unanswerable": false,
-      "filters": {"fiscal_year": 2027, "agency": "NIA"}
+      "filters": {
+        "fiscal_year": 2027,
+        "agency": "NIA"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "fmr-program",
       "question": "Farm to Market Roads locally funded projects",
-      "expected_document_ids": ["nep-2027-farm-to-market-roads"],
+      "expected_document_ids": [
+        "nep-2027-farm-to-market-roads"
+      ],
       "unanswerable": false,
-      "filters": {"fiscal_year": 2027, "agency": "DA"}
+      "filters": {
+        "fiscal_year": 2027,
+        "agency": "DA"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "pasig-marikina",
       "question": "Pasig Marikina River Channel Improvement",
-      "expected_document_ids": ["nep-2027-dpwh-volume-iib"],
+      "expected_document_ids": [
+        "nep-2027-dpwh-volume-iib"
+      ],
       "unanswerable": false,
-      "filters": {"fiscal_year": 2027, "agency": "DPWH"}
+      "filters": {
+        "fiscal_year": 2027,
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "metro-manila-flood",
       "question": "Metro Manila Flood Management",
-      "expected_document_ids": ["nep-2027-dpwh-volume-iib"],
+      "expected_document_ids": [
+        "nep-2027-dpwh-volume-iib"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "school-buildings",
       "question": "school buildings classrooms",
-      "expected_document_ids": ["nep-2027-dpwh-volume-iib"],
+      "expected_document_ids": [
+        "nep-2027-dpwh-volume-iib"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "irrigation-rehabilitation",
       "question": "irrigation system rehabilitation",
-      "expected_document_ids": ["nep-2027-national-irrigation-administration"],
+      "expected_document_ids": [
+        "nep-2027-national-irrigation-administration"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "NIA"}
+      "filters": {
+        "agency": "NIA"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "rural-health-unit",
       "question": "rural health unit",
-      "expected_document_ids": ["nep-2027-health-facilities-enhancement-program"],
+      "expected_document_ids": [
+        "nep-2027-health-facilities-enhancement-program"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DOH"}
+      "filters": {
+        "agency": "DOH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "malitubog-maridagao",
       "question": "Malitubog Maridagao irrigation",
-      "expected_document_ids": ["nep-2027-national-irrigation-administration"],
+      "expected_document_ids": [
+        "nep-2027-national-irrigation-administration"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "NIA"}
+      "filters": {
+        "agency": "NIA"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "chico-river",
       "question": "Chico River Pump Irrigation",
-      "expected_document_ids": ["nep-2027-national-irrigation-administration"],
+      "expected_document_ids": [
+        "nep-2027-national-irrigation-administration"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "NIA"}
+      "filters": {
+        "agency": "NIA"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "philippine-general-hospital",
       "question": "Philippine General Hospital",
-      "expected_document_ids": ["nep-2027-health-facilities-enhancement-program"],
+      "expected_document_ids": [
+        "nep-2027-health-facilities-enhancement-program"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DOH"}
+      "filters": {
+        "agency": "DOH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "eastern-visayas-medical-center",
       "question": "Eastern Visayas Medical Center",
-      "expected_document_ids": ["nep-2027-health-facilities-enhancement-program"],
+      "expected_document_ids": [
+        "nep-2027-health-facilities-enhancement-program"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DOH"}
+      "filters": {
+        "agency": "DOH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "fmr-ilocos-norte",
       "question": "farm to market road Ilocos Norte",
-      "expected_document_ids": ["nep-2027-farm-to-market-roads"],
+      "expected_document_ids": [
+        "nep-2027-farm-to-market-roads"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DA"}
+      "filters": {
+        "agency": "DA"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "fmr-cebu",
       "question": "farm to market road Cebu",
-      "expected_document_ids": ["nep-2027-farm-to-market-roads"],
+      "expected_document_ids": [
+        "nep-2027-farm-to-market-roads"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DA"}
+      "filters": {
+        "agency": "DA"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "house-second-ib",
       "question": "House Bill 10858 Second Reading Volume I-B",
-      "expected_document_ids": ["house-2027-second-reading-volume-ib"],
+      "expected_document_ids": [
+        "house-2027-second-reading-volume-ib"
+      ],
       "unanswerable": false,
-      "filters": {"document_ids": ["house-2027-second-reading-volume-ib"]}
+      "filters": {
+        "document_ids": [
+          "house-2027-second-reading-volume-ib"
+        ]
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "house-second-ic",
       "question": "House Bill 10858 Second Reading Volume I-C",
-      "expected_document_ids": ["house-2027-second-reading-volume-ic"],
+      "expected_document_ids": [
+        "house-2027-second-reading-volume-ic"
+      ],
       "unanswerable": false,
-      "filters": {"document_ids": ["house-2027-second-reading-volume-ic"]}
+      "filters": {
+        "document_ids": [
+          "house-2027-second-reading-volume-ic"
+        ]
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "house-third-ia",
       "question": "House Bill 10858 Third Reading Volume I-A",
-      "expected_document_ids": ["house-2027-third-reading-volume-ia"],
+      "expected_document_ids": [
+        "house-2027-third-reading-volume-ia"
+      ],
       "unanswerable": false,
-      "filters": {"document_ids": ["house-2027-third-reading-volume-ia"]}
+      "filters": {
+        "document_ids": [
+          "house-2027-third-reading-volume-ia"
+        ]
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "house-third-ib",
       "question": "House Bill 10858 Third Reading Volume I-B",
-      "expected_document_ids": ["house-2027-third-reading-volume-ib"],
+      "expected_document_ids": [
+        "house-2027-third-reading-volume-ib"
+      ],
       "unanswerable": false,
-      "filters": {"document_ids": ["house-2027-third-reading-volume-ib"]}
+      "filters": {
+        "document_ids": [
+          "house-2027-third-reading-volume-ib"
+        ]
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "house-third-ic",
       "question": "House Bill 10858 Third Reading Volume I-C",
-      "expected_document_ids": ["house-2027-third-reading-volume-ic"],
+      "expected_document_ids": [
+        "house-2027-third-reading-volume-ic"
+      ],
       "unanswerable": false,
-      "filters": {"document_ids": ["house-2027-third-reading-volume-ic"]}
+      "filters": {
+        "document_ids": [
+          "house-2027-third-reading-volume-ic"
+        ]
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "dpwh-general-summary",
       "question": "Department of Public Works and Highways general summary",
-      "expected_document_ids": ["nep-2027-dpwh-volume-iib"],
+      "expected_document_ids": [
+        "nep-2027-dpwh-volume-iib"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "ncr-road-program",
       "question": "National Capital Region road program",
-      "expected_document_ids": ["nep-2027-dpwh-volume-iib"],
+      "expected_document_ids": [
+        "nep-2027-dpwh-volume-iib"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "rainwater-collectors",
       "question": "rainwater collector systems",
-      "expected_document_ids": ["nep-2027-dpwh-volume-iib"],
+      "expected_document_ids": [
+        "nep-2027-dpwh-volume-iib"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "evacuation-centers",
       "question": "evacuation center construction",
-      "expected_document_ids": ["nep-2027-dpwh-volume-iib"],
+      "expected_document_ids": [
+        "nep-2027-dpwh-volume-iib"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "multipurpose-buildings",
       "question": "multi purpose building construction",
-      "expected_document_ids": ["nep-2027-dpwh-volume-iib"],
+      "expected_document_ids": [
+        "nep-2027-dpwh-volume-iib"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "tourism-roads",
       "question": "tourism road infrastructure program",
-      "expected_document_ids": ["nep-2027-dpwh-volume-iib"],
+      "expected_document_ids": [
+        "nep-2027-dpwh-volume-iib"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "bridge-construction",
       "question": "bridge construction program",
-      "expected_document_ids": ["nep-2027-dpwh-volume-iib"],
+      "expected_document_ids": [
+        "nep-2027-dpwh-volume-iib"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "water-supply",
       "question": "water supply system construction",
-      "expected_document_ids": ["nep-2027-dpwh-volume-iib"],
+      "expected_document_ids": [
+        "nep-2027-dpwh-volume-iib"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "hospital-expansion",
       "question": "hospital medical center expansion",
-      "expected_document_ids": ["nep-2027-health-facilities-enhancement-program"],
+      "expected_document_ids": [
+        "nep-2027-health-facilities-enhancement-program"
+      ],
       "unanswerable": false,
-      "filters": {"agency": "DOH"}
+      "filters": {
+        "agency": "DOH"
+      },
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "not-in-corpus-alpha",
       "question": "busisiunlistedalpha zqxvnotfoundone",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {}
+      "filters": {},
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "not-in-corpus-beta",
       "question": "busisiunlistedbeta zqxvnotfoundtwo",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {}
+      "filters": {},
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "not-in-corpus-gamma",
       "question": "busisiunlistedgamma zqxvnotfoundthree",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {}
+      "filters": {},
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "not-in-corpus-delta",
       "question": "busisiunlisteddelta zqxvnotfoundfour",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {}
+      "filters": {},
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "not-in-corpus-epsilon",
       "question": "busisiunlistedepsilon zqxvnotfoundfive",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {}
+      "filters": {},
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "not-in-corpus-zeta",
       "question": "busisiunlistedzeta zqxvnotfoundsix",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {}
+      "filters": {},
+      "required_evidence_kinds": [
+        "budget_document"
+      ]
     },
     {
       "case_id": "unsupported-final-payment-receipt",
       "question": "What official receipt proves final payment for the DPWH project?",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "payment_receipt"
+      ]
     },
     {
       "case_id": "unsupported-completion-certificate",
       "question": "What date appears on the signed completion certificate for the project?",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "completion_certificate"
+      ]
     },
     {
       "case_id": "unsupported-coa-disallowance",
       "question": "Which COA notice of disallowance names this multipurpose building?",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "audit_finding"
+      ]
     },
     {
       "case_id": "unsupported-contractor-owner",
       "question": "Who is the beneficial owner of the contractor awarded the road project?",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "contractor_ownership"
+      ]
     },
     {
       "case_id": "unsupported-inspection-photo",
       "question": "Show the dated inspection photo proving the hospital project was delivered.",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {"agency": "DOH"}
+      "filters": {
+        "agency": "DOH"
+      },
+      "required_evidence_kinds": [
+        "inspection_image"
+      ]
     },
     {
       "case_id": "unsupported-coordinate-proof",
       "question": "What surveyed latitude and longitude prove the school building location?",
       "expected_document_ids": [],
       "unanswerable": true,
-      "filters": {"agency": "DPWH"}
+      "filters": {
+        "agency": "DPWH"
+      },
+      "required_evidence_kinds": [
+        "surveyed_coordinates"
+      ]
     }
   ]
 }

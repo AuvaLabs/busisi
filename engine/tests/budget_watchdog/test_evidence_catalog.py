@@ -22,13 +22,14 @@ def _document(tmp_path, name, text):
         "fiscal_year": 2027,
         "stage": "nep",
         "agency": "DPWH",
+        "evidence_kinds": ["budget_document"],
     }
 
 
 def _manifest(tmp_path, documents):
     path = tmp_path / "catalog.json"
     path.write_text(
-        json.dumps({"schema_version": 1, "documents": documents}), encoding="utf-8"
+        json.dumps({"schema_version": 2, "documents": documents}), encoding="utf-8"
     )
     return path
 
@@ -48,7 +49,8 @@ def test_builds_page_catalog_and_content_addressed_chunks(tmp_path) -> None:
     assert len(result.manifest_sha256) == 64
     connection = sqlite3.connect(result.database_path)
     document_row = connection.execute(
-        "SELECT document_id, artifact_sha256, extraction_method FROM retrieval_documents"
+        "SELECT document_id, artifact_sha256, extraction_method, evidence_kinds_json "
+        "FROM retrieval_documents"
     ).fetchone()
     pages = connection.execute(
         "SELECT page_number, page_sha256 FROM retrieval_pages ORDER BY page_number"
@@ -58,7 +60,12 @@ def test_builds_page_catalog_and_content_addressed_chunks(tmp_path) -> None:
     ).fetchall()
     integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
     connection.close()
-    assert document_row == ("dpwh", document["artifact_sha256"], "plain-text")
+    assert document_row == (
+        "dpwh",
+        document["artifact_sha256"],
+        "plain-text",
+        '["budget_document"]',
+    )
     assert pages[0][0] == 1
     assert pages[1][0] == 2
     assert all(len(item[1]) == 64 for item in pages)
@@ -124,6 +131,7 @@ def test_extracts_html_json_pdf_and_long_pages(tmp_path, monkeypatch) -> None:
             "agency": "TEST",
             "contract_id": "C-1",
             "project_id": "P-1",
+            "evidence_kinds": ["budget_document"],
         }
 
     long_text = ("A" * 3_500) + "\n" + ("B" * 3_500) + "\fPDF second page\f"
@@ -162,9 +170,9 @@ def test_extracts_html_json_pdf_and_long_pages(tmp_path, monkeypatch) -> None:
     ("payload", "message"),
     [
         ("not json", "valid JSON"),
-        (json.dumps({"schema_version": 2, "documents": [{}]}), "schema_version"),
-        (json.dumps({"schema_version": 1, "documents": []}), "contain documents"),
-        (json.dumps({"schema_version": 1, "documents": ["bad"]}), "must be objects"),
+        (json.dumps({"schema_version": 1, "documents": [{}]}), "schema_version"),
+        (json.dumps({"schema_version": 2, "documents": []}), "contain documents"),
+        (json.dumps({"schema_version": 2, "documents": ["bad"]}), "must be objects"),
     ],
 )
 def test_rejects_invalid_catalog_shapes(tmp_path, payload, message) -> None:
@@ -184,6 +192,9 @@ def test_rejects_invalid_catalog_shapes(tmp_path, payload, message) -> None:
         ({"title": ""}, "title"),
         ({"artifact_path": ""}, "artifact_path"),
         ({"artifact_path": "missing.txt"}, "missing or empty"),
+        ({"evidence_kinds": []}, "evidence_kinds"),
+        ({"evidence_kinds": ["budget_document", "budget_document"]}, "unique"),
+        ({"evidence_kinds": ["rumor"]}, "recognized"),
     ],
 )
 def test_rejects_invalid_document_boundaries(tmp_path, override, message) -> None:

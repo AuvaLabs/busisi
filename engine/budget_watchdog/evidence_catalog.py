@@ -20,6 +20,19 @@ SHA256 = re.compile(r"[a-f0-9]{64}")
 DOCUMENT_ID = re.compile(r"[a-z0-9][a-z0-9:._-]{1,127}")
 MAX_CHUNK_CHARACTERS = 6_000
 CHUNK_OVERLAP_CHARACTERS = 300
+CATALOG_SCHEMA_VERSION = 2
+EVIDENCE_KINDS = frozenset(
+    {
+        "audit_finding",
+        "budget_document",
+        "completion_certificate",
+        "contractor_ownership",
+        "inspection_image",
+        "payment_receipt",
+        "procurement_record",
+        "surveyed_coordinates",
+    }
+)
 
 SCHEMA = """
 PRAGMA journal_mode = DELETE;
@@ -42,7 +55,8 @@ CREATE TABLE retrieval_documents (
     contract_id TEXT,
     project_id TEXT,
     extraction_method TEXT NOT NULL,
-    byte_size INTEGER NOT NULL CHECK(byte_size > 0)
+    byte_size INTEGER NOT NULL CHECK(byte_size > 0),
+    evidence_kinds_json TEXT NOT NULL CHECK(length(evidence_kinds_json) > 2)
 );
 CREATE TABLE retrieval_pages (
     document_id TEXT NOT NULL REFERENCES retrieval_documents(document_id),
@@ -124,6 +138,21 @@ def _optional_text(value: Any, field: str) -> str | None:
     if value is None:
         return None
     return _required_text(value, field)
+
+
+def validated_evidence_kinds(value: Any) -> tuple[str, ...]:
+    """Validate controlled record types used to decide whether a source can answer."""
+
+    if not isinstance(value, list) or not value:
+        raise ValueError("evidence_kinds must be a non-empty list")
+    if not all(isinstance(item, str) and item.strip() for item in value):
+        raise ValueError("evidence_kinds must contain non-empty text")
+    normalized = tuple(item.strip() for item in value)
+    if len(normalized) != len(set(normalized)):
+        raise ValueError("evidence_kinds must be unique")
+    if not set(normalized) <= EVIDENCE_KINDS:
+        raise ValueError("evidence_kinds must use recognized record types")
+    return tuple(sorted(normalized))
 
 
 def _document_path(root: Path, value: Any) -> tuple[Path, str]:
@@ -227,8 +256,13 @@ def _load_manifest(path: Path) -> tuple[dict[str, Any], tuple[dict[str, Any], ..
         manifest = json.loads(payload)
     except json.JSONDecodeError as error:
         raise ValueError("document catalog must be valid JSON") from error
-    if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
-        raise ValueError("document catalog schema_version must be 1")
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("schema_version") != CATALOG_SCHEMA_VERSION
+    ):
+        raise ValueError(
+            f"document catalog schema_version must be {CATALOG_SCHEMA_VERSION}"
+        )
     documents = manifest.get("documents")
     if not isinstance(documents, list) or not documents:
         raise ValueError("document catalog must contain documents")
@@ -255,6 +289,7 @@ def _insert_document(
     if fiscal_year is not None and (not isinstance(fiscal_year, int) or isinstance(fiscal_year, bool)):
         raise ValueError("fiscal_year must be an integer or null")
     title = _required_text(document.get("title"), "title")
+    evidence_kinds = validated_evidence_kinds(document.get("evidence_kinds"))
     values = (
         document_id,
         title,
@@ -270,9 +305,12 @@ def _insert_document(
         _optional_text(document.get("project_id"), "project_id"),
         extraction_method,
         path.stat().st_size,
+        json.dumps(evidence_kinds, separators=(",", ":")),
     )
     try:
-        connection.execute("INSERT INTO retrieval_documents VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", values)
+        connection.execute(
+            "INSERT INTO retrieval_documents VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", values
+        )
     except sqlite3.IntegrityError as error:
         if "document_id" in str(error):
             raise ValueError(f"duplicate document_id: {document_id}") from error
@@ -338,7 +376,7 @@ def build_evidence_index(
             if chunk_count == 0:
                 raise ValueError("document catalog produced no searchable text")
             connection.execute(
-                "INSERT INTO retrieval_metadata VALUES ('schema_version', '1')"
+                "INSERT INTO retrieval_metadata VALUES ('schema_version', '2')"
             )
             if connection.execute("PRAGMA foreign_key_check").fetchall():
                 raise ValueError("retrieval database failed its foreign-key check")

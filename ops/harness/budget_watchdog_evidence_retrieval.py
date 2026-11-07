@@ -84,7 +84,7 @@ def _query(args: argparse.Namespace) -> dict[str, Any]:
             limit=args.limit,
         )
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "question": args.question,
         "index_manifest_sha256": retrieval_manifest_sha256(args.database),
         "results": [passage_payload(item) | {"score": item.score} for item in results],
@@ -98,7 +98,7 @@ def _evaluate(args: argparse.Namespace) -> dict[str, Any]:
     )
     readiness = public_qa_readiness(evaluation)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "evaluation": asdict(evaluation),
         "readiness": asdict(readiness),
         "public_endpoint_present": False,

@@ -29,6 +29,7 @@ def passage_payload(result: RetrievalResult) -> dict[str, Any]:
         "page_end": result.page_end,
         "text": result.text,
         "chunk_sha256": result.chunk_sha256,
+        "evidence_kinds": list(result.evidence_kinds),
         "retrieval_modes": list(result.retrieval_modes),
     }
 

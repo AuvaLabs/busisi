@@ -24,7 +24,7 @@ def _result(tmp_path):
     manifest.write_text(
         json.dumps(
             {
-                "schema_version": 1,
+                "schema_version": 2,
                 "documents": [
                     {
                         "document_id": "health-budget",
@@ -37,6 +37,7 @@ def _result(tmp_path):
                         "fiscal_year": 2027,
                         "stage": "nep",
                         "agency": "DOH",
+                        "evidence_kinds": ["budget_document"],
                     }
                 ],
             }
@@ -62,6 +63,7 @@ def test_council_receives_one_immutable_cited_packet(tmp_path) -> None:
     passage = packet["document_evidence"]["passages"][0]
     assert passage["document_id"] == "health-budget"
     assert passage["page_start"] == 1
+    assert passage["evidence_kinds"] == ["budget_document"]
     assert len(passage["artifact_sha256"]) == 64
     assert len(packet_sha256(packet)) == 64
     assert base == {"schema_version": 2, "case_id": "case-1", "question": "Same work?"}
