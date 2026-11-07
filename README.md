@@ -54,11 +54,12 @@ An offline three-seat review council now pre-screens that private batch. Kimi
 K3 checks source support, Claude Fable challenges identity, and GPT-6 Astra
 checks public wording and evidence limits. Each request contains one project,
 every material claim cites a machine-checked path in the same evidence packet,
-and a blocking evidence finding prevents confirmation. The first 20-case
-calibration ended with 17 confirmed and three unclear cases after a dissent
-round. These model votes are quality-control evidence only. They do not count
-as the two independent human decisions required for publication, and no model
-is called by the public Worker.
+and a blocking evidence finding prevents confirmation. The completed 120-case
+run produced 80 confirmed pre-screening outcomes and 40 unclear outcomes after
+the dissent round. Ninety-one cases were unanimous and final seat agreement was
+75.83 percent. These model votes are quality-control evidence only. They do not
+count as the two independent human decisions required for publication, and no
+model is called by the public Worker.
 
 The public evidence question catalogue states what the current publication can
 answer, what remains only partially answerable, and what cannot yet be

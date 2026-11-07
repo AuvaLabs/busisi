@@ -72,3 +72,33 @@ government pages. A blocking evidence finding prevents confirmation.
 The council is fail-closed and remains private. Its 69 valid votes do not count
 as the two independent human decisions required by the publication gate. The
 public Worker has no model or model API dependency.
+
+## Full-batch council run, 2026-11-07
+
+The same three-seat process was then completed across all 120 cases. This was
+still private pre-screening and did not create a human review decision.
+
+- 360 valid first-round decisions, three per case
+- 40 unclear first-round cases sent to a three-seat dissent round
+- 120 valid dissent-round decisions
+- 80 confirmed pre-screening outcomes after the dissent round
+- 40 unclear outcomes after the dissent round
+- zero rejected or incomplete cases
+- 91 unanimous final outcomes
+- 75.83 percent final seat agreement
+- 498 saved attempts, including 18 invalid attempts rejected by schema or
+  evidence-path validation before a valid replacement was accepted
+- 4,076,887 recorded input tokens, including 2,579,646 cached input tokens
+- 988,261 recorded output tokens and 276,508 recorded reasoning tokens
+- zero human decisions recorded
+
+An integrity audit confirmed one unchanged evidence-packet hash per case and
+round, three distinct seats per completed round, all 120 source prechecks, all
+480 verdicts and the stored SHA-256 digest of every raw attempt file. The
+private SQLite database passed its integrity check.
+
+The 75.83 percent model-seat agreement is below the human publication standard
+and is not converted into an accuracy claim. It demonstrates where the source
+records need closer review. The public release remains closed until at least
+100 cases receive two independent human decisions and all existing thresholds
+pass.

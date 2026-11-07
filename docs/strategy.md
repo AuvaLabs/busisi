@@ -99,6 +99,14 @@ cases. A blocking evidence finding prevents confirmation. Council votes remain
 separate from the two human decisions and cannot open the publication gate.
 The public Worker has no model dependency.
 
+The completed 120-case council run produced 80 confirmed pre-screening
+outcomes and 40 unclear outcomes after a dissent round. Ninety-one cases were
+unanimous, and final seat agreement was 75.83 percent. Eighteen invalid attempts
+were rejected before a valid replacement was accepted. All 480 saved verdicts
+cite one unchanged case packet per round, and every one of the 498 raw attempt
+files passes its stored SHA-256 check. This disagreement rate reinforces the
+need for independent human review before any link is published.
+
 The private evidence index now covers nine archived FY2027 documents, 5,999
 pages and 9,838 searchable passages. Every answerable case in the expanded
 40-question evaluation retrieves an expected document, and every citation

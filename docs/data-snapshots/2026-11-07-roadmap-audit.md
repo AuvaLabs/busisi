@@ -37,6 +37,26 @@ The index contains nine archived FY2027 documents, 5,999 extracted pages and
 Retrieval remains useful for finding review candidates, but the private pilot
 is on hold and no public question-answering endpoint exists.
 
+## Private council completion
+
+The three-seat council completed all 120 prepared project-link cases. Every
+case has three valid first-round decisions. Forty unclear cases also have three
+valid dissent-round decisions.
+
+- final outcomes: 80 confirmed pre-screens and 40 unclear;
+- final unanimous cases: 91;
+- final seat agreement: 75.83 percent;
+- saved verdicts: 480;
+- saved attempts: 498;
+- invalid attempts rejected before replacement: 18; and
+- human decisions: zero.
+
+The audit verified every raw attempt file against its stored SHA-256 digest,
+one unchanged packet hash per case and round, three distinct seats per round,
+all 120 automated source prechecks and SQLite integrity. The council remains
+private because its votes are not independent human review and its agreement
+does not meet the 95 percent publication standard.
+
 ## Official geographic boundaries
 
 Geoportal Philippines identifies itself as the official Philippine GIS
