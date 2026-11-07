@@ -67,6 +67,19 @@ def _optional_score(value: Any, label: str) -> int | None:
     return _integer(value, label, 0, 10_000)
 
 
+def _source_url(value: Any) -> str:
+    if not isinstance(value, str):
+        raise ValueError("facility status source URL is invalid")
+    parsed = urlparse(value)
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc != "www.deped.gov.ph"
+        or parsed.path != _SOURCE_PATH
+    ):
+        raise ValueError("facility status source URL is invalid")
+    return value
+
+
 def _validate_release_gate(
     release_state: Any,
     reviewed: int,
@@ -101,15 +114,7 @@ def build_facility_status_sql(report: dict[str, Any]) -> tuple[str, str]:
         raise ValueError("facility status check time is invalid") from exc
     if parsed.tzinfo is None:
         raise ValueError("facility status check time is invalid")
-    source_url = report.get("source_url")
-    parsed_url = urlparse(source_url) if isinstance(source_url, str) else None
-    if (
-        parsed_url is None
-        or parsed_url.scheme != "https"
-        or parsed_url.netloc != "www.deped.gov.ph"
-        or parsed_url.path != _SOURCE_PATH
-    ):
-        raise ValueError("facility status source URL is invalid")
+    source_url = _source_url(report.get("source_url"))
     source_state = report.get("source_state")
     release_state = report.get("release_state")
     if source_state not in _SOURCE_STATES:

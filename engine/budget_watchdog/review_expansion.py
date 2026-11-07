@@ -260,7 +260,9 @@ def select_balanced_cases(
         raise ValueError("not enough candidates with delivery details")
     remaining = sorted(cases, key=_stable_key)
     selected: list[ReviewExpansionCase] = []
-    counts = {name: Counter() for name in ("year", "region", "category", "amount", "contractor")}
+    counts: dict[str, Counter[object]] = {
+        name: Counter() for name in ("year", "region", "category", "amount", "contractor")
+    }
     joint_target = max(1, target // 10)
     question_target = max(1, target // 5)
     joint_count = 0

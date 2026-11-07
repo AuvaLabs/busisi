@@ -141,7 +141,7 @@ def evaluate_facility_release(
         not isinstance(item, str) or not item.strip() for item in failures
     ):
         raise ValueError("facility review critical failures must be a text list")
-    candidate_keys = {
+    candidate_keys: set[tuple[str, str, str]] = {
         (link.source_type, link.record_id, link.facility_id or "")
         for link in _official_candidates(links)
     }

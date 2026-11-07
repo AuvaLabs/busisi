@@ -267,7 +267,7 @@ def _page_total(page: str, spec: HouseHeadSpec) -> int:
     for index, line in enumerate(lines):
         if "TOTAL NEW APPROPRIATIONS" not in _normalized(line):
             continue
-        following = []
+        following: list[str] = []
         for candidate in lines[index : index + 3]:
             if following and "TOTAL NEW APPROPRIATIONS" in _normalized(candidate):
                 break

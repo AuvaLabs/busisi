@@ -9,7 +9,14 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
-from engine.budget_watchdog.coa import CoaCatalog, load_coa_catalog, summarize_coa_catalog
+from engine.budget_watchdog.coa import (
+    CoaCatalog,
+    CoaProjectCoverage,
+    CoaReport,
+    CoaSourceCatalog,
+    load_coa_catalog,
+    summarize_coa_catalog,
+)
 
 MIGRATION_PATH = (
     Path(__file__).resolve().parents[2]
@@ -41,7 +48,7 @@ def _number(value: int | None) -> str:
     return "NULL" if value is None else str(value)
 
 
-def _report_statement(report) -> str:
+def _report_statement(report: CoaReport) -> str:
     values = (
         _text(report.report_id),
         _text(report.title),
@@ -61,7 +68,7 @@ def _report_statement(report) -> str:
     return f"INSERT INTO coa_reports VALUES ({', '.join(values)});"  # noqa: S608
 
 
-def _coverage_statement(item) -> str:
+def _coverage_statement(item: CoaProjectCoverage) -> str:
     values = (
         _text(item.case_id),
         _text(item.contract_id),
@@ -82,7 +89,7 @@ def _coverage_statement(item) -> str:
     return f"INSERT INTO coa_project_coverage VALUES ({', '.join(values)});"  # noqa: S608
 
 
-def _catalog_statement(item) -> str:
+def _catalog_statement(item: CoaSourceCatalog) -> str:
     values = (
         _text(item.catalog_id),
         _text(item.title),

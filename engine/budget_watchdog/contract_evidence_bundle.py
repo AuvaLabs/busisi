@@ -11,6 +11,7 @@ from pathlib import Path
 
 from engine.budget_watchdog.contract_evidence import (
     ContractEvidenceCatalog,
+    ContractEvidenceItem,
     load_contract_evidence_catalog,
     summarize_contract_evidence,
 )
@@ -42,15 +43,28 @@ def _number(value: int | None) -> str:
     return "NULL" if value is None else str(value)
 
 
-def _item_statement(catalog: ContractEvidenceCatalog, item) -> str:
+def _item_statement(catalog: ContractEvidenceCatalog, item: ContractEvidenceItem) -> str:
     values = (
-        _text(item.evidence_id), _text(item.case_id), _text(item.contract_id),
-        str(item.fiscal_year), _text(item.stage), str(catalog.stage_order.index(item.stage)),
-        _text(item.status), _text(item.evidence_class), _text(item.title),
-        _text(item.reported_date), _text(item.date_kind), _text(item.source_title),
-        _text(item.source_url), _text(item.source_row_id), _text(item.artifact_sha256),
-        _text(item.source_revision), _text(item.last_checked_at), _number(item.http_status),
-        "1" if item.retry_eligible else "0", _text(item.limitation),
+        _text(item.evidence_id),
+        _text(item.case_id),
+        _text(item.contract_id),
+        str(item.fiscal_year),
+        _text(item.stage),
+        str(catalog.stage_order.index(item.stage)),
+        _text(item.status),
+        _text(item.evidence_class),
+        _text(item.title),
+        _text(item.reported_date),
+        _text(item.date_kind),
+        _text(item.source_title),
+        _text(item.source_url),
+        _text(item.source_row_id),
+        _text(item.artifact_sha256),
+        _text(item.source_revision),
+        _text(item.last_checked_at),
+        _number(item.http_status),
+        "1" if item.retry_eligible else "0",
+        _text(item.limitation),
     )
     return f"INSERT INTO contract_evidence_items VALUES ({', '.join(values)});"  # noqa: S608
 
@@ -92,7 +106,8 @@ def _verify(sql: str, expected: int) -> None:
 
 
 def build_contract_evidence_bundle(
-    catalog_path: Path, output_dir: Path,
+    catalog_path: Path,
+    output_dir: Path,
 ) -> ContractEvidenceBundleResult:
     payload = catalog_path.read_bytes()
     catalog = load_contract_evidence_catalog(payload)

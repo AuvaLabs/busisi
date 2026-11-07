@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlparse
 
 ALLOWED_DATASETS = frozenset({"dpwh", "fmr", "hfep", "nia"})
@@ -84,7 +84,7 @@ def _integer(value: Any, field: str, *, optional: bool = False) -> int | None:
         return None
     if isinstance(value, bool) or not isinstance(value, int):
         raise StageChangeSchemaError(f"{field} must be an integer")
-    return value
+    return cast(int, value)
 
 
 def _centavos(value: Any, field: str) -> int:

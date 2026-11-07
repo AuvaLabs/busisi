@@ -58,8 +58,7 @@ def _validated_benchmarks(
         if item.get("source_id") not in source_ids:
             raise ValueError(f"benchmark {identifier} references an unknown source")
         if not all(
-            isinstance(item.get(field), str) and item[field].strip()
-            for field in ("label", "unit")
+            isinstance(item.get(field), str) and item[field].strip() for field in ("label", "unit")
         ):
             raise ValueError(f"benchmark {identifier} label or unit is missing")
         validated.append(dict(item))
@@ -143,9 +142,7 @@ def _append_story_sections(
     comparisons: list[dict[str, Any]],
 ) -> None:
     new_classrooms = [
-        item["equivalent_units"]
-        for item in comparisons
-        if item["unit"] == "new classrooms"
+        item["equivalent_units"] for item in comparisons if item["unit"] == "new classrooms"
     ]
     low, high = min(new_classrooms), max(new_classrooms)
     release["story"]["deck"] = (
@@ -186,9 +183,7 @@ def _append_story_sections(
                     "mpb-classroom-equivalent-high",
                 ],
                 "source_ids": [
-                    item["source_id"]
-                    for item in comparisons
-                    if item["unit"] == "new classrooms"
+                    item["source_id"] for item in comparisons if item["unit"] == "new classrooms"
                 ],
                 "visual_refs": ["chart_data.opportunity_cost"],
                 "limitation_ids": ["opportunity-cost-boundary"],
@@ -235,7 +230,9 @@ def build_multipurpose_value_release(
         version=3,
         supersedes=supersedes,
     )
-    source_ids = {item.get("id") for item in benchmark_sources}
+    source_ids = {
+        identifier for item in benchmark_sources if isinstance((identifier := item.get("id")), str)
+    }
     benchmarks = _validated_benchmarks(classroom_benchmarks, source_ids)
     records = _classified_rows(all_rows)
     active = [row for row in records if row.get("status") in ACTIVE_STATUSES]
@@ -247,17 +244,14 @@ def build_multipurpose_value_release(
         {
             **item,
             "reference_amount_centavos": active_budget,
-            "equivalent_units": active_budget * item["physical_target"]
-            // item["budget_centavos"],
+            "equivalent_units": active_budget * item["physical_target"] // item["budget_centavos"],
             "rounding": "floor",
             "interpretation": "Nominal funding-scale comparison only",
         }
         for item in benchmarks
     ]
     new_classrooms = [
-        item["equivalent_units"]
-        for item in comparisons
-        if item["unit"] == "new classrooms"
+        item["equivalent_units"] for item in comparisons if item["unit"] == "new classrooms"
     ]
     if not new_classrooms:
         raise ValueError("at least one new-classroom benchmark is required")
@@ -280,7 +274,9 @@ def build_multipurpose_value_release(
                 completed_budget,
                 "PHP centavos",
                 source_ids=[DPWH_SOURCE_ID],
-                limitations=("Completed is source-reported and does not establish payment or acceptance.",),
+                limitations=(
+                    "Completed is source-reported and does not establish payment or acceptance.",
+                ),
             ),
             _claim(
                 "mpb-classroom-equivalent-low",
@@ -288,7 +284,9 @@ def build_multipurpose_value_release(
                 min(new_classrooms),
                 "new classrooms",
                 source_ids=sorted({item["source_id"] for item in comparisons}),
-                limitations=("This is a nominal funding-scale comparison, not a project estimate.",),
+                limitations=(
+                    "This is a nominal funding-scale comparison, not a project estimate.",
+                ),
             ),
             _claim(
                 "mpb-classroom-equivalent-high",
@@ -296,7 +294,9 @@ def build_multipurpose_value_release(
                 max(new_classrooms),
                 "new classrooms",
                 source_ids=sorted({item["source_id"] for item in comparisons}),
-                limitations=("This is a nominal funding-scale comparison, not a project estimate.",),
+                limitations=(
+                    "This is a nominal funding-scale comparison, not a project estimate.",
+                ),
             ),
             _claim(
                 "mpb-necessity-assessment",
@@ -373,7 +373,5 @@ def build_multipurpose_value_release(
         active_budget=active_budget,
         comparisons=comparisons,
     )
-    release["editorial_package"] = build_consumption_index(
-        release["metadata"], release["sources"]
-    )
+    release["editorial_package"] = build_consumption_index(release["metadata"], release["sources"])
     return release

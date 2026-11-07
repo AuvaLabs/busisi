@@ -106,26 +106,43 @@ def _release(
     retries = counts.get("retry", 0)
     blocked = counts.get("blocked", 0)
     pending = counts.get("pending", 0) + counts.get("in_progress", 0)
+    released_at_text = released_at.isoformat()
+    completed = exact + no_images + conflicts
+    verified_images = _count(manifest, "verified_image_count")
+    quarantined_images = _count(manifest, "quarantined_image_count")
     payload = {
-        "released_at": released_at.isoformat(),
+        "released_at": released_at_text,
         "source_sha256": source_sha256,
         "universe_contracts": summary.total_tasks,
-        "completed_contracts": exact + no_images + conflicts,
+        "completed_contracts": completed,
         "verified_exact_contracts": exact,
         "no_image_contracts": no_images,
         "conflict_contracts": conflicts,
         "retry_contracts": retries,
         "blocked_contracts": blocked,
         "pending_contracts": pending,
-        "verified_images": _count(manifest, "verified_image_count"),
-        "quarantined_images": _count(manifest, "quarantined_image_count"),
+        "verified_images": verified_images,
+        "quarantined_images": quarantined_images,
         "base_sql_sha256": manifest.get("sql_sha256"),
     }
     identity = hashlib.sha256(
         json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
-    payload.pop("base_sql_sha256")
-    return CoverageRelease(release_id=identity, **payload)
+    return CoverageRelease(
+        release_id=identity,
+        released_at=released_at_text,
+        source_sha256=source_sha256,
+        universe_contracts=summary.total_tasks,
+        completed_contracts=completed,
+        verified_exact_contracts=exact,
+        no_image_contracts=no_images,
+        conflict_contracts=conflicts,
+        retry_contracts=retries,
+        blocked_contracts=blocked,
+        pending_contracts=pending,
+        verified_images=verified_images,
+        quarantined_images=quarantined_images,
+    )
 
 
 def _sql(value: str | int) -> str:

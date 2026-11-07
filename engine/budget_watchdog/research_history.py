@@ -14,13 +14,15 @@ SHA256 = re.compile(r"[a-f0-9]{64}")
 
 
 def _load_manifests(public_root: Path, *, verify_packages: bool) -> list[dict[str, Any]]:
-    manifests = []
+    manifests: list[dict[str, Any]] = []
     for path in sorted(public_root.glob("*/v*/manifest.json")):
         manifest = (
             verify_published_package(path.parent)
             if verify_packages
             else json.loads(path.read_text(encoding="utf-8"))
         )
+        if not isinstance(manifest, dict):
+            raise ValueError("research package manifest must be an object")
         manifests.append(manifest)
     if not manifests:
         raise ValueError("release history has no research packages")
@@ -28,9 +30,18 @@ def _load_manifests(public_root: Path, *, verify_packages: bool) -> list[dict[st
 
 
 def _note_index(notes: list[dict[str, Any]]) -> dict[tuple[str, int], dict[str, Any]]:
-    indexed = {}
+    indexed: dict[tuple[str, int], dict[str, Any]] = {}
     for note in notes:
-        key = (note.get("story_id"), note.get("version"))
+        story_id = note.get("story_id")
+        version = note.get("version")
+        if (
+            not isinstance(story_id, str)
+            or not story_id.strip()
+            or not isinstance(version, int)
+            or isinstance(version, bool)
+        ):
+            raise ValueError("release note identity is invalid")
+        key = (story_id, version)
         if key in indexed:
             raise ValueError(f"duplicate release note: {key}")
         if note.get("change_type") not in CHANGE_TYPES:
@@ -52,6 +63,8 @@ def _validate_supersedes(
             raise ValueError("non-initial release must identify the version it supersedes")
         return None
     prior_version = supersedes.get("version")
+    if not isinstance(prior_version, int) or isinstance(prior_version, bool):
+        raise ValueError("release supersedes version is invalid")
     prior = manifests.get((manifest["story_id"], prior_version))
     if prior is None or prior_version != manifest["version"] - 1:
         raise ValueError("release supersedes chain is missing or non-sequential")

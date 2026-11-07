@@ -107,7 +107,9 @@ def _evidence_record_tuple(
         expected = set(required_fields) | {"evidence_paths"}
         if set(item) != expected:
             raise ValueError(f"{field} entry fields do not match the required schema")
-        record = {key: _required_text(item.get(key), f"{field}.{key}") for key in required_fields}
+        record: dict[str, Any] = {
+            key: _required_text(item.get(key), f"{field}.{key}") for key in required_fields
+        }
         record["evidence_paths"] = _text_tuple(
             item.get("evidence_paths"), f"{field}.evidence_paths", required=True
         )
@@ -124,8 +126,11 @@ def verdict_from_payload(payload: dict[str, Any]) -> CouncilVerdict:
         ("code", "severity", "claim", "evidence", "what_to_check"),
     )
     gaps = _evidence_record_tuple(payload.get("gaps"), "gaps", ("code", "label", "why_it_matters"))
+    schema_version = payload.get("schema_version")
+    if not isinstance(schema_version, int) or isinstance(schema_version, bool):
+        raise ValueError("schema_version must be an integer")
     verdict = CouncilVerdict(
-        schema_version=payload.get("schema_version"),
+        schema_version=schema_version,
         case_id=_required_text(payload.get("case_id"), "case_id"),
         seat=_required_text(payload.get("seat"), "seat"),
         decision=_required_text(payload.get("decision"), "decision"),
@@ -292,6 +297,8 @@ def attach_document_evidence(
     if re.fullmatch(r"[a-f0-9]{64}", index_manifest_sha256) is None:
         raise ValueError("index manifest SHA-256 is invalid")
     copied = json.loads(json.dumps(packet, ensure_ascii=False))
+    if not isinstance(copied, dict):
+        raise ValueError("council packet must be an object")
     copied["schema_version"] = 3
     copied["document_evidence"] = {
         "query": query.strip(),

@@ -36,7 +36,11 @@ def _validate_acquisition(
     candidates = acquisition.get("candidates")
     if not isinstance(candidates, list):
         raise ValueError("acquisition candidates must be a list")
-    indexed = {str(item.get("contract_id")): item for item in candidates}
+    indexed: dict[str, dict[str, Any]] = {}
+    for item in candidates:
+        if not isinstance(item, dict):
+            raise ValueError("acquisition candidate entries must be objects")
+        indexed[str(item.get("contract_id"))] = item
     if set(indexed) != set(candidate_ids) or len(indexed) != len(candidates):
         raise ValueError("acquisition candidate set must match the public queue")
     task_definitions = acquisition.get("task_definitions")
@@ -45,7 +49,7 @@ def _validate_acquisition(
         raise ValueError("acquisition summary and task definitions are required")
     if summary.get("task_count") != len(candidate_ids) * len(task_definitions):
         raise ValueError("acquisition task count does not reconcile")
-    observed = Counter()
+    observed: Counter[str] = Counter()
     for candidate in candidates:
         counts = candidate.get("status_counts")
         if not isinstance(counts, dict) or sum(counts.values()) != len(task_definitions):
@@ -78,7 +82,7 @@ def _expected_contract_state(records: list[dict[str, Any]]) -> str:
 
 def _validate_review(
     review: dict[str, Any], candidate_ids: tuple[str, ...]
-) -> dict[str, dict[str, Any]]:
+) -> dict[str, list[dict[str, Any]]]:
     contracts = review.get("contracts")
     records = review.get("records")
     summary = review.get("summary")
@@ -101,7 +105,7 @@ def _validate_review(
         if status == "indexed_unarchived" and record.get("artifact_sha256") is not None:
             raise ValueError("indexed official records cannot claim archived bytes")
         grouped[contract_id].append(record)
-    state_counts = Counter()
+    state_counts: Counter[str] = Counter()
     for contract_id, contract in contracts.items():
         expected = _expected_contract_state(grouped[contract_id])
         if contract.get("state") != expected:

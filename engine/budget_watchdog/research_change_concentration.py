@@ -27,7 +27,7 @@ def _dimension_rows(
         label = str(getattr(record, field)).strip() or "Not stated"
         groups[label].append(record)
     total_house_only = sum(record.change_type == "house_only" for record in records)
-    values = []
+    values: list[dict[str, Any]] = []
     for label, selected in groups.items():
         house_only = [record for record in selected if record.change_type == "house_only"]
         matched = [record for record in selected if record.change_type in MATCHED_CHANGE_TYPES]
@@ -51,12 +51,13 @@ def _dimension_rows(
                 "matched_net_movement_centavos": sum(
                     record.difference_centavos for record in matched
                 ),
-                "quarantined": sum(
-                    record.review_status == "quarantine" for record in selected
-                ),
+                "quarantined": sum(record.review_status == "quarantine" for record in selected),
             }
         )
-    ordered = sorted(values, key=lambda item: (-item["house_only"], item["label"]))
+    ordered = sorted(
+        values,
+        key=lambda item: (-int(item["house_only"]), str(item["label"])),
+    )
     return ordered if limit is None else ordered[:limit]
 
 
@@ -87,8 +88,7 @@ def _examples(records: list[StageChange]) -> dict[str, list[dict[str, Any]]]:
         (
             record
             for record in records
-            if record.change_type in MATCHED_CHANGE_TYPES
-            and record.review_status != "quarantine"
+            if record.change_type in MATCHED_CHANGE_TYPES and record.review_status != "quarantine"
         ),
         key=lambda record: (-abs(record.difference_centavos), record.record_id),
     )[:20]
@@ -96,8 +96,7 @@ def _examples(records: list[StageChange]) -> dict[str, list[dict[str, Any]]]:
         (
             record
             for record in records
-            if record.change_type == "house_only"
-            and record.review_status != "quarantine"
+            if record.change_type == "house_only" and record.review_status != "quarantine"
         ),
         key=lambda record: (-record.house_centavos, record.record_id),
     )[:20]
@@ -162,9 +161,7 @@ def _limitations() -> list[dict[str, str]]:
     ]
 
 
-def _story(
-    metadata: dict[str, Any], claims: dict[str, dict[str, Any]]
-) -> dict[str, Any]:
+def _story(metadata: dict[str, Any], claims: dict[str, dict[str, Any]]) -> dict[str, Any]:
     return {
         "schema_version": "1.0",
         "story_id": metadata["story_id"],

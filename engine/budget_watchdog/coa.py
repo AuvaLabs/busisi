@@ -190,12 +190,7 @@ def _report(raw: object) -> CoaReport:
     byte_size = _positive_int(raw.get("byte_size"), "byte_size")
     page_count = _positive_int(raw.get("page_count"), "page_count")
     if acquisition == "verified_archived":
-        if (
-            sha is None
-            or len(sha) != SHA256_HEX_LENGTH
-            or byte_size is None
-            or page_count is None
-        ):
+        if sha is None or len(sha) != SHA256_HEX_LENGTH or byte_size is None or page_count is None:
             raise CoaCatalogError("verified report requires hash, byte size and page count")
     elif any(value is not None for value in (sha, byte_size, page_count)):
         raise CoaCatalogError("unarchived report must not claim archived artifact metadata")
@@ -288,7 +283,11 @@ def load_coa_catalog(payload: bytes) -> CoaCatalog:
     raw_catalogs = root.get("catalogs")
     raw_reports = root.get("reports")
     raw_coverage = root.get("project_coverage")
-    if not all(isinstance(value, list) for value in (raw_catalogs, raw_reports, raw_coverage)):
+    if (
+        not isinstance(raw_catalogs, list)
+        or not isinstance(raw_reports, list)
+        or not isinstance(raw_coverage, list)
+    ):
         raise CoaCatalogError("catalogs, reports and project_coverage must be arrays")
     catalogs = tuple(_source_catalog(item) for item in raw_catalogs)
     reports = tuple(_report(item) for item in raw_reports)
@@ -309,11 +308,14 @@ def summarize_coa_catalog(catalog: CoaCatalog) -> CoaCatalogSummary:
     matches = sum(
         count
         for status, count in counts.items()
-        if status in {"candidate_observation_match", "reviewed_observation_match", "resolved_or_implemented"}
+        if status
+        in {"candidate_observation_match", "reviewed_observation_match", "resolved_or_implemented"}
     )
     return CoaCatalogSummary(
         report_count=len(catalog.reports),
-        archived_reports=sum(report.acquisition_status == "verified_archived" for report in catalog.reports),
+        archived_reports=sum(
+            report.acquisition_status == "verified_archived" for report in catalog.reports
+        ),
         checked_projects=len(catalog.project_coverage),
         project_matches=matches,
         status_counts=MappingProxyType(populated),

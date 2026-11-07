@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter, defaultdict
-from typing import Any
+from typing import Any, cast
 
 from engine.budget_watchdog.acquisition_queue import QueueSummary
 from engine.budget_watchdog.acquisition_universe import AcquisitionUniverseSnapshot
@@ -112,7 +112,7 @@ def build_acquisition_release(
 def _integer(value: Any, field: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise AcquisitionReleaseError(f"{field} must be a non-negative integer")
-    return value
+    return cast(int, value)
 
 
 def _counts(value: Any, field: str) -> dict[str, int]:
@@ -148,9 +148,11 @@ def load_acquisition_release(payload: bytes) -> dict[str, Any]:
     summary = raw.get("summary")
     if not isinstance(source, dict) or not isinstance(summary, dict):
         raise AcquisitionReleaseError("source and summary must be objects")
-    if SHA256.fullmatch(str(source.get("delivery_sha256"))) is None or SHA256.fullmatch(
-        str(source.get("award_sha256"))
-    ) is None or REVISION.fullmatch(str(source.get("award_revision"))) is None:
+    if (
+        SHA256.fullmatch(str(source.get("delivery_sha256"))) is None
+        or SHA256.fullmatch(str(source.get("award_sha256"))) is None
+        or REVISION.fullmatch(str(source.get("award_revision"))) is None
+    ):
         raise AcquisitionReleaseError("source fingerprints are invalid")
     contract_count = _integer(summary.get("contract_count"), "contract_count")
     examined = _integer(summary.get("examined_contracts"), "examined_contracts")

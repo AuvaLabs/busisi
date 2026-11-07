@@ -250,19 +250,32 @@ def _blacklist_order(reported_name: str, value: Any, source_sha256: str) -> Blac
     end = None if permanent else _date(raw_end, "blacklist end date")
     if end is not None and end < start:
         raise ValueError("blacklist end date precedes start date")
+    procuring_entity = _text(item.get("procuring_entity"), "procuring entity")
+    project_title = _text(item.get("project"), "blacklist project")
+    start_date = start.isoformat()
+    end_date = end.isoformat() if end else None
     fields = {
         "reported_name": reported_name,
-        "procuring_entity": _text(item.get("procuring_entity"), "procuring entity"),
-        "project_title": _text(item.get("project"), "blacklist project"),
-        "start_date": start.isoformat(),
-        "end_date": end.isoformat() if end else None,
+        "procuring_entity": procuring_entity,
+        "project_title": project_title,
+        "start_date": start_date,
+        "end_date": end_date,
         "permanent": permanent,
     }
     identity_fields = {**fields, "reported_name": normalize_entity_name(reported_name)}
     identity = hashlib.sha256(
         json.dumps(identity_fields, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
-    return BlacklistOrder(order_id=identity, source_sha256=source_sha256, **fields)
+    return BlacklistOrder(
+        order_id=identity,
+        reported_name=reported_name,
+        procuring_entity=procuring_entity,
+        project_title=project_title,
+        start_date=start_date,
+        end_date=end_date,
+        permanent=permanent,
+        source_sha256=source_sha256,
+    )
 
 
 def parse_blacklist_order_pages(
@@ -287,7 +300,7 @@ def parse_blacklist_order_pages(
     )
     if len(orders) != next(iter(counts)):
         raise ValueError("blacklist order control total does not reconcile")
-    unique = {}
+    unique: dict[str, BlacklistOrder] = {}
     for order in sorted(orders, key=lambda item: (item.order_id, item.source_sha256)):
         unique.setdefault(order.order_id, order)
     return tuple(unique.values())
@@ -334,15 +347,23 @@ def _cpes_rating(
         raise ValueError("CPES low-rating row does not match the report layout")
     license_text = row.group("license") or ""
     evaluation = datetime.strptime(row.group("date"), "%m/%d/%Y").date()
+    reported_name = _text(row.group("name"), "CPES constructor name")
+    pcab_id = str(int(license_text)) if license_text.isdigit() else None
+    project_title = _text(row.group("project"), "CPES project title")
+    evaluation_date = evaluation.isoformat()
+    implementing_agency = _text(row.group("agency"), "CPES implementing agency")
+    visit_rating_bps = _percent_bps(match.group("visit"))
+    final_rating_bps = _percent_bps(match.group("final"))
+    qualitative_rating = match.group("quality")
     fields = {
-        "reported_name": _text(row.group("name"), "CPES constructor name"),
-        "pcab_id": str(int(license_text)) if license_text.isdigit() else None,
-        "project_title": _text(row.group("project"), "CPES project title"),
-        "evaluation_date": evaluation.isoformat(),
-        "implementing_agency": _text(row.group("agency"), "CPES implementing agency"),
-        "visit_rating_bps": _percent_bps(match.group("visit")),
-        "final_rating_bps": _percent_bps(match.group("final")),
-        "qualitative_rating": match.group("quality"),
+        "reported_name": reported_name,
+        "pcab_id": pcab_id,
+        "project_title": project_title,
+        "evaluation_date": evaluation_date,
+        "implementing_agency": implementing_agency,
+        "visit_rating_bps": visit_rating_bps,
+        "final_rating_bps": final_rating_bps,
+        "qualitative_rating": qualitative_rating,
         "page_number": page_number,
         "release_label": release_label,
         "source_sha256": source_sha256,
@@ -351,7 +372,21 @@ def _cpes_rating(
     identity = hashlib.sha256(
         json.dumps(fields, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
-    return CpesLowRating(rating_id=identity, **fields)
+    return CpesLowRating(
+        rating_id=identity,
+        reported_name=reported_name,
+        pcab_id=pcab_id,
+        project_title=project_title,
+        evaluation_date=evaluation_date,
+        implementing_agency=implementing_agency,
+        visit_rating_bps=visit_rating_bps,
+        final_rating_bps=final_rating_bps,
+        qualitative_rating=qualitative_rating,
+        page_number=page_number,
+        release_label=release_label,
+        source_sha256=source_sha256,
+        source_url=source_url,
+    )
 
 
 def parse_cpes_low_ratings(
@@ -522,25 +557,29 @@ def _award_signals(
     awards: tuple[AwardRecord, ...],
 ) -> tuple[AwardTimingSignal, ...]:
     by_key = {item.contractor_key: item for item in contractors}
-    signals = []
-    for event in blacklists:
-        contractor = by_key[event.contractor_key]
-        start = date.fromisoformat(event.start_date)
-        end = date.max if event.end_date is None else date.fromisoformat(event.end_date)
+    signals: list[AwardTimingSignal] = []
+    for blacklist_event in blacklists:
+        contractor = by_key[blacklist_event.contractor_key]
+        start = date.fromisoformat(blacklist_event.start_date)
+        end = (
+            date.max
+            if blacklist_event.end_date is None
+            else date.fromisoformat(blacklist_event.end_date)
+        )
         signals.extend(
-            _signal("award_during_blacklist", event.order_id, contractor, award)
+            _signal("award_during_blacklist", blacklist_event.order_id, contractor, award)
             for award in awards
-            if award.contractor_key == event.contractor_key
+            if award.contractor_key == blacklist_event.contractor_key
             and _award_identity_matches(award, contractor)
             and start <= date.fromisoformat(award.award_date) <= end
         )
-    for event in ratings:
-        contractor = by_key[event.contractor_key]
-        evaluation = date.fromisoformat(event.evaluation_date)
+    for rating_event in ratings:
+        contractor = by_key[rating_event.contractor_key]
+        evaluation = date.fromisoformat(rating_event.evaluation_date)
         signals.extend(
-            _signal("award_after_low_cpes", event.rating_id, contractor, award)
+            _signal("award_after_low_cpes", rating_event.rating_id, contractor, award)
             for award in awards
-            if award.contractor_key == event.contractor_key
+            if award.contractor_key == rating_event.contractor_key
             and _award_identity_matches(award, contractor)
             and date.fromisoformat(award.award_date) > evaluation
         )

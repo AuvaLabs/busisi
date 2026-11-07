@@ -311,21 +311,21 @@ def _apply_states(
 ) -> tuple[UniverseContract, ...]:
     accepted = Counter(item.contract_id for item in matches)
     bases: dict[str, set[str]] = defaultdict(set)
-    for item in matches:
-        bases[item.contract_id].add(item.match_basis)
+    for match in matches:
+        bases[match.contract_id].add(match.match_basis)
     conflicts = Counter(
         contract_id for item in quarantine for contract_id in item.candidate_contract_ids
     )
-    result = []
-    for item in contracts:
-        count = accepted[item.contract_id]
-        if item.identifier_status == "invalid":
+    result: list[UniverseContract] = []
+    for contract in contracts:
+        count = accepted[contract.contract_id]
+        if contract.identifier_status == "invalid":
             state = "invalid_identifier"
-        elif conflicts[item.contract_id]:
+        elif conflicts[contract.contract_id]:
             state = "conflict_review"
         elif count > 1:
             state = "multiple_exact_rows"
-        elif count == 1 and "structured_exact" in bases[item.contract_id]:
+        elif count == 1 and "structured_exact" in bases[contract.contract_id]:
             state = "structured_exact"
         elif count == 1:
             state = "title_exact"
@@ -333,10 +333,10 @@ def _apply_states(
             state = "no_exact_row"
         result.append(
             replace(
-                item,
+                contract,
                 match_state=state,
                 accepted_match_rows=count,
-                quarantined_match_rows=conflicts[item.contract_id],
+                quarantined_match_rows=conflicts[contract.contract_id],
             )
         )
     return tuple(result)

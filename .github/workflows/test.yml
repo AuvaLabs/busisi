@@ -50,6 +50,11 @@ jobs:
       - name: Run pytest
         run: PYTHONPATH=. pytest engine/tests/budget_watchdog/ -q --no-header --cov --cov-report=term-missing
 
+      - name: Run static checks
+        run: |
+          ruff check engine/budget_watchdog engine/tests/budget_watchdog ops/harness
+          mypy engine/budget_watchdog
+
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:

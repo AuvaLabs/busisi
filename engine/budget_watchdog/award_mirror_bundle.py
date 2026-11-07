@@ -9,7 +9,11 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
-from engine.budget_watchdog.award_mirror import AwardMirrorCatalog, load_award_mirror
+from engine.budget_watchdog.award_mirror import (
+    AwardMirrorCatalog,
+    AwardMirrorRecord,
+    load_award_mirror,
+)
 
 MIGRATION_PATHS = (
     Path(__file__).resolve().parents[2]
@@ -37,18 +41,34 @@ def _text(value: str) -> str:
     return f"'{value.replace("'", "''")}'"
 
 
-def _record_statement(catalog: AwardMirrorCatalog, item) -> str:
+def _record_statement(catalog: AwardMirrorCatalog, item: AwardMirrorRecord) -> str:
     source = catalog.source
     values = (
-        _text(item.source_row_id), _text(item.contract_id), str(item.fiscal_year),
-        _text(item.reference_id), _text(item.award_title), _text(item.notice_title),
-        _text(item.awardee_name), _text(item.organization_name), _text(item.area_of_delivery),
-        _text(item.business_category), str(item.contract_amount_centavos),
-        _text(item.award_date), _text(item.award_status), _text(item.row_sha256),
-        _text(source.title), _text(source.publisher), _text(source.dataset_url),
-        _text(source.file_url), _text(source.dataset_file), _text(source.revision),
-        _text(source.last_modified), _text(source.retrieved_at), _text(source.license),
-        _text(source.acquisition_status), _text(source.evidence_note),
+        _text(item.source_row_id),
+        _text(item.contract_id),
+        str(item.fiscal_year),
+        _text(item.reference_id),
+        _text(item.award_title),
+        _text(item.notice_title),
+        _text(item.awardee_name),
+        _text(item.organization_name),
+        _text(item.area_of_delivery),
+        _text(item.business_category),
+        str(item.contract_amount_centavos),
+        _text(item.award_date),
+        _text(item.award_status),
+        _text(item.row_sha256),
+        _text(source.title),
+        _text(source.publisher),
+        _text(source.dataset_url),
+        _text(source.file_url),
+        _text(source.dataset_file),
+        _text(source.revision),
+        _text(source.last_modified),
+        _text(source.retrieved_at),
+        _text(source.license),
+        _text(source.acquisition_status),
+        _text(source.evidence_note),
     )
     return f"INSERT INTO contract_award_mirror_records VALUES ({', '.join(values)});"  # noqa: S608
 
@@ -82,7 +102,9 @@ def _verify(sql: str, expected: int) -> None:
         for migration_path in MIGRATION_PATHS:
             connection.executescript(migration_path.read_text(encoding="utf-8"))
         connection.executescript(sql)
-        count = connection.execute("SELECT COUNT(*) FROM contract_award_mirror_records").fetchone()[0]
+        count = connection.execute("SELECT COUNT(*) FROM contract_award_mirror_records").fetchone()[
+            0
+        ]
         integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
     finally:
         connection.close()

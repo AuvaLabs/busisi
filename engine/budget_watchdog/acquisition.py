@@ -125,9 +125,9 @@ class SourceFetcher:
                     payload=payload,
                 )
         except requests.RequestException as exc:
-            response = getattr(exc, "response", None)
-            status = getattr(response, "status_code", None)
-            retry_after = self._retry_after(response)
+            error_response = exc.response
+            status = error_response.status_code if error_response is not None else None
+            retry_after = self._retry_after(error_response)
             raise AcquisitionError(
                 f"source request failed for {source_id}",
                 http_status=status,

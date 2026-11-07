@@ -10,12 +10,20 @@ from datetime import date, datetime
 from types import MappingProxyType
 from urllib.parse import urlparse
 
-DOCUMENT_TYPES = frozenset({"annual_procurement_plan", "bid_notice", "procurement_monitoring_report"})
+DOCUMENT_TYPES = frozenset(
+    {"annual_procurement_plan", "bid_notice", "procurement_monitoring_report"}
+)
 ACQUISITION_STATUSES = frozenset({"discovered", "verified_archived", "blocked", "not_located"})
 EVIDENCE_TYPES = frozenset({"plan", "bid_notice", "monitoring_report"})
 MATCH_BASES = frozenset({"exact_contract_id", "exact_solicitation_number"})
 COVERAGE_STATUSES = frozenset(
-    {"exact_evidence", "partial_evidence", "not_located", "current_year_not_yet_located", "quarantined"}
+    {
+        "exact_evidence",
+        "partial_evidence",
+        "not_located",
+        "current_year_not_yet_located",
+        "quarantined",
+    }
 )
 DATE_KINDS = frozenset({"planned", "actual"})
 EVENT_STAGES = (
@@ -194,7 +202,9 @@ def _source(raw: object) -> ProcurementSource:
             or re.fullmatch(rf"[0-9a-f]{{{SHA256_HEX_LENGTH}}}", sha) is None
             or byte_size is None
         ):
-            raise ProcurementCatalogError("verified source requires a lowercase hexadecimal SHA-256 and byte size")
+            raise ProcurementCatalogError(
+                "verified source requires a lowercase hexadecimal SHA-256 and byte size"
+            )
     elif any(value is not None for value in (sha, byte_size, page_count)):
         raise ProcurementCatalogError("unarchived source must not claim archive metadata")
     cutoff = raw.get("reporting_cutoff")
@@ -256,7 +266,9 @@ def _record(raw: object, source_ids: frozenset[str]) -> ProcurementRecord:
     elif savings is not None:
         raise ProcurementCatalogError("savings requires ABC and contract cost")
     observers = raw.get("observers")
-    if not isinstance(observers, list) or any(not isinstance(item, str) or not item.strip() for item in observers):
+    if not isinstance(observers, list) or any(
+        not isinstance(item, str) or not item.strip() for item in observers
+    ):
         raise ProcurementCatalogError("observers must be an array of non-empty strings")
     return ProcurementRecord(
         evidence_id=_text(raw.get("evidence_id"), "evidence_id"),
@@ -287,6 +299,8 @@ def _coverage(raw: object) -> ProcurementCoverage:
         raise ProcurementCatalogError("coverage entries must be objects")
     status = _text(raw.get("status"), "coverage status")
     count = _nonnegative_int(raw.get("record_count"), "record_count", optional=False)
+    if count is None:
+        raise ProcurementCatalogError("record_count is required")
     if status not in COVERAGE_STATUSES:
         raise ProcurementCatalogError("coverage status is invalid")
     if status in {"exact_evidence", "partial_evidence"} and count == 0:
@@ -361,7 +375,9 @@ def load_procurement_catalog(payload: bytes) -> ProcurementCatalog:
         raise ProcurementCatalogError("sources, records and coverage must be arrays")
     sources = tuple(_source(item) for item in raw["sources"])
     _unique(sources, "source_id")
-    records = tuple(_record(item, frozenset(source.source_id for source in sources)) for item in raw["records"])
+    records = tuple(
+        _record(item, frozenset(source.source_id for source in sources)) for item in raw["records"]
+    )
     coverage = tuple(_coverage(item) for item in raw["coverage"])
     _unique(records, "evidence_id")
     _unique(coverage, "case_id")
@@ -374,7 +390,9 @@ def summarize_procurement_catalog(catalog: ProcurementCatalog) -> ProcurementCat
     counts = Counter(item.status for item in catalog.coverage)
     return ProcurementCatalogSummary(
         source_count=len(catalog.sources),
-        archived_sources=sum(item.acquisition_status == "verified_archived" for item in catalog.sources),
+        archived_sources=sum(
+            item.acquisition_status == "verified_archived" for item in catalog.sources
+        ),
         record_count=len(catalog.records),
         exact_records=sum(item.match_basis in MATCH_BASES for item in catalog.records),
         checked_projects=len(catalog.coverage),

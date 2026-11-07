@@ -7,7 +7,7 @@ import re
 import struct
 from dataclasses import dataclass
 from hashlib import sha256
-from typing import Any
+from typing import Any, cast
 from urllib.parse import unquote, urlparse
 
 _CONTRACT_ID = re.compile(r"^[A-Z0-9-]{4,40}$")
@@ -99,7 +99,7 @@ def _text(value: Any, label: str, *, required: bool = True) -> str:
 def _integer(value: Any, label: str, *, minimum: int = 0) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
         raise ValueError(f"{label} must be an integer of at least {minimum}")
-    return value
+    return cast(int, value)
 
 
 def _number_or_none(value: Any, label: str) -> float | None:

@@ -11,7 +11,11 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
-from engine.budget_watchdog.acquisition_universe import AcquisitionUniverseSnapshot
+from engine.budget_watchdog.acquisition_universe import (
+    AcquisitionUniverseSnapshot,
+    QuarantinedAwardRow,
+    UniverseContract,
+)
 
 SCHEMA = """
 PRAGMA foreign_keys = ON;
@@ -167,7 +171,7 @@ def _write_csv(snapshot: AcquisitionUniverseSnapshot, path: Path) -> None:
             )
 
 
-def _case_html(item, contracts) -> str:
+def _case_html(item: QuarantinedAwardRow, contracts: dict[str, UniverseContract]) -> str:
     fields = (
         ("Reference ID", item.reference_id),
         ("Contract number", item.contract_no),

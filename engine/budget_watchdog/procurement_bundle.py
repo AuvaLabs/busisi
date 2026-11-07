@@ -11,6 +11,9 @@ from pathlib import Path
 
 from engine.budget_watchdog.procurement import (
     ProcurementCatalog,
+    ProcurementCoverage,
+    ProcurementRecord,
+    ProcurementSource,
     load_procurement_catalog,
     summarize_procurement_catalog,
 )
@@ -48,37 +51,63 @@ def _json(value: object) -> str:
     return _text(json.dumps(value, ensure_ascii=False, separators=(",", ":")))
 
 
-def _source_statement(item) -> str:
+def _source_statement(item: ProcurementSource) -> str:
     values = (
-        _text(item.source_id), _text(item.title), _text(item.publisher), _text(item.document_type),
-        str(item.fiscal_year), _text(item.reporting_cutoff), _text(item.source_url),
-        _text(item.acquisition_status), _text(item.artifact_sha256), _number(item.byte_size),
-        _number(item.page_count), _text(item.evidence_note),
+        _text(item.source_id),
+        _text(item.title),
+        _text(item.publisher),
+        _text(item.document_type),
+        str(item.fiscal_year),
+        _text(item.reporting_cutoff),
+        _text(item.source_url),
+        _text(item.acquisition_status),
+        _text(item.artifact_sha256),
+        _number(item.byte_size),
+        _number(item.page_count),
+        _text(item.evidence_note),
     )
     return f"INSERT INTO procurement_sources VALUES ({', '.join(values)});"  # noqa: S608
 
 
-def _record_statement(item) -> str:
+def _record_statement(item: ProcurementRecord) -> str:
     events = [
         {"stage": event.stage, "event_date": event.event_date, "date_kind": event.date_kind}
         for event in item.events
     ]
     values = (
-        _text(item.evidence_id), _text(item.case_id), _text(item.contract_id), str(item.fiscal_year),
-        _text(item.source_id), _text(item.evidence_type), _text(item.match_basis),
-        _text(item.project_title), _text(item.procuring_entity), _text(item.procurement_mode),
-        _text(item.procurement_status), _number(item.page_number), _text(item.reference_number),
-        _number(item.abc_centavos), _number(item.contract_cost_centavos),
-        _number(item.savings_centavos), _json(item.observers), _json(events),
-        _text(item.reviewed_at), _text(item.boundary_note),
+        _text(item.evidence_id),
+        _text(item.case_id),
+        _text(item.contract_id),
+        str(item.fiscal_year),
+        _text(item.source_id),
+        _text(item.evidence_type),
+        _text(item.match_basis),
+        _text(item.project_title),
+        _text(item.procuring_entity),
+        _text(item.procurement_mode),
+        _text(item.procurement_status),
+        _number(item.page_number),
+        _text(item.reference_number),
+        _number(item.abc_centavos),
+        _number(item.contract_cost_centavos),
+        _number(item.savings_centavos),
+        _json(item.observers),
+        _json(events),
+        _text(item.reviewed_at),
+        _text(item.boundary_note),
     )
     return f"INSERT INTO procurement_records VALUES ({', '.join(values)});"  # noqa: S608
 
 
-def _coverage_statement(item) -> str:
+def _coverage_statement(item: ProcurementCoverage) -> str:
     values = (
-        _text(item.case_id), _text(item.contract_id), str(item.fiscal_year), _text(item.status),
-        str(item.record_count), _text(item.review_note), _text(item.reviewed_at),
+        _text(item.case_id),
+        _text(item.contract_id),
+        str(item.fiscal_year),
+        _text(item.status),
+        str(item.record_count),
+        _text(item.review_note),
+        _text(item.reviewed_at),
     )
     return f"INSERT INTO procurement_project_coverage VALUES ({', '.join(values)});"  # noqa: S608
 

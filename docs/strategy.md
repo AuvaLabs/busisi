@@ -163,9 +163,9 @@ review.
    questions, have the answer set reviewed independently, and test exact claim
    citations. Keep public evidence question answering disabled until a separate
    release decision approves the answer-quality and safety contract.
-10. Reduce the existing strict static-typing backlog to zero before making the
-    repository-wide type check a required GitHub release check. Changed modules
-    should continue to pass focused strict checking in the meantime.
+10. Keep the required repository-wide strict type check at zero errors. New
+    ingestion, review and publication modules must pass without broad ignores
+    before they can merge.
 
 ## Decision rules
 

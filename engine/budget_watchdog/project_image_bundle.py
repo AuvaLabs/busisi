@@ -169,6 +169,7 @@ def build_project_image_bundle(
 
     sql_path = building / "project-images.sql"
     sql_path.write_text(sql, encoding="utf-8")
+    sql_digest = sha256(sql_path.read_bytes()).hexdigest()
     manifest = {
         "contract_count": len(coverage),
         "contracts": {
@@ -192,7 +193,7 @@ def build_project_image_bundle(
         ],
         "quarantined_image_count": quarantined,
         "retrieved_at": retrieved_at,
-        "sql_sha256": sha256(sql_path.read_bytes()).hexdigest(),
+        "sql_sha256": sql_digest,
         "verified_image_count": verified,
     }
     manifest_path = building / "manifest.json"
@@ -207,6 +208,6 @@ def build_project_image_bundle(
         contract_count=len(coverage),
         verified_image_count=verified,
         quarantined_image_count=quarantined,
-        sql_sha256=manifest["sql_sha256"],
+        sql_sha256=sql_digest,
         manifest_sha256=manifest_sha256,
     )

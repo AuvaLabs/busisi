@@ -6,4 +6,5 @@ httpx2>=2.16,<3
 ruff>=0.17.3,<1
 mypy>=1.13,<2
 types-requests
+types-defusedxml
 build>=1.6.1,<2

@@ -229,6 +229,8 @@ golden set reaches the documented precision gate.
 ```bash
 python -m pip install -r requirements-dev.txt
 PYTHONPATH=. pytest engine/tests/budget_watchdog -q
+ruff check engine/budget_watchdog engine/tests/budget_watchdog ops/harness
+mypy engine/budget_watchdog
 PYTHONPATH=. python3 ops/harness/budget_watchdog_golden.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_review_expansion.py
 PYTHONPATH=. python3 ops/harness/budget_watchdog_review_council.py --dry-run

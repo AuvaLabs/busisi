@@ -7,7 +7,7 @@ import json
 import re
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlparse
 
 from engine.budget_watchdog.research_sources import validate_release_evidence
@@ -26,9 +26,7 @@ EDITORIAL_PAYLOADS = {
     "story.json": "story",
 }
 PUBLISHABLE_STATES = frozenset({"verified", "source_reported"})
-ALL_STATES = PUBLISHABLE_STATES | frozenset(
-    {"review_candidate", "unresolved", "not_supported"}
-)
+ALL_STATES = PUBLISHABLE_STATES | frozenset({"review_candidate", "unresolved", "not_supported"})
 SHA256 = re.compile(r"[a-f0-9]{64}")
 
 
@@ -141,8 +139,10 @@ def _validate_story_section(
     limitations: set[str],
 ) -> None:
     copy = section.get("copy")
-    if not isinstance(copy, list) or not copy or not all(
-        isinstance(item, str) and item.strip() for item in copy
+    if (
+        not isinstance(copy, list)
+        or not copy
+        or not all(isinstance(item, str) and item.strip() for item in copy)
     ):
         raise ValueError("story section copy must contain non-empty text")
     claim_ids = section.get("claim_ids")
@@ -158,10 +158,16 @@ def _validate_story_section(
     roots = {str(item).partition(".")[0] for item in section.get("visual_refs", [])}
     if roots - {"chart_data", "project_examples"}:
         raise ValueError("story section visual reference is outside the public package")
-    held = [claim_id for claim_id in claim_ids if claims[claim_id]["evidence_state"] not in PUBLISHABLE_STATES]
+    held = [
+        claim_id
+        for claim_id in claim_ids
+        if claims[claim_id]["evidence_state"] not in PUBLISHABLE_STATES
+    ]
     if section.get("narration_eligible") and held:
         raise ValueError("review candidate cannot be eligible for factual narration")
-    if held and (section.get("section_type") != "investigation_lead" or not section.get("limitation_ids")):
+    if held and (
+        section.get("section_type") != "investigation_lead" or not section.get("limitation_ids")
+    ):
         raise ValueError("review candidate must remain a limited investigation lead")
 
 
@@ -185,10 +191,7 @@ def _validate_story(
 
 
 def _package_base(metadata: dict[str, Any]) -> str:
-    return (
-        f"https://busisi.org/data/research/{metadata['slug']}/"
-        f"v{metadata['version']}"
-    )
+    return f"https://busisi.org/data/research/{metadata['slug']}/v{metadata['version']}"
 
 
 def build_consumption_index(
@@ -197,10 +200,7 @@ def build_consumption_index(
     """Build absolute, immutable links for a downstream editorial consumer."""
 
     base = _package_base(metadata)
-    files = {
-        field: f"{base}/{path}"
-        for path, field in BASE_PAYLOADS.items()
-    }
+    files = {field: f"{base}/{path}" for path, field in BASE_PAYLOADS.items()}
     return {
         "schema_version": "1.0",
         "story_id": metadata["story_id"],
@@ -229,8 +229,15 @@ def _validate_consumption_index(release: dict[str, Any], metadata: dict[str, Any
         raise ValueError("release requires a ready consumption index")
     expected = build_consumption_index(metadata, release["sources"])
     for field in (
-        "story_id", "version", "canonical_article_url", "api_url", "package_base_url",
-        "manifest_url", "story_url", "files", "direct_source_urls",
+        "story_id",
+        "version",
+        "canonical_article_url",
+        "api_url",
+        "package_base_url",
+        "manifest_url",
+        "story_url",
+        "files",
+        "direct_source_urls",
     ):
         if package.get(field) != expected[field]:
             if field == "files":
@@ -297,6 +304,8 @@ def verify_published_package(package_dir: Path) -> dict[str, Any]:
     if not manifest_path.is_file():
         raise ValueError("published package manifest is missing")
     manifest = json.loads(manifest_path.read_bytes())
+    if not isinstance(manifest, dict):
+        raise ValueError("published package manifest must be an object")
     entries = manifest.get("files")
     if not isinstance(entries, list) or not entries:
         raise ValueError("published package manifest has no files")
@@ -315,8 +324,13 @@ def verify_published_package(package_dir: Path) -> dict[str, Any]:
     package_sha256 = hashlib.sha256("".join(identity).encode()).hexdigest()
     if package_sha256 != manifest.get("package_sha256"):
         raise ValueError("published package digest does not match its files")
-    metadata = {key: value for key, value in manifest.items() if key not in {"files", "package_sha256"}}
+    metadata = {
+        key: value for key, value in manifest.items() if key not in {"files", "package_sha256"}
+    }
     mapping = {**BASE_PAYLOADS, **EDITORIAL_PAYLOADS}
-    release = {"metadata": metadata, **{field: payloads[path] for path, field in mapping.items() if path in payloads}}
+    release = {
+        "metadata": metadata,
+        **{field: payloads[path] for path, field in mapping.items() if path in payloads},
+    }
     validate_research_release(release)
-    return manifest
+    return cast(dict[str, Any], manifest)
