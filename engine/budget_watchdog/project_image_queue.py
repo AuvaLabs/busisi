@@ -25,6 +25,17 @@ _TERMINAL_STATES = frozenset({"verified_exact", "no_images", "count_conflict"})
 _FAILURE_STATES = frozenset({"retry", "blocked"})
 _MIN_FISCAL_YEAR = 2000
 _MAX_FISCAL_YEAR = 2100
+_SQLITE_BUSY_TIMEOUT_MILLISECONDS = 30_000
+
+
+def _connect(path: Path) -> sqlite3.Connection:
+    """Open the private queue with a bounded wait for transient lock contention."""
+    connection = sqlite3.connect(
+        path,
+        timeout=_SQLITE_BUSY_TIMEOUT_MILLISECONDS / 1000,
+    )
+    connection.execute(f"PRAGMA busy_timeout = {_SQLITE_BUSY_TIMEOUT_MILLISECONDS}")
+    return connection
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,7 +161,7 @@ def _refresh_priorities(
     seeds: tuple[ImageCoverageSeed, ...],
     metadata: dict[str, str],
 ) -> None:
-    connection = sqlite3.connect(path)
+    connection = _connect(path)
     try:
         observed = dict(connection.execute("SELECT key, value FROM queue_metadata"))
         if (
@@ -205,7 +216,7 @@ def create_image_coverage_queue(
     validated = _validated_seeds(seeds)
     metadata = _expected_metadata(validated, source_sha256)
     if path.exists():
-        connection = sqlite3.connect(path)
+        connection = _connect(path)
         try:
             observed = dict(connection.execute("SELECT key, value FROM queue_metadata"))
         finally:
@@ -217,7 +228,7 @@ def create_image_coverage_queue(
     path.parent.mkdir(parents=True, exist_ok=True)
     building = path.with_name(f".{path.name}.building")
     building.unlink(missing_ok=True)
-    connection = sqlite3.connect(building)
+    connection = _connect(building)
     try:
         connection.executescript(SCHEMA)
         connection.executemany("INSERT INTO queue_metadata VALUES (?, ?)", sorted(metadata.items()))
@@ -276,6 +287,30 @@ class ImageCoverageQueue:
             raise ValueError("image coverage queue does not exist")
         self._path = path
 
+    def recover_interrupted_leases(self, *, now: datetime) -> int:
+        """Return unfinished leases to pending while the caller holds the cycle lock."""
+        timestamp = _iso(now)
+        connection = _connect(self._path)
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            cursor = connection.execute(
+                "UPDATE image_tasks SET status = 'pending', lease_until = NULL, "
+                "next_attempt_at = NULL, last_note = ?, updated_at = ? "
+                "WHERE status = 'in_progress'",
+                (
+                    "The previous coverage cycle ended before recording a result; "
+                    "the task was returned to the queue.",
+                    timestamp,
+                ),
+            )
+            connection.commit()
+            return cursor.rowcount
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+
     def claim_batch(
         self, *, limit: int, now: datetime, lease_seconds: int
     ) -> tuple[ImageCoverageTask, ...]:
@@ -283,7 +318,7 @@ class ImageCoverageQueue:
             raise ValueError("limit and lease_seconds must be positive")
         timestamp = _iso(now)
         lease_until = (now + timedelta(seconds=lease_seconds)).isoformat()
-        connection = sqlite3.connect(self._path)
+        connection = _connect(self._path)
         connection.row_factory = sqlite3.Row
         try:
             connection.execute("BEGIN IMMEDIATE")
@@ -323,7 +358,7 @@ class ImageCoverageQueue:
         if any(record.contract_id != contract_id for record, _, _, _ in images):
             raise ValueError("image contract does not match the leased contract")
         timestamp = _iso(now)
-        connection = sqlite3.connect(self._path)
+        connection = _connect(self._path)
         try:
             connection.execute("BEGIN IMMEDIATE")
             self._require_lease(connection, contract_id)
@@ -408,7 +443,7 @@ class ImageCoverageQueue:
             if status == "retry"
             else None
         )
-        connection = sqlite3.connect(self._path)
+        connection = _connect(self._path)
         try:
             connection.execute("BEGIN IMMEDIATE")
             self._require_lease(connection, contract_id)
@@ -436,7 +471,7 @@ class ImageCoverageQueue:
             raise ValueError("task must hold an active lease")
 
     def summary(self) -> ImageCoverageSummary:
-        connection = sqlite3.connect(self._path)
+        connection = _connect(self._path)
         try:
             rows = connection.execute(
                 "SELECT status, COUNT(*) FROM image_tasks GROUP BY status"
@@ -449,7 +484,7 @@ class ImageCoverageQueue:
     def publication_records(
         self,
     ) -> tuple[tuple[ProjectImageCoverage, ...], tuple[AcquiredProjectImage, ...]]:
-        connection = sqlite3.connect(self._path)
+        connection = _connect(self._path)
         connection.row_factory = sqlite3.Row
         try:
             coverage_rows = connection.execute(

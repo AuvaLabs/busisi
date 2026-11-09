@@ -296,6 +296,7 @@ def run_cycle(*, limit: int | None, publish: bool, workers: int | None = None) -
         now = datetime.now(UTC)
         create_image_coverage_queue(QUEUE, _seeds(), source_sha256=SOURCE_SHA256)
         queue = ImageCoverageQueue(QUEUE)
+        recovered_leases = queue.recover_interrupted_leases(now=now)
         runner = _runner(queue)
         batches: list[ProjectImageBatchResult] = []
         remaining = selected_limit
@@ -367,6 +368,7 @@ def run_cycle(*, limit: int | None, publish: bool, workers: int | None = None) -
                 "next_batch_limit": next_controller.batch_limit,
             },
             "queue": queue.summary().status_counts,
+            "recovered_leases": recovered_leases,
             "release_id": release.release_id,
             "published_release_id": published,
         }

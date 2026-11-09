@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from engine.budget_watchdog import project_image_queue as queue_module
 from engine.budget_watchdog.project_image_queue import (
     ImageCoverageQueue,
     ImageCoverageSeed,
@@ -17,6 +18,17 @@ from engine.budget_watchdog.project_images import (
 )
 
 NOW = datetime(2026, 11, 3, 12, 0, tzinfo=UTC)
+
+
+def test_queue_connections_wait_for_transient_database_contention(tmp_path: Path) -> None:
+    path = tmp_path / "queue.sqlite3"
+    connection = queue_module._connect(path)
+    try:
+        busy_timeout = connection.execute("PRAGMA busy_timeout").fetchone()[0]
+    finally:
+        connection.close()
+
+    assert busy_timeout == 30_000
 
 
 def _coverage(state: str = "verified_exact") -> ProjectImageCoverage:
@@ -110,6 +122,21 @@ def test_queue_reclaims_expired_lease_and_applies_retry_delay(tmp_path: Path) ->
         retry_after_seconds=300,
     )
     assert queue.claim_batch(limit=2, now=NOW + timedelta(seconds=120), lease_seconds=60) == ()
+
+
+def test_queue_recovers_interrupted_cycle_leases(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+    interrupted = queue.claim_batch(limit=1, now=NOW, lease_seconds=7_200)[0]
+
+    recovered = queue.recover_interrupted_leases(now=NOW + timedelta(seconds=30))
+
+    assert recovered == 1
+    reclaimed = queue.claim_batch(
+        limit=1,
+        now=NOW + timedelta(seconds=30),
+        lease_seconds=7_200,
+    )
+    assert reclaimed[0].contract_id == interrupted.contract_id
 
 
 def test_queue_rejects_mismatched_or_unleased_results(tmp_path: Path) -> None:
