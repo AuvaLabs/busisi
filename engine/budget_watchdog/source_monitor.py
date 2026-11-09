@@ -226,6 +226,62 @@ def parse_dbm_release_catalog(
     return records
 
 
+def _pcab_detail_records(
+    value: Any,
+    *,
+    observed: bool,
+) -> dict[str, tuple[str, str, str, str]]:
+    if value is None:
+        return {}
+    if not isinstance(value, list):
+        raise SourceMonitorError("PCAB detail records must be a list")
+    records: dict[str, tuple[str, str, str, str]] = {}
+    for item in value:
+        if not isinstance(item, dict):
+            raise SourceMonitorError("PCAB detail record must be an object")
+        record_id = item.get("record_id")
+        firm_name = item.get("firm_name")
+        license_number = item.get("license_number")
+        valid_to = item.get("valid_to")
+        if (
+            not isinstance(record_id, str)
+            or not record_id.isdigit()
+            or not isinstance(firm_name, str)
+            or not firm_name.strip()
+            or not isinstance(license_number, str)
+            or not license_number.isdigit()
+            or not isinstance(valid_to, str)
+        ):
+            raise SourceMonitorError("PCAB detail record identity is invalid")
+        try:
+            date.fromisoformat(valid_to)
+        except ValueError as exc:
+            raise SourceMonitorError("PCAB detail record validity is invalid") from exc
+        status = item.get("status", "valid") if observed else "valid"
+        if status not in {"valid", "expired", "suspended", "revoked"}:
+            raise SourceMonitorError("PCAB detail record status is invalid")
+        if record_id in records:
+            raise SourceMonitorError("PCAB detail record id is duplicated")
+        records[record_id] = (status, firm_name.strip(), license_number, valid_to)
+    return records
+
+
+def _compare_pcab_details(
+    baseline_pcab: dict[str, Any], observed_pcab: dict[str, Any]
+) -> list[str]:
+    required = _pcab_detail_records(
+        baseline_pcab.get("required_detail_records"), observed=False
+    )
+    observed = _pcab_detail_records(observed_pcab.get("detail_records"), observed=True)
+    differences = []
+    if set(required) != set(observed):
+        differences.append("pcab: required detail record set changed")
+    for record_id in sorted(set(required) & set(observed), key=int):
+        if required[record_id] != observed[record_id]:
+            differences.append(f"pcab: required detail record {record_id} changed")
+    return differences
+
+
 def compare_observations(baseline: dict[str, Any], observed: dict[str, Any]) -> tuple[str, ...]:
     """Compare only stable source identities and catalogue records."""
     differences: list[str] = []
@@ -258,4 +314,7 @@ def compare_observations(baseline: dict[str, Any], observed: dict[str, Any]) -> 
         raise SourceMonitorError("PCAB observed record count is invalid")
     if observed_pcab_records < minimum_pcab_records:
         differences.append("pcab: records fell below the reviewed floor")
+    differences.extend(
+        _compare_pcab_details(baseline.get("pcab", {}), observed.get("pcab", {}))
+    )
     return tuple(differences)

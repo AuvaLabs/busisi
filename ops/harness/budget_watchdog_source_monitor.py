@@ -12,7 +12,10 @@ from typing import Any
 from engine.budget_watchdog.acquisition import SourceFetcher
 from engine.budget_watchdog.archive import ArtifactArchive
 from engine.budget_watchdog.districts import acquire_district_snapshot
-from engine.budget_watchdog.pcab import acquire_pcab_regular_licenses
+from engine.budget_watchdog.pcab import (
+    acquire_pcab_license_details,
+    acquire_pcab_regular_licenses,
+)
 from engine.budget_watchdog.source_monitor import (
     SourceMonitorError,
     compare_observations,
@@ -38,7 +41,8 @@ MONITORED_YEAR = 2026
 NEXT_MONITORED_YEAR = 2027
 MAX_METADATA_BYTES = 2 * 1024 * 1024
 MAX_CATALOG_BYTES = 2 * 1024 * 1024
-BASELINE_SCHEMA_VERSION = 4
+BASELINE_SCHEMA_VERSION = 5
+MAX_PCAB_RESPONSE_BYTES = 4 * 1024 * 1024
 KNOWN_DISCOVERY_LIMITS = [
     {
         "source": "Commission on Audit report catalogues",
@@ -65,6 +69,15 @@ def _stable_observation(observed: dict[str, Any]) -> dict[str, Any]:
         },
         "pcab": {
             "minimum_records": observed["pcab"]["records"],
+            "required_detail_records": [
+                {
+                    "record_id": item["record_id"],
+                    "firm_name": item["firm_name"],
+                    "license_number": item["license_number"],
+                    "valid_to": item["valid_to"],
+                }
+                for item in observed["pcab"].get("detail_records", [])
+            ],
         },
         "hgab_2027": {
             "source_commit": observed["hgab_2027"]["source_commit"],
@@ -73,8 +86,27 @@ def _stable_observation(observed: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _detail_record_ids(baseline: dict[str, Any] | None) -> tuple[str, ...]:
+    if baseline is None:
+        return ()
+    records = baseline.get("pcab", {}).get("required_detail_records", [])
+    if not isinstance(records, list):
+        raise SourceMonitorError("PCAB required detail records must be a list")
+    record_ids = tuple(
+        item.get("record_id") if isinstance(item, dict) else None for item in records
+    )
+    if any(not isinstance(item, str) or not item.isdigit() for item in record_ids):
+        raise SourceMonitorError("PCAB required detail record id is invalid")
+    if len(record_ids) != len(set(record_ids)):
+        raise SourceMonitorError("PCAB required detail record id is duplicated")
+    return tuple(item for item in record_ids if isinstance(item, str))
+
+
 def _observe(
-    *, now: datetime, archive: ArtifactArchive
+    *,
+    now: datetime,
+    archive: ArtifactArchive,
+    pcab_detail_record_ids: tuple[str, ...] = (),
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     registry = default_source_registry()
     metadata_fetcher = SourceFetcher(
@@ -137,8 +169,13 @@ def _observe(
         for index, artifact in enumerate(district_artifacts)
     )
 
+    pcab_fetcher = SourceFetcher(
+        registry,
+        max_response_bytes=MAX_PCAB_RESPONSE_BYTES,
+        max_attempts=3,
+    )
     pcab_artifact, pcab = acquire_pcab_regular_licenses(
-        SourceFetcher(registry, max_attempts=3), archive, retrieved_at=now
+        pcab_fetcher, archive, retrieved_at=now
     )
     artifacts.append(
         {
@@ -146,6 +183,20 @@ def _observe(
             "sha256": pcab_artifact.sha256,
             "byte_size": pcab_artifact.byte_size,
         }
+    )
+    detail_artifacts, detail_records = acquire_pcab_license_details(
+        pcab_fetcher,
+        archive,
+        pcab_detail_record_ids,
+        retrieved_at=now,
+    )
+    artifacts.extend(
+        {
+            "source": f"pcab_detail:{detail.record_id}",
+            "sha256": artifact.sha256,
+            "byte_size": artifact.byte_size,
+        }
+        for artifact, detail in zip(detail_artifacts, detail_records, strict=True)
     )
     observed = {
         "datasets": datasets,
@@ -161,6 +212,17 @@ def _observe(
             "sha256": pcab.source_sha256,
             "records": pcab.record_count,
             "retrieved_on": pcab.retrieved_on.isoformat(),
+            "detail_records": [
+                {
+                    "record_id": item.record_id,
+                    "status": item.status,
+                    "firm_name": item.firm_name,
+                    "license_number": item.license_number,
+                    "valid_to": item.valid_to.isoformat(),
+                    "sha256": item.source_sha256,
+                }
+                for item in detail_records
+            ],
         },
         "hgab_2027": hgab_overview,
     }
@@ -187,16 +249,24 @@ def run_monitor(
 ) -> tuple[dict[str, Any], int]:
     now = datetime.now(UTC)
     try:
-        observed, artifacts = _observe(now=now, archive=ArtifactArchive(output / "archive"))
+        baseline = (
+            json.loads(baseline_path.read_text(encoding="utf-8"))
+            if baseline_path.is_file()
+            else None
+        )
+        observed, artifacts = _observe(
+            now=now,
+            archive=ArtifactArchive(output / "archive"),
+            pcab_detail_record_ids=_detail_record_ids(baseline),
+        )
         stable = _stable_observation(observed)
         if write_baseline:
             baseline_path.parent.mkdir(parents=True, exist_ok=True)
             baseline_path.write_text(
                 json.dumps(stable, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
-        if not baseline_path.is_file():
+        if baseline is None:
             raise SourceMonitorError("source monitor baseline does not exist")
-        baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
         differences = compare_observations(baseline, observed)
         report = {
             "passed": not differences,

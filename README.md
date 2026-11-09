@@ -302,9 +302,12 @@ official catalogue blocks unattended acquisition.
 
 PCAB record-count reductions require a row-level transition review between two
 archived, hash-verified official snapshots. The review permits removal only for
-licenses whose stated validity date has passed, rejects changed retained rows
-or removed active rows, and records the reviewed hashes and control totals
-before the floor can be changed.
+licenses whose stated validity date has passed. A still-valid license omitted
+from the grid remains blocked unless its individual official detail page says
+the license is valid and exactly matches the reviewed identity. Any accepted
+grid omission is then checked by record ID, contractor name, license number,
+status and validity date on every run. Changed rows and reviewed hashes are
+recorded before the floor can be changed.
 
 The project-image evidence queue runs every six hours. Each cycle starts with a
 25-contract canary, continues in 100-contract chunks and processes at most

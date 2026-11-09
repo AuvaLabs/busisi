@@ -64,18 +64,93 @@
     }
   ],
   "pcab": {
-    "minimum_records": 18924,
+    "minimum_records": 18623,
+    "required_detail_records": [
+      {
+        "firm_name": "FAJR CONSTRUCTION PARTS & SUPPLY",
+        "license_number": "40114",
+        "record_id": "115834",
+        "valid_to": "2028-02-24"
+      },
+      {
+        "firm_name": "SUPREA PHILS. DEVELOPMENT CORP.",
+        "license_number": "41868",
+        "record_id": "116362",
+        "valid_to": "2027-03-30"
+      },
+      {
+        "firm_name": "M E DIMACULANGAN CONSTRUCTION INC.",
+        "license_number": "43584",
+        "record_id": "116367",
+        "valid_to": "2027-02-01"
+      },
+      {
+        "firm_name": "RAND CHARLIE ENTERPRISES",
+        "license_number": "37651",
+        "record_id": "117524",
+        "valid_to": "2028-02-21"
+      },
+      {
+        "firm_name": "RHYMAC CONSTRUCTION AND SUPPLY",
+        "license_number": "34727",
+        "record_id": "117907",
+        "valid_to": "2028-01-10"
+      },
+      {
+        "firm_name": "DMDD ALUMINUM GLASS AND METAL WORKS",
+        "license_number": "49471",
+        "record_id": "118139",
+        "valid_to": "2027-04-06"
+      },
+      {
+        "firm_name": "3REX MYNO BUILDERS' CONSTRUCTION SERVICES",
+        "license_number": "54857",
+        "record_id": "118576",
+        "valid_to": "2027-04-14"
+      },
+      {
+        "firm_name": "HRC CONTRACTOR ELEVATOR ESCALATOR",
+        "license_number": "46052",
+        "record_id": "119535",
+        "valid_to": "2027-04-24"
+      },
+      {
+        "firm_name": "NXTLVL WATER TECHNOLOGY INCORPORATED",
+        "license_number": "49351",
+        "record_id": "119578",
+        "valid_to": "2027-03-09"
+      },
+      {
+        "firm_name": "TFM POWERLINE CONSTRUCTION INC.",
+        "license_number": "45759",
+        "record_id": "121047",
+        "valid_to": "2027-02-27"
+      },
+      {
+        "firm_name": "ALTHAEA ENTERPRISES",
+        "license_number": "35312",
+        "record_id": "121536",
+        "valid_to": "2027-09-05"
+      },
+      {
+        "firm_name": "MEGA SPEED ICT SOLUTIONS INC.",
+        "license_number": "53424",
+        "record_id": "125332",
+        "valid_to": "2027-09-20"
+      }
+    ],
     "reviewed_transition": {
-      "added_records": 1,
-      "changed_retained_records": 0,
-      "observed_on": "2026-11-04",
-      "observed_records": 18925,
-      "observed_sha256": "b1e9a03d956ae1bd31e650f4f2b03e58c392a5813dc8f9d72bd759f86fefb908",
-      "removed_active_records": 0,
-      "removed_expired_records": 41,
-      "reviewed_records": 18965,
-      "reviewed_sha256": "089144b6450c0d511562f02044a2989dc48322dfe3b5f0c02a9ed35cba0e4f39"
+      "active_detail_records": 12,
+      "added_records": 259,
+      "changed_retained_records": 5,
+      "observed_on": "2026-11-09",
+      "observed_records": 18882,
+      "observed_sha256": "67be2c7d3735a1b4ad9b8c0386aae8171295b27415d30c601d4a78ca5b5ad759",
+      "removed_active_records": 12,
+      "removed_expired_records": 290,
+      "reviewed_records": 18925,
+      "reviewed_sha256": "b1e9a03d956ae1bd31e650f4f2b03e58c392a5813dc8f9d72bd759f86fefb908"
     }
   },
-  "schema_version": 4
+  "schema_version": 5
 }

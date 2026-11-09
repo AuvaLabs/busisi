@@ -145,6 +145,79 @@ def test_rejects_pcab_transition_with_active_removal_or_changed_row() -> None:
     assert result["recommended_floor"] is None
 
 
+def test_monitors_reviewed_pcab_detail_only_records() -> None:
+    baseline = {
+        "datasets": {},
+        "dbm_releases": [],
+        "dbm_next_releases": [],
+        "districts": {"revision": "a", "total": 1},
+        "hgab_2027": {"source_commit": "b"},
+        "pcab": {
+            "minimum_records": 1,
+            "required_detail_records": [
+                {
+                    "record_id": "115834",
+                    "firm_name": "ACME BUILDERS",
+                    "license_number": "40114",
+                    "valid_to": "2028-02-24",
+                }
+            ],
+        },
+    }
+    observed = {
+        "datasets": {},
+        "dbm_releases": [],
+        "dbm_next_releases": [],
+        "districts": {"revision": "a", "total": 1},
+        "hgab_2027": {"source_commit": "b"},
+        "pcab": {
+            "records": 1,
+            "detail_records": [
+                {
+                    "record_id": "115834",
+                    "status": "valid",
+                    "firm_name": "ACME BUILDERS",
+                    "license_number": "40114",
+                    "valid_to": "2028-02-24",
+                    "sha256": "c" * 64,
+                }
+            ],
+        },
+    }
+
+    assert compare_observations(baseline, observed) == ()
+
+    observed["pcab"]["detail_records"][0]["status"] = "expired"
+    assert compare_observations(baseline, observed) == (
+        "pcab: required detail record 115834 changed",
+    )
+
+
+def test_rejects_missing_or_malformed_pcab_detail_only_records() -> None:
+    baseline = {
+        "datasets": {},
+        "dbm_releases": [],
+        "dbm_next_releases": [],
+        "districts": {"revision": "a", "total": 1},
+        "hgab_2027": {"source_commit": "b"},
+        "pcab": {
+            "minimum_records": 1,
+            "required_detail_records": [{"record_id": "115834"}],
+        },
+    }
+    observed = {
+        "datasets": {},
+        "dbm_releases": [],
+        "dbm_next_releases": [],
+        "districts": {"revision": "a", "total": 1},
+        "hgab_2027": {"source_commit": "b"},
+        "pcab": {"records": 1, "detail_records": []},
+    }
+
+    with pytest.raises(SourceMonitorError, match="detail record"):
+        compare_observations(baseline, observed)
+
+
 def test_parses_huggingface_revision_metadata() -> None:
     payload = json.dumps(
         {
