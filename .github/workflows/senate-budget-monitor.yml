@@ -30,7 +30,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Restore source health history
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: data/budget_watchdog/senate-monitor/state.json
           key: senate-source-health-${{ github.run_id }}
@@ -75,7 +75,7 @@ jobs:
 
       - name: Save source health history
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: data/budget_watchdog/senate-monitor/state.json
           key: senate-source-health-${{ github.run_id }}
