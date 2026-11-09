@@ -5,16 +5,23 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 from engine.budget_watchdog.acquisition import AcquisitionError
 from engine.budget_watchdog.facility_registry import (
+    DEPED_PPP_CURRENT_CANDIDATE_URL,
     DEPED_PPP_SOURCE_URL,
+    DEPED_PPP_SOURCE_VERSION,
     EXPECTED_DEPED_PPP_SCHOOLS,
 )
 from engine.budget_watchdog.facility_status_bundle import build_facility_status_sql
+from engine.budget_watchdog.source_resilience import (
+    classify_source_failure,
+    source_health_after_failure,
+    source_health_after_success,
+)
 from ops.harness.budget_watchdog_facilities import (
     CANONICAL_DATABASE,
     HGAB_BUNDLE_DIR,
@@ -26,6 +33,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT = ROOT / "data" / "budget_watchdog" / "facility-source-monitor"
 DEFAULT_REVIEW_MANIFEST = ROOT / "ops" / "harness" / "fixtures" / "facility_review_manifest.json"
 HTTP_FORBIDDEN = 403
+FACILITY_RETRY_DELAYS = (timedelta(hours=6),)
 
 
 def _base_report(now: datetime) -> dict[str, Any]:
@@ -41,17 +49,41 @@ def _base_report(now: datetime) -> dict[str, Any]:
         "precision_bps": None,
         "agreement_bps": None,
         "critical_failures": 0,
+        "source_version": DEPED_PPP_SOURCE_VERSION,
+        "candidate_source_url": DEPED_PPP_CURRENT_CANDIDATE_URL,
+        "candidate_state": "discovered_unarchived",
     }
 
 
 def facility_failure_report(
     error: AcquisitionError,
     now: datetime,
+    previous: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], int]:
     """Classify source failures without treating the known 403 as data."""
 
     report = _base_report(now)
     report["http_status"] = error.http_status
+    failure_kind = classify_source_failure(error.http_status, error.response_body)
+    report.update(
+        source_health_after_failure(
+            previous,
+            checked_at=now,
+            failure_kind=failure_kind,
+            response_body=error.response_body,
+            retry_delays=FACILITY_RETRY_DELAYS,
+        )
+    )
+    if failure_kind == "publisher_maintenance":
+        report.update(
+            source_state="unavailable",
+            release_state="source_unavailable",
+            status_note=(
+                "DepEd is temporarily showing a maintenance page. "
+                "No school-list rows or inferred links were published."
+            ),
+        )
+        return report, 0
     if error.http_status == HTTP_FORBIDDEN:
         report.update(
             source_state="blocked",
@@ -77,9 +109,19 @@ def facility_failure_report(
     return report, 3
 
 
-def _validation_failure_report(error: Exception, now: datetime) -> dict[str, Any]:
+def _validation_failure_report(
+    error: Exception,
+    now: datetime,
+    previous: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     report = _base_report(now)
     report.update(
+        **source_health_after_failure(
+            previous,
+            checked_at=now,
+            failure_kind="validation_error",
+            retry_delays=FACILITY_RETRY_DELAYS,
+        ),
         source_state="validation_failure",
         release_state="validation_failed",
         status_note="The acquired DepEd workbook failed a release validation and needs review.",
@@ -111,6 +153,7 @@ def run_facility_monitor(
 ) -> tuple[dict[str, Any], int]:
     """Check source availability and build a held or review-gated candidate release."""
 
+    previous = _load_previous_report(output)
     if reset_output:
         shutil.rmtree(output, ignore_errors=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -134,6 +177,7 @@ def run_facility_monitor(
         )
         report = {
             **_base_report(now),
+            **source_health_after_success(now, response_body=acquisition.payload),
             "source_state": "validated",
             "release_state": release["release_state"],
             "source_artifact_sha256": digest,
@@ -154,12 +198,23 @@ def run_facility_monitor(
         }
         code = 0 if release["release_state"] != "gate_failed" else 2
     except AcquisitionError as exc:
-        report, code = facility_failure_report(exc, now)
+        report, code = facility_failure_report(exc, now, previous)
     except Exception as exc:
-        report = _validation_failure_report(exc, now)
+        report = _validation_failure_report(exc, now, previous)
         code = 3
     _write_report(output, now, report)
     return report, code
+
+
+def _load_previous_report(output: Path) -> dict[str, Any] | None:
+    path = output / "latest.json"
+    if not path.is_file():
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return value if isinstance(value, dict) else None
 
 
 def arguments() -> argparse.Namespace:

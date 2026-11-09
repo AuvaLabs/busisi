@@ -6,6 +6,7 @@ import fcntl
 import json
 import sqlite3
 import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -40,6 +41,7 @@ TIMERS = (
     "busisi-weekly-coverage-audit.timer",
     "busisi-monthly-reconciliation.timer",
 )
+DRIFT_EXIT = 2
 
 
 def _run(command: list[str], *, cwd: Path) -> dict[str, Any]:
@@ -202,6 +204,16 @@ def _run_audit() -> int:
         ],
         cwd=WORKER,
     )
+    senate = _run(
+        [sys.executable, "ops/harness/budget_watchdog_senate_monitor.py"],
+        cwd=ROOT,
+    )
+    senate_report_path = ROOT / "data" / "budget_watchdog" / "senate-monitor" / "report.json"
+    senate_report = (
+        json.loads(senate_report_path.read_text(encoding="utf-8"))
+        if senate_report_path.is_file()
+        else None
+    )
     live = _run(["npm", "run", "verify:live"], cwd=WORKER)
 
     queue, queue_ok = _queue_facts(now)
@@ -227,6 +239,10 @@ def _run_audit() -> int:
         issues.append("facility source monitor requires review")
     if facility_publish["returncode"] != 0:
         issues.append("facility source status publication failed")
+    if senate["returncode"] == DRIFT_EXIT:
+        issues.append("Senate catalogue drift requires review")
+    elif senate["returncode"] != 0 or senate_report is None:
+        issues.append("Senate catalogue monitor did not produce a usable report")
     if live["returncode"] != 0:
         issues.append("live production verification failed")
 
@@ -247,6 +263,15 @@ def _run_audit() -> int:
             "report_path": facility_report["report_path"],
             "status_sha256": facility_report["status_sha256"],
         },
+        "senate_monitor": {
+            "code": senate["returncode"],
+            "status": senate_report.get("status") if senate_report else "missing",
+            "freshness_state": (
+                senate_report.get("freshness_state") if senate_report else "unknown"
+            ),
+            "last_success_at": (senate_report.get("last_success_at") if senate_report else None),
+            "report_path": str(senate_report_path) if senate_report else None,
+        },
         "queue": queue,
         "release": release,
         "timers": {
@@ -259,6 +284,7 @@ def _run_audit() -> int:
         "commands": {
             "source_status_publication": publish,
             "facility_status_publication": facility_publish,
+            "senate_catalogue_monitor": senate,
             "live_verification": live,
             "timers": timer_commands,
         },

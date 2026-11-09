@@ -904,8 +904,11 @@ const verifyData = async () => {
   }
   const facilityStatus = (await readJson('/api/v1/facility-registry-status')).data;
   const facilityCheckedAt = Date.parse(facilityStatus?.checked_at ?? '');
-  const facilityBlocked = facilityStatus?.source_state === 'blocked'
-    && facilityStatus.release_state === 'source_blocked'
+  const facilityBlocked = ((facilityStatus?.source_state === 'blocked'
+    && facilityStatus.release_state === 'source_blocked')
+    || (facilityStatus?.source_state === 'unavailable'
+      && facilityStatus.release_state === 'source_unavailable'
+      && facilityStatus.failure_kind === 'publisher_maintenance'))
     && facilityStatus.http_status === 403
     && facilityStatus.validated_facilities === 0
     && facilityStatus.candidate_links === 0

@@ -137,6 +137,9 @@ const facilityRegistryDetailsMigrationPath = fileURLToPath(
 const facilityRegistryStatusMigrationPath = fileURLToPath(
   new URL('../migrations/0028_facility_registry_status.sql', import.meta.url),
 );
+const facilitySourceResilienceMigrationPath = fileURLToPath(
+  new URL('../migrations/0030_facility_source_resilience.sql', import.meta.url),
+);
 const contractorAccountabilityMigrationPath = fileURLToPath(
   new URL('../migrations/0029_contractor_accountability.sql', import.meta.url),
 );
@@ -206,6 +209,7 @@ class LocalD1 {
     this.database.exec(readFileSync(facilityRegistryDetailsMigrationPath, 'utf8'));
     this.database.exec(readFileSync(facilityRegistryStatusMigrationPath, 'utf8'));
     this.database.exec(readFileSync(contractorAccountabilityMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(facilitySourceResilienceMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -1541,11 +1545,22 @@ test('keeps the question catalogue explicit when optional releases are unavailab
 });
 
 const insertPublicServiceExamples = (database) => database.database.exec(`
-  INSERT INTO facility_registry_status VALUES
+  INSERT INTO facility_registry_status (
+    singleton_id, checked_at, source_url, source_state, release_state, http_status,
+    source_artifact_sha256, expected_facilities, validated_facilities, candidate_links,
+    reviewed_cases, precision_bps, agreement_bps, critical_failures, status_note,
+    status_sha256, failure_kind, last_success_at, consecutive_failures, next_check_at,
+    freshness_state, response_sha256, source_version, candidate_source_url, candidate_state
+  ) VALUES
     (1, '2026-11-04T14:00:00+00:00',
      'https://www.deped.gov.ph/wp-content/uploads/List-of-PSIP-III-Sites.xlsx',
-     'blocked', 'source_blocked', 403, NULL, 1095, 0, 0, 0, NULL, NULL, 0,
-     'The official DepEd source blocked unattended acquisition.', '${'8'.repeat(64)}');
+     'unavailable', 'source_unavailable', 403, NULL, 1095, 0, 0, 0, NULL, NULL, 0,
+     'DepEd is temporarily showing a maintenance page. No school-list rows or inferred links were published.',
+     '${'8'.repeat(64)}', 'publisher_maintenance', NULL, 2,
+     '2026-11-04T16:00:00+00:00', 'unknown', '${'7'.repeat(64)}',
+     'legacy-xlsx-1095',
+     'https://www.deped.gov.ph/wp-content/uploads/Deped-Announcement-on-PPP-Indicative-List-of-Schools-Annex-A-2025-12-08_1.pdf',
+     'discovered_unarchived');
   INSERT INTO facility_registry_sources VALUES
     ('deped-ppp-2025', 'Department of Education', 'PPP indicative school list',
      'https://www.deped.gov.ph/example.pdf', '${'9'.repeat(64)}',
@@ -1633,8 +1648,8 @@ test('publishes a deterministic public-services inventory with separated review 
   assert.deepEqual(summaryBody.data.registry_status, {
     checked_at: '2026-11-04T14:00:00+00:00',
     source_url: 'https://www.deped.gov.ph/wp-content/uploads/List-of-PSIP-III-Sites.xlsx',
-    source_state: 'blocked',
-    release_state: 'source_blocked',
+    source_state: 'unavailable',
+    release_state: 'source_unavailable',
     http_status: 403,
     source_artifact_sha256: null,
     expected_facilities: 1095,
@@ -1644,8 +1659,17 @@ test('publishes a deterministic public-services inventory with separated review 
     precision_bps: null,
     agreement_bps: null,
     critical_failures: 0,
-    status_note: 'The official DepEd source blocked unattended acquisition.',
+    status_note: 'DepEd is temporarily showing a maintenance page. No school-list rows or inferred links were published.',
     status_sha256: '8'.repeat(64),
+    failure_kind: 'publisher_maintenance',
+    last_success_at: null,
+    consecutive_failures: 2,
+    next_check_at: '2026-11-04T16:00:00+00:00',
+    freshness_state: 'unknown',
+    response_sha256: '7'.repeat(64),
+    source_version: 'legacy-xlsx-1095',
+    candidate_source_url: 'https://www.deped.gov.ph/wp-content/uploads/Deped-Announcement-on-PPP-Indicative-List-of-Schools-Annex-A-2025-12-08_1.pdf',
+    candidate_state: 'discovered_unarchived',
   });
   assert.match(summaryBody.data.limitation, /not unique facilities/i);
   assert.deepEqual(summaryBody.data.identity_coverage, {
@@ -1819,8 +1843,10 @@ test('publishes the facility registry gate status without exposing a false relea
 
   assert.equal(response.status, 200);
   assert.equal(body.meta.review_scope, 'official_facility_registry_release_gate');
-  assert.equal(body.data.source_state, 'blocked');
-  assert.equal(body.data.release_state, 'source_blocked');
+  assert.equal(body.data.source_state, 'unavailable');
+  assert.equal(body.data.release_state, 'source_unavailable');
+  assert.equal(body.data.failure_kind, 'publisher_maintenance');
+  assert.equal(body.data.consecutive_failures, 2);
   assert.equal(body.data.validated_facilities, 0);
   assert.equal(body.data.candidate_links, 0);
   assert.equal(body.data.reviewed_cases, 0);
@@ -2003,7 +2029,7 @@ test('renders an interactive public-services desk with explicit red-flag boundar
   assert.match(document, /This does not mean the project is bad or illegal/);
   assert.match(document, /1 official facility identity linked/);
   assert.match(document, /1 possible facility group/);
-  assert.match(document, /Official school list is currently blocked/);
+  assert.match(document, /DepEd school list is temporarily under maintenance/);
   assertPlainPublicLanguage(document, 'public services page');
   assert.match(document, /Last checked 2026-11-04T14:00:00\+00:00/);
   assert.match(document, /An official identity means the record was linked to a published facility ID/);

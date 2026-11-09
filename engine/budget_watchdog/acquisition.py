@@ -14,7 +14,9 @@ from engine.budget_watchdog.sources import SourceRegistry
 DEFAULT_MAX_RESPONSE_BYTES = 64 * 1024 * 1024
 DEFAULT_TIMEOUT_SECONDS = (5, 30)
 DOWNLOAD_CHUNK_BYTES = 64 * 1024
+MAX_ERROR_RESPONSE_BYTES = 64 * 1024
 HTTP_TOO_MANY_REQUESTS = 429
+HTTP_CLIENT_ERROR_MIN = 400
 HTTP_SERVER_ERROR_MIN = 500
 
 
@@ -27,10 +29,12 @@ class AcquisitionError(RuntimeError):
         *,
         http_status: int | None = None,
         retry_after_seconds: int | None = None,
+        response_body: bytes = b"",
     ) -> None:
         super().__init__(message)
         self.http_status = http_status
         self.retry_after_seconds = retry_after_seconds
+        self.response_body = response_body
 
 
 class SourceFetcher:
@@ -111,8 +115,15 @@ class SourceFetcher:
                 stream=True,
                 allow_redirects=False,
             ) as response:
-                response.raise_for_status()
                 self._validate_final_url(base_url, response.url)
+                if response.status_code >= HTTP_CLIENT_ERROR_MIN:
+                    response_body = self._read_error_bounded(response)
+                    raise AcquisitionError(
+                        f"source request failed for {source_id}",
+                        http_status=response.status_code,
+                        retry_after_seconds=self._retry_after(response),
+                        response_body=response_body,
+                    )
                 payload = self._read_bounded(response)
                 media_type = response.headers.get("Content-Type", "application/octet-stream").split(
                     ";", maxsplit=1
@@ -135,11 +146,27 @@ class SourceFetcher:
             ) from exc
 
     @staticmethod
+    def _read_error_bounded(response: requests.Response) -> bytes:
+        chunks: list[bytes] = []
+        received = 0
+        for chunk in response.iter_content(chunk_size=DOWNLOAD_CHUNK_BYTES):
+            if not chunk:
+                continue
+            remaining = MAX_ERROR_RESPONSE_BYTES - received
+            if remaining <= 0:
+                break
+            chunks.append(chunk[:remaining])
+            received += min(len(chunk), remaining)
+            if received >= MAX_ERROR_RESPONSE_BYTES:
+                break
+        return b"".join(chunks)
+
+    @staticmethod
     def _retryable(error: AcquisitionError) -> bool:
-        if not isinstance(error.__cause__, requests.RequestException):
-            return False
         status = error.http_status
-        return status is None or status == HTTP_TOO_MANY_REQUESTS or status >= HTTP_SERVER_ERROR_MIN
+        if status is not None:
+            return status == HTTP_TOO_MANY_REQUESTS or status >= HTTP_SERVER_ERROR_MIN
+        return isinstance(error.__cause__, requests.RequestException)
 
     @staticmethod
     def _retry_after(response: requests.Response | None) -> int | None:

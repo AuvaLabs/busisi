@@ -26,6 +26,7 @@ const flagGuide = () => reviewClassEntries().map(([classification, copy]) => `<a
 
 const registryHeading = (status) => {
   if (!status) return 'No official school-list check is available';
+  if (status.failure_kind === 'publisher_maintenance') return 'DepEd school list is temporarily under maintenance';
   if (status.release_state === 'source_blocked') return 'Official school list is currently blocked';
   if (status.release_state === 'source_unavailable') return 'The official school list needs checking';
   if (status.release_state === 'awaiting_review') return 'The school list passed, but links still need review';

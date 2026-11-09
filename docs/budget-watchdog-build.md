@@ -336,11 +336,25 @@ because its official catalogue currently blocks unattended acquisition.
 The same six-hour source workflow checks the registered DepEd school workbook.
 It stores its report and any acquired original bytes separately from the general
 source monitor. The public `/api/v1/facility-registry-status` endpoint reports
-whether acquisition is blocked, validation passed, review is pending or the
-measured release gate passed. An expected HTTP 403 never becomes an empty school
+whether the publisher is under maintenance, access is blocked, validation
+passed, review is pending or the measured release gate passed. A bounded error
+response is hashed and classified, but never treated as school data. Source
+health retains the last success, consecutive failure count, freshness and next
+check time across scheduled runs. The newer Annex A PDF remains
+`discovered_unarchived` until original bytes can be archived and a validated
+parser can reconcile its own scope. An HTTP 403 never becomes an empty school
 dataset. Inferred links require a manifest bound to the exact source digest and
 candidate-set digest with 100 reviewed cases, 95 percent precision, 95 percent
 reviewer agreement and zero critical reconciliation failures.
+
+The Senate monitor uses the same persistent health model. Its GitHub workflow
+wakes every 30 minutes but requests the source only when its persisted retry
+time is due. The local operational audit supplies a second six-hour vantage. It
+stores the final response from each attempted path and treats an interactive
+challenge as a single failed observation instead of repeatedly requesting the
+same challenge page. Strict automation fails when the last successful check is
+older than 24 hours or when catalogue drift is observed. No failure can rewrite
+the reviewed catalogue.
 
 The first stable local baseline and its limitations are recorded in
 `docs/data-snapshots/2026-11-02-budget-watchdog.md`.

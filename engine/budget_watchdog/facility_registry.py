@@ -15,6 +15,11 @@ from engine.budget_watchdog.allotment_releases import extract_xlsx_rows
 from engine.budget_watchdog.facility_identity import FacilityRegistryRecord
 
 DEPED_PPP_SOURCE_URL = "https://www.deped.gov.ph/wp-content/uploads/List-of-PSIP-III-Sites.xlsx"
+DEPED_PPP_CURRENT_CANDIDATE_URL = (
+    "https://www.deped.gov.ph/wp-content/uploads/"
+    "Deped-Announcement-on-PPP-Indicative-List-of-Schools-Annex-A-2025-12-08_1.pdf"
+)
+DEPED_PPP_SOURCE_VERSION = "legacy-xlsx-1095"
 EXPECTED_DEPED_PPP_SCHOOLS = 1_095
 SOURCE_ID = "deped-ppp-2025"
 SPREADSHEET_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"

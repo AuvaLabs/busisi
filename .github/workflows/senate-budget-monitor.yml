@@ -2,7 +2,7 @@ name: Senate budget catalogue monitor
 
 on:
   schedule:
-    - cron: "43 */6 * * *"
+    - cron: "13,43 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -29,8 +29,16 @@ jobs:
       - name: Install runtime dependencies
         run: pip install -r requirements.txt
 
+      - name: Restore source health history
+        uses: actions/cache/restore@v4
+        with:
+          path: data/budget_watchdog/senate-monitor/state.json
+          key: senate-source-health-${{ github.run_id }}
+          restore-keys: |
+            senate-source-health-
+
       - name: Check the FY2027 Senate catalogue
-        run: PYTHONPATH=. python3 ops/harness/budget_watchdog_senate_monitor.py
+        run: PYTHONPATH=. python3 ops/harness/budget_watchdog_senate_monitor.py --strict --respect-backoff
 
       - name: Summarize the catalogue check
         if: always()
@@ -53,6 +61,10 @@ jobs:
                       f"- Official portal: `{report.get('direct_status', 'unknown')}`",
                       f"- Check method: `{report.get('discovery_mode', 'unknown')}`",
                       f"- Saved responses: `{len(report.get('response_artifacts', []))}`",
+                      f"- Source freshness: `{report.get('freshness_state', 'unknown')}`",
+                      f"- Last successful check: `{report.get('last_success_at', 'none')}`",
+                      f"- Consecutive failed checks: `{report.get('consecutive_failures', 0)}`",
+                      f"- Next check: `{report.get('next_check_at', 'unknown')}`",
                   ]
               )
               if report.get("error"):
@@ -60,6 +72,13 @@ jobs:
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
               summary.write("\n".join(lines) + "\n")
           PY
+
+      - name: Save source health history
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/budget_watchdog/senate-monitor/state.json
+          key: senate-source-health-${{ github.run_id }}
 
       - name: Preserve the monitor evidence
         if: always()

@@ -41,6 +41,25 @@ _RELEASES_BY_SOURCE = {
 }
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _SOURCE_PATH = "/wp-content/uploads/List-of-PSIP-III-Sites.xlsx"
+_CANDIDATE_PATH = (
+    "/wp-content/uploads/"
+    "Deped-Announcement-on-PPP-Indicative-List-of-Schools-Annex-A-2025-12-08_1.pdf"
+)
+_FAILURE_KINDS = frozenset(
+    {
+        "publisher_maintenance",
+        "bot_challenge",
+        "rate_limited",
+        "server_error",
+        "access_denied",
+        "not_found",
+        "transport_error",
+        "unexpected_response",
+        "validation_error",
+    }
+)
+_FRESHNESS_STATES = frozenset({"fresh", "degraded", "stale", "unknown"})
+_CANDIDATE_STATES = frozenset({"discovered_unarchived", "archived_unvalidated", "validated"})
 
 
 def _sql(value: str) -> str:
@@ -80,6 +99,33 @@ def _source_url(value: Any) -> str:
     return value
 
 
+def _timestamp(value: Any, label: str, *, optional: bool = False) -> str | None:
+    if optional and value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError(f"facility status {label} is invalid")
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError(f"facility status {label} is invalid") from exc
+    if parsed.tzinfo is None:
+        raise ValueError(f"facility status {label} is invalid")
+    return value
+
+
+def _candidate_url(value: Any) -> str:
+    if not isinstance(value, str):
+        raise ValueError("facility status candidate source URL is invalid")
+    parsed = urlparse(value)
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc != "www.deped.gov.ph"
+        or parsed.path != _CANDIDATE_PATH
+    ):
+        raise ValueError("facility status candidate source URL is invalid")
+    return value
+
+
 def _validate_release_gate(
     release_state: Any,
     reviewed: int,
@@ -100,20 +146,9 @@ def _validate_release_gate(
         raise ValueError("facility status release gate controls do not reconcile")
 
 
-def build_facility_status_sql(report: dict[str, Any]) -> tuple[str, str]:
-    """Validate a monitor report and return its deterministic singleton upsert."""
-
-    if not isinstance(report, dict):
-        raise ValueError("facility status report must be an object")
-    checked_at = report.get("checked_at")
-    if not isinstance(checked_at, str):
-        raise ValueError("facility status check time is invalid")
-    try:
-        parsed = datetime.fromisoformat(checked_at)
-    except ValueError as exc:
-        raise ValueError("facility status check time is invalid") from exc
-    if parsed.tzinfo is None:
-        raise ValueError("facility status check time is invalid")
+def _core_status(report: dict[str, Any]) -> dict[str, Any]:
+    checked_at = _timestamp(report.get("checked_at"), "check time")
+    assert checked_at is not None
     source_url = _source_url(report.get("source_url"))
     source_state = report.get("source_state")
     release_state = report.get("release_state")
@@ -144,7 +179,7 @@ def build_facility_status_sql(report: dict[str, Any]) -> tuple[str, str]:
     if source_state == "validated" and (artifact is None or validated != expected):
         raise ValueError("facility status validated source controls do not reconcile")
     _validate_release_gate(release_state, reviewed, precision, agreement, critical)
-    normalized = {
+    return {
         "checked_at": checked_at,
         "source_url": source_url,
         "source_state": source_state,
@@ -160,40 +195,153 @@ def build_facility_status_sql(report: dict[str, Any]) -> tuple[str, str]:
         "critical_failures": critical,
         "status_note": note.strip(),
     }
+
+
+def _resilience_status(report: dict[str, Any], source_state: str) -> dict[str, Any]:
+    failure_kind = report.get("failure_kind")
+    if failure_kind is not None and failure_kind not in _FAILURE_KINDS:
+        raise ValueError("facility status failure kind is invalid")
+    last_success_at = _timestamp(report.get("last_success_at"), "last success time", optional=True)
+    consecutive_failures = _integer(
+        report.get("consecutive_failures"), "consecutive failures", 0, 1_000_000
+    )
+    next_check_at = _timestamp(report.get("next_check_at"), "next check time", optional=True)
+    freshness_state = report.get("freshness_state")
+    if freshness_state not in _FRESHNESS_STATES:
+        raise ValueError("facility status freshness state is invalid")
+    response_sha256 = report.get("response_sha256")
+    if response_sha256 is not None and (
+        not isinstance(response_sha256, str) or _SHA256.fullmatch(response_sha256) is None
+    ):
+        raise ValueError("facility status response digest is invalid")
+    source_version = report.get("source_version")
+    if source_version != "legacy-xlsx-1095":
+        raise ValueError("facility status source version is invalid")
+    candidate_source_url = _candidate_url(report.get("candidate_source_url"))
+    candidate_state = report.get("candidate_state")
+    if candidate_state not in _CANDIDATE_STATES:
+        raise ValueError("facility status candidate state is invalid")
+    if source_state == "validated":
+        if failure_kind is not None or consecutive_failures != 0 or freshness_state != "fresh":
+            raise ValueError("facility status successful source health does not reconcile")
+    elif failure_kind is None or consecutive_failures < 1:
+        raise ValueError("facility status failed source health does not reconcile")
+    return {
+        "failure_kind": failure_kind,
+        "last_success_at": last_success_at,
+        "consecutive_failures": consecutive_failures,
+        "next_check_at": next_check_at,
+        "freshness_state": freshness_state,
+        "response_sha256": response_sha256,
+        "source_version": source_version,
+        "candidate_source_url": candidate_source_url,
+        "candidate_state": candidate_state,
+    }
+
+
+def _status_values(normalized: dict[str, Any], digest: str) -> tuple[str, ...]:
+    nullable_text = {
+        "failure_kind",
+        "last_success_at",
+        "next_check_at",
+        "response_sha256",
+    }
+    nullable_integer = {"http_status", "precision_bps", "agreement_bps"}
+    integers = {
+        "expected_facilities",
+        "validated_facilities",
+        "candidate_links",
+        "reviewed_cases",
+        "critical_failures",
+        "consecutive_failures",
+    }
+    ordered = (
+        "checked_at",
+        "source_url",
+        "source_state",
+        "release_state",
+        "http_status",
+        "source_artifact_sha256",
+        "expected_facilities",
+        "validated_facilities",
+        "candidate_links",
+        "reviewed_cases",
+        "precision_bps",
+        "agreement_bps",
+        "critical_failures",
+        "status_note",
+        "failure_kind",
+        "last_success_at",
+        "consecutive_failures",
+        "next_check_at",
+        "freshness_state",
+        "response_sha256",
+        "source_version",
+        "candidate_source_url",
+        "candidate_state",
+    )
+    values = ["1"]
+    for key in ordered:
+        value = normalized[key]
+        if key in nullable_text or key == "source_artifact_sha256":
+            values.append(_nullable_text(value))
+        elif key in nullable_integer:
+            values.append(_nullable_integer(value))
+        elif key in integers:
+            values.append(str(value))
+        else:
+            values.append(_sql(value))
+        if key == "status_note":
+            values.append(_sql(digest))
+    return tuple(values)
+
+
+def _status_sql(normalized: dict[str, Any], digest: str) -> str:
+    columns = (
+        "singleton_id",
+        "checked_at",
+        "source_url",
+        "source_state",
+        "release_state",
+        "http_status",
+        "source_artifact_sha256",
+        "expected_facilities",
+        "validated_facilities",
+        "candidate_links",
+        "reviewed_cases",
+        "precision_bps",
+        "agreement_bps",
+        "critical_failures",
+        "status_note",
+        "status_sha256",
+        "failure_kind",
+        "last_success_at",
+        "consecutive_failures",
+        "next_check_at",
+        "freshness_state",
+        "response_sha256",
+        "source_version",
+        "candidate_source_url",
+        "candidate_state",
+    )
+    mutable = columns[1:]
+    assignments = ", ".join(f"{column}=excluded.{column}" for column in mutable)
+    values = _status_values(normalized, digest)
+    return (
+        f"INSERT INTO facility_registry_status ({', '.join(columns)}) "  # noqa: S608
+        f"VALUES ({', '.join(values)}) ON CONFLICT(singleton_id) "
+        f"DO UPDATE SET {assignments};\n"
+    )
+
+
+def build_facility_status_sql(report: dict[str, Any]) -> tuple[str, str]:
+    """Validate a monitor report and return its deterministic singleton upsert."""
+
+    if not isinstance(report, dict):
+        raise ValueError("facility status report must be an object")
+    normalized = _core_status(report)
+    normalized.update(_resilience_status(report, normalized["source_state"]))
     digest = hashlib.sha256(
         json.dumps(normalized, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
-    values = (
-        "1",
-        _sql(checked_at),
-        _sql(source_url),
-        _sql(source_state),
-        _sql(release_state),
-        _nullable_integer(http_status),
-        _nullable_text(artifact),
-        str(expected),
-        str(validated),
-        str(candidates),
-        str(reviewed),
-        _nullable_integer(precision),
-        _nullable_integer(agreement),
-        str(critical),
-        _sql(note.strip()),
-        _sql(digest),
-    )
-    assignments = (
-        "checked_at=excluded.checked_at, source_url=excluded.source_url, "
-        "source_state=excluded.source_state, release_state=excluded.release_state, "
-        "http_status=excluded.http_status, source_artifact_sha256=excluded.source_artifact_sha256, "
-        "expected_facilities=excluded.expected_facilities, "
-        "validated_facilities=excluded.validated_facilities, "
-        "candidate_links=excluded.candidate_links, reviewed_cases=excluded.reviewed_cases, "
-        "precision_bps=excluded.precision_bps, agreement_bps=excluded.agreement_bps, "
-        "critical_failures=excluded.critical_failures, status_note=excluded.status_note, "
-        "status_sha256=excluded.status_sha256"
-    )
-    sql = (
-        f"INSERT INTO facility_registry_status VALUES ({', '.join(values)}) "  # noqa: S608
-        f"ON CONFLICT(singleton_id) DO UPDATE SET {assignments};\n"
-    )
-    return sql, digest
+    return _status_sql(normalized, digest), digest

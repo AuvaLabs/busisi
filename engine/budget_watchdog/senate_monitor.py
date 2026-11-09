@@ -22,6 +22,11 @@ from engine.budget_watchdog.senate_budget import (
     load_senate_catalog,
     parse_portal_rows,
 )
+from engine.budget_watchdog.source_resilience import (
+    classify_source_failure,
+    source_health_after_failure,
+    source_health_after_success,
+)
 
 PORTAL_ORIGIN = "https://budget-transparency-portal.senate.gov.ph"
 PORTAL_URL = f"{PORTAL_ORIGIN}/public/Documents?gaa_year=2027"
@@ -40,6 +45,17 @@ Fetch = Callable[[str, dict[str, str]], "HttpPayload"]
 
 class SenateMonitorError(RuntimeError):
     """Raised when catalogue drift cannot be checked safely."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        failure_kind: str = "validation_error",
+        response_body: bytes = b"",
+    ) -> None:
+        super().__init__(message)
+        self.failure_kind = failure_kind
+        self.response_body = response_body
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +79,8 @@ class ResponseArtifact:
 @dataclass(frozen=True, slots=True)
 class SenateMonitorResult:
     checked_at: str
+    passed: bool
+    status: str
     changed: bool
     direct_status: str
     discovery_mode: str
@@ -70,6 +88,12 @@ class SenateMonitorResult:
     observed_document_count: int
     differences: tuple[str, ...]
     response_artifacts: tuple[ResponseArtifact, ...]
+    failure_kind: str | None
+    last_success_at: str
+    consecutive_failures: int
+    next_check_at: str
+    freshness_state: str
+    response_sha256: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,8 +112,7 @@ def _record_sort_key(value: str) -> tuple[bool, int | str]:
 
 
 def _challenge(payload: HttpPayload) -> bool:
-    lowered = payload.content[:12_000].lower()
-    return b"just a moment" in lowered and b"cloudflare" in lowered
+    return classify_source_failure(payload.status_code, payload.content) == "bot_challenge"
 
 
 def _fetch_checked(
@@ -104,16 +127,27 @@ def _fetch_checked(
     for attempt in range(MAX_FETCH_ATTEMPTS):
         payload = fetch(url, headers)
         last_payload = payload
-        retryable = payload.status_code in {429, 500, 502, 503, 504} or (
-            payload.status_code == HTTP_OK and _challenge(payload)
-        )
+        if payload.status_code == HTTP_OK and _challenge(payload):
+            if failure_recorder is not None and failure_name is not None:
+                failure_recorder.store(failure_name, payload)
+            raise SenateMonitorError(
+                "source returned an interactive challenge",
+                failure_kind="bot_challenge",
+                response_body=payload.content,
+            )
+        retryable = payload.status_code in {429, 500, 502, 503, 504}
         if not retryable:
             return payload
         if attempt < MAX_FETCH_ATTEMPTS - 1:
             time.sleep(0.25 * (2**attempt))
     if failure_recorder is not None and failure_name is not None and last_payload:
         failure_recorder.store(failure_name, last_payload)
-    raise SenateMonitorError(f"source remained unavailable after retries: {url}")
+    assert last_payload is not None
+    raise SenateMonitorError(
+        f"source remained unavailable after retries: {url}",
+        failure_kind=classify_source_failure(last_payload.status_code, last_payload.content),
+        response_body=last_payload.content,
+    )
 
 
 def _request(url: str, headers: dict[str, str]) -> HttpPayload:
@@ -157,7 +191,9 @@ def _request(url: str, headers: dict[str, str]) -> HttpPayload:
                 media_type=media_type.split(";", maxsplit=1)[0].strip(),
             )
     except requests.RequestException as exc:
-        raise SenateMonitorError("monitor source request failed") from exc
+        raise SenateMonitorError(
+            "monitor source request failed", failure_kind="transport_error"
+        ) from exc
 
 
 def _folder_url(folder_id: str, offset: int) -> str:
@@ -368,10 +404,14 @@ def run_senate_monitor(
     output_dir: Path,
     *,
     fetch: Fetch = _request,
+    previous_report: dict[str, object] | None = None,
 ) -> SenateMonitorResult:
     """Compare a fresh bounded catalogue discovery with the reviewed baseline."""
 
+    now = datetime.now(UTC)
     baseline_payload = baseline_path.read_bytes()
+    baseline_document = json.loads(baseline_payload)
+    baseline_last_success = baseline_document.get("source", {}).get("retrieved_at")
     catalog = load_senate_catalog(baseline_payload)
     expected = _expected_documents(baseline_payload, catalog.documents)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -396,9 +436,7 @@ def run_senate_monitor(
                 raise SenateMonitorError("official root response is invalid") from exc
             observed = _direct_documents(root_rows, fetch, recorder)
         else:
-            direct_status = (
-                "blocked" if direct.status_code in {401, 403} else "unavailable"
-            )
+            direct_status = "blocked" if direct.status_code in {401, 403} else "unavailable"
             discovery_mode = "secondary_renderer"
             rendered = _fetch_checked(
                 fetch,
@@ -408,13 +446,26 @@ def run_senate_monitor(
                 failure_name="secondary-root-unavailable.html",
             )
             if rendered.status_code != HTTP_OK:
-                raise SenateMonitorError("secondary root discovery failed")
+                raise SenateMonitorError(
+                    "secondary root discovery failed",
+                    failure_kind=classify_source_failure(rendered.status_code, rendered.content),
+                    response_body=rendered.content,
+                )
             recorder.store("secondary-root.html", rendered)
             root_rows = _secondary_root_rows(rendered, fetch, recorder)
             observed = _secondary_documents(root_rows, expected, fetch, recorder)
     except SenateMonitorError as exc:
+        health = source_health_after_failure(
+            previous_report,
+            checked_at=now,
+            failure_kind=exc.failure_kind,
+            response_body=exc.response_body,
+            baseline_last_success_at=(
+                baseline_last_success if isinstance(baseline_last_success, str) else None
+            ),
+        )
         failure = {
-            "checked_at": datetime.now(UTC).isoformat(),
+            "checked_at": now.isoformat(),
             "passed": False,
             "status": "acquisition_failure",
             "error": str(exc),
@@ -423,14 +474,21 @@ def run_senate_monitor(
             "expected_document_count": len(expected),
             "observed_document_count": None,
             "response_artifacts": [asdict(artifact) for artifact in recorder.artifacts],
+            **health,
         }
         (output_dir / "report.json").write_text(
             json.dumps(failure, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
         raise
     differences = _compare(expected, observed)
+    response_fingerprint = json.dumps(
+        [artifact.sha256 for artifact in recorder.artifacts], separators=(",", ":")
+    ).encode()
+    health = source_health_after_success(now, response_body=response_fingerprint)
     result = SenateMonitorResult(
-        checked_at=datetime.now(UTC).isoformat(),
+        checked_at=now.isoformat(),
+        passed=not differences,
+        status="drift_detected" if differences else "unchanged",
         changed=bool(differences),
         direct_status=direct_status,
         discovery_mode=discovery_mode,
@@ -438,6 +496,7 @@ def run_senate_monitor(
         observed_document_count=len(observed),
         differences=differences,
         response_artifacts=tuple(recorder.artifacts),
+        **health,
     )
     (output_dir / "report.json").write_text(
         json.dumps(asdict(result), indent=2, sort_keys=True) + "\n", encoding="utf-8"

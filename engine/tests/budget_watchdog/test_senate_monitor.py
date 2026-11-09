@@ -192,20 +192,21 @@ def test_monitor_uses_official_catalogue_when_direct_access_works(tmp_path) -> N
     assert len(result.response_artifacts) == 6
 
 
-def test_monitor_retries_transient_challenges(monkeypatch) -> None:
+def test_monitor_does_not_rapid_retry_challenge_pages(monkeypatch) -> None:
     calls = 0
 
     def fetch(url: str, _headers: dict[str, str]) -> HttpPayload:
         nonlocal calls
         calls += 1
-        content = b"<title>Just a moment</title> Cloudflare" if calls < 3 else b"ready"
+        content = b"<title>Just a moment</title> Cloudflare"
         return HttpPayload(200, url, content, "text/html")
 
     monkeypatch.setattr(senate_monitor.time, "sleep", lambda _seconds: None)
-    result = senate_monitor._fetch_checked(fetch, "https://r.jina.ai/test", {})
+    with pytest.raises(SenateMonitorError, match="challenge") as error:
+        senate_monitor._fetch_checked(fetch, "https://r.jina.ai/test", {})
 
-    assert result.content == b"ready"
-    assert calls == 3
+    assert error.value.failure_kind == "bot_challenge"
+    assert calls == 1
 
 
 def test_monitor_preserves_exhausted_secondary_response_and_failure_report(
@@ -223,7 +224,7 @@ def test_monitor_preserves_exhausted_secondary_response_and_failure_report(
 
     monkeypatch.setattr(senate_monitor.time, "sleep", lambda _seconds: None)
 
-    with pytest.raises(SenateMonitorError, match="remained unavailable"):
+    with pytest.raises(SenateMonitorError, match="challenge"):
         run_senate_monitor(_baseline(), tmp_path, fetch=fetch)
 
     report = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
@@ -233,6 +234,10 @@ def test_monitor_preserves_exhausted_secondary_response_and_failure_report(
     assert report["discovery_mode"] == "secondary_renderer"
     assert report["expected_document_count"] == 4
     assert report["observed_document_count"] is None
+    assert report["failure_kind"] == "bot_challenge"
+    assert report["consecutive_failures"] == 1
+    assert report["freshness_state"] == "stale"
+    assert report["last_success_at"] == "2026-11-04T07:04:09.145223+00:00"
     assert [item["name"] for item in report["response_artifacts"]] == [
         "direct-root.html",
         "secondary-root-unavailable.html",
@@ -260,6 +265,20 @@ def test_monitor_records_forbidden_challenge_without_retry(monkeypatch) -> None:
 
     assert result.status_code == 403
     assert calls == 1
+
+
+def test_monitor_success_resets_persisted_source_health(tmp_path) -> None:
+    previous = {
+        "last_success_at": "2026-11-08T00:00:00+00:00",
+        "consecutive_failures": 3,
+    }
+
+    result = run_senate_monitor(_baseline(), tmp_path, fetch=_fetcher(), previous_report=previous)
+
+    assert result.failure_kind is None
+    assert result.freshness_state == "fresh"
+    assert result.consecutive_failures == 0
+    assert result.last_success_at == result.checked_at
 
 
 def test_monitor_rejects_empty_secondary_folder_listing(tmp_path) -> None:
@@ -336,15 +355,68 @@ def test_cli_preserves_detailed_failure_report(tmp_path, monkeypatch) -> None:
         "passed": False,
         "status": "acquisition_failure",
         "error": "source blocked",
+        "freshness_state": "stale",
         "response_artifacts": [{"name": "blocked.html"}],
     }
 
-    def fail(_baseline: Path, output_dir: Path):
+    def fail(_baseline: Path, output_dir: Path, *, previous_report=None):
+        assert previous_report is None
         output_dir.mkdir(parents=True)
-        (output_dir / "report.json").write_text(
-            json.dumps(detailed), encoding="utf-8"
-        )
+        (output_dir / "report.json").write_text(json.dumps(detailed), encoding="utf-8")
         raise SenateMonitorError("source blocked")
+
+    monkeypatch.setattr(senate_monitor_cli, "run_senate_monitor", fail)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["budget_watchdog_senate_monitor.py", "--output", str(output), "--strict"],
+    )
+
+    assert senate_monitor_cli.main() == 3
+    assert json.loads((output / "report.json").read_text(encoding="utf-8")) == detailed
+
+
+def test_cli_keeps_degraded_source_outage_nonfatal_and_persists_state(
+    tmp_path, monkeypatch
+) -> None:
+    output = tmp_path / "monitor"
+    detailed = {
+        "passed": False,
+        "status": "acquisition_failure",
+        "error": "challenge",
+        "freshness_state": "degraded",
+        "consecutive_failures": 1,
+    }
+
+    def fail(_baseline: Path, output_dir: Path, *, previous_report=None):
+        assert previous_report is None
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / "report.json").write_text(json.dumps(detailed), encoding="utf-8")
+        raise SenateMonitorError("challenge", failure_kind="bot_challenge")
+
+    monkeypatch.setattr(senate_monitor_cli, "run_senate_monitor", fail)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["budget_watchdog_senate_monitor.py", "--output", str(output)],
+    )
+
+    assert senate_monitor_cli.main() == 0
+    assert json.loads((output / "state.json").read_text(encoding="utf-8")) == detailed
+
+
+def test_cli_fails_immediately_for_invalid_source_content(tmp_path, monkeypatch) -> None:
+    output = tmp_path / "monitor"
+    detailed = {
+        "passed": False,
+        "status": "acquisition_failure",
+        "error": "invalid source content",
+        "failure_kind": "validation_error",
+        "freshness_state": "degraded",
+    }
+
+    def fail(_baseline: Path, output_dir: Path, *, previous_report=None):
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / "report.json").write_text(json.dumps(detailed), encoding="utf-8")
+        raise SenateMonitorError("invalid source content")
 
     monkeypatch.setattr(senate_monitor_cli, "run_senate_monitor", fail)
     monkeypatch.setattr(
@@ -353,4 +425,34 @@ def test_cli_preserves_detailed_failure_report(tmp_path, monkeypatch) -> None:
     )
 
     assert senate_monitor_cli.main() == 3
-    assert json.loads((output / "report.json").read_text(encoding="utf-8")) == detailed
+
+
+def test_cli_waits_for_persisted_retry_time(tmp_path, monkeypatch) -> None:
+    output = tmp_path / "monitor"
+    output.mkdir()
+    state = {
+        "checked_at": "2026-11-09T18:00:00+00:00",
+        "status": "acquisition_failure",
+        "failure_kind": "bot_challenge",
+        "freshness_state": "degraded",
+        "next_check_at": "2999-01-01T00:00:00+00:00",
+    }
+    (output / "state.json").write_text(json.dumps(state), encoding="utf-8")
+
+    def unexpected(*_args, **_kwargs):
+        raise AssertionError("source monitor should respect persisted backoff")
+
+    monkeypatch.setattr(senate_monitor_cli, "run_senate_monitor", unexpected)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "budget_watchdog_senate_monitor.py",
+            "--output",
+            str(output),
+            "--respect-backoff",
+        ],
+    )
+
+    assert senate_monitor_cli.main() == 0
+    report = json.loads((output / "report.json").read_text(encoding="utf-8"))
+    assert report["monitor_state"] == "waiting_for_retry"

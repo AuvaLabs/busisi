@@ -100,6 +100,23 @@ def test_fetcher_wraps_http_errors_without_leaking_response_details() -> None:
         fetcher.fetch("bettergov-budget", "/failure", retrieved_at=RETRIEVED_AT)
 
     assert "sensitive upstream response" not in str(error.value)
+    assert error.value.response_body == b"sensitive upstream response"
+
+
+@responses.activate
+def test_fetcher_bounds_error_response_evidence() -> None:
+    responses.add(
+        responses.GET,
+        "https://budget.bettergov.ph/failure",
+        body=b"x" * 100_000,
+        status=403,
+    )
+    fetcher = SourceFetcher(default_source_registry())
+
+    with pytest.raises(AcquisitionError) as error:
+        fetcher.fetch("bettergov-budget", "/failure", retrieved_at=RETRIEVED_AT)
+
+    assert len(error.value.response_body) == 65_536
 
 
 @responses.activate

@@ -20,6 +20,13 @@ jobs:
           cache: pip
       - name: Install audit dependencies
         run: pip install -r requirements.txt
+      - name: Restore facility source health history
+        uses: actions/cache/restore@v4
+        with:
+          path: data/budget_watchdog/facility-source-monitor/latest.json
+          key: facility-source-health-${{ github.run_id }}
+          restore-keys: |
+            facility-source-health-
       - name: Check monitored source revisions and catalogues
         run: PYTHONPATH=. python3 ops/harness/budget_watchdog_source_monitor.py --reset-output
       - name: Check DepEd facility registry availability
@@ -28,6 +35,12 @@ jobs:
       - name: Check official contractor accountability sources
         if: always()
         run: PYTHONPATH=. python3 ops/harness/budget_watchdog_accountability.py --source-only --reset-output
+      - name: Save facility source health history
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/budget_watchdog/facility-source-monitor/latest.json
+          key: facility-source-health-${{ github.run_id }}
       - name: Retain source evidence and report
         if: always()
         uses: actions/upload-artifact@v7

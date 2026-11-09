@@ -131,14 +131,19 @@ the Department of Education's indicative list of 1,095 possible PPP sites in
 eight announced regions. It requires the original workbook, its SHA-256 digest,
 the 1,095-row control total, valid school IDs and coordinates, and an exact
 school-name-and-place match. Repeated names, missing places and conflicts remain
-quarantined. The source currently blocks unattended acquisition, so no identity
-from this pilot is published until those controls pass. The pipeline does not
-turn a listed school or linked record into a building count.
+quarantined. The source currently returns a publisher maintenance page, so no
+identity from this pilot is published until those controls pass. The pipeline
+does not turn a listed school or linked record into a building count.
 
-The DepEd source monitor runs every six hours. HTTP 403 is published as a known
-blocked state, while disappearance, transport failure, schema drift and control
-total failure require operational review. When the official workbook becomes
-available, the pipeline creates a complete candidate packet but withholds every
+The DepEd source monitor runs every six hours. It inspects a bounded error body
+so the current publisher maintenance page is reported separately from access
+denial. It retains the last successful check, consecutive failures, response
+digest, freshness and next check time. The current Annex A PDF is recorded as a
+discovered candidate only. It is not treated as archived or merged with the
+older 1,095-school scope until its original bytes and schema can be validated.
+Disappearance, transport failure, schema drift and control-total failure still
+require operational review. When the official workbook becomes available, the
+pipeline creates a complete candidate packet but withholds every
 inferred link until a manifest bound to that exact source and candidate set has
 at least 100 reviewed cases, at least 95 percent precision, at least 95 percent
 reviewer agreement and zero critical reconciliation failures.
@@ -285,9 +290,15 @@ answering remains disabled. Optional vectors are accepted only as precomputed,
 hash-bound inputs. The public Worker has no retrieval or model binding. See
 [`docs/evidence-retrieval.md`](docs/evidence-retrieval.md).
 
-The Senate catalogue monitor runs every six hours, preserves its bounded source
-responses as workflow evidence, and fails closed when records change or source
-acquisition becomes unreliable. It never updates the reviewed baseline
+The Senate catalogue workflow wakes every 30 minutes and is also called by the
+data host's six-hour operational audit. It makes a source request only when the
+persisted retry time is due. It preserves bounded source responses and their
+hashes, recognizes Cloudflare challenge variants, and does not rapidly retry an
+interactive challenge. Persistent source health uses 30-minute, two-hour and
+six-hour retry intervals. A failed check is degraded for up to 24 hours after a
+successful check and stale after that. Drift and stale source health fail the
+strict workflow. A temporary degraded check retains the last verified baseline
+without replacing it. The monitor never updates the reviewed baseline
 automatically.
 
 The source drift monitor independently checks the BetterGov GAA, DPWH and
