@@ -1,6 +1,7 @@
 import { Resolver } from 'node:dns/promises';
 
 import { INDEX_NOW_KEY, SITE } from '../src/prelaunch-config.js';
+import { hasSafeFacilityRegistryState } from './verify-live-contract.mjs';
 
 const publicOrigin = SITE.origin;
 const requestOrigin = process.env.BUSISI_ORIGIN ?? publicOrigin;
@@ -456,7 +457,7 @@ const verifyPages = async () => {
   expectIncludes(publicServicesText, '/assets/public-services-v1.js', 'public services client');
   expectIncludes(publicServicesText, 'These are records, not separate buildings', 'public services counting boundary');
   expectIncludes(publicServicesText, 'Separate known facilities from possible groups', 'public services identity boundary');
-  if (!/(?:Official school list is currently blocked|The school list passed, but links still need review|The school-link review did not pass|The checked school links are ready to publish|The checked school links are published)/.test(publicServicesText)) {
+  if (!hasSafeFacilityRegistryState(publicServicesText)) {
     fail('facility registry source status: safe reader state is missing');
   }
   expectIncludes(publicServicesText, 'Things that need checking', 'public services flag boundary');
