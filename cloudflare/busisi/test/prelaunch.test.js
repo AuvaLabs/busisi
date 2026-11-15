@@ -767,6 +767,11 @@ test('serves the accessible civic color system and safe method boundaries', asyn
   assert.match(cssText, /\.primary-nav a\{[^}]*min-height:48px/);
   assert.match(cssText, /\.home-hero-art/);
   assert.match(cssText, /\.home-visual/);
+  assert.match(
+    cssText,
+    /@media\(max-width:720px\)[\s\S]*\.preview-panels>a\{[^}]*min-height:0[^}]*padding:18px[^}]*display:grid/,
+  );
+  assert.match(cssText, /@media\(max-width:720px\)[\s\S]*\.preview-panels>a div\{[^}]*margin:12px 0 14px/);
   assert.match(cssText, /\.preview-panels>a>span[^}]*border-radius:0/);
   assert.match(await css.text(), /prefers-reduced-motion:reduce/);
   assert.match(icon.headers.get('content-type'), /^image\/svg\+xml/);
