@@ -16,6 +16,7 @@ import { questionsCss } from './questions-styles.js';
 import { publicServicesCss } from './public-services-styles.js';
 import { ecosystemCss } from './ecosystem-styles.js';
 import { researchCss } from './research-styles.js';
+import { projectTypesCss } from './project-types-styles.js';
 import { methodDiagram } from './prelaunch-visuals.js';
 
 const icon = (name, className = 'section-icon') => (
@@ -24,7 +25,7 @@ const icon = (name, className = 'section-icon') => (
 
 const navigation = (canonicalPath) => {
   const groups = [
-    { label: 'Projects', icon: 'projects', href: '/contracts/', paths: ['/contracts/', '/projects/', '/public-services/'] },
+    { label: 'Projects', icon: 'projects', href: '/projects/', paths: ['/contracts/', '/projects/', '/public-services/'] },
     { label: 'Contractors', icon: 'contractors', href: '/contractors/', paths: ['/contractors/'] },
     { label: 'Places', icon: 'projects', href: '/places/', paths: ['/places/'] },
     { label: 'Research', icon: 'search', href: '/research/', paths: ['/research/'] },
@@ -44,7 +45,7 @@ const navigation = (canonicalPath) => {
 const footer = `<footer class="site-footer" id="site-footer"><div class="footer-inner">
   <div class="footer-brand"><strong>Busisi</strong><p>Independent, nonpartisan evidence desk helping Filipino citizens examine public projects and the records behind them.</p></div>
   <nav class="footer-nav" aria-label="Footer navigation">
-    <section class="footer-group"><h2>Explore</h2><div><a href="/contracts/">Projects</a><a href="/contractors/">Contractors</a><a href="/places/">Places</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a></div></section>
+    <section class="footer-group"><h2>Explore</h2><div><a href="/projects/">Projects</a><a href="/contractors/">Contractors</a><a href="/places/">Places</a><a href="/explore/">Records</a><a href="/agencies/">Agencies</a></div></section>
     <section class="footer-group"><h2>Follow the money</h2><div><a href="/sulit/">Sulit Ba?</a><a href="/releases/">Releases</a><a href="/changes/">Budget changes</a><a href="/budget-trail/">Budget trail</a><a href="/procurement/">Procurement</a></div></section>
     <section class="footer-group"><h2>Check evidence</h2><div><a href="/signals/">Needs checking</a><a href="/sources/">Sources</a><a href="/audit/">COA audit</a><a href="/integrity/">Integrity</a><a href="/accountability/">Contractor accountability</a><a href="/coverage/">Coverage</a></div></section>
     <section class="footer-group"><h2>About Busisi</h2><div><a href="/research/">Research</a><a href="/watch/">Watch</a><a href="/questions/">Questions</a><a href="/public-services/">Public services</a><a href="/methodology/">Method</a></div></section>
@@ -78,7 +79,7 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${safeTitle}"><meta property="og:description" content="${safeDescription}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow the evidence behind public projects">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta name="twitter:image:alt" content="Busisi: Follow the evidence behind public projects">
-  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js?v=2"></script>' : ''}${canonicalPath === '/contracts/' ? '<script type="module" src="/assets/contracts-v1.js?v=3"></script>' : ''}${canonicalPath === '/contractors/' ? '<script type="module" src="/assets/contractors-v1.js?v=1"></script>' : ''}${canonicalPath === '/places/' ? '<script type="module" src="/assets/places-v1.js?v=1"></script>' : ''}${canonicalPath === '/public-services/' ? '<script type="module" src="/assets/public-services-v1.js?v=3"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js?v=2"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/releases/' ? '<script type="module" src="/assets/releases-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js?v=2"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js?v=3"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js?v=3"></script>' : ''}${canonicalPath.startsWith('/contractors/') && canonicalPath !== '/contractors/' ? '<script type="module" src="/assets/contractor-v1.js?v=1"></script>' : ''}
+  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js?v=2"></script>' : ''}${canonicalPath === '/projects/' ? '<script type="module" src="/assets/projects-v1.js?v=1"></script>' : ''}${canonicalPath === '/contracts/' ? '<script type="module" src="/assets/contracts-v1.js?v=3"></script>' : ''}${canonicalPath === '/contractors/' ? '<script type="module" src="/assets/contractors-v1.js?v=1"></script>' : ''}${canonicalPath === '/places/' ? '<script type="module" src="/assets/places-v1.js?v=1"></script>' : ''}${canonicalPath === '/public-services/' ? '<script type="module" src="/assets/public-services-v1.js?v=3"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js?v=2"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/releases/' ? '<script type="module" src="/assets/releases-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js?v=2"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js?v=3"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js?v=3"></script>' : ''}${canonicalPath.startsWith('/contractors/') && canonicalPath !== '/contractors/' ? '<script type="module" src="/assets/contractor-v1.js?v=1"></script>' : ''}
 </head><body>
   <a class="skip-link" href="#main-content">Skip to content</a><header class="site-header">${navigation(canonicalPath)}</header>
   <main id="main-content">${body}</main>${footer}
@@ -105,7 +106,7 @@ export const homeBody = (checkedAt = null) => `
       <p class="eyebrow">Philippine public project evidence</p>
       <h1>Follow the evidence behind public projects.</h1>
       <p class="lede">Busisi is an independent, nonpartisan evidence desk for Philippine public projects. It connects budget, procurement, contractor, delivery, audit, and payment records so citizens can see what is supported, what needs checking, and where the public trail ends.</p>
-      <form class="home-search" action="/contracts/" method="get">
+      <form class="home-search" action="/projects/" method="get">
         <label for="home-query">Search a project, place, agency, or contractor</label>
         <div><input id="home-query" name="q" type="search" maxlength="200" placeholder="DPWH, Cebu, flood control…"><button type="submit">Search records</button></div>
       </form>
@@ -118,7 +119,7 @@ export const homeBody = (checkedAt = null) => `
         <div><dt>DPWH delivery records</dt><dd>56,887</dd></div>
         <div><dt>Integrity review signals</dt><dd>16,814</dd></div>
       </dl>
-      <a href="/contracts/">Explore public project evidence <span aria-hidden="true">→</span></a>
+      <a href="/projects/">Explore public project evidence <span aria-hidden="true">→</span></a>
     </aside>
   </section>
 
@@ -139,7 +140,7 @@ export const homeBody = (checkedAt = null) => `
   <section class="register-preview" aria-labelledby="register-preview-heading">
     <div class="preview-heading"><p class="kicker">Start with the public record</p><h2 id="register-preview-heading">Choose how you want to investigate.</h2><p>Each path leads back to project evidence while keeping official records, derived comparisons, and review questions visibly separate.</p></div>
     <div class="preview-panels">
-      <a href="/contracts/"><span class="panel-index" aria-hidden="true"><b>01</b>${icon('delivery')}</span><div><h3>Projects</h3><p>Filter 56,887 contracts and open a detailed evidence page for each current record.</p></div><small>Project-centered evidence</small></a>
+      <a href="/projects/"><span class="panel-index" aria-hidden="true"><b>01</b>${icon('delivery')}</span><div><h3>Projects</h3><p>Browse 56,887 records by project type, purpose, work, place, year, and reported status.</p></div><small>Project-centered evidence</small></a>
       <a href="/contractors/"><span class="panel-index" aria-hidden="true"><b>02</b>${icon('contractors')}</span><div><h3>Contractors</h3><p>Compare recorded project activity, joint-venture roles, identity evidence, and accountability records.</p></div><small>Association, not attribution</small></a>
       <a href="/places/"><span class="panel-index" aria-hidden="true"><b>03</b>${icon('projects')}</span><div><h3>Places</h3><p>Browse the province, district-office, and region labels stated in saved project records.</p></div><small>Source labels, not map claims</small></a>
       <a href="/signals/"><span class="panel-index" aria-hidden="true"><b>04</b>${icon('investigate')}</span><div><h3>Needs checking</h3><p>Review transparent questions raised by budget movements, contradictions, and evidence gaps.</p></div><small>Review lead, not accusation</small></a>
@@ -225,6 +226,30 @@ export const contractExplorerBody = `
     <noscript><p class="explorer-error">JavaScript is required for interactive filtering. The read-only JSON and CSV interfaces remain available.</p></noscript>
   </section>
   <section class="contract-boundary"><div><p class="kicker">How to read this page</p><h2>Source patterns are questions to check, not findings.</h2></div><ul><li>An exact secondary mirror row is not an official notice of award.</li><li>A contractor name is reproduced from saved records and may require identity verification.</li><li>“Held for review” means identifiers conflict and the documents need checking.</li><li>No exact row means an evidence gap, not proof that no award exists.</li><li>A delivery status, coordinate, or image field does not prove physical existence, completion, payment, or quality.</li></ul></section>`;
+
+export const projectTypesBody = `
+  <section class="project-type-intro"><div><p class="kicker">DPWH project types</p><h1>Explore public works by what is being built.</h1><p class="lede">Find roads, bridges, flood control, schools, health facilities, multipurpose buildings, and other public works. Filter by place, year, reported status, purpose, and type of work, then open the original project record.</p></div><aside><span>Current saved source</span><strong>FY 2024 to 2026</strong><p>The upstream bulk file was last modified on 22 January 2026. The live source has newer records, so this page clearly keeps the saved-file date visible until a complete update passes the same checks.</p></aside></section>
+  <section class="project-type-summary" data-project-type-summary aria-label="Project type coverage"><article><span>Saved project records</span><strong>Loading…</strong><small>Separate contract records in the current source</small></article><article><span>Records with a project type</span><strong>Loading…</strong><small>At least one supported physical type</small></article><article><span>Type not clear from the record</span><strong>Loading…</strong><small>Kept available without a guessed label</small></article><article><span>Supported labels applied</span><strong>Loading…</strong><small>Labels overlap when a project states several types</small></article></section>
+  <section class="project-type-groups"><header><h2>Start with a project type.</h2><p>A project can appear under more than one type. A bridge with an access road, for example, stays visible in both groups.</p></header><div class="project-type-grid" data-project-type-groups><p>Loading project types…</p></div></section>
+  <section class="project-type-shell" data-project-type-explorer>
+    <form class="project-type-controls" data-project-type-form role="search">
+      <label class="project-type-search">Search projects<input type="search" name="q" maxlength="200" placeholder="Project, contract, place, or contractor"></label>
+      <label>Project type<select name="type" data-project-filter="project_type"><option value="all">All project types</option></select></label>
+      <label>Public purpose<select name="purpose" data-project-filter="purpose"><option value="all">All purposes</option></select></label>
+      <label>Type of work<select name="work" data-project-filter="work_type"><option value="all">All work types</option></select></label>
+      <label>Funding program<select name="program" data-project-filter="funding_program"><option value="all">All named programs</option></select></label>
+      <label>Fiscal year<select name="year"><option value="">All years</option></select></label>
+      <label>Region<select name="region"><option value="">All regions</option></select></label>
+      <label>Province or DPWH office<select name="province"><option value="">All province or office labels</option></select></label>
+      <label>Reported status<select name="status"><option value="">All reported statuses</option></select></label>
+      <label>Sort<select name="sort"><option value="budget_desc">Largest recorded budget</option><option value="year_desc">Newest fiscal year</option><option value="progress_desc">Highest reported progress</option><option value="contract_asc">Contract number</option></select></label>
+      <div class="project-type-actions"><button type="submit">Apply filters</button><button type="button" class="secondary-control" data-project-type-reset>Reset</button></div>
+    </form>
+    <div class="project-type-toolbar" aria-live="polite"><p><strong data-project-type-count>0</strong> of <span data-project-type-total>0</span> project records shown.</p><span data-project-type-status>Loading project records…</span></div>
+    <div data-project-type-results></div><div class="project-type-load"><button class="project-type-more" type="button" data-project-type-more hidden>Load more projects</button></div>
+    <noscript><p>JavaScript is required for interactive filtering. The read-only project-type interface remains available as JSON.</p></noscript>
+  </section>
+  <section class="classification-coverage"><div><p class="kicker">Classification coverage</p><h2>Labels explain the record. They do not judge the project.</h2><p>The page keeps physical type, public purpose, work, and funding program separate. It does not assign a corruption label or combine separate contracts into one facility.</p></div><ol><li><span>01</span><div><strong>Read the source fields</strong><p>The project title and category are checked separately.</p></div></li><li><span>02</span><div><strong>Apply published phrase rules</strong><p>Only stated words and named programs create a label.</p></div></li><li><span>03</span><div><strong>Keep overlapping labels</strong><p>A project can be both a road and a bridge, or construction and a later phase.</p></div></li><li><span>04</span><div><strong>Leave unclear records unclassified</strong><p>Missing evidence never becomes a guessed project type.</p></div></li></ol></section>`;
 
 export const signalsBody = `
   <section class="data-intro review-intro"><div><p class="kicker">Budget changes to check</p><h1>Find budget changes that need a closer look.</h1><p class="lede">See which FY2027 project rows appeared, disappeared, or changed amount between the NEP and House bill. Open both documents before drawing a conclusion.</p></div><aside class="snapshot-card"><span>Important limit</span><strong>Questions, not verdicts</strong><p>Busisi follows written rules. It does not guess risk, intent, or who caused a change.</p><a href="/methodology/#plain-language">See how to read a flag</a></aside></section>
@@ -384,6 +409,6 @@ export const methodologyBody = `
     <div class="standards-grid"><article class="standard-panel"><h3>Same rules for every record</h3><p>Every agency, district, contractor, project, and public official is evaluated under the same published evidence rules. Names, offices, locations, and amounts do not change a threshold or turn a review signal into a finding.</p></article><article class="standard-panel"><h3>Data before interpretation</h3><p>Official records, derived comparisons, review signals, and verified findings remain separate. Busisi does not infer political motive from an amount or association, and it publishes coverage limits and correction history so readers can examine possible sources of bias.</p></article><article class="standard-panel"><h3>Ownership and contact</h3><p>Auva Labs is responsible for Busisi's software, data pipeline, methodology, presentation, and publication decisions. Data-source organizations do not control Busisi's classifications or conclusions. Questions, corrections, and source-backed challenges are welcome at <a href="mailto:dev@auvalabs.com">dev@auvalabs.com</a>.</p></article></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}\n${questionsCss}\n${publicServicesCss}\n${ecosystemCss}\n${researchCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}\n${questionsCss}\n${publicServicesCss}\n${ecosystemCss}\n${researchCss}\n${projectTypesCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#15191d" stroke-width="2.5" stroke-linejoin="round"><path fill="#d2d9de" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#e9f0f4" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fff" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#17415f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#17415f"/><path fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/><circle cx="18" cy="44" r="1.2" fill="#8a4600"/></svg>`;

@@ -16,7 +16,7 @@ const visibleText = (document) => document
   .replace(/\s+/g, ' ');
 
 const PUBLIC_LANGUAGE_ROUTES = [
-  '/', '/contractors/', '/places/', '/sources/', '/methodology/', '/explore/',
+  '/', '/projects/', '/contractors/', '/places/', '/sources/', '/methodology/', '/explore/',
   '/contracts/', '/signals/', '/integrity/', '/changes/', '/agencies/', '/releases/',
   '/sulit/', '/budget-trail/', '/research/', '/research/multipurpose-buildings/',
   '/research/multipurpose-buildings/evidence/', '/research/fy2027-nep-house-changes/',
@@ -107,6 +107,21 @@ test('home provides task-led navigation and a data-led editorial masthead', asyn
   assert.doesNotMatch(document, /busisi-masthead\.webp|Illustrative view/);
   assert.doesNotMatch(document, /class="utility-strip"/);
   assert.equal((document.match(/data-nav-group=/g) ?? []).length, 7);
+});
+
+test('publishes a plain-language DPWH project type explorer', async () => {
+  const response = await fetchPath('/projects/');
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /Explore public works by what is being built/);
+  assert.match(document, /data-project-type-explorer/);
+  assert.match(document, /Project type/);
+  assert.match(document, /Type of work/);
+  assert.match(document, /Classification coverage/);
+  assert.match(document, /assets\/projects-v1\.js/);
+  assert.match(document, /"@type":"Dataset"/);
+  assert.doesNotMatch(document, /risk score|corrupt project/i);
 });
 
 test('groups the footer into compact, readable navigation sections', async () => {
@@ -616,7 +631,7 @@ test('public-services client renders API data without injecting HTML', () => {
 });
 
 test('ecosystem clients render API data without injecting HTML', () => {
-  for (const name of ['contractors-v1.js', 'places-v1.js']) {
+  for (const name of ['contractors-v1.js', 'places-v1.js', 'projects-v1.js']) {
     const source = readFileSync(new URL(`../public/assets/${name}`, import.meta.url), 'utf8');
     assert.match(source, /textContent/);
     assert.match(source, /encodeURIComponent|reader_url/);

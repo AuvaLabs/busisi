@@ -7,6 +7,7 @@ const paths = [
   '/',
   '/sulit/',
   '/contracts/',
+  '/projects/',
   '/contractors/',
   '/places/',
   '/sources/',

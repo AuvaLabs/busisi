@@ -41,6 +41,7 @@ def main() -> None:
                 "contractor_associations": result.contractor_associations,
                 "concentrations": result.concentrations,
                 "district_offices": result.district_offices,
+                "classifications": result.classifications,
                 "sql_chunks": result.sql_chunks,
                 "manifest_sha256": result.manifest_sha256,
             },

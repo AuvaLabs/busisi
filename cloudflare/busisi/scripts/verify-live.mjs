@@ -144,6 +144,13 @@ const expectedIntegritySignals = Object.freeze({
   same_site_repeat_family: 4,
   status_progress_conflict: 5_744,
 });
+const expectedProjectTypes = Object.freeze({
+  source_records: 56_887,
+  classified_records: 56_372,
+  unclassified_records: 515,
+  classification_tags: 205_101,
+  rule_version: 1,
+});
 const expectedAccountability = Object.freeze({
   checked_on: '2026-11-04',
   blacklist_events: 28,
@@ -285,6 +292,13 @@ const verifyPages = async () => {
   expectIncludes(csp, "connect-src 'self'", 'home CSP');
   expectIncludes(csp, "script-src 'self' https://static.cloudflareinsights.com", 'home CSP');
   expectIncludes(home.headers.get('strict-transport-security') ?? '', 'max-age=', 'home HSTS');
+
+  const projects = await request('/projects/');
+  expectStatus(projects, 200, '/projects/');
+  const projectsText = await projects.text();
+  expectIncludes(projectsText, 'Explore public works by what is being built', 'project type heading');
+  expectIncludes(projectsText, '/assets/projects-v1.js?v=1', 'project type client');
+  expectIncludes(projectsText, 'They do not judge the project', 'project type boundary');
 
   const methodology = await request('/methodology/');
   expectStatus(methodology, 200, '/methodology/');
@@ -528,7 +542,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/multipurpose-buildings/evidence/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/projects/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/multipurpose-buildings/evidence/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${publicOrigin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -544,6 +558,7 @@ const verifyPages = async () => {
   expectIncludes(llmsText, 'Public services inventory', 'llms public services desk');
   expectIncludes(llmsText, '/api/v1/public-services', 'llms public services API');
   expectIncludes(llmsText, '/api/v1/facility-registry-status', 'llms facility status API');
+  expectIncludes(llmsText, '/api/v1/project-types', 'llms project type API');
   expectIncludes(
     llmsText,
     '/data/research/multipurpose-buildings/v6/editorial-package.json',
@@ -569,7 +584,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/projects/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -663,8 +678,9 @@ const verifyData = async () => {
   const catalogue = await readJson('/api/v1');
   if (catalogue.name !== 'Busisi public evidence API'
     || catalogue.read_only !== true
-    || !catalogue.endpoints?.some((item) => item.path === '/api/v1/places')) {
-    fail('public API catalogue: identity or place endpoint is missing');
+    || !catalogue.endpoints?.some((item) => item.path === '/api/v1/places')
+    || !catalogue.endpoints?.some((item) => item.path === '/api/v1/project-types')) {
+    fail('public API catalogue: identity, place, or project type endpoint is missing');
   }
   const placeDirectory = await readJson('/api/v1/places?level=region&limit=5');
   if (placeDirectory.meta?.review_scope !== 'recorded_dpwh_place_labels'
@@ -672,6 +688,27 @@ const verifyData = async () => {
     || !placeDirectory.data.length) {
     fail('place directory: no bounded region aggregation was published');
   }
+  const projectTypeSummary = (await readJson('/api/v1/project-types/summary')).data;
+  for (const [key, expected] of Object.entries(expectedProjectTypes)) {
+    if (projectTypeSummary.coverage?.[key] !== expected) {
+      fail(`project type summary: ${key} expected ${expected}`);
+    }
+  }
+  if (!projectTypeSummary.dimensions?.project_type?.some(({ tag, project_count: count }) => (
+    tag === 'multipurpose_building' && count === 12_609
+  ))) {
+    fail('project type summary: multipurpose-building control is missing');
+  }
+  const projectTypes = await readJson('/api/v1/project-types?type=road&limit=1');
+  if (projectTypes.meta?.review_scope !== 'rule_classified_dpwh_project_records'
+    || projectTypes.data?.length !== 1
+    || !projectTypes.data[0].classifications?.some(({ tag }) => tag === 'road')
+    || !projectTypes.data[0].reader_url?.startsWith('/contracts/')) {
+    fail('project type query: road result or drill-down link is missing');
+  }
+  const projectRecord = await request(projectTypes.data[0].reader_url);
+  expectStatus(projectRecord, 200, projectTypes.data[0].reader_url);
+  expectIncludes(await projectRecord.text(), 'Project type and purpose', 'project classification drill-down');
   const alerts = await readJson('/api/v1/alerts');
   if (alerts.meta?.review_scope !== 'bounded_public_evidence_updates'
     || alerts.meta?.rss !== '/feeds/updates.xml'

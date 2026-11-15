@@ -32,7 +32,12 @@ from engine.budget_watchdog.integrity import (
 )
 from engine.budget_watchdog.models import validate_fiscal_year
 from engine.budget_watchdog.money import parse_centavos
-from engine.budget_watchdog.pcab import parse_pcab_regular_licenses
+from engine.budget_watchdog.pcab import PcabSnapshot, parse_pcab_regular_licenses
+from engine.budget_watchdog.project_classification import (
+    RULE_VERSION,
+    ProjectClassification,
+    classify_project,
+)
 
 MIGRATION_DIRECTORY = Path(__file__).resolve().parents[2] / "cloudflare" / "busisi" / "migrations"
 MIGRATION_PATHS = (
@@ -42,6 +47,7 @@ MIGRATION_PATHS = (
     MIGRATION_DIRECTORY / "0011_delivery_details.sql",
     MIGRATION_DIRECTORY / "0024_contractor_project_associations.sql",
     MIGRATION_DIRECTORY / "0025_contractor_association_metadata.sql",
+    MIGRATION_DIRECTORY / "0031_project_classification.sql",
 )
 SNAPSHOT_COLUMNS = (
     "contractId",
@@ -70,8 +76,17 @@ class IntegrityBundleResult:
     contractor_associations: int
     concentrations: int
     district_offices: int
+    classifications: int
     sql_chunks: int
     manifest_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class _ClassificationRelease:
+    records: dict[str, tuple[ProjectClassification, ...]]
+    tag_count: int
+    classified_records: int
+    metadata: dict[str, str]
 
 
 def _digest(path: Path) -> str:
@@ -210,6 +225,22 @@ def _detail_statement(record: DeliveryIntegrityRecord) -> str:
     return f"INSERT INTO delivery_project_details VALUES ({_sql_values(values)});"  # noqa: S608
 
 
+def _classification_statement(
+    contract_id: str,
+    classification: ProjectClassification,
+) -> str:
+    values = (
+        contract_id,
+        classification.dimension,
+        classification.tag,
+        classification.label,
+        classification.evidence_kind,
+        classification.rule_id,
+        classification.rule_version,
+    )
+    return f"INSERT INTO project_classification_tags VALUES ({_sql_values(values)});"  # noqa: S608
+
+
 def _contractor_statement(contractor: ContractorSummary) -> str:
     values = (
         contractor.contractor_key,
@@ -323,6 +354,8 @@ def _write_chunks(
 def _metadata_sql(metadata: dict[str, str]) -> str:
     lines = [
         "DELETE FROM contractor_project_associations;",
+        "DELETE FROM project_classification_tags;",
+        "DELETE FROM project_classification_metadata;",
         "DELETE FROM delivery_project_details;",
         "DELETE FROM integrity_signal_items;",
         "DELETE FROM contractor_rankings;",
@@ -337,7 +370,10 @@ def _metadata_sql(metadata: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int, int, int, int]) -> None:
+def _verify_bundle(
+    chunks: Sequence[Path],
+    expected: tuple[int, int, int, int, int, int, int],
+) -> None:
     connection = sqlite3.connect(":memory:")
     try:
         for migration in MIGRATION_PATHS:
@@ -353,6 +389,7 @@ def _verify_bundle(chunks: Sequence[Path], expected: tuple[int, int, int, int, i
             ],
             connection.execute("SELECT COUNT(*) FROM contractor_concentrations").fetchone()[0],
             connection.execute("SELECT COUNT(*) FROM district_office_attributions").fetchone()[0],
+            connection.execute("SELECT COUNT(*) FROM project_classification_tags").fetchone()[0],
         )
         missing_associations = connection.execute(
             """
@@ -437,6 +474,62 @@ def _district_metadata(
     }
 
 
+def _classify_records(
+    records: tuple[DeliveryIntegrityRecord, ...],
+) -> _ClassificationRelease:
+    classifications = {
+        record.contract_id: classify_project(
+            description=record.description,
+            category=record.category,
+        )
+        for record in records
+    }
+    tag_count = sum(len(items) for items in classifications.values())
+    classified_records = sum(
+        any(item.dimension == "project_type" for item in items)
+        for items in classifications.values()
+    )
+    tag_counts = Counter(
+        (item.dimension, item.tag) for items in classifications.values() for item in items
+    )
+    metadata = {
+        "rule_version": str(RULE_VERSION),
+        "source_records": str(len(records)),
+        "classified_records": str(classified_records),
+        "unclassified_records": str(len(records) - classified_records),
+        "classification_tags": str(tag_count),
+        **{
+            f"tag:{dimension}:{tag}": str(count)
+            for (dimension, tag), count in sorted(tag_counts.items())
+        },
+    }
+    return _ClassificationRelease(classifications, tag_count, classified_records, metadata)
+
+
+def _classification_metadata_sql(metadata: dict[str, str]) -> str:
+    statements = (
+        "INSERT INTO project_classification_metadata VALUES "  # noqa: S608
+        f"({_sql_text(key)}, {_sql_text(value)});"
+        for key, value in sorted(metadata.items())
+    )
+    return "\n".join(statements) + "\n"
+
+
+def _load_pcab_snapshot(
+    path: Path | None,
+    retrieved_on: date | None,
+) -> PcabSnapshot | None:
+    if (path is None) != (retrieved_on is None):
+        raise ValueError("PCAB snapshot path and retrieval date must be provided together")
+    if path is None or retrieved_on is None:
+        return None
+    return parse_pcab_regular_licenses(
+        path.read_bytes(),
+        retrieved_on=retrieved_on,
+        source_sha256=_digest(path),
+    )
+
+
 def build_integrity_bundle(
     snapshot_path: Path,
     output_dir: Path,
@@ -458,16 +551,7 @@ def build_integrity_bundle(
         raise ValueError("chunk_rows must be positive")
     source_digest = _digest(snapshot_path)
     records = _load_records(snapshot_path, fiscal_years, source_digest)
-    if (pcab_snapshot_path is None) != (pcab_retrieved_on is None):
-        raise ValueError("PCAB snapshot path and retrieval date must be provided together")
-    pcab = None
-    if pcab_snapshot_path is not None and pcab_retrieved_on is not None:
-        pcab_digest = _digest(pcab_snapshot_path)
-        pcab = parse_pcab_regular_licenses(
-            pcab_snapshot_path.read_bytes(),
-            retrieved_on=pcab_retrieved_on,
-            source_sha256=pcab_digest,
-        )
+    pcab = _load_pcab_snapshot(pcab_snapshot_path, pcab_retrieved_on)
     snapshot = build_integrity_snapshot(records, pcab=pcab, as_of=source_as_of)
     association_count = sum(len(contractor_identities(record.contractor)) for record in records)
     concentrations = contractor_concentrations(
@@ -479,6 +563,7 @@ def build_integrity_bundle(
         district_retrieved_on,
     )
     signal_counts = Counter(signal.code for signal in snapshot.signals)
+    classification_release = _classify_records(records)
     pcab_status_counts = Counter(item.pcab_status for item in snapshot.contractors)
     metadata = {
         "contractors": str(len(snapshot.contractors)),
@@ -488,6 +573,10 @@ def build_integrity_bundle(
         "integrity_signals": str(len(snapshot.signals)),
         "concentrations": str(len(concentrations)),
         "schema_version": "4",
+        "classification_rule_version": str(RULE_VERSION),
+        "classification_tags": str(classification_release.tag_count),
+        "classified_records": str(classification_release.classified_records),
+        "unclassified_records": str(len(records) - classification_release.classified_records),
         "source_artifact_sha256": source_digest,
         "source_records": str(len(records)),
         **{f"signal:{code}": str(count) for code, count in sorted(signal_counts.items())},
@@ -515,11 +604,29 @@ def build_integrity_bundle(
     metadata_path = chunks_dir / "000-metadata.sql"
     metadata_path.write_text(_metadata_sql(metadata), encoding="utf-8")
     chunks = [metadata_path]
+    classification_metadata_path = chunks_dir / "025-classification-metadata.sql"
+    classification_metadata_path.write_text(
+        _classification_metadata_sql(classification_release.metadata),
+        encoding="utf-8",
+    )
+    chunks.append(classification_metadata_path)
     chunks.extend(
         _write_chunks(
             chunks_dir,
             "050-delivery-details",
             (_detail_statement(record) for record in records),
+            chunk_rows,
+        )
+    )
+    chunks.extend(
+        _write_chunks(
+            chunks_dir,
+            "075-project-classifications",
+            (
+                _classification_statement(contract_id, item)
+                for contract_id, items in sorted(classification_release.records.items())
+                for item in items
+            ),
             chunk_rows,
         )
     )
@@ -577,6 +684,7 @@ def build_integrity_bundle(
             association_count,
             len(concentrations),
             district_offices,
+            classification_release.tag_count,
         ),
     )
     manifest = {
@@ -601,6 +709,7 @@ def build_integrity_bundle(
         contractor_associations=association_count,
         concentrations=len(concentrations),
         district_offices=district_offices,
+        classifications=classification_release.tag_count,
         sql_chunks=len(chunks),
         manifest_sha256=manifest_sha256,
     )

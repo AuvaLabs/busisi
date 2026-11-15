@@ -104,7 +104,7 @@ export const getDeliveryRecord = async (database, contractId) => {
   if (!record) return null;
   const [
     related, budgets, candidates, projects, signals, imageEvidence, auditEvidence,
-    procurementEvidence, awardMirror, contractEvidence,
+    procurementEvidence, awardMirror, contractEvidence, classifications,
   ] = await Promise.all([
     database.prepare(`
       SELECT contract_id, fiscal_year, description, budget_centavos, location
@@ -131,6 +131,11 @@ export const getDeliveryRecord = async (database, contractId) => {
     getProjectProcurementEvidence(database, contractId),
     getContractAwardMirror(database, contractId),
     getProjectContractEvidence(database, contractId),
+    database.prepare(`
+      SELECT dimension, tag, label, evidence_kind, rule_id, rule_version
+      FROM project_classification_tags WHERE contract_id = ?
+      ORDER BY dimension, tag
+    `).bind(contractId).all(),
   ]);
   const signalRows = rows(signals);
   const contractors = await contractorsForDelivery(database, record);
@@ -152,6 +157,7 @@ export const getDeliveryRecord = async (database, contractId) => {
     auditEvidence,
     procurementEvidence,
     contractEvidence,
+    classifications: rows(classifications),
     contractOutcome,
   };
 };

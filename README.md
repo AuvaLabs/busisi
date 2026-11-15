@@ -36,6 +36,13 @@ counts, source identity and limitations are published to D1. Every contract
 has a human-readable drill-down. Review decisions and the mutable queue remain
 local.
 
+The project-type explorer groups the same 56,887 saved DPWH records by the
+words stated in each project title and source category. It keeps physical type,
+public purpose, work type, and named funding program separate, allows one
+project to carry several supported labels, and leaves unclear records without a
+guessed type. Every result opens the full contract record and explains whether
+its labels came from the project title, source category, or both.
+
 The public review desk ranks stage changes, groups monetary movement by region,
 office, program or dataset, identifies conservative cross-year project-family
 candidates, and exports source-linked CSV evidence.

@@ -182,6 +182,7 @@ def _apply_integrity_migrations(connection: sqlite3.Connection, migration: Path)
         "0011_delivery_details.sql",
         "0024_contractor_project_associations.sql",
         "0025_contractor_association_metadata.sql",
+        "0031_project_classification.sql",
     ):
         connection.executescript(migration.with_name(name).read_text())
 
@@ -235,6 +236,13 @@ def test_integrity_bundle_is_deterministic_and_verifies_generated_sql(tmp_path) 
         for chunk in sorted((output / "chunks").glob("*.sql")):
             connection.executescript(chunk.read_text())
         assert connection.execute("SELECT COUNT(*) FROM integrity_signal_items").fetchone()[0] == 4
+        classification_rows = connection.execute(
+            "SELECT contract_id, dimension, tag, evidence_kind "
+            "FROM project_classification_tags ORDER BY contract_id, dimension, tag"
+        ).fetchall()
+        assert ("24B", "project_type", "health_facility", "project_title") in classification_rows
+        assert ("24B", "work_type", "repair", "project_title") in classification_rows
+        assert ("25A", "project_type", "public_building", "source_category") in classification_rows
         details = connection.execute(
             "SELECT contract_id, category, status, progress, contractor_name, start_date, "
             "completion_date, latitude, longitude, has_satellite_image "

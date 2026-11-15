@@ -77,6 +77,11 @@ import { getFacility } from './facility-query.js';
 import { getFacilityRegistryStatus } from './facility-status-query.js';
 import { parsePlaceQuery, queryPlaces } from './place-query.js';
 import {
+  getProjectTypeSummary,
+  parseProjectTypeQuery,
+  queryProjectTypes,
+} from './project-type-query.js';
+import {
   getAccountabilitySummary,
   getContractorAccountability,
   queryAccountabilityEvents,
@@ -102,6 +107,7 @@ const API_CATALOGUE = Object.freeze([
   { path: '/api/v1/contracts', description: 'Contract and project evidence' },
   { path: '/api/v1/contractors', description: 'Recorded contractor activity' },
   { path: '/api/v1/places', description: 'Projects grouped by recorded place label' },
+  { path: '/api/v1/project-types', description: 'Projects grouped by type, purpose, and work' },
   { path: '/api/v1/integrity-signals', description: 'Deterministic questions to check' },
   { path: '/api/v1/changes', description: 'FY2027 budget-stage comparisons' },
   { path: '/api/v1/agency-budgets', description: 'Appropriation-head comparisons' },
@@ -177,6 +183,27 @@ const apiResponse = async (request, environment, url) => {
         boundary: 'Source labels are not verified geographic boundaries.',
       },
       data: records,
+    });
+  }
+  if (url.pathname === '/api/v1/project-types/summary') {
+    return jsonResponse({
+      meta: { review_scope: 'rule_classified_dpwh_project_records' },
+      data: await getProjectTypeSummary(environment.DB),
+    });
+  }
+  if (url.pathname === '/api/v1/project-types') {
+    const query = parseProjectTypeQuery(url);
+    const page = await queryProjectTypes(environment.DB, query);
+    return jsonResponse({
+      meta: {
+        total: page.total,
+        count: page.records.length,
+        limit: query.limit,
+        next_cursor: page.nextCursor,
+        review_scope: 'rule_classified_dpwh_project_records',
+        boundary: 'Tags describe source text. One project can have several tags.',
+      },
+      data: page.records,
     });
   }
   if (url.pathname === '/api/v1/stats') {

@@ -32,6 +32,11 @@ import {
 import { parseContractIntelligenceQuery } from '../src/contract-intelligence-query.js';
 import { parseContractorProjectQuery } from '../src/contractor-activity-query.js';
 import { parsePlaceQuery, queryPlaces } from '../src/place-query.js';
+import {
+  getProjectTypeSummary,
+  parseProjectTypeQuery,
+  queryProjectTypes,
+} from '../src/project-type-query.js';
 import { parseAgencyQuery } from '../src/agency-budget-query.js';
 import { parseAllotmentReleaseQuery } from '../src/allotment-release-query.js';
 import { parseExplorerQuery } from '../src/explorer-query.js';
@@ -143,6 +148,9 @@ const facilitySourceResilienceMigrationPath = fileURLToPath(
 const contractorAccountabilityMigrationPath = fileURLToPath(
   new URL('../migrations/0029_contractor_accountability.sql', import.meta.url),
 );
+const projectClassificationMigrationPath = fileURLToPath(
+  new URL('../migrations/0031_project_classification.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -210,6 +218,7 @@ class LocalD1 {
     this.database.exec(readFileSync(facilityRegistryStatusMigrationPath, 'utf8'));
     this.database.exec(readFileSync(contractorAccountabilityMigrationPath, 'utf8'));
     this.database.exec(readFileSync(facilitySourceResilienceMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(projectClassificationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -233,6 +242,30 @@ class LocalD1 {
          '', '', 'Cebu', 'Region VII', '', '', 0, '${'b'.repeat(64)}'),
         ('24NO0001', 2024, 'Roads', 'On-Going', '', '', '[]',
          '', '', 'Quezon 1st DEO', 'Region IV-A', '', '', 0, '${'b'.repeat(64)}');
+      INSERT INTO project_classification_metadata VALUES
+        ('rule_version', '1'), ('source_records', '3'), ('classified_records', '3'),
+        ('unclassified_records', '0'), ('classification_tags', '10');
+      INSERT INTO project_classification_tags VALUES
+        ('25O00113', 'project_type', 'flood_control', 'Flood control',
+         'project_title', 'type:flood-control', 1),
+        ('25O00113', 'purpose', 'flood_protection', 'Flood protection',
+         'project_title', 'purpose:flood-protection', 1),
+        ('25O00113', 'work_type', 'construction', 'Construction',
+         'project_title', 'work:construction', 1),
+        ('26ZERO01', 'project_type', 'health_facility', 'Hospital or health facility',
+         'source_category_and_title', 'type:health-facility', 1),
+        ('26ZERO01', 'purpose', 'health', 'Health services',
+         'project_title', 'purpose:health', 1),
+        ('26ZERO01', 'work_type', 'construction', 'Construction',
+         'project_title', 'work:construction', 1),
+        ('26ZERO01', 'funding_program', 'doh_hfep', 'DOH health facilities',
+         'source_category', 'funding:doh-hfep', 1),
+        ('24NO0001', 'project_type', 'road', 'Road',
+         'source_category_and_title', 'type:road', 1),
+        ('24NO0001', 'purpose', 'transport', 'Transport access',
+         'source_category_and_title', 'purpose:transport', 1),
+        ('24NO0001', 'work_type', 'rehabilitation', 'Rehabilitation',
+         'project_title', 'work:rehabilitation', 1);
       INSERT INTO coa_metadata VALUES
         ('checked_at', '2026-11-03T12:00:00+04:00'), ('report_count', '1'),
         ('archived_reports', '0'), ('checked_projects', '3'), ('project_matches', '1'),
@@ -592,6 +625,7 @@ const reviewUrl = (query = '') => new URL(`https://busisi.test/api/v1/review-ran
 const integrityUrl = (query = '') => new URL(`https://busisi.test/api/v1/integrity-signals${query}`);
 const contractorUrl = (query = '') => new URL(`https://busisi.test/api/v1/contractors${query}`);
 const placeUrl = (query = '') => new URL(`https://busisi.test/api/v1/places${query}`);
+const projectTypeUrl = (query = '') => new URL(`https://busisi.test/api/v1/project-types${query}`);
 const contractorProjectUrl = (query = '') => new URL(
   `https://busisi.test/api/v1/contractors/pcab%3A22222/projects${query}`,
 );
@@ -2272,7 +2306,6 @@ test('publishes a bounded place directory from recorded source labels', async (c
     request('/api/v1/places?level=province&q=Quezon&limit=20'), environment(database),
   );
   const payload = await response.json();
-
   assert.deepEqual(query, { level: 'province', q: 'Quezon', limit: 20 });
   assert.equal(response.status, 200);
   assert.equal(payload.meta.review_scope, 'recorded_dpwh_place_labels');
@@ -2285,6 +2318,114 @@ test('publishes a bounded place directory from recorded source labels', async (c
   assert.throws(() => parsePlaceQuery(placeUrl('?limit=101')), /supported range/);
   assert.throws(() => parsePlaceQuery(placeUrl(`?q=${'x'.repeat(201)}`)), /q is too long/);
   assert.deepEqual(parsePlaceQuery(placeUrl()), { level: 'province', q: '', limit: 50 });
+});
+
+test('publishes drillable multi-label project types with transparent evidence', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  const query = parseProjectTypeQuery(projectTypeUrl(
+    '?type=flood_control&work=construction&region=NCR&limit=10',
+  ));
+  const direct = await queryProjectTypes(database, query);
+  const summary = await getProjectTypeSummary(database);
+  const response = await worker.fetch(
+    request('/api/v1/project-types?type=flood_control&work=construction&region=NCR&limit=10'),
+    environment(database),
+  );
+  const payload = await response.json();
+  const detailResponse = await siteWorker.fetch(
+    request('/contracts/25O00113/'), environment(database),
+  );
+  const detailDocument = await detailResponse.text();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.meta.review_scope, 'rule_classified_dpwh_project_records');
+  assert.equal(payload.meta.total, 1);
+  assert.equal(payload.data[0].contract_id, '25O00113');
+  assert.equal(payload.data[0].reader_url, '/contracts/25O00113/');
+  assert.ok(payload.data[0].classifications.some((item) => item.tag === 'flood_control'));
+  assert.equal(direct.total, 1);
+  assert.equal(summary.coverage.source_records, 3);
+  assert.equal(summary.coverage.classification_tags, 10);
+  assert.equal(summary.coverage.classified_records, 3);
+  assert.ok(summary.dimensions.project_type.some((item) => item.tag === 'road'));
+  assert.equal(await getProjectTypeSummary(database), summary);
+  assert.match(detailDocument, /Project type and purpose/);
+  assert.match(detailDocument, /Flood control/);
+  assert.match(detailDocument, /Supported by the project title/);
+  assert.throws(() => parseProjectTypeQuery(projectTypeUrl('?type=corruption')), /type is invalid/);
+  assert.throws(() => parseProjectTypeQuery(projectTypeUrl('?purpose=corruption')), /purpose is invalid/);
+  assert.throws(() => parseProjectTypeQuery(projectTypeUrl('?work=corruption')), /work is invalid/);
+  assert.throws(() => parseProjectTypeQuery(projectTypeUrl('?program=corruption')), /program is invalid/);
+  assert.throws(() => parseProjectTypeQuery(projectTypeUrl('?sort=unknown')), /sort is invalid/);
+  assert.throws(() => parseProjectTypeQuery(projectTypeUrl('?year=none')), /year is invalid/);
+  assert.throws(() => parseProjectTypeQuery(projectTypeUrl('?year=1900')), /supported range/);
+  assert.throws(() => parseProjectTypeQuery(projectTypeUrl(`?q=${'x'.repeat(201)}`)), /q is too long/);
+  assert.throws(() => parseProjectTypeQuery(projectTypeUrl('?limit=101')), /supported range/);
+
+  const fullyFiltered = await queryProjectTypes(database, parseProjectTypeQuery(projectTypeUrl(
+    '?q=Sample&purpose=health&work=construction&program=doh_hfep&year=2026'
+      + '&region=Region%20VII&province=Cebu&status=Not%20Yet%20Started&sort=year_desc&limit=1',
+  )));
+  assert.equal(fullyFiltered.total, 1);
+  assert.equal(fullyFiltered.records[0].contract_id, '26ZERO01');
+
+  const firstPageQuery = parseProjectTypeQuery(projectTypeUrl('?work=construction&limit=1'));
+  const firstPage = await queryProjectTypes(database, firstPageQuery);
+  assert.ok(firstPage.nextCursor);
+  const secondPageQuery = parseProjectTypeQuery(projectTypeUrl(
+    `?work=construction&limit=1&cursor=${firstPage.nextCursor}`,
+  ));
+  const secondPage = await queryProjectTypes(database, secondPageQuery);
+  assert.equal(secondPage.records.length, 1);
+  assert.notEqual(secondPage.records[0].contract_id, firstPage.records[0].contract_id);
+  assert.throws(() => parseProjectTypeQuery(projectTypeUrl(
+    `?work=construction&type=road&limit=1&cursor=${firstPage.nextCursor}`,
+  )), /cursor is invalid/);
+  assert.throws(() => parseProjectTypeQuery(projectTypeUrl('?cursor=not-json')), /cursor is invalid/);
+
+  const malformedClassificationDatabase = (classificationsJson) => {
+    let prepared = 0;
+    return {
+      prepare: () => {
+        prepared += 1;
+        const statement = {
+          bind: () => statement,
+          first: async () => ({ total: 1 }),
+          all: async () => ({ results: [{
+            contract_id: `MALFORMED-${prepared}`,
+            classifications_json: classificationsJson,
+          }] }),
+        };
+        return statement;
+      },
+    };
+  };
+  const malformedJson = await queryProjectTypes(
+    malformedClassificationDatabase('{'),
+    parseProjectTypeQuery(projectTypeUrl()),
+  );
+  const nonArrayJson = await queryProjectTypes(
+    malformedClassificationDatabase('{}'),
+    parseProjectTypeQuery(projectTypeUrl()),
+  );
+  assert.deepEqual(malformedJson.records[0].classifications, []);
+  assert.deepEqual(nonArrayJson.records[0].classifications, []);
+
+  let failedSummaryCalls = 0;
+  const failingDatabase = {
+    prepare: () => ({
+      all: async () => {
+        failedSummaryCalls += 1;
+        if (failedSummaryCalls === 1 || failedSummaryCalls === 7) {
+          throw new Error('summary unavailable');
+        }
+        return { results: [] };
+      },
+    }),
+  };
+  await assert.rejects(() => getProjectTypeSummary(failingDatabase), /summary unavailable/);
+  await assert.rejects(() => getProjectTypeSummary(failingDatabase), /summary unavailable/);
 });
 
 test('renders source-watch states without trusting source text as markup', () => {

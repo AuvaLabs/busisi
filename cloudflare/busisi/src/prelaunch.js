@@ -9,6 +9,7 @@ import {
   homeBody,
   integrityBody,
   methodologyBody,
+  projectTypesBody,
   releasesBody,
   signalsBody,
   siteCss,
@@ -125,6 +126,18 @@ const CONTRACTS_SCHEMA = Object.freeze({
   name: 'Busisi Philippine DPWH contract intelligence explorer',
   url: `${SITE.origin}/contracts/`,
   description: 'Search and compare 56,887 saved DPWH contract records by contractor, place, budget, delivery status, and questions to check.',
+  temporalCoverage: '2024/2026',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
+const PROJECT_TYPES_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi DPWH public project type explorer',
+  url: `${SITE.origin}/projects/`,
+  description: 'Explore saved DPWH project records by physical type, public purpose, type of work, funding program, place, year, and reported status.',
   temporalCoverage: '2024/2026',
   spatialCoverage: 'Philippines',
   isAccessibleForFree: true,
@@ -445,6 +458,14 @@ const contracts = () => page(document({
   schema: CONTRACTS_SCHEMA,
 }));
 
+const projectTypes = () => page(document({
+  title: 'Explore DPWH public works by project type | Busisi',
+  description: 'Find Philippine roads, bridges, flood control, schools, health facilities, multipurpose buildings, and other DPWH projects by place, year, work, and status.',
+  canonicalPath: '/projects/',
+  body: projectTypesBody,
+  schema: PROJECT_TYPES_SCHEMA,
+}));
+
 const signals = () => page(document({
   title: 'Philippine budget review desk | Busisi',
   description: 'Rank FY2027 budget changes, inspect concentrations and export source-linked review candidates generated without model inference.',
@@ -724,6 +745,8 @@ Allow: /api/v1/alerts
 Allow: /api/v1/research
 Allow: /api/v1
 Allow: /api/v1/places
+Allow: /api/v1/project-types
+Allow: /api/v1/project-types/summary
 Allow: /feeds/updates.xml
 Disallow: /api/
 Disallow: /watchlist/
@@ -736,6 +759,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/sulit/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/explore/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/contracts/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/projects/</loc><lastmod>2026-11-15</lastmod></url>
   <url><loc>${SITE.origin}/contractors/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/places/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/sources/</loc><lastmod>2026-11-04</lastmod></url>
@@ -788,6 +812,7 @@ Official source records and checked FY2027 stage comparisons are public. Suggest
 - Public value desk: ${SITE.origin}/sulit/
 - Explorer: ${SITE.origin}/explore/
 - Contract intelligence: ${SITE.origin}/contracts/
+- Project type explorer: ${SITE.origin}/projects/
 - Contractor directory: ${SITE.origin}/contractors/
 - Place directory: ${SITE.origin}/places/
 - Source guide: ${SITE.origin}/sources/
@@ -821,6 +846,7 @@ Official source records and checked FY2027 stage comparisons are public. Suggest
 - Official school-list check status: ${SITE.origin}/api/v1/facility-registry-status
 - Public API catalogue: ${SITE.origin}/api/v1
 - Projects grouped by recorded place: ${SITE.origin}/api/v1/places
+- Projects grouped by type, purpose, and work: ${SITE.origin}/api/v1/project-types
 - Evidence updates: ${SITE.origin}/api/v1/alerts
 - Published research packages: ${SITE.origin}/api/v1/research
 - Ready multipurpose-building editorial package: ${SITE.origin}/data/research/multipurpose-buildings/v6/editorial-package.json
@@ -923,6 +949,7 @@ const route = (path) => {
   if (path === '/sulit' || path === '/sulit/') return sulit();
   if (path === '/explore' || path === '/explore/') return explore();
   if (path === '/contracts' || path === '/contracts/') return contracts();
+  if (path === '/projects' || path === '/projects/') return projectTypes();
   if (path === '/contractors' || path === '/contractors/') return contractorDirectory();
   if (path === '/places' || path === '/places/') return places();
   if (path === '/research' || path === '/research/') return research();

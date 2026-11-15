@@ -104,6 +104,14 @@ const projectDetails = (record) => `<dl class="evidence-details evidence-details
   <div><dt>Recorded contractor</dt><dd>${html(record?.contractor_name || 'Not stated')}</dd></div>
 </dl>`;
 
+const classificationEvidence = (value) => ({
+  project_title: 'Supported by the project title',
+  source_category: 'Supported by the source category',
+  source_category_and_title: 'Supported by the project title and source category',
+}[value] || 'Supported by the available source fields');
+
+const projectClassifications = (items) => items.length ? `<section class="evidence-section" id="project-classifications"><p class="kicker">Project type and purpose</p><h2>What the source text says this work covers</h2><div class="classification-card-grid">${items.map((item) => `<article><span>${html(item.dimension.replaceAll('_', ' '))}</span><strong>${html(item.label)}</strong><small>${html(classificationEvidence(item.evidence_kind))}</small></article>`).join('')}</div><p class="evidence-limit">A project can have several supported labels. These labels describe the source text; they do not judge need, price, quality, completion, or wrongdoing.</p></section>` : `<section class="evidence-section" id="project-classifications"><p class="kicker">Project type and purpose</p><h2>The project type is not clear enough to label</h2><p class="evidence-empty">The record remains searchable without a guessed project type.</p></section>`;
+
 const imageCoordinate = (image) => image.latitude === null || image.longitude === null
   ? 'Not reported'
   : `${image.latitude}, ${image.longitude}`;
@@ -219,12 +227,13 @@ ${boundary('This page reproduces an approved-budget record and possible links. I
 export const deliveryRecordBody = ({
   record, related = [], budgets = [], candidates = [], projects = [], signals: items = [],
   contractors = [], imageEvidence, auditEvidence, procurementEvidence,
-  contractEvidence = [], contractOutcome, ...acquisition
+  contractEvidence = [], contractOutcome, classifications = [], ...acquisition
 }) => `${breadcrumb('DPWH contract', record.contract_id)}
 <article class="evidence-dossier">${heading({ badge: 'Official DPWH delivery record', kicker: `FY ${record.fiscal_year} · Contract ${record.contract_id}`, title: record.description, summary: record.location })}
 ${facts([['Recorded project budget', money(record.budget_centavos), 'Value in this dated record, not proof of payment'], ['Status / progress', `${record.status || 'Not stated'} / ${record.progress ? `${record.progress}%` : 'Not stated'}`, 'Reported by the source record'], ['Things to check', items.length, 'Questions to verify, not findings']])}
-<nav class="dossier-index" aria-label="Dossier sections"><span>Jump to</span><a href="#project-record">Project record</a><a href="#project-images">Images</a><a href="#procurement-evidence">Procurement</a><a href="#contract-evidence">Evidence status</a><a href="#contract-outcome">Outcome cross-check</a><a href="#contractors">Contractors</a><a href="#audit-evidence">COA audit</a><a href="#related-records">Related records</a><a href="#provenance">Sources</a></nav>
+<nav class="dossier-index" aria-label="Dossier sections"><span>Jump to</span><a href="#project-record">Project record</a><a href="#project-classifications">Type and purpose</a><a href="#project-images">Images</a><a href="#procurement-evidence">Procurement</a><a href="#contract-evidence">Evidence status</a><a href="#contract-outcome">Outcome cross-check</a><a href="#contractors">Contractors</a><a href="#audit-evidence">COA audit</a><a href="#related-records">Related records</a><a href="#provenance">Sources</a></nav>
 <div class="evidence-columns" id="project-record"><section class="evidence-panel"><p class="kicker">Project details</p><h2>What the official project record says</h2>${sourceRoles({ publisher: 'Department of Public Works and Highways', access: 'BetterGov DPWH dataset and API' })}${projectDetails(record)}<dl class="evidence-details"><div><dt>Source of funds</dt><dd>${html(record.source_of_funds || 'Not stated')}</dd></div><div><dt>Related project group</dt><dd>${html(record.project_family_id)}</dd></div><div><dt>Saved-file check code</dt><dd>${hash(record.detail_artifact_sha256 || record.artifact_sha256)}</dd></div></dl></section>${district(record.district_context)}</div>
+${projectClassifications(classifications)}
 ${projectImageEvidencePanel(imageEvidence)}
 ${projectAvailability(record, procurementEvidence, auditEvidence, budgets.length > 0)}
 ${procurementEvidencePanel(procurementEvidence)}

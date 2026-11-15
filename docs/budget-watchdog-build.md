@@ -147,6 +147,12 @@ As of 2026-11-07:
   from 56,887 archived DPWH delivery records. These include source-field
   contradictions, amount questions, coordinate reuse and coverage gaps. They
   are review leads, not findings of wrongdoing.
+- The project-type explorer applies versioned, deterministic phrase rules to
+  project titles and source categories. Rule version 1 produces 205,101
+  overlapping labels for 56,372 of 56,887 records. The remaining 515 records
+  stay searchable without a guessed type. Labels are split into physical type,
+  public purpose, work type and named funding program, and every result opens
+  the complete contract record.
 - Contractor activity covers 4,297 identities after explicit slash-delimited
   joint ventures are split into their recorded parties. It provides separate
   rankings by project count and associated project budget. Joint-project
