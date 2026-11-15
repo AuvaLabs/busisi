@@ -334,8 +334,11 @@ The project-image evidence queue runs every six hours. Each cycle starts with a
 25-contract canary, continues in 100-contract chunks and processes at most
 1,000 contracts with four workers paced to two requests per second per source
 host. Eight healthy cycles raise the limit to 2,000. Repeated rate limits or a
-retryable failure ratio above 10 percent stop the cycle and reduce its next
-workload.
+source-health failure ratio above 10 percent stop the cycle and reduce its next
+workload. The safety count includes rate limits, metadata access failures,
+server failures, network failures and invalid responses. A missing record or an
+access-denied individual image is recorded as a coverage gap without falsely
+declaring the whole metadata source unhealthy.
 Pending work is ordered by disclosed priority factors: an existing reviewed
 dossier, source image availability, project value, a stated joint venture,
 repeated contractor activity, deterministic evidence questions and qualifying
@@ -346,6 +349,12 @@ Every successful record still requires archived source bytes, detail-to-list
 count reconciliation, JPEG inspection and a gated D1 release. The bulk project
 feed is used only for discovery because it does not provide the exact image-list
 count needed for this evidence contract.
+
+The private queue records a stable reason code and source stage for every final
+or failed check. A source-count conflict receives one delayed second look after
+24 hours. A blocked rate-limit, access, server or network condition can be
+checked again after seven days. Permanent missing records and invalid evidence
+remain held until the source or validation rule changes.
 
 The local acquisition retry timer runs one bounded batch daily. It accepts only
 registered official DPWH HTTPS origins, archives successful source bytes, uses

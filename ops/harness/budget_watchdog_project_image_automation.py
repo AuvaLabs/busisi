@@ -79,6 +79,7 @@ EXPECTED_SEEDS = 56_890
 MAX_BATCH_SIZE = 2000
 CANARY_BATCH_SIZE = 25
 ACQUISITION_CHUNK_SIZE = 100
+MAX_RECHECKS_PER_KIND = 250
 REQUESTS_PER_SECOND_PER_HOST = 2.0
 MAX_METADATA_BYTES = 4 * 1024 * 1024
 MAX_IMAGE_BYTES = 20 * 1024 * 1024
@@ -118,10 +119,10 @@ def _integrity_question(row: dict[str, object]) -> bool:
     status = _text(row.get("status")).casefold().replace("-", " ")
     progress = Decimal(str(row.get("progress") or 0))
     missing_coordinate = row.get("latitude") is None or row.get("longitude") is None
+    start_date = _text(row.get("startDate"))
+    completion_date = _text(row.get("completionDate"))
     date_conflict = bool(
-        row.get("startDate")
-        and row.get("completionDate")
-        and row["startDate"] > row["completionDate"]
+        start_date and completion_date and start_date > completion_date
     )
     status_conflict = (
         status in {"ongoing", "on going"} and progress >= COMPLETE_PROGRESS
@@ -249,9 +250,13 @@ def _promote_candidate(release_id: str, previous: dict[str, object] | None) -> N
 def _metrics(batch: ProjectImageBatchResult) -> CoverageCycleMetrics:
     return CoverageCycleMetrics(
         claimed=batch.claimed,
-        failures=batch.retry,
+        failures=batch.controller_failures,
         rate_limited=batch.rate_limited,
     )
+
+
+def _recheck_limit(batch_limit: int) -> int:
+    return min(MAX_RECHECKS_PER_KIND, batch_limit // 4)
 
 
 def _runner(queue: ImageCoverageQueue) -> ProjectImageRunner:
@@ -297,6 +302,17 @@ def run_cycle(*, limit: int | None, publish: bool, workers: int | None = None) -
         create_image_coverage_queue(QUEUE, _seeds(), source_sha256=SOURCE_SHA256)
         queue = ImageCoverageQueue(QUEUE)
         recovered_leases = queue.recover_interrupted_leases(now=now)
+        recheck_limit = _recheck_limit(selected_limit)
+        requeued_conflicts = (
+            queue.requeue_count_conflicts(now=now, limit=recheck_limit)
+            if recheck_limit
+            else 0
+        )
+        requeued_blocked = (
+            queue.requeue_recoverable_blocked(now=now, limit=recheck_limit)
+            if recheck_limit
+            else 0
+        )
         runner = _runner(queue)
         batches: list[ProjectImageBatchResult] = []
         remaining = selected_limit
@@ -341,6 +357,7 @@ def run_cycle(*, limit: int | None, publish: bool, workers: int | None = None) -
                 source_failure=0,
                 server_failure=0,
                 validation_failure=0,
+                controller_failures=0,
             )
         )
         coverage, images = queue.publication_records()
@@ -374,7 +391,10 @@ def run_cycle(*, limit: int | None, publish: bool, workers: int | None = None) -
                 "next_batch_limit": next_controller.batch_limit,
             },
             "queue": queue.summary().status_counts,
+            "queue_outcomes": queue.outcome_counts(),
             "recovered_leases": recovered_leases,
+            "requeued_conflicts": requeued_conflicts,
+            "requeued_recoverable_blocked": requeued_blocked,
             "release_id": release.release_id,
             "published_release_id": published,
         }

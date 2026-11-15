@@ -3,6 +3,10 @@ from __future__ import annotations
 import json
 
 import pytest
+from ops.harness.budget_watchdog_project_image_automation import (
+    _metrics,
+    _recheck_limit,
+)
 
 from engine.budget_watchdog.coverage_controller import (
     CoverageControllerState,
@@ -12,6 +16,7 @@ from engine.budget_watchdog.coverage_controller import (
     save_controller,
     should_halt_cycle,
 )
+from engine.budget_watchdog.project_image_runner import ProjectImageBatchResult
 
 
 def test_controller_ramps_to_two_thousand_after_eight_healthy_cycles() -> None:
@@ -75,3 +80,31 @@ def test_controller_rejects_invalid_persisted_state(tmp_path, value) -> None:
 
     with pytest.raises(ValueError, match="invalid"):
         load_controller(path)
+
+
+def test_automation_controller_uses_every_health_failure() -> None:
+    batch = ProjectImageBatchResult(
+        claimed=25,
+        verified_exact=0,
+        no_images=0,
+        count_conflict=0,
+        retry=0,
+        blocked=10,
+        images_archived=0,
+        rate_limited=0,
+        source_failure=10,
+        server_failure=0,
+        validation_failure=0,
+        controller_failures=10,
+    )
+
+    metrics = _metrics(batch)
+
+    assert metrics.failures == 10
+    assert should_halt_cycle(metrics)
+
+
+def test_rechecks_never_consume_more_than_half_of_a_cycle() -> None:
+    assert _recheck_limit(1) == 0
+    assert _recheck_limit(25) == 6
+    assert _recheck_limit(1_000) == 250

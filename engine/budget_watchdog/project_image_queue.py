@@ -26,6 +26,53 @@ _FAILURE_STATES = frozenset({"retry", "blocked"})
 _MIN_FISCAL_YEAR = 2000
 _MAX_FISCAL_YEAR = 2100
 _SQLITE_BUSY_TIMEOUT_MILLISECONDS = 30_000
+_SCHEMA_VERSION = "3"
+_CONFLICT_RECHECK_SECONDS = 86_400
+_BLOCKED_RECHECK_SECONDS = 604_800
+_MAX_CONFLICT_ATTEMPTS = 2
+_RECHECK_LIMIT = 250
+_OUTCOME_CODES = frozenset(
+    {
+        "verified_exact",
+        "source_reports_no_images",
+        "source_count_mismatch",
+        "duplicate_image_payload",
+        "source_rate_limited",
+        "source_access_denied",
+        "source_not_found",
+        "source_server_error",
+        "source_network_error",
+        "source_client_error",
+        "evidence_validation",
+    }
+)
+_FAILURE_OUTCOME_CODES = frozenset(
+    {
+        "source_rate_limited",
+        "source_access_denied",
+        "source_not_found",
+        "source_server_error",
+        "source_network_error",
+        "source_client_error",
+        "evidence_validation",
+    }
+)
+_OUTCOME_STAGES = frozenset({"evidence", "metadata", "media", "unknown"})
+_RECOVERABLE_BLOCKED_CODES = (
+    "source_rate_limited",
+    "source_access_denied",
+    "source_server_error",
+    "source_network_error",
+)
+_REQUEUE_CONFLICT_SQL = (
+    "SELECT contract_id FROM image_tasks WHERE status = 'count_conflict' "
+    "AND attempts < ? AND updated_at <= ? ORDER BY priority, contract_id LIMIT ?"
+)
+_REQUEUE_BLOCKED_SQL = (
+    "SELECT contract_id FROM image_tasks WHERE status = 'blocked' AND updated_at <= ? "
+    "AND contract_id IN (SELECT contract_id FROM image_task_outcomes WHERE outcome_code "
+    "IN (?, ?, ?, ?)) ORDER BY priority, contract_id LIMIT ?"
+)
 
 
 def _connect(path: Path) -> sqlite3.Connection:
@@ -35,6 +82,7 @@ def _connect(path: Path) -> sqlite3.Connection:
         timeout=_SQLITE_BUSY_TIMEOUT_MILLISECONDS / 1000,
     )
     connection.execute(f"PRAGMA busy_timeout = {_SQLITE_BUSY_TIMEOUT_MILLISECONDS}")
+    connection.execute("PRAGMA foreign_keys = ON")
     return connection
 
 
@@ -114,6 +162,12 @@ CREATE TABLE image_attempts (
     status TEXT NOT NULL,
     note TEXT NOT NULL
 );
+CREATE TABLE image_task_outcomes (
+    contract_id TEXT PRIMARY KEY REFERENCES image_tasks(contract_id),
+    outcome_code TEXT NOT NULL,
+    outcome_stage TEXT NOT NULL,
+    recorded_at TEXT NOT NULL
+);
 CREATE INDEX image_tasks_ready
 ON image_tasks (status, next_attempt_at, lease_until, priority, contract_id);
 CREATE INDEX image_records_contract ON image_records (contract_id, photo_number, image_id);
@@ -149,11 +203,57 @@ def _expected_metadata(seeds: tuple[ImageCoverageSeed, ...], source_sha256: str)
     if _SHA256.fullmatch(source_sha256) is None:
         raise ValueError("source snapshot digest must be SHA-256")
     return {
-        "schema_version": "2",
+        "schema_version": _SCHEMA_VERSION,
         "seed_count": str(len(seeds)),
         "seed_sha256": _seed_digest(seeds),
         "source_sha256": source_sha256,
     }
+
+
+def _migrate_queue_schema(path: Path) -> None:
+    connection = _connect(path)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            "CREATE TABLE IF NOT EXISTS image_task_outcomes ("
+            "contract_id TEXT PRIMARY KEY REFERENCES image_tasks(contract_id), "
+            "outcome_code TEXT NOT NULL, outcome_stage TEXT NOT NULL, "
+            "recorded_at TEXT NOT NULL)"
+        )
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO image_task_outcomes
+                (contract_id, outcome_code, outcome_stage, recorded_at)
+            SELECT contract_id,
+                CASE
+                    WHEN status = 'verified_exact' THEN 'verified_exact'
+                    WHEN status = 'no_images' THEN 'source_reports_no_images'
+                    WHEN status = 'count_conflict' AND last_note LIKE '%duplicate JPEG content%'
+                        THEN 'duplicate_image_payload'
+                    WHEN status = 'count_conflict' THEN 'source_count_mismatch'
+                    WHEN last_note LIKE '%HTTP 429%' THEN 'source_rate_limited'
+                    WHEN last_note LIKE '%HTTP 401%' OR last_note LIKE '%HTTP 403%'
+                        THEN 'source_access_denied'
+                    WHEN last_note LIKE '%HTTP 404%' OR last_note LIKE '%HTTP 410%'
+                        THEN 'source_not_found'
+                    WHEN last_note GLOB '*HTTP 5[0-9][0-9]*' THEN 'source_server_error'
+                    WHEN last_note LIKE 'Evidence validation failed%' THEN 'evidence_validation'
+                    ELSE 'source_network_error'
+                END,
+                'unknown',
+                COALESCE(updated_at, '1970-01-01T00:00:00+00:00')
+            FROM image_tasks
+            WHERE status IN (
+                'verified_exact', 'no_images', 'count_conflict', 'retry', 'blocked'
+            )
+            """
+        )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
 
 def _refresh_priorities(
@@ -169,35 +269,40 @@ def _refresh_priorities(
             or observed.get("seed_count") != metadata["seed_count"]
         ):
             raise ValueError("existing image queue belongs to a different source snapshot")
-        existing = tuple(
-            connection.execute(
-                "SELECT contract_id, fiscal_year, source_image_hint "
-                "FROM image_tasks ORDER BY contract_id"
-            )
-        )
-        expected = tuple(
-            sorted(
-                (
-                    seed.contract_id,
-                    seed.fiscal_year,
-                    int(seed.source_image_hint),
+        priorities_changed = observed.get("seed_sha256") != metadata["seed_sha256"]
+        if priorities_changed:
+            existing = tuple(
+                connection.execute(
+                    "SELECT contract_id, fiscal_year, source_image_hint "
+                    "FROM image_tasks ORDER BY contract_id"
                 )
-                for seed in seeds
             )
-        )
-        if existing != expected:
-            raise ValueError("existing image queue belongs to a different source snapshot")
+            expected = tuple(
+                sorted(
+                    (
+                        seed.contract_id,
+                        seed.fiscal_year,
+                        int(seed.source_image_hint),
+                    )
+                    for seed in seeds
+                )
+            )
+            if existing != expected:
+                raise ValueError("existing image queue belongs to a different source snapshot")
         connection.execute("BEGIN IMMEDIATE")
-        connection.executemany(
-            "UPDATE image_tasks SET priority = ? WHERE contract_id = ?",
-            [(seed.priority, seed.contract_id) for seed in seeds],
-        )
+        if priorities_changed:
+            connection.executemany(
+                "UPDATE image_tasks SET priority = ? WHERE contract_id = ?",
+                [(seed.priority, seed.contract_id) for seed in seeds],
+            )
         connection.execute("DELETE FROM queue_metadata")
         connection.executemany(
             "INSERT INTO queue_metadata VALUES (?, ?)", sorted(metadata.items())
         )
-        if connection.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+        if priorities_changed and connection.execute("PRAGMA quick_check").fetchone()[0] != "ok":
             raise ValueError("image coverage queue integrity check failed")
+        if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
+            raise ValueError("image coverage queue foreign keys are invalid")
         connection.commit()
     except Exception:
         connection.rollback()
@@ -216,6 +321,7 @@ def create_image_coverage_queue(
     validated = _validated_seeds(seeds)
     metadata = _expected_metadata(validated, source_sha256)
     if path.exists():
+        _migrate_queue_schema(path)
         connection = _connect(path)
         try:
             observed = dict(connection.execute("SELECT key, value FROM queue_metadata"))
@@ -273,8 +379,8 @@ def _task(row: sqlite3.Row) -> ImageCoverageTask:
 def _selection_key(row: sqlite3.Row) -> tuple[int, int, bytes]:
     identity = f"{row['fiscal_year']}:{row['source_image_hint']}:{row['contract_id']}".encode()
     return (
-        row["priority"],
         0 if row["status"] == "retry" else 1,
+        row["priority"],
         hashlib.sha256(identity).digest(),
     )
 
@@ -305,6 +411,75 @@ class ImageCoverageQueue:
             )
             connection.commit()
             return cursor.rowcount
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+
+    def requeue_count_conflicts(
+        self,
+        *,
+        now: datetime,
+        cooldown_seconds: int = _CONFLICT_RECHECK_SECONDS,
+        limit: int = _RECHECK_LIMIT,
+        max_attempts: int = _MAX_CONFLICT_ATTEMPTS,
+    ) -> int:
+        """Schedule one delayed second look at conflicting source representations."""
+        if min(cooldown_seconds, limit, max_attempts) <= 0:
+            raise ValueError("conflict recheck limits must be positive")
+        cutoff = _iso(now - timedelta(seconds=cooldown_seconds))
+        return self._requeue_matching(
+            query=_REQUEUE_CONFLICT_SQL,
+            parameters=(max_attempts, cutoff),
+            now=now,
+            limit=limit,
+            note="Source disagreement scheduled for one delayed recheck.",
+        )
+
+    def requeue_recoverable_blocked(
+        self,
+        *,
+        now: datetime,
+        cooldown_seconds: int = _BLOCKED_RECHECK_SECONDS,
+        limit: int = _RECHECK_LIMIT,
+    ) -> int:
+        """Retry blocked source conditions that may recover, never permanent absence."""
+        if min(cooldown_seconds, limit) <= 0:
+            raise ValueError("blocked recheck limits must be positive")
+        cutoff = _iso(now - timedelta(seconds=cooldown_seconds))
+        return self._requeue_matching(
+            query=_REQUEUE_BLOCKED_SQL,
+            parameters=(cutoff, *_RECOVERABLE_BLOCKED_CODES),
+            now=now,
+            limit=limit,
+            note="Recoverable source failure scheduled for a delayed recheck.",
+        )
+
+    def _requeue_matching(
+        self,
+        *,
+        query: str,
+        parameters: tuple[object, ...],
+        now: datetime,
+        limit: int,
+        note: str,
+    ) -> int:
+        timestamp = _iso(now)
+        connection = _connect(self._path)
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            rows = connection.execute(
+                query,
+                (*parameters, limit),
+            ).fetchall()
+            connection.executemany(
+                "UPDATE image_tasks SET status = 'retry', lease_until = NULL, "
+                "next_attempt_at = ?, last_note = ? WHERE contract_id = ?",
+                [(timestamp, note, row[0]) for row in rows],
+            )
+            connection.commit()
+            return len(rows)
         except Exception:
             connection.rollback()
             raise
@@ -362,11 +537,19 @@ class ImageCoverageQueue:
         try:
             connection.execute("BEGIN IMMEDIATE")
             self._require_lease(connection, contract_id)
+            previous_keys = {
+                (row[0], row[1]): row[2]
+                for row in connection.execute(
+                    "SELECT image_id, artifact_sha256, archive_key FROM image_records "
+                    "WHERE contract_id = ?",
+                    (contract_id,),
+                )
+            }
             connection.execute("DELETE FROM image_records WHERE contract_id = ?", (contract_id,))
             connection.executemany(
                 "INSERT INTO image_records VALUES "
                 "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [self._image_values(item) for item in images],
+                [self._image_values(item, previous_keys) for item in images],
             )
             connection.execute(
                 "UPDATE image_tasks SET status = ?, attempts = attempts + 1, "
@@ -385,6 +568,13 @@ class ImageCoverageQueue:
                     contract_id,
                 ),
             )
+            self._record_outcome(
+                connection,
+                contract_id,
+                self._evidence_outcome(coverage, images),
+                "evidence",
+                timestamp,
+            )
             connection.execute(
                 "INSERT INTO image_attempts (contract_id, attempted_at, status, note) "
                 "VALUES (?, ?, ?, ?)",
@@ -397,6 +587,7 @@ class ImageCoverageQueue:
     @staticmethod
     def _image_values(
         item: tuple[ProjectImageRecord, ImageInspection, str, str],
+        previous_keys: dict[tuple[str, str], str],
     ) -> tuple[object, ...]:
         record, inspection, archive_key, source_path = item
         return (
@@ -418,7 +609,7 @@ class ImageCoverageQueue:
             inspection.byte_size,
             inspection.width,
             inspection.height,
-            archive_key,
+            previous_keys.get((record.image_id, inspection.sha256), archive_key),
             source_path,
         )
 
@@ -427,6 +618,8 @@ class ImageCoverageQueue:
         contract_id: str,
         *,
         status: str,
+        reason_code: str,
+        reason_stage: str,
         note: str,
         now: datetime,
         retry_after_seconds: int | None = None,
@@ -435,6 +628,10 @@ class ImageCoverageQueue:
             raise ValueError("unsupported image acquisition failure state")
         if not note.strip():
             raise ValueError("image acquisition failure requires a note")
+        if reason_code not in _FAILURE_OUTCOME_CODES:
+            raise ValueError("unsupported image acquisition failure reason")
+        if reason_stage not in _OUTCOME_STAGES:
+            raise ValueError("unsupported image acquisition failure stage")
         if status == "retry" and (retry_after_seconds is None or retry_after_seconds <= 0):
             raise ValueError("retry requires a positive delay")
         timestamp = _iso(now)
@@ -453,6 +650,9 @@ class ImageCoverageQueue:
                 "WHERE contract_id = ?",
                 (status, next_attempt, note, timestamp, contract_id),
             )
+            self._record_outcome(
+                connection, contract_id, reason_code, reason_stage, timestamp
+            )
             connection.execute(
                 "INSERT INTO image_attempts (contract_id, attempted_at, status, note) "
                 "VALUES (?, ?, ?, ?)",
@@ -461,6 +661,42 @@ class ImageCoverageQueue:
             connection.commit()
         finally:
             connection.close()
+
+    @staticmethod
+    def _record_outcome(
+        connection: sqlite3.Connection,
+        contract_id: str,
+        outcome_code: str,
+        outcome_stage: str,
+        recorded_at: str,
+    ) -> None:
+        if outcome_code not in _OUTCOME_CODES:
+            raise ValueError("unsupported project-image outcome code")
+        if outcome_stage not in _OUTCOME_STAGES:
+            raise ValueError("unsupported project-image outcome stage")
+        connection.execute(
+            "INSERT INTO image_task_outcomes VALUES (?, ?, ?, ?) "
+            "ON CONFLICT(contract_id) DO UPDATE SET "
+            "outcome_code = excluded.outcome_code, "
+            "outcome_stage = excluded.outcome_stage, recorded_at = excluded.recorded_at",
+            (contract_id, outcome_code, outcome_stage, recorded_at),
+        )
+
+    @staticmethod
+    def _evidence_outcome(
+        coverage: ProjectImageCoverage,
+        images: tuple[tuple[ProjectImageRecord, ImageInspection, str, str], ...],
+    ) -> str:
+        if coverage.state == "verified_exact":
+            return "verified_exact"
+        if coverage.state == "no_images":
+            return "source_reports_no_images"
+        unique_payloads = len({inspection.sha256 for _, inspection, _, _ in images})
+        return (
+            "duplicate_image_payload"
+            if unique_payloads < len(images)
+            else "source_count_mismatch"
+        )
 
     @staticmethod
     def _require_lease(connection: sqlite3.Connection, contract_id: str) -> None:
@@ -481,6 +717,17 @@ class ImageCoverageQueue:
         counts = Counter(dict(rows))
         return ImageCoverageSummary(sum(counts.values()), dict(sorted(counts.items())))
 
+    def outcome_counts(self) -> dict[str, int]:
+        connection = _connect(self._path)
+        try:
+            rows = connection.execute(
+                "SELECT outcome_code, COUNT(*) FROM image_task_outcomes "
+                "GROUP BY outcome_code ORDER BY outcome_code"
+            ).fetchall()
+        finally:
+            connection.close()
+        return dict(rows)
+
     def publication_records(
         self,
     ) -> tuple[tuple[ProjectImageCoverage, ...], tuple[AcquiredProjectImage, ...]]:
@@ -492,7 +739,9 @@ class ImageCoverageQueue:
                 "('verified_exact', 'no_images', 'count_conflict') ORDER BY contract_id"
             ).fetchall()
             image_rows = connection.execute(
-                "SELECT * FROM image_records ORDER BY image_id"
+                "SELECT image_records.* FROM image_records "
+                "JOIN image_tasks USING (contract_id) WHERE image_tasks.status IN "
+                "('verified_exact', 'no_images', 'count_conflict') ORDER BY image_id"
             ).fetchall()
         finally:
             connection.close()

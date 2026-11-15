@@ -3467,6 +3467,8 @@ test('serves gated coverage status through the API and public page', async (cont
   const pageDocument = await pageResponse.text();
   assert.match(pageDocument, /See how many project images Busisi has checked/);
   assert.match(pageDocument, /36,748/);
+  assert.match(pageDocument, /Strongly resolved/);
+  assert.match(pageDocument, /Checked does not mean verified/);
   assert.match(pageDocument, /No AI model decides whether an image is published/);
   assert.match(pageDocument, /The checked sources have not changed/);
   assert.match(pageDocument, /Commission on Audit report catalogues/);

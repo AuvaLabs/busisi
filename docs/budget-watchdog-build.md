@@ -297,13 +297,19 @@ research package.
 queue every six hours. It uses a 25-contract canary, 100-contract chunks, four
 worker-local HTTP sessions and a shared two-request-per-second host limiter.
 The adaptive controller begins at 1,000 contracts per cycle, ramps to 2,000
-after eight healthy cycles, and reduces work after retryable source failures.
-Two rate limits or a retryable failure ratio above 10 percent halt the cycle
-before publication. Permanent HTTP access failures are recorded as blocked
-coverage gaps rather than repeatedly requested.
+after eight healthy cycles, and reduces work after source-health failures. Two
+rate limits or a source-health failure ratio above 10 percent halt the cycle
+before publication. Metadata access, server, network and validation failures
+count against that limit. Missing records and inaccessible individual media are
+recorded without treating the entire metadata source as unavailable.
 The queue selection is deterministic and mixes fiscal years and source image
 hints. Publication remains limited to reconciled metadata and inspected JPEG
 artifacts; conflicts remain quarantined.
+A private outcome table records a reason code and whether the failure happened
+while reading metadata, downloading media or validating evidence. Count
+conflicts receive one delayed recheck after 24 hours. Recoverable blocked source
+conditions receive a bounded delayed check after seven days; permanent absence
+and invalid evidence remain held.
 `npm run check`
 enforces at least 95
 percent Worker line and function coverage and at least 90 percent branch

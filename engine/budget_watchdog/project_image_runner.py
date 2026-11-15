@@ -33,6 +33,28 @@ type AcquiredEvidence = tuple[
 HTTP_TOO_MANY_REQUESTS = 429
 HTTP_SERVER_ERROR_MINIMUM = 500
 HTTP_PERMANENT_SOURCE_FAILURES = frozenset({401, 403, 404, 410})
+HTTP_ACCESS_DENIED = frozenset({401, 403})
+HTTP_NOT_FOUND = frozenset({404, 410})
+
+
+class StagedAcquisitionError(AcquisitionError):
+    """Preserve which project-image source boundary failed."""
+
+    def __init__(self, stage: str, error: AcquisitionError) -> None:
+        super().__init__(
+            str(error),
+            http_status=error.http_status,
+            retry_after_seconds=error.retry_after_seconds,
+            response_body=error.response_body,
+        )
+        self.stage = stage
+
+
+@dataclass(frozen=True, slots=True)
+class FailureClassification:
+    code: str
+    kind: str
+    controller_failure: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +70,7 @@ class ProjectImageBatchResult:
     source_failure: int
     server_failure: int
     validation_failure: int
+    controller_failures: int
 
 
 def merge_batch_results(
@@ -103,6 +126,7 @@ class ProjectImageRunner:
             "source_failure": 0,
             "server_failure": 0,
             "validation_failure": 0,
+            "controller_failures": 0,
         }
         thread_state = local()
 
@@ -132,9 +156,12 @@ class ProjectImageRunner:
             else:
                 exc = error
                 state = self._failure_state(exc, task.attempts + 1)
+                classification = self._classify_failure(exc)
                 self._queue.record_failure(
                     task.contract_id,
                     status=state,
+                    reason_code=classification.code,
+                    reason_stage=self._failure_stage(exc),
                     note=self._failure_note(exc, state),
                     now=now,
                     retry_after_seconds=(
@@ -149,7 +176,8 @@ class ProjectImageRunner:
                     ),
                 )
                 counts[state] += 1
-                counts[self._failure_kind(exc)] += 1
+                counts[classification.kind] += 1
+                counts["controller_failures"] += int(classification.controller_failure)
         return ProjectImageBatchResult(claimed=len(tasks), **counts)
 
     def _fetchers(
@@ -172,11 +200,19 @@ class ProjectImageRunner:
         metadata_fetcher: ProjectImageFetcher,
         image_fetcher: ProjectImageFetcher,
     ) -> AcquiredEvidence:
-        detail = metadata_fetcher.fetch(
-            "bettergov-dpwh", f"/projects/{contract_id}", retrieved_at=now
+        detail = self._fetch(
+            metadata_fetcher,
+            "bettergov-dpwh",
+            f"/projects/{contract_id}",
+            now,
+            stage="metadata",
         )
-        image_list = metadata_fetcher.fetch(
-            "bettergov-dpwh", f"/projects/{contract_id}/images", retrieved_at=now
+        image_list = self._fetch(
+            metadata_fetcher,
+            "bettergov-dpwh",
+            f"/projects/{contract_id}/images",
+            now,
+            stage="metadata",
         )
         detail_artifact = self._archive.store(detail)
         list_artifact = self._archive.store(image_list)
@@ -192,7 +228,9 @@ class ProjectImageRunner:
         acquired = []
         for record in records:
             source_id, path = project_image_acquisition_target(record.source_url)
-            image = image_fetcher.fetch(source_id, path, retrieved_at=now)
+            image = self._fetch(
+                image_fetcher, source_id, path, now, stage="media"
+            )
             inspection = inspect_jpeg(image.payload, image.media_type)
             artifact = self._archive.store(image)
             if inspection.sha256 != artifact.sha256:
@@ -218,6 +256,20 @@ class ProjectImageRunner:
             )
         return coverage, tuple(acquired)
 
+    @staticmethod
+    def _fetch(
+        fetcher: ProjectImageFetcher,
+        source_id: str,
+        path: str,
+        now: datetime,
+        *,
+        stage: str,
+    ) -> Acquisition:
+        try:
+            return fetcher.fetch(source_id, path, retrieved_at=now)
+        except AcquisitionError as exc:
+            raise StagedAcquisitionError(stage, exc) from exc
+
     def _failure_state(self, error: Exception, attempts: int) -> str:
         if attempts >= self._max_attempts:
             return "blocked"
@@ -229,18 +281,40 @@ class ProjectImageRunner:
         return "retry"
 
     @staticmethod
-    def _failure_kind(error: Exception) -> str:
-        if isinstance(error, AcquisitionError):
-            if error.http_status == HTTP_TOO_MANY_REQUESTS:
-                return "rate_limited"
-            if error.http_status is not None and error.http_status >= HTTP_SERVER_ERROR_MINIMUM:
-                return "server_failure"
-            return "source_failure"
-        return "validation_failure"
+    def _classify_failure(error: Exception) -> FailureClassification:
+        if not isinstance(error, AcquisitionError):
+            return FailureClassification(
+                "evidence_validation", "validation_failure", True
+            )
+        status = error.http_status
+        if status == HTTP_TOO_MANY_REQUESTS:
+            classification = ("source_rate_limited", "rate_limited", True)
+        elif status in HTTP_ACCESS_DENIED:
+            classification = (
+                "source_access_denied",
+                "source_failure",
+                getattr(error, "stage", "unknown") != "media",
+            )
+        elif status in HTTP_NOT_FOUND:
+            classification = ("source_not_found", "source_failure", False)
+        elif status is not None and status >= HTTP_SERVER_ERROR_MINIMUM:
+            classification = ("source_server_error", "server_failure", True)
+        elif status is None:
+            classification = ("source_network_error", "source_failure", True)
+        else:
+            classification = ("source_client_error", "source_failure", True)
+        return FailureClassification(*classification)
+
+    @staticmethod
+    def _failure_stage(error: Exception) -> str:
+        if isinstance(error, StagedAcquisitionError):
+            return error.stage
+        return "evidence" if not isinstance(error, AcquisitionError) else "unknown"
 
     @staticmethod
     def _failure_note(error: Exception, state: str) -> str:
         if isinstance(error, AcquisitionError):
             status = f" HTTP {error.http_status}" if error.http_status else ""
-            return f"Source acquisition failed{status}; task marked {state}."
+            stage = getattr(error, "stage", "source")
+            return f"Project {stage} download failed{status}; task marked {state}."
         return f"Evidence validation failed; task marked {state}."

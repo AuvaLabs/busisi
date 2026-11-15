@@ -173,7 +173,9 @@ def test_runner_retries_transient_source_failure(tmp_path: Path) -> None:
 
     assert result.retry == 1
     assert result.server_failure == 1
+    assert result.controller_failures == 1
     assert queue.summary().status_counts == {"retry": 1}
+    assert queue.outcome_counts() == {"source_server_error": 1}
 
 
 def test_runner_retries_validation_failure_before_blocking(tmp_path: Path) -> None:
@@ -187,7 +189,9 @@ def test_runner_retries_validation_failure_before_blocking(tmp_path: Path) -> No
 
     assert result.retry == 1
     assert result.validation_failure == 1
+    assert result.controller_failures == 1
     assert queue.summary().status_counts == {"retry": 1}
+    assert queue.outcome_counts() == {"evidence_validation": 1}
 
 
 def test_runner_classifies_rate_limits_for_the_cycle_controller(tmp_path: Path) -> None:
@@ -201,6 +205,8 @@ def test_runner_classifies_rate_limits_for_the_cycle_controller(tmp_path: Path) 
 
     assert result.retry == 1
     assert result.rate_limited == 1
+    assert result.controller_failures == 1
+    assert queue.outcome_counts() == {"source_rate_limited": 1}
 
 
 def test_runner_separates_non_server_source_failures(tmp_path: Path) -> None:
@@ -215,6 +221,8 @@ def test_runner_separates_non_server_source_failures(tmp_path: Path) -> None:
     assert result.blocked == 1
     assert result.source_failure == 1
     assert result.server_failure == 0
+    assert result.controller_failures == 0
+    assert queue.outcome_counts() == {"source_not_found": 1}
 
 
 def test_runner_blocks_forbidden_official_media_without_retrying(tmp_path: Path) -> None:
@@ -229,6 +237,22 @@ def test_runner_blocks_forbidden_official_media_without_retrying(tmp_path: Path)
     assert result.blocked == 1
     assert result.retry == 0
     assert result.source_failure == 1
+    assert result.controller_failures == 1
+    assert queue.outcome_counts() == {"source_access_denied": 1}
+
+
+def test_runner_does_not_halt_all_coverage_for_one_forbidden_image(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+    result = ProjectImageRunner(
+        queue=queue,
+        archive=ArtifactArchive(tmp_path / "archive"),
+        metadata_fetcher=FakeFetcher(),
+        image_fetcher=FakeFetcher(fail=True, status=403),
+    ).run_batch(limit=1, now=NOW)
+
+    assert result.blocked == 1
+    assert result.controller_failures == 0
+    assert queue.outcome_counts() == {"source_access_denied": 1}
 
 
 def test_runner_quarantines_distinct_records_with_duplicate_image_bytes(tmp_path: Path) -> None:
