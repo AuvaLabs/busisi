@@ -754,6 +754,11 @@ test('serves the accessible civic color system and safe method boundaries', asyn
   assert.match(cssText, /\.section-icon/);
   assert.match(cssText, /\.budget-stage-line/);
   assert.match(cssText, /\.primary-nav/);
+  assert.match(
+    cssText,
+    /@media\(max-width:720px\)\{\.primary-nav\{[^}]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)[^}]*grid-auto-rows:minmax\(44px,auto\)[^}]*gap:0/,
+  );
+  assert.match(cssText, /@media\(max-width:720px\)\{\.primary-nav\{[^}]+\}\.primary-nav a\{[^}]*min-height:44px/);
   assert.match(cssText, /\.preview-panels>a>span[^}]*border-radius:0/);
   assert.match(await css.text(), /prefers-reduced-motion:reduce/);
   assert.match(icon.headers.get('content-type'), /^image\/svg\+xml/);
