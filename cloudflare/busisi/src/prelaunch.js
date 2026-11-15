@@ -744,12 +744,13 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/agencies/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/releases/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/budget-trail/</loc><lastmod>2026-11-03</lastmod></url>
-  <url><loc>${SITE.origin}/audit/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/audit/</loc><lastmod>2026-11-15</lastmod></url>
   <url><loc>${SITE.origin}/procurement/</loc><lastmod>2026-11-03</lastmod></url>
-  <url><loc>${SITE.origin}/audit/reports/coa-oda-consolidated-2024/</loc><lastmod>2026-11-03</lastmod></url>
-  <url><loc>${SITE.origin}/audit/reports/coa-dpwh-region-i-sao-2023-02/</loc><lastmod>2026-11-03</lastmod></url>
-  <url><loc>${SITE.origin}/audit/reports/coa-cpa-benguet-local-roads-2022/</loc><lastmod>2026-11-03</lastmod></url>
-  <url><loc>${SITE.origin}/audit/reports/coa-cpa-capiz-fmr-2015-01/</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>${SITE.origin}/audit/reports/coa-oda-consolidated-2025/</loc><lastmod>2026-11-15</lastmod></url>
+  <url><loc>${SITE.origin}/audit/reports/coa-oda-consolidated-2024/</loc><lastmod>2026-11-15</lastmod></url>
+  <url><loc>${SITE.origin}/audit/reports/coa-dpwh-region-i-sao-2023-02/</loc><lastmod>2026-11-15</lastmod></url>
+  <url><loc>${SITE.origin}/audit/reports/coa-cpa-benguet-local-roads-2022/</loc><lastmod>2026-11-15</lastmod></url>
+  <url><loc>${SITE.origin}/audit/reports/coa-cpa-capiz-fmr-2015-01/</loc><lastmod>2026-11-15</lastmod></url>
   <url><loc>${SITE.origin}/signals/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/integrity/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/accountability/</loc><lastmod>2026-11-04</lastmod></url>
@@ -873,6 +874,27 @@ const projectImage = async (env, imageId) => {
   });
 };
 
+const coaReportFile = async (env, reportId) => {
+  if (!env.DB || !env.PROJECT_MEDIA || !/^[a-z0-9-]{1,160}$/.test(reportId)) return null;
+  const record = await env.DB.prepare(`
+    SELECT artifact_sha256
+    FROM coa_reports
+    WHERE report_id = ? AND acquisition_status = 'verified_archived'
+  `).bind(reportId).first();
+  if (!record?.artifact_sha256 || !/^[a-f0-9]{64}$/.test(record.artifact_sha256)) return null;
+  const object = await env.PROJECT_MEDIA.get(`coa-reports/${record.artifact_sha256}.pdf`);
+  if (!object?.body) return null;
+  return new Response(object.body, {
+    headers: {
+      ...SECURITY_HEADERS,
+      'cache-control': 'public, max-age=31536000, immutable',
+      'content-disposition': `inline; filename="${reportId}.pdf"`,
+      'content-type': 'application/pdf',
+      etag: `"${record.artifact_sha256}"`,
+    },
+  });
+};
+
 const decodeRecordId = (value) => {
   try {
     const decoded = decodeURIComponent(value);
@@ -971,6 +993,10 @@ export default {
     }
     const imageMatch = url.pathname.match(/^\/media\/project-images\/([a-f0-9]{64})$/);
     if (imageMatch) result = await projectImage(env, imageMatch[1]);
+    const auditFileMatch = url.pathname.match(
+      /^\/audit\/reports\/([a-z0-9-]{1,160})\/source\.pdf$/,
+    );
+    if (!result && auditFileMatch) result = await coaReportFile(env, auditFileMatch[1]);
     const projectMatch = url.pathname.match(/^\/projects\/([a-z0-9-]+)\/?$/);
     if (projectMatch && env.DB) {
       const payload = await getEnhancedProject(env.DB, projectMatch[1]);

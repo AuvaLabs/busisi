@@ -475,9 +475,15 @@ const environment = (database, allowed = true) => ({
   DB: database,
   ASSETS: { fetch: async () => new Response('<h1>Busisi</h1>', { headers: { 'Content-Type': 'text/html' } }) },
   PROJECT_MEDIA: {
-    get: async (key) => key === `project-images/25O00113/${'a'.repeat(64)}.jpg`
-      ? { body: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]) }
-      : null,
+    get: async (key) => {
+      if (key === `project-images/25O00113/${'a'.repeat(64)}.jpg`) {
+        return { body: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]) };
+      }
+      if (key === `coa-reports/${'c'.repeat(64)}.pdf`) {
+        return { body: new TextEncoder().encode('%PDF-1.7\n%%EOF') };
+      }
+      return null;
+    },
   },
   PUBLIC_API_RATE_LIMITER: { limit: async () => ({ success: allowed }) },
 });
@@ -2705,6 +2711,43 @@ test('publishes the COA audit desk without turning absence into clearance', asyn
   assertPlainPublicLanguage(reportDocument, 'COA report page');
 });
 
+test('serves only saved COA report copies from private object storage', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  database.database.exec(`
+    UPDATE coa_reports
+    SET acquisition_status = 'verified_archived', artifact_sha256 = '${'c'.repeat(64)}',
+        byte_size = 15, page_count = 1
+    WHERE report_id = 'coa-report-1';
+  `);
+  const saved = await siteWorker.fetch(
+    request('/audit/reports/coa-report-1/source.pdf'), environment(database),
+  );
+  const missingRecord = await siteWorker.fetch(
+    request('/audit/reports/not-present/source.pdf'), environment(database),
+  );
+  const missingObjectEnv = environment(database);
+  missingObjectEnv.PROJECT_MEDIA = { get: async () => null };
+  const missingObject = await siteWorker.fetch(
+    request('/audit/reports/coa-report-1/source.pdf'), missingObjectEnv,
+  );
+  const missingBindingEnv = environment(database);
+  delete missingBindingEnv.PROJECT_MEDIA;
+  const missingBinding = await siteWorker.fetch(
+    request('/audit/reports/coa-report-1/source.pdf'), missingBindingEnv,
+  );
+
+  assert.equal(saved.status, 200);
+  assert.equal(saved.headers.get('content-type'), 'application/pdf');
+  assert.match(saved.headers.get('content-disposition'), /coa-report-1\.pdf/);
+  assert.match(saved.headers.get('cache-control'), /immutable/);
+  assert.equal(saved.headers.get('etag'), `"${'c'.repeat(64)}"`);
+  assert.match(await saved.text(), /^%PDF-1\.7/);
+  assert.equal(missingRecord.status, 404);
+  assert.equal(missingObject.status, 404);
+  assert.equal(missingBinding.status, 404);
+});
+
 test('publishes exact procurement evidence and preserves missing coverage', async (context) => {
   const database = new LocalD1();
   context.after(() => database.close());
@@ -3113,6 +3156,7 @@ test('renders archived, unavailable and incomplete COA report presentation state
   assert.match(desk, /Source unavailable/);
   assert.match(desk, /0 project files checked/);
   assert.match(archivedPage, /Source copy saved/);
+  assert.match(archivedPage, /audit\/reports\/archived-report\/source\.pdf/);
   assert.match(archivedPage, new RegExp('a{64}'));
   assert.match(archivedPage, /Not stated/);
   assert.match(unavailablePage, /Source copy not saved/);

@@ -551,6 +551,7 @@ test('publishes machine-readable discovery files', async () => {
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/budget-trail\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/audit\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/audit\/reports\/coa-oda-consolidated-2024\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/audit\/reports\/coa-oda-consolidated-2025\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/integrity\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/sulit\/<\/loc>/);
   assert.match(sitemapText, /<loc>https:\/\/busisi\.org\/questions\/<\/loc>/);

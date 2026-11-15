@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -91,6 +92,26 @@ def test_accepts_verified_archive_and_context_only_report_coverage() -> None:
     assert summary.archived_reports == 1
     assert summary.project_matches == 0
     assert catalog.project_coverage[0].status == "program_audit_available"
+
+
+def test_tracked_coa_catalog_archives_every_listed_report() -> None:
+    catalog_path = (
+        Path(__file__).resolve().parents[3]
+        / "ops"
+        / "harness"
+        / "fixtures"
+        / "coa_audit_catalog.json"
+    )
+
+    catalog = load_coa_catalog(catalog_path.read_bytes())
+    summary = summarize_coa_catalog(catalog)
+
+    assert summary.report_count == 5
+    assert summary.archived_reports == 5
+    assert all(report.source_url.endswith(".pdf") for report in catalog.reports)
+    assert all(report.artifact_sha256 for report in catalog.reports)
+    assert all(report.byte_size and report.byte_size > 1_000 for report in catalog.reports)
+    assert all(report.page_count and report.page_count > 0 for report in catalog.reports)
 
 
 def _mutate(mutator) -> bytes:

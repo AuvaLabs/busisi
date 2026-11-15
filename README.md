@@ -308,8 +308,11 @@ archived and reported, but never replace a reviewed publication automatically.
 The public `/coverage/` page exposes the latest result and its known discovery
 limits. The local operational audit also verifies queue integrity, lease age,
 publication markers, timer health and the complete live production contract.
-COA catalogue discovery remains an explicit manual coverage limit because the
-official catalogue blocks unattended acquisition.
+The data host remains blocked by the COA site's security layer, so catalogue
+discovery remains a reviewed coverage step. Busisi now uses a bounded
+Cloudflare-edge download path for known official files. Five report PDFs are
+saved with verified hashes and page counts; new reports are not published
+until their identity and source bytes pass the same review.
 
 PCAB record-count reductions require a row-level transition review between two
 archived, hash-verified official snapshots. The review permits removal only for

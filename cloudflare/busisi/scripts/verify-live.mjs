@@ -62,11 +62,11 @@ const expectedBudgetCycle = Object.freeze({
   catalog_sha256: '7fb461156cba8bd04b48315b298fb2b908506b6a2bb6e3df656d179ad59608ff',
 });
 const expectedCoa = Object.freeze({
-  report_count: '4',
-  archived_reports: '0',
+  report_count: '5',
+  archived_reports: '5',
   checked_projects: '6',
   project_matches: '0',
-  catalog_sha256: '4c6cbc56a5226dff8499f097bf8c800c1b952ed51198cce4842b724b2498d4ba',
+  catalog_sha256: 'd01dda4f28044ff6c48ad68b3a0a02deba1f5732f449a78d7cbbb391bd0ed07c',
 });
 const expectedProcurement = Object.freeze({
   source_count: '3',
@@ -1006,15 +1006,19 @@ const verifyData = async () => {
     fail('COA summary: coverage status or catalogue count mismatch');
   }
   const coaReports = await readJson('/api/v1/coa-reports');
-  if (coaReports.meta.total !== 4
+  if (coaReports.meta.total !== 5
     || coaReports.meta.review_scope !== 'official_coa_report_catalogue'
-    || !coaReports.data.every((report) => report.acquisition_status === 'discovered')) {
+    || !coaReports.data.every((report) => report.acquisition_status === 'verified_archived')) {
     fail('COA reports: count, scope or acquisition boundary mismatch');
   }
   await verifyHtmlRecord(
-    '/audit/reports/coa-oda-consolidated-2024/',
-    'Source copy not saved',
+    '/audit/reports/coa-oda-consolidated-2025/',
+    'Open Busisi saved copy',
   );
+  const coaFile = await request('/audit/reports/coa-oda-consolidated-2025/source.pdf');
+  expectStatus(coaFile, 200, 'COA saved report');
+  expectContentType(coaFile, 'application/pdf', 'COA saved report');
+  expectBytes(Buffer.from(await coaFile.arrayBuffer()).subarray(0, 4), '%PDF', 'COA saved report');
   const procurementSummary = (await readJson('/api/v1/procurement-summary')).data;
   for (const [key, expected] of Object.entries(expectedProcurement)) {
     if (procurementSummary.metadata[key] !== expected) {

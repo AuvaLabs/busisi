@@ -49,9 +49,10 @@ The current production snapshot contains 68,608 positive GAA records, 56,887
 DPWH delivery records, 385 explicitly unreviewed candidate links, five reviewed
 dossiers and one quarantined example. Exact artifact hashes and monetary totals
 are verified by the live contract in `cloudflare/busisi/scripts/verify-live.mjs`.
-The COA pilot separately indexes four official report records and records a
-completed coverage review for all six dossiers. No project-level COA observation
-match is currently claimed, and no COA source copy is marked archived.
+The COA pilot separately indexes five official report records and records a
+completed coverage review for all six dossiers. All five official PDFs are
+saved with verified hashes and page counts. No project-level COA observation
+match is currently claimed.
 The contract outcome layer currently compares the three dossiers with exact
 procurement evidence against their DPWH delivery records. It also retains three
 exact rows extracted from BetterGov's version-pinned PhilGEPS mirror, including

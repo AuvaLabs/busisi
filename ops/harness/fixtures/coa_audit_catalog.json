@@ -1,34 +1,34 @@
 {
   "schema_version": 1,
-  "checked_at": "2026-11-03T12:00:00+04:00",
+  "checked_at": "2026-11-15T02:29:08+00:00",
   "catalogs": [
     {
       "catalog_id": "coa-aar-nga",
       "title": "Annual Audit Reports: National Government Agencies",
-      "source_url": "https://www.coa.gov.ph/reports/annual-audit-reports/aar-national-government-agencies/",
-      "checked_status": "blocked",
-      "evidence_note": "The official catalogue is publicly indexed but its current bot challenge prevented deterministic acquisition from the Busisi runner. No report content is claimed from this catalogue snapshot."
+      "source_url": "https://www.coa.gov.ph/reports/annual-audit-reports/",
+      "checked_status": "reachable",
+      "evidence_note": "The official catalogue was reached and checked through Busisi's source-download path."
     },
     {
       "catalog_id": "coa-compliance",
       "title": "COA compliance audit reports",
       "source_url": "https://www.coa.gov.ph/reports/compliance-audit-reports/local-government-units/",
-      "checked_status": "reachable_by_index",
-      "evidence_note": "The official catalogue indexes targeted compliance audits including local development, education and disaster funds."
+      "checked_status": "reachable",
+      "evidence_note": "The official catalogue was reached and checked. It indexes targeted compliance audits including local development, education and disaster funds."
     },
     {
       "catalog_id": "coa-cpa",
       "title": "Citizen Participatory Audit reports",
       "source_url": "https://cpa.coa.gov.ph/reports/",
-      "checked_status": "reachable_by_index",
-      "evidence_note": "The official CPA catalogue indexes reports produced by COA audit teams with citizen partners."
+      "checked_status": "reachable",
+      "evidence_note": "The official CPA catalogue was reached and checked. It indexes reports produced by COA audit teams with citizen partners."
     },
     {
       "catalog_id": "coa-oda",
       "title": "Official Development Assistance audit reports",
-      "source_url": "https://www.coa.gov.ph/reports/official-development-assistance-projects/",
-      "checked_status": "reachable_by_index",
-      "evidence_note": "The official catalogue indexes consolidated audits of ODA-funded programs and projects."
+      "source_url": "https://www.coa.gov.ph/reports/official-development-assistance-oda-projects/",
+      "checked_status": "reachable",
+      "evidence_note": "The official catalogue was reached and checked. It indexes consolidated audits of ODA-funded programs and projects."
     }
   ],
   "reports": [
@@ -39,14 +39,14 @@
       "audited_entity": "Department of Public Works and Highways Regional Office No. I",
       "fiscal_year": 2023,
       "publication_date": "2023-06-30",
-      "source_url": "https://www.coa.gov.ph/wpfd_file/department-of-public-works-and-highways-regional-office-no-i-sao-report-no-2023-02/",
+      "source_url": "https://www.coa.gov.ph/download/6043/2023/77860/department-of-public-works-and-highways-regional-office-no-i-sao-report-no-2023-02.pdf",
       "landing_url": "https://www.coa.gov.ph/reports/special-audits/",
-      "acquisition_status": "discovered",
-      "artifact_sha256": null,
-      "byte_size": null,
-      "page_count": null,
+      "acquisition_status": "verified_archived",
+      "artifact_sha256": "a156dde264637ff227c1f93b366785f12a06a2700e2300f9e6125c6e0869f4f1",
+      "byte_size": 19812538,
+      "page_count": 222,
       "scope_note": "Sectoral performance audit of Malampaya Fund received for various DPWH Regional Office I projects.",
-      "evidence_note": "The official report record was discovered. The source bytes were not acquired, so Busisi does not publish observations from it."
+      "evidence_note": "The official PDF was saved, hashed and checked. Busisi does not publish project observations from it without a separate reviewed match."
     },
     {
       "report_id": "coa-cpa-benguet-local-roads-2022",
@@ -57,12 +57,12 @@
       "publication_date": "2024-02-21",
       "source_url": "https://cpa.coa.gov.ph/wp-content/uploads/2024/02/CPA-LGAS-C-Province-of-Benguet-ML-2022_compressed.pdf",
       "landing_url": "https://cpa.coa.gov.ph/reports/",
-      "acquisition_status": "discovered",
-      "artifact_sha256": null,
-      "byte_size": null,
-      "page_count": null,
+      "acquisition_status": "verified_archived",
+      "artifact_sha256": "c168eda01ffb5fc0a50367f39a32a77944e550a1e9cad49e5fc5b07630dd818a",
+      "byte_size": 9412701,
+      "page_count": 155,
       "scope_note": "Procurement and implementation of CY2022 local road projects funded from the provincial 20% Development Fund.",
-      "evidence_note": "The official PDF was discovered through the CPA catalogue. It is contextual and does not cover the current Busisi pilot contracts."
+      "evidence_note": "The official PDF was saved, hashed and checked. It is contextual and does not cover the current Busisi reviewed projects."
     },
     {
       "report_id": "coa-cpa-capiz-fmr-2015-01",
@@ -73,12 +73,12 @@
       "publication_date": null,
       "source_url": "https://cpa.coa.gov.ph/wp-content/uploads/2021/03/CPA_Consolidated_Capiz_Province.pdf",
       "landing_url": "https://cpa.coa.gov.ph/reports/",
-      "acquisition_status": "discovered",
-      "artifact_sha256": null,
-      "byte_size": null,
-      "page_count": null,
+      "acquisition_status": "verified_archived",
+      "artifact_sha256": "af2bd48fe39d4ba146b7ef93d87bd4af58a7b38e19dd478cd6bdf4de4fcd9905",
+      "byte_size": 12741537,
+      "page_count": 101,
       "scope_note": "Pilot audit of selected farm-to-market road projects and compliance with applicable project requirements.",
-      "evidence_note": "The official PDF was discovered through the CPA catalogue. It is program context, not evidence about a current Busisi dossier."
+      "evidence_note": "The official PDF was saved, hashed and checked. It is program context, not evidence about a current Busisi reviewed project."
     },
     {
       "report_id": "coa-oda-consolidated-2024",
@@ -86,15 +86,31 @@
       "report_type": "oda_consolidated_audit",
       "audited_entity": "National government agencies implementing ODA-funded programs and projects",
       "fiscal_year": 2024,
-      "publication_date": null,
-      "source_url": "https://www.coa.gov.ph/wpfd_file/cy-2024-consolidated-audit-report-on-the-oda-funded-programs-and-projects/",
-      "landing_url": "https://www.coa.gov.ph/reports/official-development-assistance-projects/",
-      "acquisition_status": "discovered",
-      "artifact_sha256": null,
-      "byte_size": null,
-      "page_count": null,
+      "publication_date": "2025-12-16",
+      "source_url": "https://www.coa.gov.ph/download/94/oda-projects/95604/cy-2024-consolidated-audit-report-on-the-oda-funded-programs-and-projects.pdf",
+      "landing_url": "https://www.coa.gov.ph/reports/official-development-assistance-oda-projects/",
+      "acquisition_status": "verified_archived",
+      "artifact_sha256": "3022cf370a785b207462a5036dd9e61cfdf46b9c2d198793cb5ea32e5e69260e",
+      "byte_size": 5434796,
+      "page_count": 102,
       "scope_note": "Consolidated project-level audit observations, recommendations and reported implementation status for covered ODA projects.",
-      "evidence_note": "The official report record was discovered. It is not linked to a Busisi contract without a reviewed identifier match."
+      "evidence_note": "The official PDF was saved, hashed and checked. It is not linked to a Busisi contract without a reviewed identifier match."
+    },
+    {
+      "report_id": "coa-oda-consolidated-2025",
+      "title": "CY2025 Consolidated Audit Report on ODA-Funded Programs and Projects",
+      "report_type": "oda_consolidated_audit",
+      "audited_entity": "National government agencies implementing ODA-funded programs and projects",
+      "fiscal_year": 2025,
+      "publication_date": "2026-10-30",
+      "source_url": "https://www.coa.gov.ph/download/94/oda-projects/103620/cy-2025-consolidated-audit-report-on-the-oda-funded-programs-and-projects.pdf",
+      "landing_url": "https://www.coa.gov.ph/reports/official-development-assistance-oda-projects/",
+      "acquisition_status": "verified_archived",
+      "artifact_sha256": "8a842b7c15b37c49be05e0313ff9a60ac1112b0727104d1a253206b5aceb3b50",
+      "byte_size": 2516210,
+      "page_count": 98,
+      "scope_note": "Consolidated audit observations and agency action status for ODA-funded programs and projects.",
+      "evidence_note": "The official PDF was saved, hashed and checked. It is not linked to a Busisi contract without a reviewed identifier match."
     }
   ],
   "project_coverage": [
