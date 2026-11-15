@@ -17,6 +17,7 @@ import { publicServicesCss } from './public-services-styles.js';
 import { ecosystemCss } from './ecosystem-styles.js';
 import { researchCss } from './research-styles.js';
 import { projectTypesCss } from './project-types-styles.js';
+import { newsroomCss } from './newsroom-styles.js';
 import { methodDiagram } from './prelaunch-visuals.js';
 
 const icon = (name, className = 'section-icon') => (
@@ -38,7 +39,8 @@ const navigation = (canonicalPath) => {
   )).join('');
   return `<div class="header-inner">
     <a class="wordmark" href="/" aria-label="Busisi home"><img class="brand-mark" src="/assets/busisi-mark-v3.svg" width="44" height="44" alt=""><span>Busisi</span></a>
-    <nav class="primary-nav" aria-label="Primary navigation">${links}</nav>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" aria-label="Open menu"><span aria-hidden="true"></span><span class="nav-toggle-label">Menu</span></button>
+    <nav id="primary-navigation" class="primary-nav" aria-label="Primary navigation">${links}</nav>
   </div>`;
 };
 
@@ -75,11 +77,11 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 <html lang="en-PH"><head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${safeTitle}</title><meta name="description" content="${safeDescription}"><meta name="robots" content="${robots}">
-  <link rel="canonical" href="${canonical}"><link rel="alternate" type="application/rss+xml" title="Busisi evidence updates" href="/feeds/updates.xml"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v20.css">
+  <link rel="canonical" href="${canonical}"><link rel="alternate" type="application/rss+xml" title="Busisi evidence updates" href="/feeds/updates.xml"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/site-visual-v21.css">
   <meta property="og:type" content="website"><meta property="og:site_name" content="Busisi"><meta property="og:title" content="${safeTitle}"><meta property="og:description" content="${safeDescription}"><meta property="og:url" content="${canonical}">
   <meta property="og:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Busisi: Follow the evidence behind public projects">
   <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${SITE.origin}/assets/busisi-social-v2.png"><meta name="twitter:image:alt" content="Busisi: Follow the evidence behind public projects">
-  <script type="application/ld+json">${escapeJson(schema)}</script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js?v=2"></script>' : ''}${canonicalPath === '/projects/' ? '<script type="module" src="/assets/projects-v1.js?v=1"></script>' : ''}${canonicalPath === '/contracts/' ? '<script type="module" src="/assets/contracts-v1.js?v=3"></script>' : ''}${canonicalPath === '/contractors/' ? '<script type="module" src="/assets/contractors-v1.js?v=1"></script>' : ''}${canonicalPath === '/places/' ? '<script type="module" src="/assets/places-v1.js?v=1"></script>' : ''}${canonicalPath === '/public-services/' ? '<script type="module" src="/assets/public-services-v1.js?v=3"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js?v=2"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/releases/' ? '<script type="module" src="/assets/releases-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js?v=2"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js?v=3"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js?v=3"></script>' : ''}${canonicalPath.startsWith('/contractors/') && canonicalPath !== '/contractors/' ? '<script type="module" src="/assets/contractor-v1.js?v=1"></script>' : ''}
+  <script type="application/ld+json">${escapeJson(schema)}</script><script type="module" src="/assets/navigation-v1.js"></script>${canonicalPath === '/sulit/' ? '<script type="module" src="/assets/public-value-v1.js?v=2"></script>' : ''}${canonicalPath === '/projects/' ? '<script type="module" src="/assets/projects-v1.js?v=1"></script>' : ''}${canonicalPath === '/contracts/' ? '<script type="module" src="/assets/contracts-v1.js?v=3"></script>' : ''}${canonicalPath === '/contractors/' ? '<script type="module" src="/assets/contractors-v1.js?v=1"></script>' : ''}${canonicalPath === '/places/' ? '<script type="module" src="/assets/places-v1.js?v=1"></script>' : ''}${canonicalPath === '/public-services/' ? '<script type="module" src="/assets/public-services-v1.js?v=3"></script>' : ''}${canonicalPath === '/explore/' ? '<script type="module" src="/assets/explorer-v1.js?v=2"></script>' : ''}${canonicalPath === '/agencies/' ? '<script type="module" src="/assets/agencies-v1.js"></script>' : ''}${canonicalPath === '/releases/' ? '<script type="module" src="/assets/releases-v1.js"></script>' : ''}${canonicalPath === '/changes/' ? '<script type="module" src="/assets/changes-v1.js?v=2"></script>' : ''}${canonicalPath === '/budget-trail/' ? '<script type="module" src="/assets/budget-cycle-v1.js"></script>' : ''}${canonicalPath === '/signals/' ? '<script type="module" src="/assets/review-v1.js?v=3"></script>' : ''}${canonicalPath === '/integrity/' ? '<script type="module" src="/assets/integrity-v1.js?v=3"></script>' : ''}${canonicalPath.startsWith('/contractors/') && canonicalPath !== '/contractors/' ? '<script type="module" src="/assets/contractor-v1.js?v=1"></script>' : ''}
 </head><body>
   <a class="skip-link" href="#main-content">Skip to content</a><header class="site-header">${navigation(canonicalPath)}</header>
   <main id="main-content">${body}</main>${footer}
@@ -111,19 +113,20 @@ export const homeBody = (checkedAt = null) => `
         <div><input id="home-query" name="q" type="search" maxlength="200" placeholder="DPWH, Cebu, flood control…"><button type="submit">Search records</button></div>
       </form>
     </div>
-    <aside class="home-ledger" aria-label="Current FY2027 budget evidence">
-      <header><span>Current evidence</span>${evidenceCheckStamp(checkedAt)}</header>
-      <dl>
-        <div><dt>Proposed expenditure program</dt><dd>₱7.200T</dd></div>
-        <div><dt>Project rows compared</dt><dd>20,431</dd></div>
-        <div><dt>DPWH delivery records</dt><dd>56,887</dd></div>
-        <div><dt>Integrity review signals</dt><dd>16,814</dd></div>
-      </dl>
-      <a href="/projects/">Explore public project evidence <span aria-hidden="true">→</span></a>
-    </aside>
+    <div class="home-visual">
+      <figure class="home-hero-art"><img src="/assets/busisi-civic-evidence-hero-v1.webp" width="1600" height="800" alt="Citizens following public project evidence across the Philippines" fetchpriority="high" decoding="async"><figcaption>From the national budget to projects in communities</figcaption></figure>
+      <aside class="home-ledger" aria-label="Current FY2027 budget evidence">
+        <header><span>Current evidence</span>${evidenceCheckStamp(checkedAt)}</header>
+        <dl>
+          <div><dt>Proposed expenditure program</dt><dd>₱7.200T</dd></div>
+          <div><dt>Project rows compared</dt><dd>20,431</dd></div>
+          <div><dt>DPWH delivery records</dt><dd>56,887</dd></div>
+          <div><dt>Integrity review signals</dt><dd>16,814</dd></div>
+        </dl>
+        <a href="/projects/">Explore public project evidence <span aria-hidden="true">→</span></a>
+      </aside>
+    </div>
   </section>
-
-  <div class="editorial-banner" aria-hidden="true"><img src="/assets/busisi-evidence-banner-v2.webp" width="1600" height="520" alt="" loading="lazy" decoding="async"></div>
 
   <section class="budget-stage-line" aria-labelledby="budget-stage-heading">
     <header><p class="kicker">Evidence chain</p><h2 id="budget-stage-heading">What can be followed now</h2></header>
@@ -409,6 +412,6 @@ export const methodologyBody = `
     <div class="standards-grid"><article class="standard-panel"><h3>Same rules for every record</h3><p>Every agency, district, contractor, project, and public official is evaluated under the same published evidence rules. Names, offices, locations, and amounts do not change a threshold or turn a review signal into a finding.</p></article><article class="standard-panel"><h3>Data before interpretation</h3><p>Official records, derived comparisons, review signals, and verified findings remain separate. Busisi does not infer political motive from an amount or association, and it publishes coverage limits and correction history so readers can examine possible sources of bias.</p></article><article class="standard-panel"><h3>Ownership and contact</h3><p>Auva Labs is responsible for Busisi's software, data pipeline, methodology, presentation, and publication decisions. Data-source organizations do not control Busisi's classifications or conclusions. Questions, corrections, and source-backed challenges are welcome at <a href="mailto:dev@auvalabs.com">dev@auvalabs.com</a>.</p></article></div>
   </section>`;
 
-export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}\n${questionsCss}\n${publicServicesCss}\n${ecosystemCss}\n${researchCss}\n${projectTypesCss}`;
+export const siteCss = `${baseSiteCss}\n${dataCss}\n${typeCss}\n${changeCss}\n${agencyCss}\n${releaseCss}\n${budgetCycleCss}\n${publicValueCss}\n${reviewCss}\n${integrityCss}\n${editorialCss}\n${recordCss}\n${contractsCss}\n${questionsCss}\n${publicServicesCss}\n${ecosystemCss}\n${researchCss}\n${projectTypesCss}\n${newsroomCss}`;
 
 export const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#15191d" stroke-width="2.5" stroke-linejoin="round"><path fill="#d2d9de" d="m8 39 24 14 24-14v9L32 62 8 48Z"/><path fill="#e9f0f4" d="m8 28 24 14 24-14v9L32 51 8 37Z"/><path fill="#fff" d="M8 17 32 3l24 14-24 14Z"/></g><path fill="none" stroke="#17415f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M18 44V34l14-8v-9l9-5"/><circle cx="18" cy="44" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="32" cy="26" r="3.5" fill="#fff" stroke="#17415f" stroke-width="3"/><circle cx="51" cy="12" r="10" fill="#17415f"/><path fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m46.5 12 3 3 6-7"/><circle cx="18" cy="44" r="1.2" fill="#8a4600"/></svg>`;

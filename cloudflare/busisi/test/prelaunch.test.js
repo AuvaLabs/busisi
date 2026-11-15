@@ -66,7 +66,8 @@ test('home publishes canonical prelaunch SEO without exposing records', async ()
   assert.match(document, /<meta property="og:image:width" content="1200">/);
   assert.match(document, /<meta property="og:image:height" content="630">/);
   assert.match(document, /<meta name="twitter:card" content="summary_large_image">/);
-  assert.match(document, /href="\/assets\/site-visual-v20\.css"/);
+  assert.match(document, /href="\/assets\/site-visual-v21\.css"/);
+  assert.match(document, /src="\/assets\/navigation-v1\.js"/);
   assert.match(document, /"@type":"WebSite"/);
   assert.match(document, /Philippine public project evidence/);
   assert.match(document, /independent, nonpartisan evidence desk for Philippine public projects/);
@@ -93,6 +94,8 @@ test('home provides task-led navigation and a data-led editorial masthead', asyn
   assert.match(document, /href="\/signals\/"/);
   assert.match(document, /href="\/sources\/"/);
   assert.match(document, /href="\/watch\/"/);
+  assert.match(document, /class="nav-toggle"[^>]*aria-expanded="false"[^>]*aria-controls="primary-navigation"/);
+  assert.match(document, /<nav id="primary-navigation" class="primary-nav"/);
   assert.match(document, /class="home-ledger"/);
   assert.match(document, /aria-label="Current FY2027 budget evidence"/);
   assert.match(document, /Project rows compared<\/dt><dd>20,431/);
@@ -100,7 +103,9 @@ test('home provides task-led navigation and a data-led editorial masthead', asyn
   assert.match(document, /56,887/);
   assert.match(document, /Budget authority/);
   assert.match(document, /Payment and outcome/);
-  assert.match(document, /src="\/assets\/busisi-evidence-banner-v2\.webp"/);
+  assert.match(document, /class="home-hero-art"/);
+  assert.match(document, /src="\/assets\/busisi-civic-evidence-hero-v1\.webp"/);
+  assert.match(document, /Citizens following public project evidence across the Philippines/);
   assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#delivery"/);
   assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#contractors"/);
   assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#investigate"/);
@@ -721,7 +726,7 @@ test('renders a reviewed evidence dossier when the publication database is bound
 });
 
 test('serves the accessible civic color system and safe method boundaries', async () => {
-  const css = await fetchPath('/assets/site-visual-v20.css');
+  const css = await fetchPath('/assets/site-visual-v21.css');
   const icon = await fetchPath('/assets/favicon.svg');
   const missingAsset = await fetchPath('/assets/missing.svg');
   const head = await worker.fetch(new Request('https://busisi.org/', { method: 'HEAD' }));
@@ -733,11 +738,11 @@ test('serves the accessible civic color system and safe method boundaries', asyn
   assert.match(cssText, /font-family:'Source Sans 3'/);
   assert.doesNotMatch(cssText, /Merriweather|Georgia|Times New Roman/i);
   assert.match(cssText, /--paper:#fff/);
-  assert.match(cssText, /--ink:#15191d/);
-  assert.match(cssText, /--accent:#17415f/);
-  assert.match(cssText, /--review:#8a4600/);
-  assert.match(cssText, /--signal-red:#982b25/);
-  assert.match(cssText, /--verified:#1f6547/);
+  assert.match(cssText, /--ink:#111820/);
+  assert.match(cssText, /--accent:#0b4f9f/);
+  assert.match(cssText, /--review:#9a5700/);
+  assert.match(cssText, /--signal-red:#a32824/);
+  assert.match(cssText, /--verified:#096547/);
   assert.match(cssText, /--text-xs:\.8125rem/);
   assert.match(cssText, /body\{[^}]*font-size:var\(--text-md\)[^}]*line-height:1\.6/);
   assert.match(cssText, /body:before\{display:none/);
@@ -756,9 +761,12 @@ test('serves the accessible civic color system and safe method boundaries', asyn
   assert.match(cssText, /\.primary-nav/);
   assert.match(
     cssText,
-    /@media\(max-width:720px\)\{\.primary-nav\{[^}]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)[^}]*grid-auto-rows:minmax\(44px,auto\)[^}]*gap:0/,
+    /@media\(max-width:720px\)[\s\S]*\.nav-toggle\{[^}]*display:inline-flex/,
   );
-  assert.match(cssText, /@media\(max-width:720px\)\{\.primary-nav\{[^}]+\}\.primary-nav a\{[^}]*min-height:44px/);
+  assert.match(cssText, /\.site-header\.nav-ready:not\(\.nav-open\) \.primary-nav\{[^}]*visibility:hidden/);
+  assert.match(cssText, /\.primary-nav a\{[^}]*min-height:48px/);
+  assert.match(cssText, /\.home-hero-art/);
+  assert.match(cssText, /\.home-visual/);
   assert.match(cssText, /\.preview-panels>a>span[^}]*border-radius:0/);
   assert.match(await css.text(), /prefers-reduced-motion:reduce/);
   assert.match(icon.headers.get('content-type'), /^image\/svg\+xml/);
@@ -769,8 +777,8 @@ test('serves the accessible civic color system and safe method boundaries', asyn
 });
 
 test('keeps semantic text colors at WCAG AA contrast on white', async () => {
-  const cssText = await (await fetchPath('/assets/site-visual-v20.css')).text();
-  const token = (name) => cssText.match(new RegExp(`--${name}:(#[0-9a-f]{6})`))?.[1];
+  const cssText = await (await fetchPath('/assets/site-visual-v21.css')).text();
+  const token = (name) => [...cssText.matchAll(new RegExp(`--${name}:(#[0-9a-f]{6})`, 'g'))].at(-1)?.[1];
   const luminance = (hex) => {
     const channels = [1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
     const linear = channels.map((value) => (
@@ -783,6 +791,15 @@ test('keeps semantic text colors at WCAG AA contrast on white', async () => {
   for (const name of ['ink', 'accent', 'review', 'signal-red', 'verified', 'muted']) {
     assert.ok(contrastOnWhite(token(name)) >= 4.5, `${name} must meet WCAG AA on white`);
   }
+});
+
+test('mobile navigation exposes an accessible open and close interaction', () => {
+  const script = readFileSync(new URL('../public/assets/navigation-v1.js', import.meta.url), 'utf8');
+
+  assert.match(script, /aria-expanded/);
+  assert.match(script, /nav-open/);
+  assert.match(script, /Escape/);
+  assert.match(script, /focus\(\)/);
 });
 
 test('passes self-hosted fonts through the static asset binding', async () => {
@@ -852,7 +869,7 @@ test('places the decorative budget evidence banner on the release ledger', async
   assert.match(document, /busisi-budget-evidence-banner-v2\.webp/);
   assert.match(document, /class="release-editorial-banner" aria-hidden="true"/);
   assert.match(document, /width="1600" height="534" alt=""/);
-  assert.match(document, /site-visual-v20\.css/);
+  assert.match(document, /site-visual-v21\.css/);
 });
 
 test('reader actions use human-readable evidence instead of raw JSON endpoints', () => {

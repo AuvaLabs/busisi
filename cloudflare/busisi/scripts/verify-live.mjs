@@ -592,10 +592,11 @@ const verifyDesign = async () => {
   expectStatus(home, 200, '/');
   const html = await home.text();
   for (const value of [
-    '/assets/site-visual-v20.css',
+    '/assets/site-visual-v21.css',
     '/assets/busisi-mark-v3.svg',
     '/assets/busisi-social-v2.png',
-    '/assets/busisi-evidence-banner-v2.webp',
+    '/assets/busisi-civic-evidence-hero-v1.webp',
+    '/assets/navigation-v1.js',
     '/assets/busisi-icons-v1.svg#delivery',
     'class="home-ledger"',
     'Current FY2027 budget evidence',
@@ -605,13 +606,14 @@ const verifyDesign = async () => {
     fail('home design: retired branding or illustration is public');
   }
 
-  const css = await request('/assets/site-visual-v20.css');
+  const css = await request('/assets/site-visual-v21.css');
   expectStatus(css, 200, 'design CSS');
   expectContentType(css, 'text/css', 'design CSS');
   const cssText = await css.text();
   for (const value of [
-    'Source Sans 3', '--paper:#fff', '--ink:#15191d', '--accent:#17415f',
-    '--review:#8a4600', '--signal-red:#982b25', '--verified:#1f6547', '.home-ledger',
+    'Source Sans 3', '--paper:#fff', '--ink:#111820', '--accent:#0b4f9f',
+    '--review:#9a5700', '--signal-red:#a32824', '--verified:#096547', '.home-ledger',
+    '.home-hero-art', '.home-visual', '.nav-toggle',
     '.explorer-shell', '.review-shell', '.integrity-shell', '.contractor-shell',
     '.lifecycle-grid', '.lifecycle-item', '.contract-explorer', '.contract-card',
     '.release-shell', '.release-card', '.questions-hero', '.question-grid',
@@ -640,13 +642,13 @@ const verifyDesign = async () => {
   if (socialCardBytes.length > 250_000) fail('social card: exceeds the 250 KB performance budget');
   expectBytes(socialCardBytes.subarray(1, 4), 'PNG', 'social card');
 
-  const banner = await request('/assets/busisi-evidence-banner-v2.webp');
-  expectStatus(banner, 200, 'editorial banner');
-  expectContentType(banner, 'image/webp', 'editorial banner');
+  const banner = await request('/assets/busisi-civic-evidence-hero-v1.webp');
+  expectStatus(banner, 200, 'editorial hero');
+  expectContentType(banner, 'image/webp', 'editorial hero');
   const bannerBytes = Buffer.from(await banner.arrayBuffer());
-  if (bannerBytes.length > 200_000) fail('editorial banner: exceeds the 200 KB performance budget');
-  expectBytes(bannerBytes.subarray(0, 4), 'RIFF', 'editorial banner');
-  expectBytes(bannerBytes.subarray(8, 12), 'WEBP', 'editorial banner');
+  if (bannerBytes.length > 250_000) fail('editorial hero: exceeds the 250 KB performance budget');
+  expectBytes(bannerBytes.subarray(0, 4), 'RIFF', 'editorial hero');
+  expectBytes(bannerBytes.subarray(8, 12), 'WEBP', 'editorial hero');
 
   const budgetBanner = await request('/assets/busisi-budget-evidence-banner-v2.webp');
   expectStatus(budgetBanner, 200, 'budget evidence banner');
