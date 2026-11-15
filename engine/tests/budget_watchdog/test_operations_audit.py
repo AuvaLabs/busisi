@@ -65,3 +65,21 @@ def test_reports_each_fail_closed_operational_gap() -> None:
     assert any("acquisition-retry.timer next run is too far away" in item for item in issues)
     assert any("weekly-coverage-audit.timer is not active" in item for item in issues)
     assert any("monthly-reconciliation.timer next run is too far away" in item for item in issues)
+
+
+def test_defers_queue_invariants_while_coverage_is_writing() -> None:
+    facts = _facts(
+        queue_total=0,
+        queue_statuses={},
+        expired_leases=0,
+        latest_queue_update=None,
+        release_completed=100,
+        queue_checked=False,
+        pipeline_busy=True,
+        timer_states={
+            **_facts().timer_states,
+            "busisi-project-image-coverage.timer": ("active", None),
+        },
+    )
+
+    assert audit_operational_facts(facts, now=NOW) == ()

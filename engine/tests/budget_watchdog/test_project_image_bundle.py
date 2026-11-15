@@ -147,3 +147,66 @@ def test_media_materialization_falls_back_to_copy(tmp_path, monkeypatch) -> None
     media = next((output / "media").iterdir())
     assert media.read_bytes() == JPEG
     assert media.stat().st_ino != source.stat().st_ino
+
+
+def test_reuses_unchanged_released_media_without_rehashing_or_materializing(
+    tmp_path, monkeypatch
+) -> None:
+    source = tmp_path / "source.jpg"
+    source.write_bytes(JPEG)
+    image = _image("24EXACT1", "1" * 64, source)
+    previous = {
+        "contracts": {"24EXACT1": {"state": "verified_exact"}},
+        "media": [
+            {
+                "archive_key": image.archive_key,
+                "byte_size": image.inspection.byte_size,
+                "sha256": image.inspection.sha256,
+            }
+        ],
+    }
+
+    def reject_rehash(_path) -> str:
+        raise AssertionError("unchanged released media must not be rehashed")
+
+    monkeypatch.setattr("engine.budget_watchdog.project_image_bundle._digest_file", reject_rehash)
+    output = tmp_path / "bundle"
+
+    build_project_image_bundle(
+        (_coverage("24EXACT1"),),
+        (image,),
+        "2026-11-03T10:00:00+00:00",
+        output,
+        previous_manifest=previous,
+    )
+
+    assert tuple((output / "media").iterdir()) == ()
+
+
+def test_materializes_media_when_a_held_record_becomes_publishable(tmp_path) -> None:
+    source = tmp_path / "source.jpg"
+    source.write_bytes(JPEG)
+    image = _image("24EXACT1", "1" * 64, source)
+    previous = {
+        "contracts": {"24EXACT1": {"state": "count_conflict"}},
+        "media": [
+            {
+                "archive_key": image.archive_key,
+                "byte_size": image.inspection.byte_size,
+                "sha256": image.inspection.sha256,
+            }
+        ],
+    }
+    output = tmp_path / "bundle"
+
+    build_project_image_bundle(
+        (_coverage("24EXACT1"),),
+        (image,),
+        "2026-11-03T10:00:00+00:00",
+        output,
+        previous_manifest=previous,
+    )
+
+    assert [item.name for item in (output / "media").iterdir()] == [
+        f"{image.inspection.sha256}.jpg"
+    ]

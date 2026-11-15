@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import fcntl
 import json
 import sqlite3
@@ -68,9 +69,17 @@ def _parse_time(value: str | None) -> datetime | None:
     return parsed.astimezone(UTC)
 
 
-def _queue_facts(now: datetime) -> tuple[dict[str, Any], bool]:
+def _integrity_pragma(*, full_integrity: bool) -> str:
+    return "PRAGMA integrity_check" if full_integrity else "PRAGMA quick_check"
+
+
+def _queue_facts(
+    now: datetime, *, full_integrity: bool = False
+) -> tuple[dict[str, Any], bool]:
     with sqlite3.connect(QUEUE) as database:
-        integrity = database.execute("PRAGMA integrity_check").fetchone()[0]
+        integrity = database.execute(
+            _integrity_pragma(full_integrity=full_integrity)
+        ).fetchone()[0]
         statuses = dict(
             database.execute("SELECT status, COUNT(*) FROM image_tasks GROUP BY status").fetchall()
         )
@@ -90,6 +99,18 @@ def _queue_facts(now: datetime) -> tuple[dict[str, Any], bool]:
         "expired_leases": expired,
         "latest_update": latest,
     }, integrity == "ok"
+
+
+def _queue_facts_for_run(
+    now: datetime, *, pipeline_busy: bool, full_integrity: bool = False
+) -> tuple[dict[str, Any], bool]:
+    if pipeline_busy:
+        return {
+            "checked": False,
+            "reason": "deferred while project-image publication is in progress",
+        }, True
+    queue, queue_ok = _queue_facts(now, full_integrity=full_integrity)
+    return {"checked": True, **queue}, queue_ok
 
 
 def _release_facts() -> dict[str, Any]:
@@ -172,7 +193,7 @@ def _write_report(now: datetime, report: dict[str, Any]) -> Path:
     return path
 
 
-def _run_audit() -> int:
+def _run_audit(*, pipeline_busy: bool, full_integrity: bool = False) -> int:
     now = datetime.now(UTC)
     source_report, source_code = run_monitor(DEFAULT_BASELINE, SOURCE_OUTPUT)
     source_sql, source_digest = build_source_status_sql(source_report)
@@ -214,21 +235,34 @@ def _run_audit() -> int:
         if senate_report_path.is_file()
         else None
     )
-    live = _run(["npm", "run", "verify:live"], cwd=WORKER)
+    live = (
+        {
+            "command": ["npm", "run", "verify:live"],
+            "returncode": None,
+            "stdout": "",
+            "stderr": "deferred while project-image publication is in progress",
+        }
+        if pipeline_busy
+        else _run(["npm", "run", "verify:live"], cwd=WORKER)
+    )
 
-    queue, queue_ok = _queue_facts(now)
+    queue, queue_ok = _queue_facts_for_run(
+        now, pipeline_busy=pipeline_busy, full_integrity=full_integrity
+    )
     release = _release_facts()
     timers, timer_commands = _timer_facts()
     facts = OperationalFacts(
-        queue_total=queue["total"],
-        queue_statuses=queue["statuses"],
-        expired_leases=queue["expired_leases"],
-        latest_queue_update=_parse_time(queue["latest_update"]),
+        queue_total=queue.get("total", 0),
+        queue_statuses=queue.get("statuses", {}),
+        expired_leases=queue.get("expired_leases", 0),
+        latest_queue_update=_parse_time(queue.get("latest_update")),
         release_completed=release["completed_contracts"],
         publication_marker_exists=release["publication_marker_exists"],
         source_monitor_checked_at=_parse_time(source_report["checked_at"]),
         source_monitor_passed=source_report["passed"],
         timer_states=timers,
+        queue_checked=queue["checked"],
+        pipeline_busy=pipeline_busy,
     )
     issues = list(audit_operational_facts(facts, now=now))
     if not queue_ok:
@@ -243,13 +277,17 @@ def _run_audit() -> int:
         issues.append("Senate catalogue drift requires review")
     elif senate["returncode"] != 0 or senate_report is None:
         issues.append("Senate catalogue monitor did not produce a usable report")
-    if live["returncode"] != 0:
+    if not pipeline_busy and live["returncode"] != 0:
         issues.append("live production verification failed")
 
     report = {
         "passed": not issues and source_code == 0,
         "checked_at": now.isoformat(),
         "issues": issues,
+        "pipeline": {
+            "busy": pipeline_busy,
+            "live_verification_deferred": pipeline_busy,
+        },
         "source_monitor": {
             "code": source_code,
             "status": source_report["status"],
@@ -294,12 +332,22 @@ def _run_audit() -> int:
     return 0 if report["passed"] else 1
 
 
-def main() -> int:
+def main(*, full_integrity: bool = False) -> int:
     PIPELINE_LOCK.parent.mkdir(parents=True, exist_ok=True)
     with PIPELINE_LOCK.open("a+", encoding="utf-8") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
-        return _run_audit()
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return _run_audit(pipeline_busy=True, full_integrity=full_integrity)
+        return _run_audit(pipeline_busy=False, full_integrity=full_integrity)
+
+
+def arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--full-integrity", action="store_true")
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    options = arguments()
+    raise SystemExit(main(full_integrity=options.full_integrity))

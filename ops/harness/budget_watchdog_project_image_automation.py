@@ -345,7 +345,13 @@ def run_cycle(*, limit: int | None, publish: bool, workers: int | None = None) -
         )
         coverage, images = queue.publication_records()
         previous = _load_manifest(OUTPUT)
-        build_project_image_bundle(coverage, images, now.isoformat(), CANDIDATE)
+        build_project_image_bundle(
+            coverage,
+            images,
+            now.isoformat(),
+            CANDIDATE,
+            previous_manifest=previous,
+        )
         release = finalize_coverage_release(
             CANDIDATE,
             summary=queue.summary(),

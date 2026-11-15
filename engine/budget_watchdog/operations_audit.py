@@ -26,12 +26,13 @@ class OperationalFacts:
     source_monitor_checked_at: datetime | None
     source_monitor_passed: bool
     timer_states: dict[str, tuple[str, datetime | None]]
+    queue_checked: bool = True
+    pipeline_busy: bool = False
 
 
-def audit_operational_facts(facts: OperationalFacts, *, now: datetime) -> tuple[str, ...]:
-    """Return every invariant failure without mutating operational state."""
-    if now.tzinfo is None:
-        raise ValueError("operational audit time must be timezone-aware")
+def _audit_queue(facts: OperationalFacts, now: datetime) -> list[str]:
+    if not facts.queue_checked:
+        return []
     issues: list[str] = []
     if sum(facts.queue_statuses.values()) != facts.queue_total:
         issues.append("queue status counts do not reconcile")
@@ -45,6 +46,14 @@ def audit_operational_facts(facts: OperationalFacts, *, now: datetime) -> tuple[
     )
     if facts.release_completed > completed:
         issues.append("public release exceeds completed private queue evidence")
+    return issues
+
+
+def audit_operational_facts(facts: OperationalFacts, *, now: datetime) -> tuple[str, ...]:
+    """Return every invariant failure without mutating operational state."""
+    if now.tzinfo is None:
+        raise ValueError("operational audit time must be timezone-aware")
+    issues = _audit_queue(facts, now)
     if not facts.publication_marker_exists:
         issues.append("latest public release has no successful publication marker")
     if not facts.source_monitor_passed:
@@ -58,6 +67,12 @@ def audit_operational_facts(facts: OperationalFacts, *, now: datetime) -> tuple[
         state, next_run = facts.timer_states.get(timer, ("missing", None))
         if state != "active":
             issues.append(f"{timer} is not active")
+        elif (
+            next_run is None
+            and timer == "busisi-project-image-coverage.timer"
+            and facts.pipeline_busy
+        ):
+            continue
         elif next_run is None or next_run - now > maximum_delay:
             issues.append(f"{timer} next run is too far away")
     return tuple(issues)

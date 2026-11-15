@@ -1,3 +1,5 @@
+import hashlib
+import json
 import threading
 import time
 from pathlib import Path
@@ -55,3 +57,28 @@ def test_propagates_media_upload_failure(monkeypatch, tmp_path) -> None:
 
     with pytest.raises(RuntimeError, match="upload failed"):
         publisher._upload_media([("project-images/24TEST/1.jpg", tmp_path / "1.jpg")])
+
+
+def test_verified_bundle_does_not_require_previously_uploaded_media(tmp_path) -> None:
+    sql = "SELECT 1;\n"
+    (tmp_path / "project-images.sql").write_text(sql, encoding="utf-8")
+    manifest = {
+        "coverage_release": {"release_id": "release-1"},
+        "media": [
+            {
+                "archive_key": "project-images/24OLD/old.jpg",
+                "byte_size": 123,
+                "sha256": "a" * 64,
+            }
+        ],
+        "publish_media": [],
+        "sql_sha256": hashlib.sha256(sql.encode()).hexdigest(),
+    }
+    (tmp_path / "manifest.json").write_text(
+        json.dumps(manifest), encoding="utf-8"
+    )
+
+    loaded, uploads = publisher._load_verified_bundle(tmp_path)
+
+    assert loaded["coverage_release"]["release_id"] == "release-1"
+    assert uploads == []

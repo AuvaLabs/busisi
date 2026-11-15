@@ -9,6 +9,7 @@ import sqlite3
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
+from typing import Any
 
 from engine.budget_watchdog.project_images import (
     ImageInspection,
@@ -23,6 +24,7 @@ MIGRATION_PATH = (
     / "migrations"
     / "0021_project_images.sql"
 )
+SHA256_HEX_LENGTH = sha256().digest_size * 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,11 +127,90 @@ def _materialize_media(source: Path, destination: Path) -> None:
         shutil.copyfile(source, destination)
 
 
+def _digest_file(path: Path) -> str:
+    digest = sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _previous_media(manifest: dict[str, Any] | None) -> dict[str, tuple[str, int]]:
+    if manifest is None:
+        return {}
+    media = manifest.get("media", [])
+    if not isinstance(media, list):
+        raise ValueError("previous project-image manifest has invalid media")
+    result: dict[str, tuple[str, int]] = {}
+    for item in media:
+        if not isinstance(item, dict):
+            raise ValueError("previous project-image manifest has invalid media")
+        key = item.get("archive_key")
+        digest = item.get("sha256")
+        byte_size = item.get("byte_size")
+        if (
+            not isinstance(key, str)
+            or not key
+            or not isinstance(digest, str)
+            or len(digest) != SHA256_HEX_LENGTH
+            or isinstance(byte_size, bool)
+            or not isinstance(byte_size, int)
+            or byte_size <= 0
+            or key in result
+        ):
+            raise ValueError("previous project-image manifest has invalid media")
+        result[key] = (digest, byte_size)
+    return result
+
+
+def _previous_states(manifest: dict[str, Any] | None) -> dict[str, str]:
+    if manifest is None:
+        return {}
+    contracts = manifest.get("contracts", {})
+    if not isinstance(contracts, dict):
+        raise ValueError("previous project-image manifest has invalid contracts")
+    return {
+        contract_id: value.get("state", "")
+        for contract_id, value in contracts.items()
+        if isinstance(contract_id, str) and isinstance(value, dict)
+    }
+
+
+def _publishable_images(
+    coverage_by_contract: dict[str, ProjectImageCoverage],
+    images: tuple[AcquiredProjectImage, ...],
+    previous_media: dict[str, tuple[str, int]],
+    previous_states: dict[str, str],
+) -> list[AcquiredProjectImage]:
+    publishable: list[AcquiredProjectImage] = []
+    for item in images:
+        if not item.source_path.is_file():
+            raise ValueError("project image payload is missing")
+        source_size = item.source_path.stat().st_size
+        if source_size <= 0:
+            raise ValueError("project image payload is empty")
+        if source_size != item.inspection.byte_size:
+            raise ValueError("project image payload does not match its inspection")
+        state = coverage_by_contract[item.metadata.contract_id].state
+        current_identity = (item.inspection.sha256, item.inspection.byte_size)
+        needs_upload = state == "verified_exact" and (
+            previous_media.get(item.archive_key) != current_identity
+            or previous_states.get(item.metadata.contract_id) != "verified_exact"
+        )
+        if needs_upload and _digest_file(item.source_path) != item.inspection.sha256:
+            raise ValueError("project image payload does not match its inspection")
+        if needs_upload:
+            publishable.append(item)
+    return publishable
+
+
 def build_project_image_bundle(
     coverage: tuple[ProjectImageCoverage, ...],
     images: tuple[AcquiredProjectImage, ...],
     retrieved_at: str,
     output_dir: Path,
+    *,
+    previous_manifest: dict[str, Any] | None = None,
 ) -> ProjectImageBundleResult:
     """Write an atomic, self-verifying D1/R2 upload bundle."""
     coverage_by_contract = {item.contract_id: item for item in coverage}
@@ -137,15 +218,11 @@ def build_project_image_bundle(
         raise ValueError("project-image coverage contains duplicate contracts")
     if any(item.metadata.contract_id not in coverage_by_contract for item in images):
         raise ValueError("project image has no coverage record")
-    for item in images:
-        payload = item.source_path.read_bytes()
-        if not payload:
-            raise ValueError("project image payload is empty")
-        if (
-            sha256(payload).hexdigest() != item.inspection.sha256
-            or len(payload) != item.inspection.byte_size
-        ):
-            raise ValueError("project image payload does not match its inspection")
+    previous_media = _previous_media(previous_manifest)
+    previous_states = _previous_states(previous_manifest)
+    publishable = _publishable_images(
+        coverage_by_contract, images, previous_media, previous_states
+    )
 
     lines = ["DELETE FROM project_images;", "DELETE FROM project_image_coverage;"]
     lines.extend(
@@ -167,11 +244,11 @@ def build_project_image_bundle(
     shutil.rmtree(building, ignore_errors=True)
     media_dir = building / "media"
     media_dir.mkdir(parents=True)
-    for item in images:
+    for item in publishable:
         destination = media_dir / f"{item.inspection.sha256}.jpg"
         if (
             destination.exists()
-            and sha256(destination.read_bytes()).hexdigest() != item.inspection.sha256
+            and _digest_file(destination) != item.inspection.sha256
         ):
             raise ValueError("project-image media digest collision")
         if not destination.exists():

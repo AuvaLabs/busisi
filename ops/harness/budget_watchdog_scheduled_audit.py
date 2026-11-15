@@ -17,7 +17,11 @@ WORKER = ROOT / "cloudflare" / "busisi"
 OUTPUT = ROOT / "data" / "budget_watchdog" / "scheduled-audits"
 COMMANDS = {
     "operations": (
-        ["python3", "ops/harness/budget_watchdog_operational_audit.py"],
+        [
+            "python3",
+            "ops/harness/budget_watchdog_operational_audit.py",
+            "--full-integrity",
+        ],
         ROOT,
         10_800,
     ),
