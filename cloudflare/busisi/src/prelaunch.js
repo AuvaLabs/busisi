@@ -356,12 +356,18 @@ const response = (body, { status = 200, type, cache = 'public, max-age=3600' }) 
   },
 });
 
-const home = () => page(document({
+const latestEvidenceCheck = (...values) => values.reduce((latest, value) => {
+  if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) return latest;
+  if (!latest || Date.parse(value) > Date.parse(latest)) return value;
+  return latest;
+}, null);
+
+const home = (checkedAt = null) => page(document({
   title: 'Busisi | Philippine public project evidence',
   description: SITE.description,
   canonicalPath: '/',
-  body: homeBody,
-  schema: HOME_SCHEMA,
+  body: homeBody(checkedAt),
+  schema: checkedAt ? { ...HOME_SCHEMA, dateModified: checkedAt } : HOME_SCHEMA,
 }));
 
 const collectionSchema = (name, description, path) => ({
@@ -952,6 +958,17 @@ export default {
       return response('Method not allowed\n', { status: 405, type: 'text/plain; charset=utf-8', cache: 'no-store' });
     }
     let result = null;
+    if (url.pathname === '/' && env.DB) {
+      const [coverageResult, sourceResult] = await Promise.allSettled([
+        getCoverageStatus(env.DB), getSourceMonitorStatus(env.DB),
+      ]);
+      const coverageStatus = coverageResult.status === 'fulfilled' ? coverageResult.value : null;
+      const sourceStatus = sourceResult.status === 'fulfilled' ? sourceResult.value : null;
+      result = home(latestEvidenceCheck(
+        coverageStatus?.released_at,
+        sourceStatus?.checked_at,
+      ));
+    }
     const imageMatch = url.pathname.match(/^\/media\/project-images\/([a-f0-9]{64})$/);
     if (imageMatch) result = await projectImage(env, imageMatch[1]);
     const projectMatch = url.pathname.match(/^\/projects\/([a-z0-9-]+)\/?$/);

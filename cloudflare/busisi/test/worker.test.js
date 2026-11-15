@@ -515,6 +515,42 @@ const insertJointContract = (database) => database.database.exec(`
     ('25JOINT1', 2025, 'valid', 'aligned', 'no_exact_row', 0, 0);
 `);
 
+test('home shows the newest verified evidence date automatically', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  database.database.exec(`
+    UPDATE coverage_releases SET released_at = '2026-11-14T20:30:56.268018+00:00';
+    UPDATE source_monitor_status SET checked_at = '2026-11-14T22:27:31.497762+00:00';
+  `);
+
+  const response = await siteWorker.fetch(request('/'), environment(database));
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(
+    document,
+    /<time datetime="2026-11-14T22:27:31\.497762\+00:00">Evidence checked 15 Nov 2026<\/time>/,
+  );
+  assert.match(document, /"dateModified":"2026-11-14T22:27:31\.497762\+00:00"/);
+  assert.doesNotMatch(document, /Updated 3 Nov 2026/);
+});
+
+test('home remains available when evidence freshness cannot be read', async () => {
+  const unavailableDatabase = {
+    prepare: () => ({
+      first: async () => {
+        throw new Error('temporary database read failure');
+      },
+    }),
+  };
+
+  const response = await siteWorker.fetch(request('/'), environment(unavailableDatabase));
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /Evidence check date unavailable/);
+});
+
 test('publishes a bounded evidence update feed for people and machines', async (context) => {
   const database = new LocalD1();
   context.after(() => database.close());

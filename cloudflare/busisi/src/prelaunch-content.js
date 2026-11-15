@@ -85,7 +85,21 @@ export const document = ({ title, description, canonicalPath, body, schema, noin
 </body></html>`;
 };
 
-export const homeBody = `
+const evidenceCheckStamp = (checkedAt) => {
+  const timestamp = typeof checkedAt === 'string' ? Date.parse(checkedAt) : Number.NaN;
+  if (!Number.isFinite(timestamp)) {
+    return '<span>Evidence check date unavailable</span>';
+  }
+  const label = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Asia/Manila',
+  }).format(new Date(timestamp));
+  return `<time datetime="${escapeHtml(checkedAt)}">Evidence checked ${escapeHtml(label)}</time>`;
+};
+
+export const homeBody = (checkedAt = null) => `
   <section class="hero editorial-hero">
     <div class="hero-copy">
       <p class="eyebrow">Philippine public project evidence</p>
@@ -97,7 +111,7 @@ export const homeBody = `
       </form>
     </div>
     <aside class="home-ledger" aria-label="Current FY2027 budget evidence">
-      <header><span>Current evidence</span><time datetime="2026-11-03">Updated 3 Nov 2026</time></header>
+      <header><span>Current evidence</span>${evidenceCheckStamp(checkedAt)}</header>
       <dl>
         <div><dt>Proposed expenditure program</dt><dd>₱7.200T</dd></div>
         <div><dt>Project rows compared</dt><dd>20,431</dd></div>
