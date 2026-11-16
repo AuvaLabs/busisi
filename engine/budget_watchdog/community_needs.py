@@ -93,7 +93,7 @@ class NationalPopulationControl:
     source_updated_at: str
 
 
-def openstat_population_query() -> dict[str, object]:
+def openstat_population_query() -> dict[str, Any]:
     """Return the fixed query used for all regional 2024 population tables."""
 
     return {
@@ -111,7 +111,7 @@ def openstat_population_query() -> dict[str, object]:
     }
 
 
-def openstat_national_population_query() -> dict[str, object]:
+def openstat_national_population_query() -> dict[str, Any]:
     """Return the fixed query for the national 2024 population controls."""
 
     query = openstat_population_query()
