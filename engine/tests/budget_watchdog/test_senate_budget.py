@@ -114,6 +114,7 @@ def test_rejects_malformed_portal_rows(payload: bytes, message: str) -> None:
         ("Bicameral Conference Committee Report FY 2027", "bicam"),
         ("FY 2027 General Appropriations Act", "gaa"),
         ("SEPO Budget Notes on the Proposed 2027 National Budget", "supporting"),
+        ("SEPO Post-Budget Briefing Highlights", "supporting"),
     ],
 )
 def test_classifies_documents_by_title_evidence(title: str, expected: str) -> None:

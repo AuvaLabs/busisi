@@ -30,6 +30,7 @@ from engine.budget_watchdog.source_resilience import (
 
 PORTAL_ORIGIN = "https://budget-transparency-portal.senate.gov.ph"
 PORTAL_URL = f"{PORTAL_ORIGIN}/public/Documents?gaa_year=2027"
+PORTAL_ALIAS_URL = f"{PORTAL_ORIGIN}/public/documents?gaa_year=2027"
 READER_ORIGIN = "https://r.jina.ai"
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_DIRECT_FOLDER_ROWS = 200
@@ -213,6 +214,38 @@ def _folder_url(folder_id: str, offset: int) -> str:
 
 def _proxy_url(target: str) -> str:
     return f"{READER_ORIGIN}/{target}"
+
+
+def _secondary_root(fetch: Fetch, recorder: _ArtifactRecorder) -> tuple[HttpPayload, str]:
+    attempts = (
+        (PORTAL_URL, "secondary-root", "secondary_renderer"),
+        (PORTAL_ALIAS_URL, "secondary-root-alias", "secondary_renderer_alias"),
+    )
+    last_error: SenateMonitorError | None = None
+    for target, name, mode in attempts:
+        try:
+            rendered = _fetch_checked(
+                fetch,
+                _proxy_url(target),
+                {"X-Return-Format": "html"},
+                failure_recorder=recorder,
+                failure_name=f"{name}-unavailable.html",
+            )
+        except SenateMonitorError as exc:
+            last_error = exc
+            continue
+        if rendered.status_code != HTTP_OK:
+            recorder.store(f"{name}-unavailable.html", rendered)
+            last_error = SenateMonitorError(
+                "secondary root discovery failed",
+                failure_kind=classify_source_failure(rendered.status_code, rendered.content),
+                response_body=rendered.content,
+            )
+            continue
+        recorder.store(f"{name}.html", rendered)
+        return rendered, mode
+    assert last_error is not None
+    raise last_error
 
 
 def _secondary_root_rows(
@@ -438,20 +471,7 @@ def run_senate_monitor(
         else:
             direct_status = "blocked" if direct.status_code in {401, 403} else "unavailable"
             discovery_mode = "secondary_renderer"
-            rendered = _fetch_checked(
-                fetch,
-                _proxy_url(PORTAL_URL),
-                {"X-Return-Format": "html"},
-                failure_recorder=recorder,
-                failure_name="secondary-root-unavailable.html",
-            )
-            if rendered.status_code != HTTP_OK:
-                raise SenateMonitorError(
-                    "secondary root discovery failed",
-                    failure_kind=classify_source_failure(rendered.status_code, rendered.content),
-                    response_body=rendered.content,
-                )
-            recorder.store("secondary-root.html", rendered)
+            rendered, discovery_mode = _secondary_root(fetch, recorder)
             root_rows = _secondary_root_rows(rendered, fetch, recorder)
             observed = _secondary_documents(root_rows, expected, fetch, recorder)
     except SenateMonitorError as exc:

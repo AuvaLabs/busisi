@@ -28,6 +28,7 @@ class OperationalFacts:
     timer_states: dict[str, tuple[str, datetime | None]]
     queue_checked: bool = True
     pipeline_busy: bool = False
+    running_timers: frozenset[str] = frozenset()
 
 
 def _audit_queue(facts: OperationalFacts, now: datetime) -> list[str]:
@@ -67,10 +68,9 @@ def audit_operational_facts(facts: OperationalFacts, *, now: datetime) -> tuple[
         state, next_run = facts.timer_states.get(timer, ("missing", None))
         if state != "active":
             issues.append(f"{timer} is not active")
-        elif (
-            next_run is None
-            and timer == "busisi-project-image-coverage.timer"
-            and facts.pipeline_busy
+        elif next_run is None and (
+            timer in facts.running_timers
+            or (timer == "busisi-project-image-coverage.timer" and facts.pipeline_busy)
         ):
             continue
         elif next_run is None or next_run - now > maximum_delay:

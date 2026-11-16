@@ -56,10 +56,10 @@ const expectedReleases = Object.freeze({
 });
 const expectedBudgetCycle = Object.freeze({
   fiscal_year: '2027',
-  document_count: '5',
+  document_count: '6',
   verified_document_count: '2',
-  discovered_document_count: '3',
-  catalog_sha256: '7fb461156cba8bd04b48315b298fb2b908506b6a2bb6e3df656d179ad59608ff',
+  discovered_document_count: '4',
+  catalog_sha256: '3da4995ce479d17d88f35c8759aa3479cf632b361bb707e543204c46d33008d0',
 });
 const expectedCoa = Object.freeze({
   report_count: '5',
@@ -1030,7 +1030,7 @@ const verifyData = async () => {
     if (!unavailableStages.includes(stage)) fail(`budget cycle: ${stage} should be unavailable`);
   }
   const cycleDocuments = await readJson('/api/v1/budget-cycle/documents');
-  if (cycleDocuments.meta.total !== 5
+  if (cycleDocuments.meta.total !== 6
     || cycleDocuments.meta.review_scope !== 'source_separated_budget_cycle_catalogue') {
     fail('budget cycle documents: count or review scope mismatch');
   }

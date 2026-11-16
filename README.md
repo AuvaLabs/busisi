@@ -311,12 +311,13 @@ The Senate catalogue workflow wakes every 30 minutes and is also called by the
 data host's six-hour operational audit. It makes a source request only when the
 persisted retry time is due. It preserves bounded source responses and their
 hashes, recognizes Cloudflare challenge variants, and does not rapidly retry an
-interactive challenge. Persistent source health uses 30-minute, two-hour and
-six-hour retry intervals. A failed check is degraded for up to 24 hours after a
-successful check and stale after that. Drift and stale source health fail the
-strict workflow. A temporary degraded check retains the last verified baseline
-without replacing it. The monitor never updates the reviewed baseline
-automatically.
+interactive challenge. If the primary rendered page is challenged, it checks
+the official lowercase page alias through the same bounded secondary reader.
+Persistent source health uses 30-minute, two-hour and six-hour retry intervals.
+A failed check is degraded for up to 24 hours after a successful check and
+stale after that. Drift and stale source health fail the strict workflow. A
+temporary degraded check retains the last verified baseline without replacing
+it. The monitor never updates the reviewed baseline automatically.
 
 The source drift monitor independently checks the BetterGov GAA, DPWH and
 PhilGEPS revisions, the DBM allotment-release catalogue, the district roster and

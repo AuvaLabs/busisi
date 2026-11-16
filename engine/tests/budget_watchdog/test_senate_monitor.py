@@ -11,11 +11,30 @@ from engine.budget_watchdog.senate_monitor import (
     run_senate_monitor,
 )
 
+ROOT_FOLDER_HTML = b"""
+<table><tbody>
+<tr class="folder-item portal-library-row" data-folder-id="123">
+  <td class="portal-library-name">House Bill No. 10858</td>
+  <td data-label="Type">Folder</td><td data-label="Size">-</td><td data-label="Date">-</td>
+</tr>
+</tbody></table>
+"""
+
 ROOT_HTML = b"""
 <table><tbody>
 <tr class="folder-item portal-library-row" data-folder-id="123">
   <td class="portal-library-name">House Bill No. 10858</td>
   <td data-label="Type">Folder</td><td data-label="Size">-</td><td data-label="Date">-</td>
+</tr>
+<tr class="portal-library-row">
+  <td class="portal-library-name">SEPO Budget Notes: An Assessment of the Macroeconomic and Fiscal Assumptions of the Proposed 2027 National Budget</td>
+  <td data-label="Type">Document</td><td data-label="Size">988 B</td>
+  <td data-label="Date">-</td><td><a data-file-id="417"></a></td>
+</tr>
+<tr class="portal-library-row">
+  <td class="portal-library-name">SEPO POST-BUDGET BRIEFING HIGHLIGHTS: Summaries of Agency Budget Briefings Conducted by the Senate Committee on Finance</td>
+  <td data-label="Type">Document</td><td data-label="Size">8.63 KB</td>
+  <td data-label="Date">November 11, 2026</td><td><a data-file-id="423"></a></td>
 </tr>
 </tbody></table>
 """
@@ -92,8 +111,8 @@ def test_monitor_accepts_unchanged_secondary_catalogue(tmp_path) -> None:
     assert result.changed is False
     assert result.direct_status == "blocked"
     assert result.discovery_mode == "secondary_renderer"
-    assert result.expected_document_count == 4
-    assert result.observed_document_count == 4
+    assert result.expected_document_count == 6
+    assert result.observed_document_count == 6
     assert result.differences == ()
     assert len(result.response_artifacts) == 3
     assert (tmp_path / "report.json").is_file()
@@ -112,7 +131,7 @@ def test_monitor_loads_async_root_listing_when_rendered_page_is_empty(tmp_path) 
     result = run_senate_monitor(_baseline(), tmp_path, fetch=fetch)
 
     assert result.changed is False
-    assert result.observed_document_count == 4
+    assert result.observed_document_count == 6
     assert [artifact.name for artifact in result.response_artifacts] == [
         "direct-root.html",
         "secondary-root.html",
@@ -125,14 +144,14 @@ def test_monitor_retains_reviewed_historical_documents_without_expectation(
     tmp_path,
 ) -> None:
     baseline = json.loads(_baseline().read_text(encoding="utf-8"))
-    baseline["monitor_excluded_source_record_ids"] = ["417"]
+    baseline["monitor_excluded_source_record_ids"] = ["417", "423"]
     baseline_path = tmp_path / "catalog.json"
     baseline_path.write_text(json.dumps(baseline), encoding="utf-8")
 
     def fetch(url: str, headers: dict[str, str]) -> HttpPayload:
         payload = _fetcher()(url, headers)
         if "/public/Documents" in url and url.startswith("https://r.jina.ai"):
-            return HttpPayload(200, url, ROOT_HTML, "text/html")
+            return HttpPayload(200, url, ROOT_FOLDER_HTML, "text/html")
         return payload
 
     result = run_senate_monitor(baseline_path, tmp_path / "output", fetch=fetch)
@@ -146,7 +165,7 @@ def test_monitor_quarantines_new_catalogue_records(tmp_path) -> None:
     result = run_senate_monitor(_baseline(), tmp_path, fetch=_fetcher(changed=True))
 
     assert result.changed is True
-    assert result.observed_document_count == 5
+    assert result.observed_document_count == 7
     assert len(result.differences) == 1
     assert result.differences[0].startswith("new source record unresolved:")
     assert result.differences[0].endswith(": Senate Committee Report FY 2027")
@@ -188,7 +207,7 @@ def test_monitor_uses_official_catalogue_when_direct_access_works(tmp_path) -> N
     assert result.changed is False
     assert result.direct_status == "available"
     assert result.discovery_mode == "official_direct"
-    assert result.observed_document_count == 4
+    assert result.observed_document_count == 6
     assert len(result.response_artifacts) == 6
 
 
@@ -207,6 +226,38 @@ def test_monitor_does_not_rapid_retry_challenge_pages(monkeypatch) -> None:
 
     assert error.value.failure_kind == "bot_challenge"
     assert calls == 1
+
+
+def test_monitor_uses_official_page_alias_when_primary_render_is_challenged(
+    tmp_path,
+) -> None:
+    def fetch(url: str, headers: dict[str, str]) -> HttpPayload:
+        if url.startswith("https://budget-transparency-portal.senate.gov.ph"):
+            return HttpPayload(403, url, b"blocked", "text/html")
+        if "/public/Documents" in url:
+            return HttpPayload(
+                200,
+                url,
+                b"<title>Just a moment</title> Cloudflare challenge",
+                "text/html",
+            )
+        if "/public/documents" in url:
+            return HttpPayload(200, url, ROOT_HTML, "text/html")
+        if headers.get("X-Return-Format") != "html":
+            return HttpPayload(200, url, FOLDER_MARKDOWN, "text/plain")
+        raise AssertionError(f"unexpected monitor request: {url}")
+
+    result = run_senate_monitor(_baseline(), tmp_path, fetch=fetch)
+
+    assert result.changed is False
+    assert result.discovery_mode == "secondary_renderer_alias"
+    assert result.observed_document_count == 6
+    assert [artifact.name for artifact in result.response_artifacts] == [
+        "direct-root.html",
+        "secondary-root-unavailable.html",
+        "secondary-root-alias.html",
+        "folder-123-listing.md",
+    ]
 
 
 def test_monitor_preserves_exhausted_secondary_response_and_failure_report(
@@ -232,19 +283,23 @@ def test_monitor_preserves_exhausted_secondary_response_and_failure_report(
     assert report["status"] == "acquisition_failure"
     assert report["direct_status"] == "blocked"
     assert report["discovery_mode"] == "secondary_renderer"
-    assert report["expected_document_count"] == 4
+    assert report["expected_document_count"] == 6
     assert report["observed_document_count"] is None
     assert report["failure_kind"] == "bot_challenge"
     assert report["consecutive_failures"] == 1
-    assert report["freshness_state"] == "stale"
-    assert report["last_success_at"] == "2026-11-04T07:04:09.145223+00:00"
+    assert report["freshness_state"] == "degraded"
+    assert report["last_success_at"] == "2026-11-16T07:25:51.439288+00:00"
     assert [item["name"] for item in report["response_artifacts"]] == [
         "direct-root.html",
         "secondary-root-unavailable.html",
+        "secondary-root-alias-unavailable.html",
     ]
     assert (tmp_path / "responses" / "secondary-root-unavailable.html").read_bytes() == (
         b"<title>Just a moment</title> Cloudflare challenge"
     )
+    assert (
+        tmp_path / "responses" / "secondary-root-alias-unavailable.html"
+    ).read_bytes() == b"<title>Just a moment</title> Cloudflare challenge"
 
 
 def test_monitor_records_forbidden_challenge_without_retry(monkeypatch) -> None:

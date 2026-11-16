@@ -184,7 +184,12 @@ def classify_stage(title: str) -> str:
             "nep",
             "national expenditure program" in normalized or bool(re.search(r"\bnep\b", normalized)),
         ),
-        ("supporting", "budget notes" in normalized or "assessment" in normalized),
+        (
+            "supporting",
+            "budget notes" in normalized
+            or "assessment" in normalized
+            or "post-budget briefing" in normalized,
+        ),
     )
     return next((stage for stage, matches in rules if matches), "unknown")
 

@@ -31,7 +31,7 @@ Neither view produces a composite risk score or infers wrongdoing.
 
 The FY2027 publication trail separately catalogs the Senate Budget
 Transparency Portal. Four portal records are classified as House bill volumes
-because their titles identify HB 10858 at third reading, and one record is
+because their titles identify HB 10858 at third reading, and two records are
 classified as supporting fiscal analysis. Two archived mirror copies pass
 their recorded SHA-256 checks. Senate committee, Senate amendment, bicameral,
 and enacted GAA stages remain explicitly unavailable rather than being inferred
@@ -143,18 +143,17 @@ monitor passed on 16 November 2026. The primary project-image cycle also
 published a successful 1,000-record batch. The main source catalogue was
 unchanged at the latest check.
 
-Two external sources remain limited. The Senate Budget Transparency Portal is
-returning an interactive access challenge, and the secondary reader is also
-unavailable. Its latest successful catalogue check remains 4 November 2026, so
-Busisi keeps the last verified snapshot and marks it stale. The facility source
-monitor also reports its source unavailable and keeps that release held.
+Two external sources remain limited. The Senate Budget Transparency Portal
+still returns an interactive access challenge to the direct monitor. The
+bounded secondary reader passed on 16 November 2026, including its official
+lowercase page alias fallback, and six active catalogue records reconciled.
+The facility source monitor still reports its source unavailable and keeps that
+release held.
 
-The weekly scheduled audit currently reports a false failure. While the weekly
-service is running, systemd temporarily reports no next activation for that
-same timer. The nested operations check interprets the temporary value as a
-schedule that is too far away. The timer is active and its next activation is
-23 November 2026. The audit must distinguish an executing timer from a missing
-future schedule.
+The weekly audit now checks whether the service attached to an active timer is
+currently running before treating a temporarily missing next activation as a
+schedule failure. A genuinely inactive timer or a stopped service without a
+future activation still fails the audit.
 
 ## Release gates
 
@@ -170,8 +169,11 @@ future schedule.
 
 ## Next practical work
 
-1. Correct the weekly audit's self-timer check and add a regression test for a
-   running timer whose next activation is temporarily absent.
+1. Add the 2023 PSA city and municipal poverty estimates only after the
+   official spreadsheet can be acquired and archived without an interactive
+   access challenge. Keep CBMS indicators out until PSA or an LGU publishes
+   reusable aggregate tables with clear geographic coverage and no household
+   identifiers.
 2. Continue the bounded project-image cycles. Do not increase public coverage
    by weakening source-count, file-integrity or immutable-media checks.
 3. Complete two independent human decisions for at least 100 cases in the

@@ -499,6 +499,8 @@ test('publishes a budget trail without claiming missing Senate or GAA stages', a
   assert.match(document, /Follow the FY2027 budget through each published stage/);
   assert.match(document, /data-budget-cycle/);
   assert.match(document, /House bill, third reading/);
+  assert.match(document, /6 records/);
+  assert.match(document, /2 supporting fiscal records/);
   assert.match(document, /Senate committee stage/);
   assert.match(document, /Not yet found/);
   assert.match(document, /A Senate-hosted document is not automatically a Senate-stage document/);

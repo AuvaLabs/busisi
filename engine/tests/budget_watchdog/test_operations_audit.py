@@ -83,3 +83,16 @@ def test_defers_queue_invariants_while_coverage_is_writing() -> None:
     )
 
     assert audit_operational_facts(facts, now=NOW) == ()
+
+
+def test_accepts_missing_next_run_while_a_timer_service_is_running() -> None:
+    timer = "busisi-weekly-coverage-audit.timer"
+    facts = _facts(
+        timer_states={
+            **_facts().timer_states,
+            timer: ("active", None),
+        },
+        running_timers=frozenset({timer}),
+    )
+
+    assert audit_operational_facts(facts, now=NOW) == ()

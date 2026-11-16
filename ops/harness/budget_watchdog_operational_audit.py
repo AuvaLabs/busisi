@@ -73,13 +73,9 @@ def _integrity_pragma(*, full_integrity: bool) -> str:
     return "PRAGMA integrity_check" if full_integrity else "PRAGMA quick_check"
 
 
-def _queue_facts(
-    now: datetime, *, full_integrity: bool = False
-) -> tuple[dict[str, Any], bool]:
+def _queue_facts(now: datetime, *, full_integrity: bool = False) -> tuple[dict[str, Any], bool]:
     with sqlite3.connect(QUEUE) as database:
-        integrity = database.execute(
-            _integrity_pragma(full_integrity=full_integrity)
-        ).fetchone()[0]
+        integrity = database.execute(_integrity_pragma(full_integrity=full_integrity)).fetchone()[0]
         statuses = dict(
             database.execute("SELECT status, COUNT(*) FROM image_tasks GROUP BY status").fetchall()
         )
@@ -145,7 +141,9 @@ def _release_facts() -> dict[str, Any]:
     }
 
 
-def _timer_facts() -> tuple[dict[str, tuple[str, datetime | None]], list[dict[str, Any]]]:
+def _timer_facts() -> tuple[
+    dict[str, tuple[str, datetime | None]], frozenset[str], list[dict[str, Any]]
+]:
     listing = _run(
         [
             "systemctl",
@@ -161,6 +159,7 @@ def _timer_facts() -> tuple[dict[str, tuple[str, datetime | None]], list[dict[st
     rows = json.loads(listing["stdout"]) if listing["returncode"] == 0 else []
     by_name = {row["unit"]: row for row in rows}
     facts: dict[str, tuple[str, datetime | None]] = {}
+    running: set[str] = set()
     commands = [listing]
     for timer in TIMERS:
         state_result = _run(
@@ -168,6 +167,13 @@ def _timer_facts() -> tuple[dict[str, tuple[str, datetime | None]], list[dict[st
             cwd=ROOT,
         )
         commands.append(state_result)
+        service_result = _run(
+            ["systemctl", "--user", "is-active", timer.removesuffix(".timer") + ".service"],
+            cwd=ROOT,
+        )
+        commands.append(service_result)
+        if service_result["returncode"] == 0 and service_result["stdout"].strip() == "active":
+            running.add(timer)
         row = by_name.get(timer, {})
         epoch_microseconds = row.get("next")
         next_run = (
@@ -177,7 +183,7 @@ def _timer_facts() -> tuple[dict[str, tuple[str, datetime | None]], list[dict[st
         )
         state = state_result["stdout"].strip() if state_result["returncode"] == 0 else "unavailable"
         facts[timer] = (state, next_run)
-    return facts, commands
+    return facts, frozenset(running), commands
 
 
 def _write_report(now: datetime, report: dict[str, Any]) -> Path:
@@ -250,7 +256,7 @@ def _run_audit(*, pipeline_busy: bool, full_integrity: bool = False) -> int:
         now, pipeline_busy=pipeline_busy, full_integrity=full_integrity
     )
     release = _release_facts()
-    timers, timer_commands = _timer_facts()
+    timers, running_timers, timer_commands = _timer_facts()
     facts = OperationalFacts(
         queue_total=queue.get("total", 0),
         queue_statuses=queue.get("statuses", {}),
@@ -263,6 +269,7 @@ def _run_audit(*, pipeline_busy: bool, full_integrity: bool = False) -> int:
         timer_states=timers,
         queue_checked=queue["checked"],
         pipeline_busy=pipeline_busy,
+        running_timers=running_timers,
     )
     issues = list(audit_operational_facts(facts, now=now))
     if not queue_ok:
@@ -316,6 +323,7 @@ def _run_audit(*, pipeline_busy: bool, full_integrity: bool = False) -> int:
             name: {
                 "state": state,
                 "next_run": next_run.isoformat() if next_run else None,
+                "service_running": name in running_timers,
             }
             for name, (state, next_run) in timers.items()
         },

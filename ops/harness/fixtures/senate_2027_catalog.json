@@ -73,7 +73,7 @@
       "artifact_sha256": null,
       "byte_size": null,
       "document_id": "senate-portal:417",
-      "evidence_note": "Discovered in the Senate portal catalogue on 2026-11-03 through the disclosed secondary renderer. The record left the active catalogue and its viewer returned 404 on 2026-11-04, so it is retained only as historical catalogue evidence.",
+      "evidence_note": "Discovered in the Senate portal catalogue on 2026-11-03, absent on 2026-11-04, and observed again on 2026-11-16 through the disclosed secondary renderer. The official viewer does not expose retrievable file bytes to the acquisition worker.",
       "mirror_url": null,
       "publication_date": null,
       "publisher": "Senate Budget Transparency Portal",
@@ -84,17 +84,32 @@
       "title": "SEPO Budget Notes: An Assessment of the Macroeconomic and Fiscal Assumptions of the Proposed 2027 National Budget",
       "viewer_url": "https://budget-transparency-portal.senate.gov.ph/file_viewer?id=417&type=Documents",
       "volume": null
+    },
+    {
+      "acquisition_status": "discovered",
+      "artifact_sha256": null,
+      "byte_size": null,
+      "document_id": "senate-portal:423",
+      "evidence_note": "Discovered in the Senate portal catalogue on 2026-11-16 through the disclosed secondary renderer. The official viewer does not expose retrievable file bytes to the acquisition worker.",
+      "mirror_url": null,
+      "publication_date": "2026-11-11",
+      "publisher": "Senate Budget Transparency Portal",
+      "source_record_id": "423",
+      "source_url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027",
+      "stage": "supporting",
+      "stage_label": "Supporting fiscal analysis",
+      "title": "SEPO POST-BUDGET BRIEFING HIGHLIGHTS: Summaries of Agency Budget Briefings Conducted by the Senate Committee on Finance",
+      "viewer_url": "https://budget-transparency-portal.senate.gov.ph/file_viewer?id=423&type=Documents",
+      "volume": null
     }
   ],
   "fiscal_year": 2027,
-  "monitor_excluded_source_record_ids": [
-    "417"
-  ],
+  "monitor_excluded_source_record_ids": [],
   "schema_version": 1,
   "source": {
     "acquisition_status": "direct_blocked_secondary_discovery",
     "discovery_source_id": "jina-reader",
-    "retrieved_at": "2026-11-04T07:04:09.145223+00:00",
+    "retrieved_at": "2026-11-16T07:25:51.439288+00:00",
     "source_id": "senate-budget-portal",
     "url": "https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027"
   },

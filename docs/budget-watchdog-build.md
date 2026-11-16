@@ -364,7 +364,9 @@ wakes every 30 minutes but requests the source only when its persisted retry
 time is due. The local operational audit supplies a second six-hour vantage. It
 stores the final response from each attempted path and treats an interactive
 challenge as a single failed observation instead of repeatedly requesting the
-same challenge page. Strict automation fails when the last successful check is
+same challenge page. A challenged primary render receives one bounded attempt
+through the official lowercase page alias before the source is marked
+unavailable. Strict automation fails when the last successful check is
 older than 24 hours or when catalogue drift is observed. No failure can rewrite
 the reviewed catalogue.
 
