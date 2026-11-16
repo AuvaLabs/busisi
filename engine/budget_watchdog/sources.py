@@ -155,6 +155,12 @@ def default_source_registry() -> SourceRegistry:
                 SourceAuthority.PRIMARY,
             ),
             SourceDefinition(
+                "psa-openstat",
+                "Philippine Statistics Authority OpenSTAT",
+                "https://openstat.psa.gov.ph",
+                SourceAuthority.PRIMARY,
+            ),
+            SourceDefinition(
                 "bettergov-budget",
                 "BetterGov Budget API",
                 "https://budget.bettergov.ph",

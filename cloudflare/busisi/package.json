@@ -9,6 +9,7 @@
     "build:agencies": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_agencies.py",
     "build:allotment-releases": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_allotment_releases.py",
     "build:project-images": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_project_images.py",
+    "build:community-needs": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_community_needs.py",
     "coverage:images": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_project_image_automation.py --publish",
     "build:public-value": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_public_value.py",
     "build:facilities": "PYTHONPATH=../.. python3 ../../ops/harness/budget_watchdog_facilities.py",

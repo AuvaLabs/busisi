@@ -10,6 +10,7 @@ const paths = [
   '/projects/',
   '/contractors/',
   '/places/',
+  '/needs/',
   '/sources/',
   '/watch/',
   '/explore/',

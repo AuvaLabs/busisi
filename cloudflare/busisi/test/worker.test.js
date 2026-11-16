@@ -33,6 +33,11 @@ import { parseContractIntelligenceQuery } from '../src/contract-intelligence-que
 import { parseContractorProjectQuery } from '../src/contractor-activity-query.js';
 import { parsePlaceQuery, queryPlaces } from '../src/place-query.js';
 import {
+  getCommunityNeedsSummary,
+  parseCommunityNeedsQuery,
+  queryCommunityNeeds,
+} from '../src/community-needs-query.js';
+import {
   getProjectTypeSummary,
   parseProjectTypeQuery,
   queryProjectTypes,
@@ -151,6 +156,9 @@ const contractorAccountabilityMigrationPath = fileURLToPath(
 const projectClassificationMigrationPath = fileURLToPath(
   new URL('../migrations/0031_project_classification.sql', import.meta.url),
 );
+const communityNeedsMigrationPath = fileURLToPath(
+  new URL('../migrations/0032_community_needs.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -219,6 +227,7 @@ class LocalD1 {
     this.database.exec(readFileSync(contractorAccountabilityMigrationPath, 'utf8'));
     this.database.exec(readFileSync(facilitySourceResilienceMigrationPath, 'utf8'));
     this.database.exec(readFileSync(projectClassificationMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(communityNeedsMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -2318,6 +2327,85 @@ test('publishes a bounded place directory from recorded source labels', async (c
   assert.throws(() => parsePlaceQuery(placeUrl('?limit=101')), /supported range/);
   assert.throws(() => parsePlaceQuery(placeUrl(`?q=${'x'.repeat(201)}`)), /q is too long/);
   assert.deepEqual(parsePlaceQuery(placeUrl()), { level: 'province', q: '', limit: 50 });
+});
+
+test('publishes official population context without turning need into a red flag', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  database.database.exec(`
+    INSERT INTO community_needs_metadata VALUES
+      ('census_date', '2024-07-01'),
+      ('checked_at', '2026-11-16T10:00:00+08:00'),
+      ('national_population', '112729484'),
+      ('national_households', '29665206'),
+      ('place_count', '2'),
+      ('region_count', '1'),
+      ('barangay_count', '0'),
+      ('excluded_out_of_region', '0'),
+      ('hierarchy_gap_count', '0'),
+      ('national_unallocated_population', '1708');
+    INSERT INTO community_need_places VALUES
+      ('1300000000', NULL, 'National Capital Region (NCR)', 'region', '2024-07-01',
+       14001751, 13898189, 3738378,
+       'https://openstat.psa.gov.ph/PXWeb/api/v1/en/DB/1A/PO_2024/ncr.px', '${'a'.repeat(64)}'),
+      ('1380600000', '1300000000', 'City of Manila', 'province_or_huc', '2024-07-01',
+       1900000, 1870000, 500000,
+       'https://openstat.psa.gov.ph/PXWeb/api/v1/en/DB/1A/PO_2024/ncr.px', '${'a'.repeat(64)}');
+    INSERT INTO community_need_hierarchy_gaps VALUES
+      ('1300000000', 1708, 0, 0);
+  `);
+
+  const parsed = parseCommunityNeedsQuery(
+    new URL('https://busisi.test/api/v1/community-needs?level=province_or_huc&q=Manila&limit=20'),
+  );
+  assert.equal(parsed.level, 'province_or_huc');
+  assert.throws(
+    () => parseCommunityNeedsQuery(new URL('https://busisi.test/api/v1/community-needs?level=district')),
+    /level is invalid/,
+  );
+  assert.deepEqual(
+    parseCommunityNeedsQuery(new URL('https://busisi.test/api/v1/community-needs')),
+    { level: 'city_or_municipality', q: '', limit: 50 },
+  );
+  for (const query of ['?limit=none', '?limit=101', `?q=${'x'.repeat(201)}`]) {
+    assert.throws(
+      () => parseCommunityNeedsQuery(new URL(`https://busisi.test/api/v1/community-needs${query}`)),
+      /invalid|supported range|too long/,
+    );
+  }
+  const rows = await queryCommunityNeeds(database, parsed);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].name, 'City of Manila');
+  assert.equal(rows[0].parent_name, 'National Capital Region (NCR)');
+  assert.equal(rows[0].child_coverage_complete, true);
+  assert.equal(
+    rows[0].source_page_url,
+    'https://openstat.psa.gov.ph/PXWeb/pxweb/en/DB/DB__1A__PO_2024/ncr.px/',
+  );
+  const allRows = await queryCommunityNeeds(
+    database,
+    parseCommunityNeedsQuery(new URL('https://busisi.test/api/v1/community-needs?level=all')),
+  );
+  assert.equal(allRows[0].child_coverage_complete, false);
+
+  const summary = await getCommunityNeedsSummary(database);
+  assert.equal(summary.national_population, 112729484);
+  assert.equal(summary.national_unallocated_population, 1708);
+
+  const api = await worker.fetch(
+    request('/api/v1/community-needs?level=province_or_huc&q=Manila'),
+    environment(database),
+  );
+  const payload = await api.json();
+  assert.equal(api.status, 200);
+  assert.equal(payload.data[0].psgc_code, '1380600000');
+  assert.match(payload.meta.boundary, /context/i);
+
+  const page = await siteWorker.fetch(request('/needs/'), environment(database));
+  const document = await page.text();
+  assert.equal(page.status, 200);
+  assert.match(document, /What do communities need/);
+  assertPlainPublicLanguage(document, 'community needs page');
 });
 
 test('publishes drillable multi-label project types with transparent evidence', async (context) => {

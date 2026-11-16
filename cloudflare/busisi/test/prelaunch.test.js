@@ -16,7 +16,7 @@ const visibleText = (document) => document
   .replace(/\s+/g, ' ');
 
 const PUBLIC_LANGUAGE_ROUTES = [
-  '/', '/projects/', '/contractors/', '/places/', '/sources/', '/methodology/', '/explore/',
+  '/', '/projects/', '/contractors/', '/places/', '/needs/', '/sources/', '/methodology/', '/explore/',
   '/contracts/', '/signals/', '/integrity/', '/changes/', '/agencies/', '/releases/',
   '/sulit/', '/budget-trail/', '/research/', '/research/multipurpose-buildings/',
   '/research/multipurpose-buildings/evidence/', '/research/fy2027-nep-house-changes/',
@@ -111,7 +111,7 @@ test('home provides task-led navigation and a data-led editorial masthead', asyn
   assert.match(document, /href="\/assets\/busisi-icons-v1\.svg#investigate"/);
   assert.doesNotMatch(document, /busisi-masthead\.webp|Illustrative view/);
   assert.doesNotMatch(document, /class="utility-strip"/);
-  assert.equal((document.match(/data-nav-group=/g) ?? []).length, 7);
+  assert.equal((document.match(/data-nav-group=/g) ?? []).length, 8);
 });
 
 test('publishes a plain-language DPWH project type explorer', async () => {
@@ -129,6 +129,20 @@ test('publishes a plain-language DPWH project type explorer', async () => {
   assert.doesNotMatch(document, /risk score|corrupt project/i);
 });
 
+test('publishes a plain-language community needs explorer shell', async () => {
+  const response = await fetchPath('/needs/');
+  const document = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(document, /What do communities need/);
+  assert.match(document, /2024 Census of Population/);
+  assert.match(document, /data-community-needs/);
+  assert.match(document, /assets\/community-needs-v1\.js/);
+  assert.match(document, /not a red flag or a verdict/);
+  assert.match(document, /Community-Based Monitoring System/);
+  assert.doesNotMatch(document, /household-level records/i);
+});
+
 test('groups the footer into compact, readable navigation sections', async () => {
   const response = await fetchPath('/research/');
   const document = await response.text();
@@ -142,7 +156,7 @@ test('groups the footer into compact, readable navigation sections', async () =>
   assert.match(document, /class="footer-meta"/);
   assert.match(document, /class="footer-note"/);
   const footerNavigation = document.match(/<nav class="footer-nav"[\s\S]*?<\/nav>/)?.[0] ?? '';
-  assert.equal((footerNavigation.match(/<a href=/g) ?? []).length, 21);
+  assert.equal((footerNavigation.match(/<a href=/g) ?? []).length, 22);
   assert.doesNotMatch(footerNavigation, /href="\/api\//);
 });
 
@@ -620,6 +634,7 @@ test('submits the allotment-release desk for search discovery', () => {
   assert.match(source, /'\/public-services\/'/);
   assert.match(source, /'\/contractors\/'/);
   assert.match(source, /'\/places\/'/);
+  assert.match(source, /'\/needs\/'/);
   assert.match(source, /'\/sources\/'/);
   assert.match(source, /'\/watch\/'/);
 });
@@ -642,6 +657,15 @@ test('ecosystem clients render API data without injecting HTML', () => {
     assert.match(source, /encodeURIComponent|reader_url/);
     assert.doesNotMatch(source, /innerHTML|insertAdjacentHTML/);
   }
+});
+
+test('community-needs client renders official counts without injecting HTML', () => {
+  const source = readFileSync(
+    new URL('../public/assets/community-needs-v1.js', import.meta.url), 'utf8',
+  );
+  assert.match(source, /\/api\/v1\/community-needs/);
+  assert.match(source, /textContent/);
+  assert.doesNotMatch(source, /innerHTML|insertAdjacentHTML|risk score/i);
 });
 
 test('redirects www and returns a useful 404', async () => {

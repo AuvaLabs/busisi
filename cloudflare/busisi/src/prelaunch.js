@@ -43,6 +43,7 @@ import {
   queryAccountabilityEvents,
 } from './accountability-query.js';
 import { alertsRss } from './alerts-feed.js';
+import { communityNeedsBody } from './community-needs-content.js';
 import { getAlertFeed } from './alerts-query.js';
 import {
   fy2027ChangeConcentrationBody,
@@ -280,6 +281,18 @@ const PUBLIC_SERVICES_SCHEMA = Object.freeze({
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
 });
 
+const COMMUNITY_NEEDS_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'Busisi Philippine community population context',
+  url: `${SITE.origin}/needs/`,
+  description: 'Official 2024 PSA population and household counts from regions through barangays, presented as context for public spending questions.',
+  temporalCoverage: '2024-07-01',
+  spatialCoverage: 'Philippines',
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
 const RESEARCH_SCHEMA = Object.freeze({
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
@@ -408,6 +421,14 @@ const places = () => page(document({
   canonicalPath: '/places/',
   body: placesBody,
   schema: collectionSchema('Busisi place directory', 'Philippine public projects grouped by recorded source place labels.', '/places/'),
+}));
+
+const communityNeeds = () => page(document({
+  title: 'What do Philippine communities need? | Busisi',
+  description: 'Explore official 2024 PSA population and household counts, then use them as context when examining public projects and budgets.',
+  canonicalPath: '/needs/',
+  body: communityNeedsBody,
+  schema: COMMUNITY_NEEDS_SCHEMA,
 }));
 
 const sources = () => page(document({
@@ -745,6 +766,8 @@ Allow: /api/v1/alerts
 Allow: /api/v1/research
 Allow: /api/v1
 Allow: /api/v1/places
+Allow: /api/v1/community-needs
+Allow: /api/v1/community-needs-summary
 Allow: /api/v1/project-types
 Allow: /api/v1/project-types/summary
 Allow: /feeds/updates.xml
@@ -762,6 +785,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/projects/</loc><lastmod>2026-11-15</lastmod></url>
   <url><loc>${SITE.origin}/contractors/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/places/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>${SITE.origin}/needs/</loc><lastmod>2026-11-16</lastmod></url>
   <url><loc>${SITE.origin}/sources/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/watch/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/changes/</loc><lastmod>2026-11-03</lastmod></url>
@@ -815,6 +839,7 @@ Official source records and checked FY2027 stage comparisons are public. Suggest
 - Project type explorer: ${SITE.origin}/projects/
 - Contractor directory: ${SITE.origin}/contractors/
 - Place directory: ${SITE.origin}/places/
+- Community needs: ${SITE.origin}/needs/
 - Source guide: ${SITE.origin}/sources/
 - Source watch: ${SITE.origin}/watch/
 - Evidence update feed: ${SITE.origin}/feeds/updates.xml
@@ -846,6 +871,8 @@ Official source records and checked FY2027 stage comparisons are public. Suggest
 - Official school-list check status: ${SITE.origin}/api/v1/facility-registry-status
 - Public API catalogue: ${SITE.origin}/api/v1
 - Projects grouped by recorded place: ${SITE.origin}/api/v1/places
+- Official PSA population context: ${SITE.origin}/api/v1/community-needs
+- PSA population coverage summary: ${SITE.origin}/api/v1/community-needs-summary
 - Projects grouped by type, purpose, and work: ${SITE.origin}/api/v1/project-types
 - Evidence updates: ${SITE.origin}/api/v1/alerts
 - Published research packages: ${SITE.origin}/api/v1/research
@@ -952,6 +979,7 @@ const route = (path) => {
   if (path === '/projects' || path === '/projects/') return projectTypes();
   if (path === '/contractors' || path === '/contractors/') return contractorDirectory();
   if (path === '/places' || path === '/places/') return places();
+  if (path === '/needs' || path === '/needs/') return communityNeeds();
   if (path === '/research' || path === '/research/') return research();
   if (path === '/research/multipurpose-buildings' || path === '/research/multipurpose-buildings/') return multipurposeBuildings();
   if (path === '/research/multipurpose-buildings/evidence' || path === '/research/multipurpose-buildings/evidence/') return multipurposeEvidence();

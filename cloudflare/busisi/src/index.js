@@ -77,6 +77,11 @@ import { getFacility } from './facility-query.js';
 import { getFacilityRegistryStatus } from './facility-status-query.js';
 import { parsePlaceQuery, queryPlaces } from './place-query.js';
 import {
+  getCommunityNeedsSummary,
+  parseCommunityNeedsQuery,
+  queryCommunityNeeds,
+} from './community-needs-query.js';
+import {
   getProjectTypeSummary,
   parseProjectTypeQuery,
   queryProjectTypes,
@@ -107,6 +112,7 @@ const API_CATALOGUE = Object.freeze([
   { path: '/api/v1/contracts', description: 'Contract and project evidence' },
   { path: '/api/v1/contractors', description: 'Recorded contractor activity' },
   { path: '/api/v1/places', description: 'Projects grouped by recorded place label' },
+  { path: '/api/v1/community-needs', description: 'Official PSA population context by place' },
   { path: '/api/v1/project-types', description: 'Projects grouped by type, purpose, and work' },
   { path: '/api/v1/integrity-signals', description: 'Deterministic questions to check' },
   { path: '/api/v1/changes', description: 'FY2027 budget-stage comparisons' },
@@ -181,6 +187,22 @@ const apiResponse = async (request, environment, url) => {
         level: query.level,
         review_scope: 'recorded_dpwh_place_labels',
         boundary: 'Source labels are not verified geographic boundaries.',
+      },
+      data: records,
+    });
+  }
+  if (url.pathname === '/api/v1/community-needs-summary') {
+    return jsonResponse({ data: await getCommunityNeedsSummary(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/community-needs') {
+    const query = parseCommunityNeedsQuery(url);
+    const records = await queryCommunityNeeds(environment.DB, query);
+    return jsonResponse({
+      meta: {
+        count: records.length,
+        level: query.level,
+        review_scope: 'official_psa_2024_population_context',
+        boundary: 'Population is context for public spending questions, not a red flag or finding.',
       },
       data: records,
     });

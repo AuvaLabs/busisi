@@ -43,6 +43,16 @@ project to carry several supported labels, and leaves unclear records without a
 guessed type. Every result opens the full contract record and explains whether
 its labels came from the project title, source category, or both.
 
+The community needs explorer at `/needs/` adds official 2024 PSA population
+and household context for 43,768 geographic rows, including 42,011 barangays.
+It keeps the PSA geographic code, date and source table for every row. The
+national population count is shown separately from the 18-region sum because
+the official tables differ by 1,708 people. The difference is not assigned to
+any place. Population context is not a red flag and does not change the
+integrity score for a project or contractor. Poverty estimates and public CBMS
+totals remain separate future layers and will not be published until their
+source files and geographic coverage pass the same checks.
+
 The public review desk ranks stage changes, groups monetary movement by region,
 office, program or dataset, identifies conservative cross-year project-family
 candidates, and exports source-linked CSV evidence.

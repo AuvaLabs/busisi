@@ -35,6 +35,43 @@ def test_fetcher_acquires_allowlisted_source_with_bounded_payload() -> None:
     assert responses.calls[0].request.headers["User-Agent"] == "BusisiBudgetWatchdog/1.0"
 
 
+@responses.activate
+def test_fetcher_posts_deterministic_json_to_allowlisted_source() -> None:
+    responses.add(
+        responses.POST,
+        "https://openstat.psa.gov.ph/PXWeb/api/v1/en/DB/table.px",
+        body=b'{"dataset": {"value": [1]}}',
+        headers={"Content-Type": "application/json; charset=utf-8"},
+        status=200,
+    )
+    fetcher = SourceFetcher(default_source_registry(), max_response_bytes=1024)
+
+    acquisition = fetcher.post_json(
+        "psa-openstat",
+        "/PXWeb/api/v1/en/DB/table.px",
+        {"response": {"format": "json-stat"}, "query": []},
+        retrieved_at=RETRIEVED_AT,
+    )
+
+    request = responses.calls[0].request
+    assert acquisition.source_url.endswith("/table.px")
+    assert acquisition.payload == b'{"dataset": {"value": [1]}}'
+    assert request.headers["Content-Type"] == "application/json"
+    assert request.body == b'{"query":[],"response":{"format":"json-stat"}}'
+
+
+def test_fetcher_rejects_non_object_json_post_body() -> None:
+    fetcher = SourceFetcher(default_source_registry())
+
+    with pytest.raises(AcquisitionError, match="JSON object"):
+        fetcher.post_json(
+            "psa-openstat",
+            "/PXWeb/api/v1/en/DB/table.px",
+            ["not", "an", "object"],
+            retrieved_at=RETRIEVED_AT,
+        )
+
+
 def test_fetcher_rejects_unknown_sources_and_absolute_paths() -> None:
     fetcher = SourceFetcher(default_source_registry())
 

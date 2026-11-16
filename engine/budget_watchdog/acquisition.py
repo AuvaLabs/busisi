@@ -1,5 +1,6 @@
 """Bounded, allowlisted acquisition for registered public sources."""
 
+import json
 import time
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
@@ -74,6 +75,55 @@ class SourceFetcher:
         params: Mapping[str, str | int] | None = None,
         retrieved_at: datetime | None = None,
     ) -> Acquisition:
+        return self._request_with_retry(
+            source_id,
+            path,
+            params=params,
+            retrieved_at=retrieved_at,
+            method="GET",
+        )
+
+    def post_json(
+        self,
+        source_id: str,
+        path: str,
+        document: Mapping[str, object],
+        *,
+        retrieved_at: datetime | None = None,
+    ) -> Acquisition:
+        """POST a deterministic JSON object to an allowlisted public source."""
+
+        if not isinstance(document, Mapping):
+            raise AcquisitionError("source JSON request body must be a JSON object")
+        try:
+            body = json.dumps(
+                document,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8")
+        except (TypeError, ValueError) as exc:
+            raise AcquisitionError("source JSON request body must be serializable") from exc
+        return self._request_with_retry(
+            source_id,
+            path,
+            retrieved_at=retrieved_at,
+            method="POST",
+            body=body,
+            headers={"Content-Type": "application/json"},
+        )
+
+    def _request_with_retry(
+        self,
+        source_id: str,
+        path: str,
+        *,
+        params: Mapping[str, str | int] | None = None,
+        retrieved_at: datetime | None = None,
+        method: str,
+        body: bytes | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> Acquisition:
         source = self._registry.get(source_id)
         url = self._build_url(source.base_url, path)
         timestamp = retrieved_at or datetime.now(UTC)
@@ -88,6 +138,9 @@ class SourceFetcher:
                     url,
                     params=params,
                     retrieved_at=timestamp,
+                    method=method,
+                    body=body,
+                    headers=headers,
                 )
             except AcquisitionError as exc:
                 if attempt >= self._max_attempts - 1 or not self._retryable(exc):
@@ -104,13 +157,19 @@ class SourceFetcher:
         *,
         params: Mapping[str, str | int] | None,
         retrieved_at: datetime,
+        method: str,
+        body: bytes | None,
+        headers: Mapping[str, str] | None,
     ) -> Acquisition:
         try:
             if self._request_gate is not None:
                 self._request_gate(url)
-            with self._session.get(
+            with self._session.request(
+                method,
                 url,
                 params=params,
+                data=body,
+                headers=headers,
                 timeout=DEFAULT_TIMEOUT_SECONDS,
                 stream=True,
                 allow_redirects=False,

@@ -42,6 +42,27 @@ monitor is read-only and holds no deployment credentials.
 | `/api/v1/acquisition-coverage` | Reconciled full-contract-universe acquisition controls |
 | `/api/v1/coverage-status` | Latest gated project-image coverage release |
 | `/api/v1/source-monitor-status` | Latest deterministic source-revision monitor result |
+| `/api/v1/community-needs-summary` | PSA 2024 population coverage and published source limits |
+| `/api/v1/community-needs` | Searchable PSA population and household counts by official place code |
+
+## Community needs context
+
+The first community needs release contains 43,768 official PSA place rows from
+the 2024 Census of Population. This includes 18 regions and 42,011 barangay
+rows. The national table reports 112,729,484 people. The 18 regional tables add
+to 112,727,776 people, which is 1,708 fewer. Household population and household
+counts match the national controls exactly. Busisi preserves the difference and
+does not assign it to a region.
+
+The PSA CAR response also contains 1,148 appended Region II rows. They are
+excluded because their geographic codes fall outside CAR. All published place
+codes remain unique, every included lower-level row is attached to a matching
+parent code, and each published parent-child total matches. These source limits
+are returned by the summary endpoint.
+
+This layer is context for budget questions. It is not part of the integrity
+signal calculation and does not label a project, contractor, agency or public
+official as suspicious. No individual CBMS response is collected or published.
 
 ## Published dataset contract
 
@@ -98,4 +119,4 @@ conflicts remain quarantined, and explicit zero-image responses stay visible as
 coverage results. Images are served from private R2 by immutable internal URLs.
 The live coverage page is the current source for release counts.
 
-Last updated: 2026-11-04.
+Last updated: 2026-11-16.
