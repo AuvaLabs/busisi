@@ -37,6 +37,7 @@ import {
   parseCommunityNeedsQuery,
   queryCommunityNeeds,
 } from '../src/community-needs-query.js';
+import { getPovertyStatus } from '../src/poverty-status-query.js';
 import {
   getProjectTypeSummary,
   parseProjectTypeQuery,
@@ -159,6 +160,9 @@ const projectClassificationMigrationPath = fileURLToPath(
 const communityNeedsMigrationPath = fileURLToPath(
   new URL('../migrations/0032_community_needs.sql', import.meta.url),
 );
+const communityPovertyMigrationPath = fileURLToPath(
+  new URL('../migrations/0033_community_poverty.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -228,6 +232,7 @@ class LocalD1 {
     this.database.exec(readFileSync(facilitySourceResilienceMigrationPath, 'utf8'));
     this.database.exec(readFileSync(projectClassificationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(communityNeedsMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(communityPovertyMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -2406,6 +2411,40 @@ test('publishes official population context without turning need into a red flag
   assert.equal(page.status, 200);
   assert.match(document, /What do communities need/);
   assertPlainPublicLanguage(document, 'community needs page');
+});
+
+test('publishes a blocked poverty source status without publishing estimates', async (context) => {
+  const database = new LocalD1();
+  context.after(() => database.close());
+  database.database.exec(`
+    INSERT INTO community_poverty_status VALUES (
+      1, '2026-11-16T08:00:00+00:00',
+      'https://psa.gov.ph/sites/default/files/phdsd/2_2023%20SAE_with%20PSGC_noHUC_06Feb2026.xlsx',
+      'blocked', 'not_published', 403, NULL, 1611, 0, 'bot_challenge', NULL, 1,
+      '2026-11-16T14:00:00+00:00', 'unknown', '${'a'.repeat(64)}',
+      'PSA blocked the automatic download. No poverty estimates were published.',
+      '${'b'.repeat(64)}'
+    );
+  `);
+
+  const direct = await getPovertyStatus(database);
+  assert.equal(direct.source_state, 'blocked');
+  assert.equal(direct.validated_records, 0);
+
+  const response = await worker.fetch(
+    request('/api/v1/poverty-status'), environment(database),
+  );
+  const payload = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(payload.meta.review_scope, 'official_psa_2023_local_poverty_source');
+  assert.equal(payload.data.publication_state, 'not_published');
+  assert.equal(payload.data.expected_records, 1611);
+
+  const page = await siteWorker.fetch(request('/needs/'), environment(database));
+  const document = await page.text();
+  assert.match(document, /Poverty estimates are not published yet/);
+  assert.match(document, /Next automatic check/);
+  assertPlainPublicLanguage(document, 'poverty status');
 });
 
 test('publishes drillable multi-label project types with transparent evidence', async (context) => {

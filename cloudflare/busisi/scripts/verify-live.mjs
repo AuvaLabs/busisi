@@ -365,6 +365,13 @@ const verifyPages = async () => {
   expectIncludes(placesText, '/assets/places-v1.js?v=1', 'place directory client');
   expectIncludes(placesText, 'Source label only', 'place directory boundary');
 
+  const needs = await request('/needs/');
+  expectStatus(needs, 200, '/needs/');
+  const needsText = await needs.text();
+  expectIncludes(needsText, 'What do communities need?', 'community needs heading');
+  expectIncludes(needsText, 'Poverty estimates are not published yet', 'poverty source boundary');
+  expectIncludes(needsText, 'Next automatic check', 'poverty retry status');
+
   const sources = await request('/sources/');
   expectStatus(sources, 200, '/sources/');
   const sourcesText = await sources.text();
@@ -538,11 +545,12 @@ const verifyPages = async () => {
   expectIncludes(robotsText, 'Allow: /api/v1/questions', 'robots question API');
   expectIncludes(robotsText, 'Allow: /api/v1/public-services', 'robots public services API');
   expectIncludes(robotsText, 'Allow: /api/v1/facility-registry-status', 'robots facility status API');
+  expectIncludes(robotsText, 'Allow: /api/v1/poverty-status', 'robots poverty status API');
 
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/projects/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/multipurpose-buildings/evidence/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/projects/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/needs/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/multipurpose-buildings/evidence/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${publicOrigin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -558,6 +566,7 @@ const verifyPages = async () => {
   expectIncludes(llmsText, 'Public services inventory', 'llms public services desk');
   expectIncludes(llmsText, '/api/v1/public-services', 'llms public services API');
   expectIncludes(llmsText, '/api/v1/facility-registry-status', 'llms facility status API');
+  expectIncludes(llmsText, '/api/v1/poverty-status', 'llms poverty status API');
   expectIncludes(llmsText, '/api/v1/project-types', 'llms project type API');
   expectIncludes(
     llmsText,
@@ -584,7 +593,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/projects/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/projects/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/needs/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -906,6 +915,19 @@ const verifyData = async () => {
     || releaseRows.data[0]?.balance_centavos !== 226_960_100_000
     || releaseRows.data[0]?.source_reader_url !== '/releases/#source') {
     fail('allotment releases: DPWH row or evidence boundary does not reconcile');
+  }
+
+  const povertyStatus = (await readJson('/api/v1/poverty-status')).data;
+  const povertyBlocked = povertyStatus?.source_state === 'blocked'
+    && povertyStatus.publication_state === 'not_published'
+    && povertyStatus.http_status === 403
+    && povertyStatus.validated_records === 0;
+  const povertyValidated = povertyStatus?.source_state === 'validated'
+    && ['ready_for_review', 'published'].includes(povertyStatus.publication_state)
+    && povertyStatus.source_sha256
+    && povertyStatus.validated_records === 1_611;
+  if (povertyStatus?.expected_records !== 1_611 || (!povertyBlocked && !povertyValidated)) {
+    fail('poverty source: checked status or record controls do not reconcile');
   }
 
   const publicServices = (await readJson('/api/v1/public-services-summary')).data;

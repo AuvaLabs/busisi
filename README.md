@@ -49,9 +49,13 @@ It keeps the PSA geographic code, date and source table for every row. The
 national population count is shown separately from the 18-region sum because
 the official tables differ by 1,708 people. The difference is not assigned to
 any place. Population context is not a red flag and does not change the
-integrity score for a project or contractor. Poverty estimates and public CBMS
-totals remain separate future layers and will not be published until their
-source files and geographic coverage pass the same checks.
+integrity score for a project or contractor. A separate automatic check now
+tries the official 2023 city and municipal poverty spreadsheet every six hours.
+The public status at `/api/v1/poverty-status` shows whether the complete file
+was available and how many of the expected 1,611 rows passed. The current
+download is blocked by the publisher, so no poverty values are published.
+Public CBMS totals remain a separate future layer and will not be published
+until reusable aggregate tables and geographic coverage pass the same checks.
 
 The public review desk ranks stage changes, groups monetary movement by region,
 office, program or dataset, identifies conservative cross-year project-family

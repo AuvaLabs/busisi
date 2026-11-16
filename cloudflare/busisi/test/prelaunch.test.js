@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import { communityNeedsBody } from '../src/community-needs-content.js';
 import worker from '../src/prelaunch.js';
 
 const fetchPath = (path, hostname = 'busisi.org') => worker.fetch(
@@ -140,7 +141,32 @@ test('publishes a plain-language community needs explorer shell', async () => {
   assert.match(document, /assets\/community-needs-v1\.js/);
   assert.match(document, /not a red flag or a verdict/);
   assert.match(document, /Community-Based Monitoring System/);
+  assert.match(document, /Poverty estimates are not published yet/);
+  assert.match(document, /automatic check will try the official spreadsheet again/i);
   assert.doesNotMatch(document, /household-level records/i);
+});
+
+test('explains validated and published poverty source states in plain language', () => {
+  const validated = communityNeedsBody({
+    source_state: 'validated',
+    publication_state: 'not_published',
+    expected_records: 1611,
+    validated_records: 1611,
+    next_check_at: 'not-a-date',
+    status_note: 'The official file passed every required check.',
+  });
+  assert.match(validated, /official spreadsheet passed its checks/i);
+  assert.match(validated, /1,611/);
+  assert.match(validated, /not-a-date/);
+
+  const published = communityNeedsBody({
+    source_state: 'validated',
+    publication_state: 'published',
+    expected_records: 1611,
+    validated_records: 1611,
+  });
+  assert.match(published, /Checked poverty estimates are available/);
+  assert.match(published, /Not scheduled yet/);
 });
 
 test('groups the footer into compact, readable navigation sections', async () => {

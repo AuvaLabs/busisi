@@ -44,6 +44,7 @@ import {
 } from './accountability-query.js';
 import { alertsRss } from './alerts-feed.js';
 import { communityNeedsBody } from './community-needs-content.js';
+import { getPovertyStatus } from './poverty-status-query.js';
 import { getAlertFeed } from './alerts-query.js';
 import {
   fy2027ChangeConcentrationBody,
@@ -423,11 +424,11 @@ const places = () => page(document({
   schema: collectionSchema('Busisi place directory', 'Philippine public projects grouped by recorded source place labels.', '/places/'),
 }));
 
-const communityNeeds = () => page(document({
+const communityNeeds = (poverty = null) => page(document({
   title: 'What do Philippine communities need? | Busisi',
   description: 'Explore official 2024 PSA population and household counts, then use them as context when examining public projects and budgets.',
   canonicalPath: '/needs/',
-  body: communityNeedsBody,
+  body: communityNeedsBody(poverty),
   schema: COMMUNITY_NEEDS_SCHEMA,
 }));
 
@@ -768,6 +769,7 @@ Allow: /api/v1
 Allow: /api/v1/places
 Allow: /api/v1/community-needs
 Allow: /api/v1/community-needs-summary
+Allow: /api/v1/poverty-status
 Allow: /api/v1/project-types
 Allow: /api/v1/project-types/summary
 Allow: /feeds/updates.xml
@@ -873,6 +875,7 @@ Official source records and checked FY2027 stage comparisons are public. Suggest
 - Projects grouped by recorded place: ${SITE.origin}/api/v1/places
 - Official PSA population context: ${SITE.origin}/api/v1/community-needs
 - PSA population coverage summary: ${SITE.origin}/api/v1/community-needs-summary
+- PSA local poverty spreadsheet status: ${SITE.origin}/api/v1/poverty-status
 - Projects grouped by type, purpose, and work: ${SITE.origin}/api/v1/project-types
 - Evidence updates: ${SITE.origin}/api/v1/alerts
 - Published research packages: ${SITE.origin}/api/v1/research
@@ -1092,6 +1095,9 @@ export default {
     }
     if (!result && (url.pathname === '/public-services' || url.pathname === '/public-services/') && env.DB) {
       result = publicServices(await getPublicServicesSummary(env.DB));
+    }
+    if (!result && (url.pathname === '/needs' || url.pathname === '/needs/') && env.DB) {
+      result = communityNeeds(await getPovertyStatus(env.DB));
     }
     const facilityMatch = url.pathname.match(/^\/facilities\/([^/]+)\/?$/);
     if (!result && facilityMatch && env.DB) {

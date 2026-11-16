@@ -81,6 +81,7 @@ import {
   parseCommunityNeedsQuery,
   queryCommunityNeeds,
 } from './community-needs-query.js';
+import { getPovertyStatus } from './poverty-status-query.js';
 import {
   getProjectTypeSummary,
   parseProjectTypeQuery,
@@ -113,6 +114,7 @@ const API_CATALOGUE = Object.freeze([
   { path: '/api/v1/contractors', description: 'Recorded contractor activity' },
   { path: '/api/v1/places', description: 'Projects grouped by recorded place label' },
   { path: '/api/v1/community-needs', description: 'Official PSA population context by place' },
+  { path: '/api/v1/poverty-status', description: 'Official PSA poverty spreadsheet check status' },
   { path: '/api/v1/project-types', description: 'Projects grouped by type, purpose, and work' },
   { path: '/api/v1/integrity-signals', description: 'Deterministic questions to check' },
   { path: '/api/v1/changes', description: 'FY2027 budget-stage comparisons' },
@@ -193,6 +195,12 @@ const apiResponse = async (request, environment, url) => {
   }
   if (url.pathname === '/api/v1/community-needs-summary') {
     return jsonResponse({ data: await getCommunityNeedsSummary(environment.DB) });
+  }
+  if (url.pathname === '/api/v1/poverty-status') {
+    return jsonResponse({
+      meta: { review_scope: 'official_psa_2023_local_poverty_source' },
+      data: await getPovertyStatus(environment.DB),
+    });
   }
   if (url.pathname === '/api/v1/community-needs') {
     const query = parseCommunityNeedsQuery(url);

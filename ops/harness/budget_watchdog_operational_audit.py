@@ -21,6 +21,10 @@ from ops.harness.budget_watchdog_facility_monitor import (
     DEFAULT_OUTPUT as FACILITY_OUTPUT,
 )
 from ops.harness.budget_watchdog_facility_monitor import run_facility_monitor
+from ops.harness.budget_watchdog_poverty_monitor import (
+    DEFAULT_OUTPUT as POVERTY_OUTPUT,
+)
+from ops.harness.budget_watchdog_poverty_monitor import run_poverty_monitor
 from ops.harness.budget_watchdog_source_monitor import (
     DEFAULT_BASELINE,
     run_monitor,
@@ -231,6 +235,19 @@ def _run_audit(*, pipeline_busy: bool, full_integrity: bool = False) -> int:
         ],
         cwd=WORKER,
     )
+    poverty_report, poverty_code = run_poverty_monitor(POVERTY_OUTPUT)
+    poverty_publish = _run(
+        [
+            "npx",
+            "wrangler",
+            "d1",
+            "execute",
+            "busisi-publication",
+            "--remote",
+            f"--file={POVERTY_OUTPUT / 'public-status.sql'}",
+        ],
+        cwd=WORKER,
+    )
     senate = _run(
         [sys.executable, "ops/harness/budget_watchdog_senate_monitor.py"],
         cwd=ROOT,
@@ -280,6 +297,10 @@ def _run_audit(*, pipeline_busy: bool, full_integrity: bool = False) -> int:
         issues.append("facility source monitor requires review")
     if facility_publish["returncode"] != 0:
         issues.append("facility source status publication failed")
+    if poverty_code != 0:
+        issues.append("poverty source monitor requires review")
+    if poverty_publish["returncode"] != 0:
+        issues.append("poverty source status publication failed")
     if senate["returncode"] == DRIFT_EXIT:
         issues.append("Senate catalogue drift requires review")
     elif senate["returncode"] != 0 or senate_report is None:
@@ -308,6 +329,12 @@ def _run_audit(*, pipeline_busy: bool, full_integrity: bool = False) -> int:
             "report_path": facility_report["report_path"],
             "status_sha256": facility_report["status_sha256"],
         },
+        "poverty_monitor": {
+            "code": poverty_code,
+            "source_state": poverty_report["source_state"],
+            "publication_state": poverty_report["publication_state"],
+            "status_sha256": poverty_report["status_sha256"],
+        },
         "senate_monitor": {
             "code": senate["returncode"],
             "status": senate_report.get("status") if senate_report else "missing",
@@ -330,6 +357,7 @@ def _run_audit(*, pipeline_busy: bool, full_integrity: bool = False) -> int:
         "commands": {
             "source_status_publication": publish,
             "facility_status_publication": facility_publish,
+            "poverty_status_publication": poverty_publish,
             "senate_catalogue_monitor": senate,
             "live_verification": live,
             "timers": timer_commands,

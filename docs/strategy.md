@@ -150,6 +150,15 @@ lowercase page alias fallback, and six active catalogue records reconciled.
 The facility source monitor still reports its source unavailable and keeps that
 release held.
 
+The official PSA page lists a 2023 city and municipal poverty workbook covering
+1,611 places. The source currently presents an interactive access challenge to
+the automatic downloader. A bounded monitor now retries every six hours,
+publishes the download status, and keeps all poverty values out of the public
+database until the complete workbook, PSGC identities, uncertainty measures,
+and published classification totals pass together. CBMS remains excluded
+because no reusable national aggregate table with the required geographic
+coverage has been acquired.
+
 The weekly audit now checks whether the service attached to an active timer is
 currently running before treating a temporarily missing next activation as a
 schedule failure. A genuinely inactive timer or a stopped service without a
@@ -169,11 +178,11 @@ future activation still fails the audit.
 
 ## Next practical work
 
-1. Add the 2023 PSA city and municipal poverty estimates only after the
-   official spreadsheet can be acquired and archived without an interactive
-   access challenge. Keep CBMS indicators out until PSA or an LGU publishes
-   reusable aggregate tables with clear geographic coverage and no household
-   identifiers.
+1. Keep the automatic PSA poverty check running and publish the 2023 city and
+   municipal estimates only after the official workbook passes source, schema,
+   PSGC, uncertainty, row-count, and classification-total checks. Keep CBMS
+   indicators out until PSA or an LGU publishes reusable aggregate tables with
+   clear geographic coverage and no household identifiers.
 2. Continue the bounded project-image cycles. Do not increase public coverage
    by weakening source-count, file-integrity or immutable-media checks.
 3. Complete two independent human decisions for at least 100 cases in the
