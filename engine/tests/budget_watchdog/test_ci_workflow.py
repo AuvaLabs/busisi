@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 WORKFLOW = ROOT / ".github" / "workflows" / "busisi-production-monitor.yml"
 TEST_WORKFLOW = ROOT / ".github" / "workflows" / "test.yml"
+SENATE_WORKFLOW = ROOT / ".github" / "workflows" / "senate-budget-monitor.yml"
 TEST_REQUIREMENTS = ROOT / "requirements-dev.txt"
 LIVE_VERIFIER = ROOT / "cloudflare" / "busisi" / "scripts" / "verify-live.mjs"
 PUBLIC_RELEASE_FILES = (
@@ -69,6 +70,15 @@ def test_test_workflow_validates_contributor_attribution() -> None:
     assert "co-authored-by:" in document.lower()
     for identity in ("claude", "codex", "chatgpt", "openai", "anthropic", "copilot"):
         assert identity in document.lower()
+
+
+def test_manual_senate_monitor_bypasses_scheduled_retry_backoff() -> None:
+    document = SENATE_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "if: github.event_name == 'schedule'" in document
+    assert "--strict --respect-backoff" in document
+    assert "if: github.event_name == 'workflow_dispatch'" in document
+    assert "budget_watchdog_senate_monitor.py --strict" in document
 
 
 def test_public_release_governance_is_explicit() -> None:

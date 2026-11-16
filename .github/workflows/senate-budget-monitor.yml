@@ -37,8 +37,13 @@ jobs:
           restore-keys: |
             senate-source-health-
 
-      - name: Check the FY2027 Senate catalogue
+      - name: Check the FY2027 Senate catalogue on schedule
+        if: github.event_name == 'schedule'
         run: PYTHONPATH=. python3 ops/harness/budget_watchdog_senate_monitor.py --strict --respect-backoff
+
+      - name: Check the FY2027 Senate catalogue on demand
+        if: github.event_name == 'workflow_dispatch'
+        run: PYTHONPATH=. python3 ops/harness/budget_watchdog_senate_monitor.py --strict
 
       - name: Summarize the catalogue check
         if: always()
