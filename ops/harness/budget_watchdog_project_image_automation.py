@@ -121,12 +121,10 @@ def _integrity_question(row: dict[str, object]) -> bool:
     missing_coordinate = row.get("latitude") is None or row.get("longitude") is None
     start_date = _text(row.get("startDate"))
     completion_date = _text(row.get("completionDate"))
-    date_conflict = bool(
-        start_date and completion_date and start_date > completion_date
+    date_conflict = bool(start_date and completion_date and start_date > completion_date)
+    status_conflict = (status in {"ongoing", "on going"} and progress >= COMPLETE_PROGRESS) or (
+        status == "completed" and progress < COMPLETE_PROGRESS
     )
-    status_conflict = (
-        status in {"ongoing", "on going"} and progress >= COMPLETE_PROGRESS
-    ) or (status == "completed" and progress < COMPLETE_PROGRESS)
     image_gap = status == "completed" and not bool(row.get("hasSatelliteImage"))
     return missing_coordinate or date_conflict or status_conflict or image_gap
 
@@ -144,8 +142,8 @@ def _priority_inputs(
     rows: tuple[dict[str, object], ...],
 ) -> tuple[int, Counter[str], frozenset[str]]:
     amounts = sorted(parse_centavos(Decimal(str(row["budget"]))) for row in rows)
-    threshold_index = len(amounts) * HIGH_VALUE_PERCENTILE_NUMERATOR // (
-        HIGH_VALUE_PERCENTILE_DENOMINATOR
+    threshold_index = (
+        len(amounts) * HIGH_VALUE_PERCENTILE_NUMERATOR // (HIGH_VALUE_PERCENTILE_DENOMINATOR)
     )
     threshold = amounts[min(threshold_index, len(amounts) - 1)]
     contractor_counts: Counter[str] = Counter()
@@ -297,21 +295,24 @@ def run_cycle(*, limit: int | None, publish: bool, workers: int | None = None) -
         raise ValueError("coverage worker count must be between 1 and 4")
     LOCK.parent.mkdir(parents=True, exist_ok=True)
     with LOCK.open("a+", encoding="utf-8") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return {
+                "passed": True,
+                "deferred": True,
+                "reason": "another Busisi maintenance cycle is running",
+            }
         now = datetime.now(UTC)
         create_image_coverage_queue(QUEUE, _seeds(), source_sha256=SOURCE_SHA256)
         queue = ImageCoverageQueue(QUEUE)
         recovered_leases = queue.recover_interrupted_leases(now=now)
         recheck_limit = _recheck_limit(selected_limit)
         requeued_conflicts = (
-            queue.requeue_count_conflicts(now=now, limit=recheck_limit)
-            if recheck_limit
-            else 0
+            queue.requeue_count_conflicts(now=now, limit=recheck_limit) if recheck_limit else 0
         )
         requeued_blocked = (
-            queue.requeue_recoverable_blocked(now=now, limit=recheck_limit)
-            if recheck_limit
-            else 0
+            queue.requeue_recoverable_blocked(now=now, limit=recheck_limit) if recheck_limit else 0
         )
         runner = _runner(queue)
         batches: list[ProjectImageBatchResult] = []

@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 
 import pytest
+from ops.harness import budget_watchdog_project_image_automation as automation
 from ops.harness.budget_watchdog_project_image_automation import (
     _metrics,
     _recheck_limit,
+    run_cycle,
 )
 
 from engine.budget_watchdog.coverage_controller import (
@@ -108,3 +110,21 @@ def test_rechecks_never_consume_more_than_half_of_a_cycle() -> None:
     assert _recheck_limit(1) == 0
     assert _recheck_limit(25) == 6
     assert _recheck_limit(1_000) == 250
+
+
+def test_coverage_cycle_defers_cleanly_when_an_audit_owns_the_lock(tmp_path, monkeypatch) -> None:
+    lock_path = tmp_path / "cycle.lock"
+    monkeypatch.setattr(automation, "LOCK", lock_path)
+
+    def busy(_file, _mode) -> None:
+        raise BlockingIOError("operational audit owns the lock")
+
+    monkeypatch.setattr(automation.fcntl, "flock", busy)
+
+    result = run_cycle(limit=1, workers=1, publish=True)
+
+    assert result == {
+        "passed": True,
+        "deferred": True,
+        "reason": "another Busisi maintenance cycle is running",
+    }
