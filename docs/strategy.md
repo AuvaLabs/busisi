@@ -70,6 +70,23 @@ whose exact identifiers point to more than one contract. It does not select one
 row automatically when multiple exact rows exist. The 511,983-stage local queue
 is resumable and leased; its public release contains reconciled summaries only.
 
+The gated project-image release dated 16 November 2026 covers 33,155 of 56,890
+contracts. Of those records, 10,302 have an exact source-count match, 2,612
+report no images in both source views and 20,241 remain source-count conflicts.
+The remaining queue contains 14,103 pending records and 9,632 blocked records.
+The public release contains 22,541 verified images and holds 191,147 images for
+checking. These figures belong to release
+`ac5ffd47f7aac897d609472665e285629ee3c4730040d50e6c79f0eca9e2ef63`;
+they are a dated snapshot rather than permanent site totals.
+
+Project-image checks run every six hours with bounded work and a source-health
+circuit breaker. A count conflict receives one delayed second check after 24
+hours. Recoverable access, rate-limit, server and network failures can receive
+a delayed check after seven days. Missing records and invalid evidence remain
+held. The public coverage page separates all checked records from strongly
+resolved records, which are exact matches plus records reporting no images in
+both source views.
+
 Project and change records also show congressional district context when the
 listed DPWH office can be matched exactly. A single-district office names that
 district and its representative as recorded in the dated roster snapshot. Shared offices show every served
@@ -119,6 +136,26 @@ only. No public question-answering endpoint exists. Retrieval remains available
 only to the private council and research editor as a way to find passages for
 review.
 
+## Operational status
+
+The production site, repository tests, production monitor and source-drift
+monitor passed on 16 November 2026. The primary project-image cycle also
+published a successful 1,000-record batch. The main source catalogue was
+unchanged at the latest check.
+
+Two external sources remain limited. The Senate Budget Transparency Portal is
+returning an interactive access challenge, and the secondary reader is also
+unavailable. Its latest successful catalogue check remains 4 November 2026, so
+Busisi keeps the last verified snapshot and marks it stale. The facility source
+monitor also reports its source unavailable and keeps that release held.
+
+The weekly scheduled audit currently reports a false failure. While the weekly
+service is running, systemd temporarily reports no next activation for that
+same timer. The nested operations check interprets the temporary value as a
+schedule that is too far away. The timer is active and its next activation is
+23 November 2026. The audit must distinguish an executing timer from a missing
+future schedule.
+
 ## Release gates
 
 | Area | Gate |
@@ -133,37 +170,41 @@ review.
 
 ## Next practical work
 
-1. Complete two independent human decisions for at least 100 cases in the balanced
-   120-case project-link review batch. Unclear and conflicting cases stay out
-   of the public reviewed-project list.
-2. Publish only confirmed project links after the review, accuracy, agreement
+1. Correct the weekly audit's self-timer check and add a regression test for a
+   running timer whose next activation is temporarily absent.
+2. Continue the bounded project-image cycles. Do not increase public coverage
+   by weakening source-count, file-integrity or immutable-media checks.
+3. Complete two independent human decisions for at least 100 cases in the
+   balanced 120-case project-link review batch. Unclear and conflicting cases
+   stay out of the public reviewed-project list.
+4. Publish only confirmed project links after the review, accuracy, agreement
    and source-total checks all pass. Then add those links to place and district
    summaries without changing unreviewed source records.
-3. Refresh the FY2027 publication catalogue and extend the comparison ledger
+5. Refresh the FY2027 publication catalogue and extend the comparison ledger
    when stable Senate, bicameral and final GAA artifacts can be acquired and
    reconciled.
-4. Continue the bounded official-source retry runner and acquire award notices,
+6. Continue the bounded official-source retry runner and acquire award notices,
    signed contracts, completion certificates, inspection and acceptance
    records, payment records and COA findings only when reproducible official
    artifacts can be retained and their identifier limitations modeled.
-5. Obtain a licensed, reusable NAMRIA administrative-boundary artifact before
+7. Obtain a licensed, reusable NAMRIA administrative-boundary artifact before
    adding point-in-polygon coordinate validation. Until then, keep exact source
    coordinate checks visibly separate from geographic verification. The
    official Geoportal catalogue labels the available regional, provincial and
    municipal layers approximate and not downloadable, and its WFS endpoint
    currently requires authorization. No unofficial polygon substitute is
    published.
-6. Review high-volume name-only contractor identities and quarantine ambiguous
+8. Review high-volume name-only contractor identities and quarantine ambiguous
    mergers instead of collapsing similar business names.
-7. Add alerts for source drift and publication mismatch without granting the
+9. Add alerts for source drift and publication mismatch without granting the
    monitor deployment or database mutation credentials.
-8. Reconcile district and representative changes against a newly archived
+10. Reconcile district and representative changes against a newly archived
    roster snapshot before updating public names, keeping prior snapshot hashes.
-9. Expand the completed answer-support evaluation beyond the current 40
+11. Expand the completed answer-support evaluation beyond the current 40
    questions, have the answer set reviewed independently, and test exact claim
    citations. Keep public evidence question answering disabled until a separate
    release decision approves the answer-quality and safety contract.
-10. Keep the required repository-wide strict type check at zero errors. New
+12. Keep the required repository-wide strict type check at zero errors. New
     ingestion, review and publication modules must pass without broad ignores
     before they can merge.
 
@@ -179,4 +220,4 @@ review.
   several districts.
 - Prefer a smaller verified publication over a larger uncertain one.
 
-Last updated: 2026-11-07.
+Last updated: 2026-11-16.
