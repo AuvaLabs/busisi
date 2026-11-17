@@ -64,7 +64,7 @@
     }
   ],
   "pcab": {
-    "minimum_records": 18623,
+    "minimum_records": 18576,
     "required_detail_records": [
       {
         "firm_name": "FAJR CONSTRUCTION PARTS & SUPPLY",
@@ -141,15 +141,15 @@
     ],
     "reviewed_transition": {
       "active_detail_records": 12,
-      "added_records": 259,
-      "changed_retained_records": 5,
-      "observed_on": "2026-11-09",
-      "observed_records": 18882,
-      "observed_sha256": "67be2c7d3735a1b4ad9b8c0386aae8171295b27415d30c601d4a78ca5b5ad759",
-      "removed_active_records": 12,
-      "removed_expired_records": 290,
-      "reviewed_records": 18925,
-      "reviewed_sha256": "b1e9a03d956ae1bd31e650f4f2b03e58c392a5813dc8f9d72bd759f86fefb908"
+      "added_records": 28,
+      "changed_retained_records": 0,
+      "observed_on": "2026-11-16",
+      "observed_records": 18604,
+      "observed_sha256": "220dd4e215e86377e2d61309ef81baa2459e1e789e0b4677c686bf7bef20ae71",
+      "removed_active_records": 0,
+      "removed_expired_records": 81,
+      "reviewed_records": 18657,
+      "reviewed_sha256": "6e450af57d1210164c42087b1135ab799675d4341809989d365dfafdb19da348"
     }
   },
   "schema_version": 5

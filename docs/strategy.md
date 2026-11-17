@@ -138,10 +138,17 @@ review.
 
 ## Operational status
 
-The production site, repository tests, production monitor and source-drift
-monitor passed on 16 November 2026. The primary project-image cycle also
-published a successful 1,000-record batch. The main source catalogue was
-unchanged at the latest check.
+The production site and repository tests passed on 17 November 2026. The
+project-image workflow published 35,890 checked contracts, including 10,706
+exact source-count matches and 4,167 records whose official source reported no
+images. Another 21,017 records remain held because the source counts conflict.
+
+The PCAB regular-license table fell from 18,657 to 18,604 rows and crossed its
+reviewed floor. A row-level comparison of the archived official responses found
+81 removed licenses whose stated validity dates had passed, 28 additions, no
+removed active license and no changed retained row. The reviewed floor is now
+18,576. The 12 valid licenses already missing from the grid still pass their
+exact official detail-page checks and remain explicit source inconsistencies.
 
 Two external sources remain limited. The Senate Budget Transparency Portal
 still returns an interactive access challenge to the direct monitor. The
@@ -231,4 +238,4 @@ future activation still fails the audit.
   several districts.
 - Prefer a smaller verified publication over a larger uncertain one.
 
-Last updated: 2026-11-16.
+Last updated: 2026-11-17.

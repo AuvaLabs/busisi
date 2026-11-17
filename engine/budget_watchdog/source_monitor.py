@@ -12,6 +12,7 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 from engine.budget_watchdog.pcab import parse_pcab_regular_licenses
 
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _DBM_ORIGIN = "https://www.dbm.gov.ph"
 _HGAB_FISCAL_YEAR = 2027
 
@@ -64,9 +65,7 @@ def review_pcab_transition(
     added_ids = sorted(observed_rows.keys() - reviewed_rows.keys())
     retained_ids = reviewed_rows.keys() & observed_rows.keys()
     removed_expired = [
-        record_id
-        for record_id in removed_ids
-        if reviewed_rows[record_id][4] <= comparison_date
+        record_id for record_id in removed_ids if reviewed_rows[record_id][4] <= comparison_date
     ]
     removed_active = sorted(set(removed_ids) - set(removed_expired))
     changed = sorted(
@@ -90,6 +89,54 @@ def review_pcab_transition(
         "removed_active_ids": removed_active,
         "changed_retained_ids": changed,
     }
+
+
+def _review_count(transition: dict[str, Any], field: str) -> int:
+    value = transition.get(field)
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise SourceMonitorError("PCAB baseline review counts are invalid")
+    return value
+
+
+def validate_pcab_baseline_review(pcab: dict[str, Any]) -> None:
+    """Reject a reviewed PCAB floor whose saved transition is inconsistent."""
+
+    transition = pcab.get("reviewed_transition")
+    details = pcab.get("required_detail_records")
+    minimum = pcab.get("minimum_records")
+    if not isinstance(transition, dict) or not isinstance(details, list):
+        raise SourceMonitorError("PCAB baseline review metadata is missing")
+    count_fields = (
+        "active_detail_records",
+        "added_records",
+        "changed_retained_records",
+        "observed_records",
+        "removed_active_records",
+        "removed_expired_records",
+        "reviewed_records",
+    )
+    counts = {field: _review_count(transition, field) for field in count_fields}
+    if counts["active_detail_records"] != len(details):
+        raise SourceMonitorError("PCAB baseline review detail count is inconsistent")
+    for field in ("reviewed_sha256", "observed_sha256"):
+        value = transition.get(field)
+        if not isinstance(value, str) or _SHA256.fullmatch(value) is None:
+            raise SourceMonitorError("PCAB baseline review hash is invalid")
+    observed_on = transition.get("observed_on")
+    if not isinstance(observed_on, str):
+        raise SourceMonitorError("PCAB baseline review date is invalid")
+    try:
+        date.fromisoformat(observed_on)
+    except ValueError as exc:
+        raise SourceMonitorError("PCAB baseline review date is invalid") from exc
+    expected_floor = (
+        counts["reviewed_records"]
+        - counts["removed_expired_records"]
+        - counts["removed_active_records"]
+    )
+    expected_observed = expected_floor + counts["added_records"]
+    if minimum != expected_floor or counts["observed_records"] != expected_observed:
+        raise SourceMonitorError("PCAB baseline review arithmetic is inconsistent")
 
 
 def _object(payload: bytes, label: str) -> dict[str, Any]:
@@ -133,10 +180,7 @@ def parse_hgab_overview(payload: bytes) -> dict[str, Any]:
     data = value.get("data")
     if not isinstance(metadata, dict) or not isinstance(data, dict):
         raise SourceMonitorError("HGAB overview metadata is invalid")
-    if (
-        metadata.get("dataset") != "hgab"
-        or metadata.get("fiscal_year") != _HGAB_FISCAL_YEAR
-    ):
+    if metadata.get("dataset") != "hgab" or metadata.get("fiscal_year") != _HGAB_FISCAL_YEAR:
         raise SourceMonitorError("HGAB overview identity changed")
     revision = metadata.get("source_commit")
     built_at = metadata.get("built_at")
@@ -269,9 +313,7 @@ def _pcab_detail_records(
 def _compare_pcab_details(
     baseline_pcab: dict[str, Any], observed_pcab: dict[str, Any]
 ) -> list[str]:
-    required = _pcab_detail_records(
-        baseline_pcab.get("required_detail_records"), observed=False
-    )
+    required = _pcab_detail_records(baseline_pcab.get("required_detail_records"), observed=False)
     observed = _pcab_detail_records(observed_pcab.get("detail_records"), observed=True)
     differences = []
     if set(required) != set(observed):
@@ -298,11 +340,14 @@ def compare_observations(baseline: dict[str, Any], observed: dict[str, Any]) -> 
     for key in ("revision", "total"):
         if baseline.get("districts", {}).get(key) != observed.get("districts", {}).get(key):
             differences.append(f"districts: {key} changed")
-    if baseline.get("hgab_2027", {}).get("source_commit") != observed.get(
-        "hgab_2027", {}
-    ).get("source_commit"):
+    if baseline.get("hgab_2027", {}).get("source_commit") != observed.get("hgab_2027", {}).get(
+        "source_commit"
+    ):
         differences.append("hgab_2027: source commit changed")
-    minimum_pcab_records = baseline.get("pcab", {}).get("minimum_records")
+    baseline_pcab = baseline.get("pcab", {})
+    if baseline_pcab.get("reviewed_transition") is not None:
+        validate_pcab_baseline_review(baseline_pcab)
+    minimum_pcab_records = baseline_pcab.get("minimum_records")
     observed_pcab_records = observed.get("pcab", {}).get("records")
     if (
         not isinstance(minimum_pcab_records, int)
@@ -314,7 +359,5 @@ def compare_observations(baseline: dict[str, Any], observed: dict[str, Any]) -> 
         raise SourceMonitorError("PCAB observed record count is invalid")
     if observed_pcab_records < minimum_pcab_records:
         differences.append("pcab: records fell below the reviewed floor")
-    differences.extend(
-        _compare_pcab_details(baseline.get("pcab", {}), observed.get("pcab", {}))
-    )
+    differences.extend(_compare_pcab_details(baseline.get("pcab", {}), observed.get("pcab", {})))
     return tuple(differences)

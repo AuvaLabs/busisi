@@ -345,6 +345,13 @@ grid omission is then checked by record ID, contractor name, license number,
 status and validity date on every run. Changed rows and reviewed hashes are
 recorded before the floor can be changed.
 
+The 17 November 2026 transition review compared the last passing 18,657-row
+official response with the 18,604-row response that crossed the prior floor.
+It found 81 removed licenses whose stated validity dates had passed, 28 new
+records, no removed active license and no changed retained row. The reviewed
+floor is now 18,576. The 12 valid licenses already absent from the grid remain
+checked through their exact official detail pages on every run.
+
 The project-image evidence queue runs every six hours. Each cycle starts with a
 25-contract canary, continues in 100-contract chunks and processes at most
 1,000 contracts with four workers paced to two requests per second per source
