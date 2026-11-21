@@ -438,6 +438,15 @@ const verifyPages = async () => {
   expectIncludes(budgetTrailText, 'Follow the FY2027 budget through each published stage', 'budget trail heading');
   expectIncludes(budgetTrailText, '/assets/budget-cycle-v1.js', 'budget trail client');
   expectIncludes(budgetTrailText, 'Publisher is not stage', 'budget trail evidence boundary');
+  expectIncludes(budgetTrailText, 'Committee Report No. 131', 'Senate committee watch');
+
+  const senateCommittee = await request('/api/v1/senate-committee');
+  expectStatus(senateCommittee, 200, '/api/v1/senate-committee');
+  const senateCommitteeBody = await senateCommittee.json();
+  if (senateCommitteeBody.data?.release?.state === 'awaiting_official_document'
+      && senateCommitteeBody.data.release.total_change_centavos !== null) {
+    throw new Error('Senate committee watch must keep unavailable money null');
+  }
 
   const audit = await request('/audit/');
   expectStatus(audit, 200, '/audit/');

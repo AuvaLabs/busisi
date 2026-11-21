@@ -58,6 +58,13 @@ department, attached-agency, subunit and Special Purpose Fund records as of
 converting the workbook's thousand-peso values to integer centavos. Allotment
 release remains separate from obligation, disbursement and payment evidence.
 
+The budget trail at `/budget-trail/` also exposes the FY2027 Senate committee
+watch state. The current release watches Committee Report No. 131 but publishes
+no reported project count or peso amount because the official report and full
+project schedules have not been saved and checked. When those files become
+available, the release requires page-level citations, exact centavo controls,
+and a complete row-to-total check before project changes appear.
+
 Reviewed project dossiers can include archived DPWH source images. The image
 builder archives both metadata views and original JPEG bytes, reconciles the
 source counts, validates origin and dimensions, and emits separate verified and

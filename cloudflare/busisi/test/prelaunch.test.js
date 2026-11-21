@@ -528,7 +528,10 @@ test('publishes a budget trail without claiming missing Senate or GAA stages', a
   assert.match(document, /6 records/);
   assert.match(document, /2 supporting fiscal records/);
   assert.match(document, /Senate committee stage/);
-  assert.match(document, /Not yet found/);
+  assert.match(document, /Committee Report No\. 131/);
+  assert.match(document, /official report and project schedules are not in Busisi yet/i);
+  assert.match(document, /What needs checking/);
+  assert.match(document, /What this does not prove/);
   assert.match(document, /A Senate-hosted document is not automatically a Senate-stage document/);
   assert.match(document, /src="\/assets\/budget-cycle-v1\.js"/);
 });

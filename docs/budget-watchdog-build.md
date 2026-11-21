@@ -372,5 +372,13 @@ unavailable. Strict automation fails when the last successful check is
 older than 24 hours or when catalogue drift is observed. No failure can rewrite
 the reviewed catalogue.
 
+The FY2027 committee-stage layer is separate from the NEP-to-House comparison.
+Its current state watches Committee Report No. 131 without publishing figures
+from press reports. A verified release requires an official Senate URL, the
+original file hash and size, page citations, integer-centavo values, and an
+exact match between every project row and each printed group total. A committee
+change is always labelled as a proposed stage change, not a final enacted
+amount. Uncertain project identity links are held back.
+
 The first stable local baseline and its limitations are recorded in
 `docs/data-snapshots/2026-11-02-budget-watchdog.md`.

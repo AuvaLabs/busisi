@@ -42,8 +42,17 @@ monitor is read-only and holds no deployment credentials.
 | `/api/v1/acquisition-coverage` | Reconciled full-contract-universe acquisition controls |
 | `/api/v1/coverage-status` | Latest gated project-image coverage release |
 | `/api/v1/source-monitor-status` | Latest deterministic source-revision monitor result |
+| `/api/v1/senate-committee` | FY2027 Senate committee watch or fully checked project changes |
 | `/api/v1/community-needs-summary` | PSA 2024 population coverage and published source limits |
 | `/api/v1/community-needs` | Searchable PSA population and household counts by official place code |
+
+## Senate committee-stage contract
+
+The committee endpoint currently publishes a watch state for Committee Report
+No. 131 and HB 10858. It publishes no project count or peso amount until the
+official report and complete schedules are saved, hashed, checked by page, and
+reconciled to every published project row. Missing values remain `null`, never
+zero. Uncertain project links stay outside the public change table.
 
 ## Community needs context
 

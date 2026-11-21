@@ -29,6 +29,7 @@ import {
   getBudgetCycleSummary,
   queryBudgetCycleDocuments,
 } from './budget-cycle-query.js';
+import { getSenateCommitteeRelease } from './senate-committee-query.js';
 import { getCoaSummary, queryCoaReports } from './coa-query.js';
 import { getProcurementSummary, queryProcurementRecords } from './procurement-query.js';
 import { getAcquisitionCoverage } from './acquisition-coverage-query.js';
@@ -118,6 +119,7 @@ const API_CATALOGUE = Object.freeze([
   { path: '/api/v1/project-types', description: 'Projects grouped by type, purpose, and work' },
   { path: '/api/v1/integrity-signals', description: 'Deterministic questions to check' },
   { path: '/api/v1/changes', description: 'FY2027 budget-stage comparisons' },
+  { path: '/api/v1/senate-committee', description: 'FY2027 Senate committee-stage status' },
   { path: '/api/v1/agency-budgets', description: 'Appropriation-head comparisons' },
   { path: '/api/v1/allotment-releases', description: 'Official DBM allotment releases' },
   { path: '/api/v1/questions', description: 'Supported public evidence questions' },
@@ -400,6 +402,16 @@ const apiResponse = async (request, environment, url) => {
         review_scope: 'source_separated_budget_cycle_catalogue',
       },
       data: records,
+    });
+  }
+  if (url.pathname === '/api/v1/senate-committee') {
+    return jsonResponse({
+      meta: {
+        review_scope: 'official_senate_committee_changes',
+        boundary: 'A committee-stage change is not the final enacted budget.',
+        displayed_changes_limit: 100,
+      },
+      data: await getSenateCommitteeRelease(environment.DB),
     });
   }
   if (url.pathname === '/api/v1/coa-summary') {

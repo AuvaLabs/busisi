@@ -328,10 +328,20 @@ export const budgetCycleBody = `
   <section class="cycle-map" data-budget-cycle aria-label="FY2027 budget publication stages">
     <article class="cycle-stage available" data-cycle-stage="nep"><span>01 · Executive proposal</span><h2>NEP</h2><p>Available through DBM and the existing Busisi comparison page.</p><b>Available elsewhere</b></article>
     <article class="cycle-stage partial" data-cycle-stage="house_gab"><span>02 · House</span><h2>House bill, third reading</h2><p>Four volumes identified in the Senate publication catalogue.</p><b>Partial catalogue</b></article>
-    <article class="cycle-stage unavailable" data-cycle-stage="senate_committee"><span>03 · Senate review</span><h2>Senate committee stage</h2><p>Busisi has not found a comparable FY2027 document.</p><b>Not yet found</b></article>
+    <article class="cycle-stage unavailable" data-cycle-stage="senate_committee"><span>03 · Senate review</span><h2>Senate committee stage</h2><p>Committee Report No. 131 is on the watch list. Its official report and project schedules are not in Busisi yet.</p><b>Watching official source</b></article>
     <article class="cycle-stage unavailable" data-cycle-stage="senate_amendment"><span>04 · Senate action</span><h2>Senate amendments</h2><p>Busisi has not found a comparable FY2027 document.</p><b>Not yet found</b></article>
     <article class="cycle-stage unavailable" data-cycle-stage="bicam"><span>05 · Totals check</span><h2>Bicameral report</h2><p>Busisi has not found a comparable FY2027 document.</p><b>Not yet found</b></article>
     <article class="cycle-stage unavailable" data-cycle-stage="gaa"><span>06 · Enacted law</span><h2>General Appropriations Act</h2><p>Busisi has not found an enacted FY2027 GAA.</p><b>Not yet found</b></article>
+  </section>
+  <section class="committee-watch" data-senate-committee>
+    <header><p class="kicker">Senate committee watch</p><h2>Committee Report No. 131</h2><p data-senate-committee-status>The official report and project schedules are not in Busisi yet. No project or peso change is shown from news reports alone.</p></header>
+    <div class="committee-watch-grid">
+      <article><h3>What we know</h3><p>Busisi is watching for an official FY2027 committee report connected to HB 10858.</p></article>
+      <article><h3>What needs checking</h3><p>The signed report, complete project schedules, page totals, and every listed project must be saved and checked.</p></article>
+      <article><h3>What this does not prove</h3><p>A reported committee change is not yet a final deletion. The Senate, the bicameral conference, and the enacted budget can still differ.</p></article>
+      <article><h3>What to check next</h3><p>When the official files appear, Busisi will compare every item with the Executive proposal, House bill, and existing project records.</p></article>
+      <article><h3>Where this information came from</h3><p><a href="https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027" target="_blank" rel="noopener noreferrer">Check the official Senate budget document page</a></p></article>
+    </div>
   </section>
   <section class="cycle-documents"><header><p class="kicker">Document list</p><h2>What the portal currently publishes.</h2><p>“Saved copy checked” means the retained copy passed its recorded file check. “Official listing only” means Busisi can verify the listing but could not save the file.</p><p data-cycle-status aria-live="polite">Loading the document list…</p></header><div class="cycle-document-list" data-cycle-documents><p class="cycle-empty">Loading documents…</p></div></section>
   <section class="cycle-note"><p class="kicker">What this does not show</p><h2>A missing stage does not mean zero.</h2><p>The portal's “GAA 2027” navigation label describes a fiscal-year collection. Busisi will not call a document an enacted GAA, a Senate amendment, or a bicameral report unless the document title and saved content support that label.</p></section>`;

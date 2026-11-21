@@ -1,6 +1,7 @@
 const root = document.querySelector('[data-budget-cycle]');
 const list = document.querySelector('[data-cycle-documents]');
 const status = document.querySelector('[data-cycle-status]');
+const committeeStatus = document.querySelector('[data-senate-committee-status]');
 
 const LABELS = Object.freeze({
   available: 'Available',
@@ -62,20 +63,29 @@ const documentCard = (record) => {
 
 const load = async () => {
   try {
-    const [summaryResponse, documentsResponse] = await Promise.all([
+    const [summaryResponse, documentsResponse, committeeResponse] = await Promise.all([
       fetch('/api/v1/budget-cycle'),
       fetch('/api/v1/budget-cycle/documents'),
+      fetch('/api/v1/senate-committee'),
     ]);
-    if (!summaryResponse.ok || !documentsResponse.ok) throw new Error('request failed');
-    const [{ data: summary }, { data: documents, meta }] = await Promise.all([
-      summaryResponse.json(), documentsResponse.json(),
+    if (!summaryResponse.ok || !documentsResponse.ok || !committeeResponse.ok) {
+      throw new Error('request failed');
+    }
+    const [{ data: summary }, { data: documents, meta }, { data: committee }] = await Promise.all([
+      summaryResponse.json(), documentsResponse.json(), committeeResponse.json(),
     ]);
     updateStages(summary.stages);
     list.replaceChildren(...documents.map(documentCard));
     status.textContent = `${meta.total} source-separated records in the FY2027 catalogue.`;
+    if (committeeStatus && committee.release) {
+      committeeStatus.textContent = committee.release.public_note;
+    }
   } catch {
     list.replaceChildren(make('p', 'cycle-empty', 'The document register is temporarily unavailable.'));
     status.textContent = 'Publication register unavailable.';
+    if (committeeStatus) {
+      committeeStatus.textContent = 'The Senate committee source check is temporarily unavailable.';
+    }
   }
 };
 

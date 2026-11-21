@@ -323,6 +323,13 @@ stale after that. Drift and stale source health fail the strict workflow. A
 temporary degraded check retains the last verified baseline without replacing
 it. The monitor never updates the reviewed baseline automatically.
 
+Committee Report No. 131 is an explicit FY2027 watch target. The public
+committee endpoint remains in `awaiting_official_document` state until an
+official Senate file and its complete project schedules are available. The
+builder refuses news-only amounts, floating-point money, incomplete controls,
+and uncertain links. The existing catalogue monitor still raises a review stop
+for any new Senate document instead of accepting it automatically.
+
 The source drift monitor independently checks the BetterGov GAA, DPWH and
 PhilGEPS revisions, the DBM allotment-release catalogue, the district roster and
 the PCAB regular-license table every six hours. Changed source observations are

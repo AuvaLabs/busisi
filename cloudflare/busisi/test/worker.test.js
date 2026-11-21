@@ -163,6 +163,9 @@ const communityNeedsMigrationPath = fileURLToPath(
 const communityPovertyMigrationPath = fileURLToPath(
   new URL('../migrations/0033_community_poverty.sql', import.meta.url),
 );
+const senateCommitteeMigrationPath = fileURLToPath(
+  new URL('../migrations/0034_senate_committee_changes.sql', import.meta.url),
+);
 const awardMirrorBundlePath = fileURLToPath(
   new URL('../../../data/budget_watchdog/award-mirror-d1-bundle/contract-award-mirror.sql', import.meta.url),
 );
@@ -233,6 +236,7 @@ class LocalD1 {
     this.database.exec(readFileSync(projectClassificationMigrationPath, 'utf8'));
     this.database.exec(readFileSync(communityNeedsMigrationPath, 'utf8'));
     this.database.exec(readFileSync(communityPovertyMigrationPath, 'utf8'));
+    this.database.exec(readFileSync(senateCommitteeMigrationPath, 'utf8'));
     this.database.exec(readFileSync(awardMirrorBundlePath, 'utf8'));
     this.database.exec(readFileSync(contractEvidenceBundlePath, 'utf8'));
     this.database.exec(readFileSync(acquisitionUniverseBundlePath, 'utf8'));
@@ -463,6 +467,10 @@ class LocalD1 {
       INSERT INTO budget_cycle_documents VALUES
         ('senate-portal:385', 2027, '385', 'HB 10858 FOR 3RD READING VOL I-B', 'house_gab', 'House bill, third reading', 'Senate Budget Transparency Portal', 'I-B', '2026-10-13', 'https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027', 'https://budget-transparency-portal.senate.gov.ph/file_viewer?id=385&type=Documents', 'verified_archived', '${'4'.repeat(64)}', 15663076, 'https://budget-assets.bettergov.ph/hgab/2027/pdf/hb10858-3r-vol-ib.pdf', 'Archived copy verified by SHA-256.'),
         ('senate-portal:417', 2027, '417', 'SEPO Budget Notes', 'supporting', 'Supporting fiscal analysis', 'Senate Budget Transparency Portal', NULL, NULL, 'https://budget-transparency-portal.senate.gov.ph/public/Documents?gaa_year=2027', 'https://budget-transparency-portal.senate.gov.ph/file_viewer?id=417&type=Documents', 'discovered', NULL, NULL, NULL, 'Catalogue discovery only.');
+      INSERT INTO senate_committee_releases VALUES
+        ('fy2027-cr131', 2027, '131', 'HB 10858', 'awaiting_official_document',
+         '2026-11-21T12:00:00+00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL,
+         'The official report and project schedules are not in Busisi yet.');
       INSERT INTO contract_acquisition_metadata VALUES
         ('award_revision', '${'c'.repeat(40)}'),
         ('award_sha256', '${'a'.repeat(64)}'),
@@ -717,6 +725,22 @@ test('publishes the source-separated FY2027 budget-cycle catalogue', async () =>
   assert.equal(documentBody.data[0].stage, 'house_gab');
   assert.equal(documentBody.data[0].acquisition_status, 'verified_archived');
   assert.equal(documentBody.data[1].stage, 'supporting');
+  database.close();
+});
+
+test('publishes a Senate committee watch state without turning missing evidence into zero', async () => {
+  const database = new LocalD1();
+  const response = await worker.fetch(
+    request('/api/v1/senate-committee'), environment(database),
+  );
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.data.release.report_number, '131');
+  assert.equal(body.data.release.state, 'awaiting_official_document');
+  assert.equal(body.data.release.total_change_centavos, null);
+  assert.deepEqual(body.data.controls, []);
+  assert.deepEqual(body.data.changes, []);
   database.close();
 });
 
