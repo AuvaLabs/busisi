@@ -3,7 +3,7 @@ pytest>=9.2,<10
 pytest-cov>=6.0,<7
 responses>=0.26.3,<1
 httpx2>=2.16,<3
-ruff>=0.17.3,<1
+ruff>=0.17.4,<1
 mypy>=1.13,<2
 types-requests
 types-defusedxml
