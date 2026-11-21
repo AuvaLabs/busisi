@@ -7,6 +7,7 @@ from ops.harness import budget_watchdog_project_image_automation as automation
 from ops.harness.budget_watchdog_project_image_automation import (
     _metrics,
     _recheck_limit,
+    _should_defer_publication,
     run_cycle,
 )
 
@@ -110,6 +111,14 @@ def test_rechecks_never_consume_more_than_half_of_a_cycle() -> None:
     assert _recheck_limit(1) == 0
     assert _recheck_limit(25) == 6
     assert _recheck_limit(1_000) == 250
+
+
+def test_existing_release_defers_when_no_image_task_is_due() -> None:
+    manifest = {"coverage_release": {"release_id": "abc"}}
+
+    assert _should_defer_publication(claimed=0, previous_manifest=manifest)
+    assert not _should_defer_publication(claimed=1, previous_manifest=manifest)
+    assert not _should_defer_publication(claimed=0, previous_manifest=None)
 
 
 def test_coverage_cycle_defers_cleanly_when_an_audit_owns_the_lock(tmp_path, monkeypatch) -> None:

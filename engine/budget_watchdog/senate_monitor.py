@@ -438,10 +438,14 @@ def run_senate_monitor(
     *,
     fetch: Fetch = _request,
     previous_report: dict[str, object] | None = None,
+    checked_at: datetime | None = None,
 ) -> SenateMonitorResult:
     """Compare a fresh bounded catalogue discovery with the reviewed baseline."""
 
-    now = datetime.now(UTC)
+    now = checked_at or datetime.now(UTC)
+    if now.tzinfo is None:
+        raise ValueError("Senate monitor check time must be timezone-aware")
+    now = now.astimezone(UTC)
     baseline_payload = baseline_path.read_bytes()
     baseline_document = json.loads(baseline_payload)
     baseline_last_success = baseline_document.get("source", {}).get("retrieved_at")

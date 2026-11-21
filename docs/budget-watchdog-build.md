@@ -307,9 +307,11 @@ hints. Publication remains limited to reconciled metadata and inspected JPEG
 artifacts; conflicts remain quarantined.
 A private outcome table records a reason code and whether the failure happened
 while reading metadata, downloading media or validating evidence. Count
-conflicts receive one delayed recheck after 24 hours. Recoverable blocked source
-conditions receive a bounded delayed check after seven days; permanent absence
-and invalid evidence remain held.
+conflicts receive one delayed recheck after 24 hours. Rate-limit, server and
+network failures receive a bounded delayed check after seven days.
+Access-denied records wait 30 days. Permanent absence and invalid evidence
+remain held. A cycle with no due task reuses the current release and skips an
+unchanged D1 upload.
 `npm run check`
 enforces at least 95
 percent Worker line and function coverage and at least 90 percent branch

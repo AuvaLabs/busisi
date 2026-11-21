@@ -98,6 +98,18 @@ def _review_count(transition: dict[str, Any], field: str) -> int:
     return value
 
 
+def _review_ids(transition: dict[str, Any], field: str, expected_count: int) -> tuple[str, ...]:
+    value = transition.get(field, [] if expected_count == 0 else None)
+    if (
+        not isinstance(value, list)
+        or len(value) != expected_count
+        or any(not isinstance(item, str) or not item.isdigit() for item in value)
+        or len(value) != len(set(value))
+    ):
+        raise SourceMonitorError("PCAB baseline review verified ids are invalid")
+    return tuple(value)
+
+
 def validate_pcab_baseline_review(pcab: dict[str, Any]) -> None:
     """Reject a reviewed PCAB floor whose saved transition is inconsistent."""
 
@@ -118,6 +130,30 @@ def validate_pcab_baseline_review(pcab: dict[str, Any]) -> None:
     counts = {field: _review_count(transition, field) for field in count_fields}
     if counts["active_detail_records"] != len(details):
         raise SourceMonitorError("PCAB baseline review detail count is inconsistent")
+    detail_ids: set[str] = set()
+    for item in details:
+        if not isinstance(item, dict):
+            raise SourceMonitorError("PCAB baseline review detail ids are invalid")
+        record_id = item.get("record_id")
+        if not isinstance(record_id, str) or not record_id.isdigit() or record_id in detail_ids:
+            raise SourceMonitorError("PCAB baseline review detail ids are invalid")
+        detail_ids.add(record_id)
+    verified_active = _review_ids(
+        transition,
+        "verified_active_omission_ids",
+        counts["removed_active_records"],
+    )
+    verified_changed = _review_ids(
+        transition,
+        "verified_changed_ids",
+        counts["changed_retained_records"],
+    )
+    if (
+        not set(verified_active) <= detail_ids
+        or not set(verified_changed) <= detail_ids
+        or set(verified_active) & set(verified_changed)
+    ):
+        raise SourceMonitorError("PCAB baseline review verified ids are inconsistent")
     for field in ("reviewed_sha256", "observed_sha256"):
         value = transition.get(field)
         if not isinstance(value, str) or _SHA256.fullmatch(value) is None:

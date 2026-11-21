@@ -64,8 +64,14 @@
     }
   ],
   "pcab": {
-    "minimum_records": 18576,
+    "minimum_records": 18422,
     "required_detail_records": [
+      {
+        "firm_name": "SAN RAFAEL BUILDERS",
+        "license_number": "30496",
+        "record_id": "112411",
+        "valid_to": "2027-09-30"
+      },
       {
         "firm_name": "FAJR CONSTRUCTION PARTS & SUPPLY",
         "license_number": "40114",
@@ -109,6 +115,12 @@
         "valid_to": "2027-04-14"
       },
       {
+        "firm_name": "BAQPRINCE CONSTRUCTION AND TRADING CORP. (FORMERLY: BAQPRINCE CONSTRUCTION)",
+        "license_number": "28337",
+        "record_id": "118744",
+        "valid_to": "2029-04-28"
+      },
+      {
         "firm_name": "HRC CONTRACTOR ELEVATOR ESCALATOR",
         "license_number": "46052",
         "record_id": "119535",
@@ -119,6 +131,18 @@
         "license_number": "49351",
         "record_id": "119578",
         "valid_to": "2027-03-09"
+      },
+      {
+        "firm_name": "TOCHIGI-KEN TECHNOLOGIES INTERNATIONAL INC.",
+        "license_number": "35198",
+        "record_id": "119616",
+        "valid_to": "2028-04-28"
+      },
+      {
+        "firm_name": "PPK DAVAO CONSTRUCTION SERVICES CORP.",
+        "license_number": "59836",
+        "record_id": "119797",
+        "valid_to": "2027-05-09"
       },
       {
         "firm_name": "TFM POWERLINE CONSTRUCTION INC.",
@@ -137,19 +161,41 @@
         "license_number": "53424",
         "record_id": "125332",
         "valid_to": "2027-09-20"
+      },
+      {
+        "firm_name": "PVL CONSTRUCTION, INC.",
+        "license_number": "50985",
+        "record_id": "129587",
+        "valid_to": "2027-08-26"
+      },
+      {
+        "firm_name": "GRIDLINE ENGINEERING SERVICES",
+        "license_number": "54086",
+        "record_id": "130166",
+        "valid_to": "2027-12-05"
       }
     ],
     "reviewed_transition": {
-      "active_detail_records": 12,
-      "added_records": 28,
-      "changed_retained_records": 0,
-      "observed_on": "2026-11-16",
-      "observed_records": 18604,
-      "observed_sha256": "220dd4e215e86377e2d61309ef81baa2459e1e789e0b4677c686bf7bef20ae71",
-      "removed_active_records": 0,
-      "removed_expired_records": 81,
-      "reviewed_records": 18657,
-      "reviewed_sha256": "6e450af57d1210164c42087b1135ab799675d4341809989d365dfafdb19da348"
+      "active_detail_records": 18,
+      "added_records": 138,
+      "changed_retained_records": 1,
+      "observed_on": "2026-11-21",
+      "observed_records": 18560,
+      "observed_sha256": "fe93cc4e516d52571eadd96fbe0a0e3f2b160b3810673304b47aa899a448d8d1",
+      "removed_active_records": 5,
+      "removed_expired_records": 177,
+      "reviewed_records": 18604,
+      "reviewed_sha256": "220dd4e215e86377e2d61309ef81baa2459e1e789e0b4677c686bf7bef20ae71",
+      "verified_active_omission_ids": [
+        "112411",
+        "118744",
+        "119616",
+        "119797",
+        "129587"
+      ],
+      "verified_changed_ids": [
+        "130166"
+      ]
     }
   },
   "schema_version": 5

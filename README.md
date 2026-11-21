@@ -352,6 +352,13 @@ records, no removed active license and no changed retained row. The reviewed
 floor is now 18,576. The 12 valid licenses already absent from the grid remain
 checked through their exact official detail pages on every run.
 
+The 21 November 2026 review compared the next 18,560-row response with the
+previously accepted response. It found 177 expired removals, 138 additions,
+five active licenses omitted from the grid and one renewed retained record.
+Official detail pages confirmed all six identities and current validity. The
+reviewed floor is now 18,422 rows, with 18 exact detail-page checks. See
+`docs/data-snapshots/2026-11-21-pcab-source-review.md`.
+
 The project-image evidence queue runs every six hours. Each cycle starts with a
 25-contract canary, continues in 100-contract chunks and processes at most
 1,000 contracts with four workers paced to two requests per second per source
@@ -374,9 +381,11 @@ count needed for this evidence contract.
 
 The private queue records a stable reason code and source stage for every final
 or failed check. A source-count conflict receives one delayed second look after
-24 hours. A blocked rate-limit, access, server or network condition can be
-checked again after seven days. Permanent missing records and invalid evidence
-remain held until the source or validation rule changes.
+24 hours. A blocked rate-limit, server or network condition can be checked
+again after seven days. Access-denied records wait 30 days because repeated
+checks rarely produce new evidence. Permanent missing records and invalid
+evidence remain held until the source or validation rule changes. When no task
+is due, the cycle keeps the current release and skips an unchanged D1 upload.
 
 The local acquisition retry timer runs one bounded batch daily. It accepts only
 registered official DPWH HTTPS origins, archives successful source bytes, uses

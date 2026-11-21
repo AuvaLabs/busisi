@@ -28,7 +28,8 @@ _MAX_FISCAL_YEAR = 2100
 _SQLITE_BUSY_TIMEOUT_MILLISECONDS = 30_000
 _SCHEMA_VERSION = "3"
 _CONFLICT_RECHECK_SECONDS = 86_400
-_BLOCKED_RECHECK_SECONDS = 604_800
+_TRANSIENT_BLOCKED_RECHECK_SECONDS = 604_800
+_ACCESS_DENIED_RECHECK_SECONDS = 2_592_000
 _MAX_CONFLICT_ATTEMPTS = 2
 _RECHECK_LIMIT = 250
 _OUTCOME_CODES = frozenset(
@@ -58,20 +59,18 @@ _FAILURE_OUTCOME_CODES = frozenset(
     }
 )
 _OUTCOME_STAGES = frozenset({"evidence", "metadata", "media", "unknown"})
-_RECOVERABLE_BLOCKED_CODES = (
-    "source_rate_limited",
-    "source_access_denied",
-    "source_server_error",
-    "source_network_error",
-)
 _REQUEUE_CONFLICT_SQL = (
     "SELECT contract_id FROM image_tasks WHERE status = 'count_conflict' "
     "AND attempts < ? AND updated_at <= ? ORDER BY priority, contract_id LIMIT ?"
 )
 _REQUEUE_BLOCKED_SQL = (
-    "SELECT contract_id FROM image_tasks WHERE status = 'blocked' AND updated_at <= ? "
-    "AND contract_id IN (SELECT contract_id FROM image_task_outcomes WHERE outcome_code "
-    "IN (?, ?, ?, ?)) ORDER BY priority, contract_id LIMIT ?"
+    "SELECT image_tasks.contract_id FROM image_tasks "
+    "JOIN image_task_outcomes USING (contract_id) WHERE image_tasks.status = 'blocked' AND ("
+    "(image_task_outcomes.outcome_code = 'source_access_denied' "
+    "AND image_tasks.updated_at <= ?) OR "
+    "(image_task_outcomes.outcome_code IN ('source_rate_limited', "
+    "'source_server_error', 'source_network_error') AND image_tasks.updated_at <= ?)) "
+    "ORDER BY image_tasks.priority, image_tasks.contract_id LIMIT ?"
 )
 
 
@@ -296,9 +295,7 @@ def _refresh_priorities(
                 [(seed.priority, seed.contract_id) for seed in seeds],
             )
         connection.execute("DELETE FROM queue_metadata")
-        connection.executemany(
-            "INSERT INTO queue_metadata VALUES (?, ?)", sorted(metadata.items())
-        )
+        connection.executemany("INSERT INTO queue_metadata VALUES (?, ?)", sorted(metadata.items()))
         if priorities_changed and connection.execute("PRAGMA quick_check").fetchone()[0] != "ok":
             raise ValueError("image coverage queue integrity check failed")
         if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
@@ -441,19 +438,24 @@ class ImageCoverageQueue:
         self,
         *,
         now: datetime,
-        cooldown_seconds: int = _BLOCKED_RECHECK_SECONDS,
+        cooldown_seconds: int | None = None,
         limit: int = _RECHECK_LIMIT,
     ) -> int:
         """Retry blocked source conditions that may recover, never permanent absence."""
-        if min(cooldown_seconds, limit) <= 0:
+        if cooldown_seconds is not None and cooldown_seconds <= 0:
             raise ValueError("blocked recheck limits must be positive")
-        cutoff = _iso(now - timedelta(seconds=cooldown_seconds))
+        if limit <= 0:
+            raise ValueError("blocked recheck limits must be positive")
+        access_delay = cooldown_seconds or _ACCESS_DENIED_RECHECK_SECONDS
+        transient_delay = cooldown_seconds or _TRANSIENT_BLOCKED_RECHECK_SECONDS
+        access_cutoff = _iso(now - timedelta(seconds=access_delay))
+        transient_cutoff = _iso(now - timedelta(seconds=transient_delay))
         return self._requeue_matching(
             query=_REQUEUE_BLOCKED_SQL,
-            parameters=(cutoff, *_RECOVERABLE_BLOCKED_CODES),
+            parameters=(access_cutoff, transient_cutoff),
             now=now,
             limit=limit,
-            note="Recoverable source failure scheduled for a delayed recheck.",
+            note="Recoverable source failure scheduled with source-specific backoff.",
         )
 
     def _requeue_matching(
@@ -650,9 +652,7 @@ class ImageCoverageQueue:
                 "WHERE contract_id = ?",
                 (status, next_attempt, note, timestamp, contract_id),
             )
-            self._record_outcome(
-                connection, contract_id, reason_code, reason_stage, timestamp
-            )
+            self._record_outcome(connection, contract_id, reason_code, reason_stage, timestamp)
             connection.execute(
                 "INSERT INTO image_attempts (contract_id, attempted_at, status, note) "
                 "VALUES (?, ?, ?, ?)",
@@ -693,9 +693,7 @@ class ImageCoverageQueue:
             return "source_reports_no_images"
         unique_payloads = len({inspection.sha256 for _, inspection, _, _ in images})
         return (
-            "duplicate_image_payload"
-            if unique_payloads < len(images)
-            else "source_count_mismatch"
+            "duplicate_image_payload" if unique_payloads < len(images) else "source_count_mismatch"
         )
 
     @staticmethod

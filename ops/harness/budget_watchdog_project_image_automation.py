@@ -257,6 +257,12 @@ def _recheck_limit(batch_limit: int) -> int:
     return min(MAX_RECHECKS_PER_KIND, batch_limit // 4)
 
 
+def _should_defer_publication(*, claimed: int, previous_manifest: dict[str, object] | None) -> bool:
+    """Avoid rebuilding and uploading an unchanged full publication."""
+
+    return claimed == 0 and previous_manifest is not None
+
+
 def _runner(queue: ImageCoverageQueue) -> ProjectImageRunner:
     registry = default_source_registry()
     limiter = HostRateLimiter(requests_per_second=REQUESTS_PER_SECOND_PER_HOST)
@@ -361,8 +367,24 @@ def run_cycle(*, limit: int | None, publish: bool, workers: int | None = None) -
                 controller_failures=0,
             )
         )
-        coverage, images = queue.publication_records()
         previous = _load_manifest(OUTPUT)
+        if _should_defer_publication(claimed=total.claimed, previous_manifest=previous):
+            coverage_release = previous.get("coverage_release")
+            prior_release_id = (
+                coverage_release.get("release_id") if isinstance(coverage_release, dict) else None
+            )
+            return {
+                "passed": True,
+                "deferred": True,
+                "reason": "no project-image tasks are due",
+                "queue": queue.summary().status_counts,
+                "queue_outcomes": queue.outcome_counts(),
+                "recovered_leases": recovered_leases,
+                "requeued_conflicts": requeued_conflicts,
+                "requeued_recoverable_blocked": requeued_blocked,
+                "release_id": prior_release_id,
+            }
+        coverage, images = queue.publication_records()
         build_project_image_bundle(
             coverage,
             images,

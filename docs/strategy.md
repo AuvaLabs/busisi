@@ -70,20 +70,21 @@ whose exact identifiers point to more than one contract. It does not select one
 row automatically when multiple exact rows exist. The 511,983-stage local queue
 is resumable and leased; its public release contains reconciled summaries only.
 
-The gated project-image release dated 16 November 2026 covers 33,155 of 56,890
-contracts. Of those records, 10,302 have an exact source-count match, 2,612
-report no images in both source views and 20,241 remain source-count conflicts.
-The remaining queue contains 14,103 pending records and 9,632 blocked records.
-The public release contains 22,541 verified images and holds 191,147 images for
+The gated project-image release dated 21 November 2026 covers 42,535 of 56,890
+contracts. Of those records, 10,887 have an exact source-count match, 10,197
+report no images in both source views and 21,451 remain source-count conflicts.
+The remaining queue contains no pending record and 14,355 blocked records. The
+public release contains 23,573 verified images and holds 198,608 images for
 checking. These figures belong to release
-`ac5ffd47f7aac897d609472665e285629ee3c4730040d50e6c79f0eca9e2ef63`;
+`6ebd16e4e8562e7f8910c310458014410578c9a0ea863851e6a576c01d786539`;
 they are a dated snapshot rather than permanent site totals.
 
 Project-image checks run every six hours with bounded work and a source-health
 circuit breaker. A count conflict receives one delayed second check after 24
-hours. Recoverable access, rate-limit, server and network failures can receive
-a delayed check after seven days. Missing records and invalid evidence remain
-held. The public coverage page separates all checked records from strongly
+hours. Rate-limit, server and network failures can receive a delayed check
+after seven days. Access-denied records wait 30 days. A cycle with no due work
+does not upload an unchanged release. Missing records and invalid evidence
+remain held. The public coverage page separates all checked records from strongly
 resolved records, which are exact matches plus records reporting no images in
 both source views.
 
@@ -138,10 +139,11 @@ review.
 
 ## Operational status
 
-The production site and repository tests passed on 17 November 2026. The
-project-image workflow published 35,890 checked contracts, including 10,706
-exact source-count matches and 4,167 records whose official source reported no
-images. Another 21,017 records remain held because the source counts conflict.
+The production site and repository tests passed on 21 November 2026. The
+project-image workflow published 42,535 checked contracts, including 10,887
+exact source-count matches and 10,197 records whose official source reported no
+images. Another 21,451 records remain held because the source counts conflict,
+and 14,355 records are blocked by source access or evidence validation.
 
 The PCAB regular-license table fell from 18,657 to 18,604 rows and crossed its
 reviewed floor. A row-level comparison of the archived official responses found
@@ -150,12 +152,20 @@ removed active license and no changed retained row. The reviewed floor is now
 18,576. The 12 valid licenses already missing from the grid still pass their
 exact official detail-page checks and remain explicit source inconsistencies.
 
-Two external sources remain limited. The Senate Budget Transparency Portal
+The 21 November 2026 review compared the next archived response with the
+previously accepted response. Five active licenses omitted from the grid
+remained valid on their official detail pages, and one changed retained record
+was a confirmed renewal. Busisi now requires 18 exact detail-page checks and
+uses a reviewed minimum of 18,422 grid rows. Any new active omission,
+unexplained change, or missing required detail page still fails closed.
+
+Three external sources remain limited. The Senate Budget Transparency Portal
 still returns an interactive access challenge to the direct monitor. The
 bounded secondary reader passed on 16 November 2026, including its official
 lowercase page alias fallback, and six active catalogue records reconciled.
-The facility source monitor still reports its source unavailable and keeps that
-release held.
+The DepEd facility source now lists a current 2026 school project PDF, but the
+official host blocks the automatic downloader. The facility release therefore
+remains held until Busisi can archive and validate the official file.
 
 The official PSA page lists a 2023 city and municipal poverty workbook covering
 1,611 places. The source currently presents an interactive access challenge to

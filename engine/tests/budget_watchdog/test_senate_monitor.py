@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -276,7 +277,12 @@ def test_monitor_preserves_exhausted_secondary_response_and_failure_report(
     monkeypatch.setattr(senate_monitor.time, "sleep", lambda _seconds: None)
 
     with pytest.raises(SenateMonitorError, match="challenge"):
-        run_senate_monitor(_baseline(), tmp_path, fetch=fetch)
+        run_senate_monitor(
+            _baseline(),
+            tmp_path,
+            fetch=fetch,
+            checked_at=datetime(2026, 11, 16, 8, 0, tzinfo=UTC),
+        )
 
     report = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
     assert report["passed"] is False
@@ -300,6 +306,15 @@ def test_monitor_preserves_exhausted_secondary_response_and_failure_report(
     assert (
         tmp_path / "responses" / "secondary-root-alias-unavailable.html"
     ).read_bytes() == b"<title>Just a moment</title> Cloudflare challenge"
+
+
+def test_monitor_rejects_a_check_time_without_timezone(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="timezone-aware"):
+        run_senate_monitor(
+            _baseline(),
+            tmp_path,
+            checked_at=datetime(2026, 11, 16, 8, 0),
+        )
 
 
 def test_monitor_records_forbidden_challenge_without_retry(monkeypatch) -> None:

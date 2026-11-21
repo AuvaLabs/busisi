@@ -181,6 +181,176 @@ def test_validates_reviewed_pcab_baseline_arithmetic() -> None:
     validate_pcab_baseline_review(baseline)
 
 
+def test_validates_reviewed_pcab_active_omissions_and_changed_records() -> None:
+    baseline = {
+        "minimum_records": 18426,
+        "required_detail_records": [
+            {"record_id": "112411"},
+            {"record_id": "130166"},
+        ],
+        "reviewed_transition": {
+            "active_detail_records": 2,
+            "added_records": 138,
+            "changed_retained_records": 1,
+            "observed_on": "2026-11-21",
+            "observed_records": 18564,
+            "observed_sha256": "a" * 64,
+            "removed_active_records": 1,
+            "removed_expired_records": 177,
+            "reviewed_records": 18604,
+            "reviewed_sha256": "b" * 64,
+            "verified_active_omission_ids": ["112411"],
+            "verified_changed_ids": ["130166"],
+        },
+    }
+
+    validate_pcab_baseline_review(baseline)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("verified_active_omission_ids", []),
+        ("verified_active_omission_ids", ["999999"]),
+        ("verified_changed_ids", []),
+        ("verified_changed_ids", ["999999"]),
+    ],
+)
+def test_rejects_unverified_pcab_active_or_changed_rows(field: str, value: list[str]) -> None:
+    transition = {
+        "active_detail_records": 2,
+        "added_records": 138,
+        "changed_retained_records": 1,
+        "observed_on": "2026-11-21",
+        "observed_records": 18564,
+        "observed_sha256": "a" * 64,
+        "removed_active_records": 1,
+        "removed_expired_records": 177,
+        "reviewed_records": 18604,
+        "reviewed_sha256": "b" * 64,
+        "verified_active_omission_ids": ["112411"],
+        "verified_changed_ids": ["130166"],
+    }
+    transition[field] = value
+    baseline = {
+        "minimum_records": 18426,
+        "required_detail_records": [
+            {"record_id": "112411"},
+            {"record_id": "130166"},
+        ],
+        "reviewed_transition": transition,
+    }
+
+    with pytest.raises(SourceMonitorError, match="PCAB baseline review"):
+        validate_pcab_baseline_review(baseline)
+
+
+@pytest.mark.parametrize(
+    ("details", "active_ids", "changed_ids"),
+    [
+        ([{"record_id": "112411"}, {"record_id": "112411"}], ["112411"], ["112411"]),
+        ([{"record_id": "not-a-number"}, {"record_id": "130166"}], ["not-a-number"], ["130166"]),
+        ([{"record_id": "112411"}, {"record_id": "130166"}], ["112411"], ["112411"]),
+        ([{"record_id": "112411"}, {"record_id": "130166"}], ["112411"], ["13x166"]),
+        ([{"record_id": "112411"}, {"record_id": "130166"}], ["112411"], "130166"),
+    ],
+)
+def test_rejects_invalid_pcab_review_identity_sets(
+    details: list[object],
+    active_ids: list[str],
+    changed_ids: object,
+) -> None:
+    baseline = {
+        "minimum_records": 18426,
+        "required_detail_records": details,
+        "reviewed_transition": {
+            "active_detail_records": 2,
+            "added_records": 138,
+            "changed_retained_records": 1,
+            "observed_on": "2026-11-21",
+            "observed_records": 18564,
+            "observed_sha256": "a" * 64,
+            "removed_active_records": 1,
+            "removed_expired_records": 177,
+            "reviewed_records": 18604,
+            "reviewed_sha256": "b" * 64,
+            "verified_active_omission_ids": active_ids,
+            "verified_changed_ids": changed_ids,
+        },
+    }
+
+    with pytest.raises(SourceMonitorError, match="PCAB baseline review"):
+        validate_pcab_baseline_review(baseline)
+
+
+@pytest.mark.parametrize(
+    ("target", "field", "value"),
+    [
+        ("transition", "active_detail_records", True),
+        ("transition", "active_detail_records", 1),
+        ("transition", "observed_sha256", "not-a-hash"),
+        ("transition", "observed_on", 20261121),
+        ("transition", "observed_on", "21 November 2026"),
+        ("baseline", "required_detail_records", [None, {"record_id": "130166"}]),
+    ],
+)
+def test_rejects_malformed_pcab_review_metadata(target: str, field: str, value: object) -> None:
+    transition: dict[str, object] = {
+        "active_detail_records": 2,
+        "added_records": 138,
+        "changed_retained_records": 1,
+        "observed_on": "2026-11-21",
+        "observed_records": 18564,
+        "observed_sha256": "a" * 64,
+        "removed_active_records": 1,
+        "removed_expired_records": 177,
+        "reviewed_records": 18604,
+        "reviewed_sha256": "b" * 64,
+        "verified_active_omission_ids": ["112411"],
+        "verified_changed_ids": ["130166"],
+    }
+    baseline: dict[str, object] = {
+        "minimum_records": 18426,
+        "required_detail_records": [
+            {"record_id": "112411"},
+            {"record_id": "130166"},
+        ],
+        "reviewed_transition": transition,
+    }
+    destination = transition if target == "transition" else baseline
+    destination[field] = value
+
+    with pytest.raises(SourceMonitorError, match="PCAB baseline review"):
+        validate_pcab_baseline_review(baseline)
+
+
+def test_rejects_duplicate_verified_pcab_review_ids() -> None:
+    baseline = {
+        "minimum_records": 18425,
+        "required_detail_records": [
+            {"record_id": "112411"},
+            {"record_id": "130166"},
+        ],
+        "reviewed_transition": {
+            "active_detail_records": 2,
+            "added_records": 138,
+            "changed_retained_records": 0,
+            "observed_on": "2026-11-21",
+            "observed_records": 18563,
+            "observed_sha256": "a" * 64,
+            "removed_active_records": 2,
+            "removed_expired_records": 177,
+            "reviewed_records": 18604,
+            "reviewed_sha256": "b" * 64,
+            "verified_active_omission_ids": ["112411", "112411"],
+            "verified_changed_ids": [],
+        },
+    }
+
+    with pytest.raises(SourceMonitorError, match="PCAB baseline review"):
+        validate_pcab_baseline_review(baseline)
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [("minimum_records", 18577), ("observed_records", 18605)],
