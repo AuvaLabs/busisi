@@ -1,0 +1,25 @@
+[
+  {
+    "claim_ids": [
+      "health-nep-total",
+      "health-house-total",
+      "health-net-movement"
+    ],
+    "evidence_state": "verified",
+    "id": "net-document-change",
+    "result": "The recorded House-list total is PHP 4,450,860,000.00 lower than the reconciled NEP line total.",
+    "title": "The compared House-list total is lower"
+  },
+  {
+    "claim_ids": [
+      "health-house-only",
+      "health-nep-only",
+      "health-amount-changes",
+      "health-unchanged"
+    ],
+    "evidence_state": "source_reported",
+    "id": "separate-row-movements",
+    "result": "54 matched rows increased and 64 decreased in the House list.",
+    "title": "The lists differ through several row movements"
+  }
+]

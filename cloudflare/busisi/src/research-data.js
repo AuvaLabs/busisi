@@ -28,6 +28,16 @@ import concentrationManifest from '../public/data/research/fy2027-change-concent
 import concentrationProjectExamples from '../public/data/research/fy2027-change-concentration/v1/project-examples.json' with { type: 'json' };
 import concentrationSources from '../public/data/research/fy2027-change-concentration/v1/sources.json' with { type: 'json' };
 import concentrationStory from '../public/data/research/fy2027-change-concentration/v1/story.json' with { type: 'json' };
+import healthChartData from '../public/data/research/fy2027-health-facility-changes/v1/chart-data.json' with { type: 'json' };
+import healthClaims from '../public/data/research/fy2027-health-facility-changes/v1/claims.json' with { type: 'json' };
+import healthEditorialPackage from '../public/data/research/fy2027-health-facility-changes/v1/editorial-package.json' with { type: 'json' };
+import healthFindings from '../public/data/research/fy2027-health-facility-changes/v1/findings.json' with { type: 'json' };
+import healthInvestigations from '../public/data/research/fy2027-health-facility-changes/v1/investigations.json' with { type: 'json' };
+import healthLimitations from '../public/data/research/fy2027-health-facility-changes/v1/limitations.json' with { type: 'json' };
+import healthManifest from '../public/data/research/fy2027-health-facility-changes/v1/manifest.json' with { type: 'json' };
+import healthProjectExamples from '../public/data/research/fy2027-health-facility-changes/v1/project-examples.json' with { type: 'json' };
+import healthSources from '../public/data/research/fy2027-health-facility-changes/v1/sources.json' with { type: 'json' };
+import healthStory from '../public/data/research/fy2027-health-facility-changes/v1/story.json' with { type: 'json' };
 import releaseHistory from '../public/data/research/release-history.json' with { type: 'json' };
 
 export const multipurposeBuildingsRelease = Object.freeze({
@@ -67,6 +77,19 @@ export const fy2027ChangeConcentrationRelease = Object.freeze({
   limitations: concentrationLimitations,
   story: concentrationStory,
   editorial_package: concentrationEditorialPackage,
+});
+
+export const fy2027HealthFacilityChangesRelease = Object.freeze({
+  manifest: healthManifest,
+  claims: healthClaims,
+  findings: healthFindings,
+  investigations: healthInvestigations,
+  chart_data: healthChartData,
+  project_examples: healthProjectExamples,
+  sources: healthSources,
+  limitations: healthLimitations,
+  story: healthStory,
+  editorial_package: healthEditorialPackage,
 });
 
 export const researchReleaseHistory = Object.freeze(releaseHistory);
@@ -116,5 +139,20 @@ export const researchCatalogue = Object.freeze([
     story_url: concentrationEditorialPackage.story_url,
     editorial_package_url: `${concentrationEditorialPackage.package_base_url}/editorial-package.json`,
     summary: 'A limited ranking of where FY2027 project-list differences cluster by recorded program, region, office, and dataset labels.',
+  },
+  {
+    story_id: healthManifest.story_id,
+    slug: healthManifest.slug,
+    headline: healthManifest.headline,
+    status: healthManifest.status,
+    version: healthManifest.version,
+    published_at: healthManifest.published_at,
+    data_cutoff: healthManifest.data_cutoff,
+    canonical_url: healthManifest.canonical_url,
+    package_sha256: healthManifest.package_sha256,
+    manifest_url: healthEditorialPackage.manifest_url,
+    story_url: healthEditorialPackage.story_url,
+    editorial_package_url: `${healthEditorialPackage.package_base_url}/editorial-package.json`,
+    summary: 'A checked comparison of 746 FY2027 health-facility rows, showing what changed between the NEP and House lists and what remains unknown.',
   },
 ]);

@@ -48,6 +48,7 @@ import { getPovertyStatus } from './poverty-status-query.js';
 import { getAlertFeed } from './alerts-query.js';
 import {
   fy2027ChangeConcentrationBody,
+  fy2027HealthFacilityChangesBody,
   fy2027StageChangesBody,
   multipurposeBuildingsBody,
   multipurposeEvidenceBody,
@@ -357,6 +358,19 @@ const FY2027_CHANGE_CONCENTRATION_SCHEMA = Object.freeze({
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
 });
 
+const FY2027_HEALTH_FACILITY_CHANGES_SCHEMA = Object.freeze({
+  '@context': 'https://schema.org',
+  '@type': 'AnalysisNewsArticle',
+  headline: 'What changed in the FY2027 health-facility project list?',
+  url: `${SITE.origin}/research/fy2027-health-facility-changes/`,
+  description: 'A checked comparison of 746 FY2027 health-facility rows in the NEP and House lists, with source and spending limits explained.',
+  datePublished: '2026-11-25',
+  dateModified: '2026-11-25',
+  inLanguage: ['en-PH', 'fil-PH'],
+  isAccessibleForFree: true,
+  isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
+});
+
 const RESEARCH_RELEASE_HISTORY_SCHEMA = Object.freeze({
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
@@ -635,6 +649,14 @@ const fy2027ChangeConcentration = () => page(document({
   schema: FY2027_CHANGE_CONCENTRATION_SCHEMA,
 }));
 
+const fy2027HealthFacilityChanges = () => page(document({
+  title: 'What changed in the FY2027 health-facility list? | Busisi',
+  description: 'Compare 746 FY2027 health-facility rows in the NEP and House lists, see where amounts changed, and understand what the records do not prove.',
+  canonicalPath: '/research/fy2027-health-facility-changes/',
+  body: fy2027HealthFacilityChangesBody,
+  schema: FY2027_HEALTH_FACILITY_CHANGES_SCHEMA,
+}));
+
 const researchReleaseHistory = () => page(document({
   title: 'Corrections and research release history | Busisi',
   description: 'Inspect every published Busisi research version and see whether it is a correction, data update, or editorial addition.',
@@ -812,6 +834,7 @@ const sitemap = () => response(`<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE.origin}/research/multipurpose-buildings/evidence/</loc><lastmod>2026-11-05</lastmod></url>
   <url><loc>${SITE.origin}/research/fy2027-nep-house-changes/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>${SITE.origin}/research/fy2027-change-concentration/</loc><lastmod>2026-11-05</lastmod></url>
+  <url><loc>${SITE.origin}/research/fy2027-health-facility-changes/</loc><lastmod>2026-11-25</lastmod></url>
   <url><loc>${SITE.origin}/research/releases/</loc><lastmod>2026-11-05</lastmod></url>
   <url><loc>${SITE.origin}/methodology/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>${SITE.origin}/projects/corazon-2022-combined/</loc><lastmod>2026-11-03</lastmod></url>
@@ -862,6 +885,7 @@ Official source records and checked FY2027 stage comparisons are public. Suggest
 - Multipurpose-building public-value evidence queue: ${SITE.origin}/research/multipurpose-buildings/evidence/
 - FY2027 NEP-to-House project-list investigation: ${SITE.origin}/research/fy2027-nep-house-changes/
 - FY2027 change-concentration investigation: ${SITE.origin}/research/fy2027-change-concentration/
+- FY2027 health-facility list investigation: ${SITE.origin}/research/fy2027-health-facility-changes/
 - Corrections and research release history: ${SITE.origin}/research/releases/
 - Methodology: ${SITE.origin}/methodology/
 
@@ -882,6 +906,7 @@ Official source records and checked FY2027 stage comparisons are public. Suggest
 - Ready multipurpose-building editorial package: ${SITE.origin}/data/research/multipurpose-buildings/v6/editorial-package.json
 - Ready FY2027 stage-change editorial package: ${SITE.origin}/data/research/fy2027-nep-house-changes/v1/editorial-package.json
 - Ready FY2027 concentration editorial package: ${SITE.origin}/data/research/fy2027-change-concentration/v1/editorial-package.json
+- Ready FY2027 health-facility editorial package: ${SITE.origin}/data/research/fy2027-health-facility-changes/v1/editorial-package.json
 - Research release history: ${SITE.origin}/data/research/release-history.json
 
 ## Evidence and publication rules
@@ -988,6 +1013,7 @@ const route = (path) => {
   if (path === '/research/multipurpose-buildings/evidence' || path === '/research/multipurpose-buildings/evidence/') return multipurposeEvidence();
   if (path === '/research/fy2027-nep-house-changes' || path === '/research/fy2027-nep-house-changes/') return fy2027StageChanges();
   if (path === '/research/fy2027-change-concentration' || path === '/research/fy2027-change-concentration/') return fy2027ChangeConcentration();
+  if (path === '/research/fy2027-health-facility-changes' || path === '/research/fy2027-health-facility-changes/') return fy2027HealthFacilityChanges();
   if (path === '/research/releases' || path === '/research/releases/') return researchReleaseHistory();
   if (path === '/sources' || path === '/sources/') return sources();
   if (path === '/watch' || path === '/watch/') return watch();
@@ -1031,6 +1057,7 @@ export default {
       || url.pathname === '/api/v1/research/multipurpose-buildings'
       || url.pathname === '/api/v1/research/fy2027-nep-house-changes'
       || url.pathname === '/api/v1/research/fy2027-change-concentration'
+      || url.pathname === '/api/v1/research/fy2027-health-facility-changes'
       || ((url.pathname === '/healthz' || url.pathname.startsWith('/api/')) && env.DB))) {
       return dataWorker.fetch(request, env);
     }

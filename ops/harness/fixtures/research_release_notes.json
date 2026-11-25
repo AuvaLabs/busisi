@@ -54,5 +54,12 @@
     "story_id": "fy2027-change-concentration-2026",
     "summary": "Initial concentration analysis by recorded program, region, office, and dataset labels.",
     "version": 1
+  },
+  {
+    "affects_findings": false,
+    "change_type": "initial",
+    "story_id": "fy2027-health-facility-changes-2026",
+    "summary": "Initial checked comparison of the FY2027 NEP and House health-facility project lists.",
+    "version": 1
   }
 ]

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "document-stage-only",
+    "text": "The result compares the FY2027 NEP list with the House second-reading list. It is not the enacted budget."
+  },
+  {
+    "id": "rows-not-facilities",
+    "text": "A facility can have separate construction, equipment, and vehicle rows. Row counts are not unique-facility counts."
+  },
+  {
+    "id": "matching-boundary",
+    "text": "A House-only or NEP-only row can reflect a new line, removal, renaming, regrouping, or unmatched text."
+  },
+  {
+    "id": "source-control-gap",
+    "text": "The source reports that the NEP line sum is PHP 140,000 below its published annex control. This release uses the reconciled line sum."
+  },
+  {
+    "id": "amounts-not-spending",
+    "text": "The amounts are proposed budget authority, not allotment releases, obligations, payments, final costs, or completed facilities."
+  },
+  {
+    "id": "regional-boundary",
+    "text": "Recorded regional labels show document distribution. They do not measure population need, facility condition, or health outcomes."
+  },
+  {
+    "id": "missing-later-stages",
+    "text": "Senate, bicameral, enacted GAA, release, procurement, payment, completion, and audit stages are not established here."
+  },
+  {
+    "id": "source-extraction",
+    "text": "BetterGov performed the row extraction and initial matching. Busisi verifies saved bytes, schemas, row counts, arithmetic, and controls."
+  }
+]

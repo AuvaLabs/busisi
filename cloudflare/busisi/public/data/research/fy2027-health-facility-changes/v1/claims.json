@@ -1,0 +1,152 @@
+[
+  {
+    "calculation_id": "fy2027-health-facility-changes-v1",
+    "evidence_state": "verified",
+    "id": "health-total-records",
+    "limitations": [],
+    "scope": "FY2027 Health Facilities Enhancement Program, NEP versus House list",
+    "source_ids": [
+      "bettergov-hgab-overview-2027",
+      "document-nep2027-hfep",
+      "document-hb10858-2r-vol-ib",
+      "document-hb10858-3r-vol-ib"
+    ],
+    "statement": "Busisi validated 746 rows in the FY2027 health-facility comparison.",
+    "unit": "project-list rows",
+    "value": 746
+  },
+  {
+    "calculation_id": "fy2027-health-facility-changes-v1",
+    "evidence_state": "verified",
+    "id": "health-nep-total",
+    "limitations": [],
+    "scope": "FY2027 Health Facilities Enhancement Program, NEP versus House list",
+    "source_ids": [
+      "bettergov-hgab-overview-2027",
+      "document-nep2027-hfep",
+      "document-hb10858-2r-vol-ib",
+      "document-hb10858-3r-vol-ib"
+    ],
+    "statement": "The reconciled NEP health-facility list totals PHP 14,472,519,000.00.",
+    "unit": "PHP centavos",
+    "value": 1447251900000
+  },
+  {
+    "calculation_id": "fy2027-health-facility-changes-v1",
+    "evidence_state": "verified",
+    "id": "health-house-total",
+    "limitations": [],
+    "scope": "FY2027 Health Facilities Enhancement Program, NEP versus House list",
+    "source_ids": [
+      "bettergov-hgab-overview-2027",
+      "document-nep2027-hfep",
+      "document-hb10858-2r-vol-ib",
+      "document-hb10858-3r-vol-ib"
+    ],
+    "statement": "The reconciled House health-facility list totals PHP 10,021,659,000.00.",
+    "unit": "PHP centavos",
+    "value": 1002165900000
+  },
+  {
+    "calculation_id": "fy2027-health-facility-changes-v1",
+    "evidence_state": "verified",
+    "id": "health-net-movement",
+    "limitations": [
+      "This is a document-stage difference, not a final budget cut."
+    ],
+    "scope": "FY2027 Health Facilities Enhancement Program, NEP versus House list",
+    "source_ids": [
+      "bettergov-hgab-overview-2027",
+      "document-nep2027-hfep",
+      "document-hb10858-2r-vol-ib",
+      "document-hb10858-3r-vol-ib"
+    ],
+    "statement": "The recorded House-list total is PHP 4,450,860,000.00 lower than the reconciled NEP line total.",
+    "unit": "PHP centavos",
+    "value": -445086000000
+  },
+  {
+    "calculation_id": "fy2027-health-facility-changes-v1",
+    "evidence_state": "source_reported",
+    "id": "health-house-only",
+    "limitations": [
+      "House-only does not establish insertion or authorship."
+    ],
+    "scope": "FY2027 Health Facilities Enhancement Program, NEP versus House list",
+    "source_ids": [
+      "bettergov-hgab-overview-2027",
+      "document-nep2027-hfep",
+      "document-hb10858-2r-vol-ib",
+      "document-hb10858-3r-vol-ib"
+    ],
+    "statement": "184 rows appear only in the compared House list.",
+    "unit": "project-list rows",
+    "value": 184
+  },
+  {
+    "calculation_id": "fy2027-health-facility-changes-v1",
+    "evidence_state": "source_reported",
+    "id": "health-nep-only",
+    "limitations": [],
+    "scope": "FY2027 Health Facilities Enhancement Program, NEP versus House list",
+    "source_ids": [
+      "bettergov-hgab-overview-2027",
+      "document-nep2027-hfep",
+      "document-hb10858-2r-vol-ib",
+      "document-hb10858-3r-vol-ib"
+    ],
+    "statement": "163 rows appear only in the compared NEP list.",
+    "unit": "project-list rows",
+    "value": 163
+  },
+  {
+    "calculation_id": "fy2027-health-facility-changes-v1",
+    "evidence_state": "source_reported",
+    "id": "health-amount-changes",
+    "limitations": [],
+    "scope": "FY2027 Health Facilities Enhancement Program, NEP versus House list",
+    "source_ids": [
+      "bettergov-hgab-overview-2027",
+      "document-nep2027-hfep",
+      "document-hb10858-2r-vol-ib",
+      "document-hb10858-3r-vol-ib"
+    ],
+    "statement": "54 matched rows increased and 64 decreased in the House list.",
+    "unit": "project-list rows",
+    "value": 118
+  },
+  {
+    "calculation_id": "fy2027-health-facility-changes-v1",
+    "evidence_state": "source_reported",
+    "id": "health-unchanged",
+    "limitations": [],
+    "scope": "FY2027 Health Facilities Enhancement Program, NEP versus House list",
+    "source_ids": [
+      "bettergov-hgab-overview-2027",
+      "document-nep2027-hfep",
+      "document-hb10858-2r-vol-ib",
+      "document-hb10858-3r-vol-ib"
+    ],
+    "statement": "281 matched rows carry the same amount in both lists.",
+    "unit": "project-list rows",
+    "value": 281
+  },
+  {
+    "calculation_id": "fy2027-health-facility-changes-v1",
+    "evidence_state": "source_reported",
+    "id": "health-largest-regional-movement",
+    "limitations": [
+      "Regional document movement is not a measure of health need."
+    ],
+    "scope": "FY2027 Health Facilities Enhancement Program, NEP versus House list",
+    "source_ids": [
+      "bettergov-hgab-overview-2027",
+      "document-nep2027-hfep",
+      "document-hb10858-2r-vol-ib",
+      "document-hb10858-3r-vol-ib"
+    ],
+    "statement": "Among recorded regional labels, NCR has the largest absolute net document movement at PHP 2,399,700,000.00.",
+    "unit": "PHP centavos",
+    "value": -239970000000
+  }
+]

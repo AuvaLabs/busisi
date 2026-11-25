@@ -1,5 +1,6 @@
 import {
   fy2027ChangeConcentrationRelease,
+  fy2027HealthFacilityChangesRelease,
   fy2027StageChangesRelease,
   multipurposeBuildingsRelease,
   researchCatalogue,
@@ -268,6 +269,47 @@ export const fy2027StageChangesBody = `
     <section class="research-section evidence-callout"><div><p class="kicker">Evidence boundary</p><h2>${number(stageClaim('stage-quarantined').value)} rows are held back.</h2><p>Busisi does not turn ambiguous matches or scope-review rows into public findings. The comparison also stops before the Senate, bicameral conference, enacted GAA, release, procurement, payment, and implementation stages.</p></div><aside><strong>What to verify next</strong><p>Read the original project-list pages, confirm whether the scope is truly the same, then follow any surviving change through later official stages.</p></aside></section>
 
     <section class="research-section research-method"><div><p class="kicker">Check the result yourself</p><h2>The article, API, and editorial data share one published version.</h2><p>Busisi checked the saved overview and source documents, checked every page, and confirmed that row counts and money totals matched before publication.</p><dl><div><dt>Source-file check code</dt><dd><code>${escapeHtml(fy2027StageChangesRelease.manifest.source_artifact_sha256)}</code></dd></div><div><dt>Research-package check code</dt><dd><code>${escapeHtml(fy2027StageChangesRelease.manifest.package_sha256)}</code></dd></div></dl></div><div class="research-downloads"><a href="/data/research/fy2027-nep-house-changes/v1/manifest.json">Download the research package</a><a href="/data/research/fy2027-nep-house-changes/v1/story.json">Download the finished story</a><a href="/data/research/fy2027-nep-house-changes/v1/editorial-package.json">Open the consumption index</a><a href="/data/research/fy2027-nep-house-changes/v1/chart-data.json">Download chart data</a><a href="/changes/">Explore the budget changes</a><a href="/methodology/">Read the Busisi method</a></div></section>
+  </article>`;
+
+const healthClaims = new Map(
+  fy2027HealthFacilityChangesRelease.claims.map((item) => [item.id, item]),
+);
+const healthClaim = (id) => healthClaims.get(id);
+const healthChangeLabels = {
+  house_only: 'House-list only',
+  nep_only: 'NEP-list only',
+  increased: 'Matched row increased',
+  decreased: 'Matched row decreased',
+  unchanged: 'Matched row unchanged',
+};
+const healthChangeRows = Object.entries(fy2027HealthFacilityChangesRelease.chart_data.change_types)
+  .map(([key, item]) => `<tr><th scope="row">${escapeHtml(healthChangeLabels[key])}</th><td>${number(item.count)}</td><td>${money(item.nep_centavos)}</td><td>${money(item.house_centavos)}</td><td>${money(item.net_difference_centavos)}</td></tr>`)
+  .join('');
+const healthRegionRows = fy2027HealthFacilityChangesRelease.chart_data.regions.slice(0, 12)
+  .map((item) => `<tr><th scope="row">${escapeHtml(item.region)}</th><td>${number(item.records)}</td><td>${money(item.nep_centavos)}</td><td>${money(item.house_centavos)}</td><td>${money(item.net_difference_centavos)}</td></tr>`)
+  .join('');
+const healthExamples = fy2027HealthFacilityChangesRelease.project_examples
+  .largest_absolute_changes.slice(0, 8)
+  .map((item) => `<tr><th scope="row"><a href="${escapeHtml(item.reader_url)}">${escapeHtml(item.title)}</a><small>${escapeHtml(item.region)} · ${escapeHtml(item.office)}</small></th><td>${escapeHtml(healthChangeLabels[item.change_type])}</td><td>${money(item.nep_centavos)}</td><td>${money(item.house_centavos)}</td></tr>`)
+  .join('');
+
+export const fy2027HealthFacilityChangesBody = `
+  <article class="research-article">
+    <header class="research-hero"><div><p class="kicker">Health budget investigation</p><h1>What changed in the FY2027 health-facility project list?</h1><p class="lede">Busisi compared <strong>${number(healthClaim('health-total-records').value)}</strong> rows in the proposed National Expenditure Program, or NEP, with the House list. This page explains what the documents show and what they cannot prove.</p></div><aside><span>Release v${number(fy2027HealthFacilityChangesRelease.manifest.version)}</span><dl><div><dt>Published</dt><dd>${escapeHtml(fy2027HealthFacilityChangesRelease.manifest.published_at)}</dd></div><div><dt>Data cutoff</dt><dd>${escapeHtml(fy2027HealthFacilityChangesRelease.manifest.data_cutoff)}</dd></div><div><dt>Scope</dt><dd>Health-facility list</dd></div></dl></aside></header>
+
+    <section class="research-answer" aria-labelledby="health-short-answer"><div><p class="kicker">The short answer</p><h2 id="health-short-answer">The compared House list is ${billionMoney(Math.abs(healthClaim('health-net-movement').value))} lower.</h2><p>The checked line totals move from ${billionMoney(healthClaim('health-nep-total').value)} in the NEP list to ${billionMoney(healthClaim('health-house-total').value)} in the House list. This is a change between two proposed budget documents. It is not the final budget, an allotment release, a payment, or proof that a facility was completed.</p></div><div class="research-metrics"><article><span>Rows compared</span><strong>${number(healthClaim('health-total-records').value)}</strong><small>Not unique facilities</small></article><article><span>NEP-list total</span><strong>${billionMoney(healthClaim('health-nep-total').value)}</strong></article><article><span>House-list total</span><strong>${billionMoney(healthClaim('health-house-total').value)}</strong></article><article><span>Net difference</span><strong>-${billionMoney(Math.abs(healthClaim('health-net-movement').value))}</strong><small>House compared with NEP</small></article></div></section>
+
+    <section class="research-section split-section"><div><p class="kicker">What we know</p><h2>The total difference comes from several kinds of row movement.</h2><p>${escapeHtml(healthClaim('health-house-only').statement)} ${escapeHtml(healthClaim('health-nep-only').statement)} ${escapeHtml(healthClaim('health-amount-changes').statement)} Another ${number(healthClaim('health-unchanged').value)} matched rows carry the same amount.</p></div><aside class="research-source-card"><span>Safe conclusion</span><p>The saved NEP and House lists differ in rows and amounts.</p><span>Not established</span><p>A House-list-only row is not proof of an insertion, authorship, wrongdoing, release, payment, or completed work.</p></aside></section>
+
+    <section class="research-section"><div class="research-heading"><p class="kicker">How the rows changed</p><h2>Every row is kept in a stated comparison class.</h2><p>“List only” can also reflect renamed, regrouped, or unmatched text. Open the record and source page before drawing a conclusion.</p></div><div class="research-table-wrap"><table><thead><tr><th>Comparison class</th><th>Rows</th><th>NEP amount</th><th>House amount</th><th>Net difference</th></tr></thead><tbody>${healthChangeRows}</tbody></table></div></section>
+
+    <section class="research-section"><div class="research-heading"><p class="kicker">Recorded regions</p><h2>The largest amount movements are not evenly distributed.</h2><p>These are labels in the source documents. They do not measure the population’s health needs, the condition of each facility, or whether funding is fair.</p></div><div class="research-table-wrap"><table><thead><tr><th>Recorded region</th><th>Rows</th><th>NEP amount</th><th>House amount</th><th>Net difference</th></tr></thead><tbody>${healthRegionRows}</tbody></table></div></section>
+
+    <section class="research-section"><div class="research-heading"><p class="kicker">Largest changes to inspect</p><h2>These records are starting points for checking, not a list of wrongdoing.</h2><p>Rows are ranked by the size of the document difference. A facility may have separate rows for construction, equipment, and vehicles, so the row count is not a count of unique hospitals or health centers.</p></div><div class="research-table-wrap"><table class="example-table"><thead><tr><th>Health-facility record</th><th>Class</th><th>NEP amount</th><th>House amount</th></tr></thead><tbody>${healthExamples}</tbody></table></div></section>
+
+    <section class="research-section evidence-callout"><div><p class="kicker">What this does not prove</p><h2>The comparison stops before the final budget and spending stages.</h2><p>It does not establish who requested a change, why it changed, whether it survived the Senate and bicameral stages, or whether money was later released, awarded, paid, or used.</p><p>The source also reports that the NEP row sum is PHP 140,000 below the published annex control. Busisi uses the checked row sum and shows this difference instead of hiding it.</p></div><aside><strong>What to check next</strong><p>Compare the Senate and bicameral health-facility schedules, then follow surviving items into the enacted GAA and Department of Budget and Management allotment releases.</p></aside></section>
+
+    <section class="research-section research-method"><div><p class="kicker">Where this information came from</p><h2>The public article and downloads use the same checked release.</h2><p>BetterGov provided the row extraction and initial matching from Department of Budget and Management and House documents. Busisi saved and checked the source files, row structure, counts, arithmetic, and stated totals before publication.</p><dl><div><dt>Source-file check code</dt><dd><code>${escapeHtml(fy2027HealthFacilityChangesRelease.manifest.source_artifact_sha256)}</code></dd></div><div><dt>Research-package check code</dt><dd><code>${escapeHtml(fy2027HealthFacilityChangesRelease.manifest.package_sha256)}</code></dd></div></dl></div><div class="research-downloads"><a href="/data/research/fy2027-health-facility-changes/v1/manifest.json">Download the research package</a><a href="/data/research/fy2027-health-facility-changes/v1/story.json">Download the finished story</a><a href="/data/research/fy2027-health-facility-changes/v1/sources.json">See the source list</a><a href="/data/research/fy2027-health-facility-changes/v1/chart-data.json">Download the table data</a><a href="/changes/?dataset=hfep">Explore all health-facility changes</a><a href="/methodology/">Read the Busisi method</a></div></section>
   </article>`;
 
 const concentrationClaims = new Map(

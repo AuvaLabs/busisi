@@ -45,6 +45,8 @@ monitor is read-only and holds no deployment credentials.
 | `/api/v1/senate-committee` | FY2027 Senate committee watch or fully checked project changes |
 | `/api/v1/community-needs-summary` | PSA 2024 population coverage and published source limits |
 | `/api/v1/community-needs` | Searchable PSA population and household counts by official place code |
+| `/api/v1/research` | Current published research catalogue |
+| `/api/v1/research/fy2027-health-facility-changes` | Checked FY2027 NEP-to-House health-facility comparison and editorial package |
 
 ## Senate committee-stage contract
 

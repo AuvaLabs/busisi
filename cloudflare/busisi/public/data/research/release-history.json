@@ -1,8 +1,23 @@
 {
   "correction_count": 0,
   "policy": "A correction changes an error or supported conclusion. Editorial expansions and data updates are labelled separately. Older immutable packages remain available.",
-  "release_count": 8,
+  "release_count": 9,
   "releases": [
+    {
+      "affects_findings": false,
+      "canonical_url": "https://busisi.org/research/fy2027-health-facility-changes/",
+      "change_type": "initial",
+      "data_cutoff": "2026-10-26",
+      "headline": "What changed in the FY2027 health-facility project list?",
+      "manifest_url": "https://busisi.org/data/research/fy2027-health-facility-changes/v1/manifest.json",
+      "package_sha256": "e838364fcbb18436975f4de0c30379bd2a702abe7b13f6052fa645633a90ea9f",
+      "published_at": "2026-11-25",
+      "slug": "fy2027-health-facility-changes",
+      "story_id": "fy2027-health-facility-changes-2026",
+      "summary": "Initial checked comparison of the FY2027 NEP and House health-facility project lists.",
+      "supersedes_version": null,
+      "version": 1
+    },
     {
       "affects_findings": false,
       "canonical_url": "https://busisi.org/research/multipurpose-buildings/",
@@ -125,5 +140,5 @@
     }
   ],
   "schema_version": "1.0",
-  "story_count": 3
+  "story_count": 4
 }

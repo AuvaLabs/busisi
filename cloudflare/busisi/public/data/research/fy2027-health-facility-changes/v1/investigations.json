@@ -1,0 +1,14 @@
+[
+  {
+    "calculation_id": "fy2027-health-facility-changes-v1",
+    "question": "What changed between the FY2027 NEP and House health-facility lists?",
+    "result": "The recorded House-list total is PHP 4,450,860,000.00 lower than the reconciled NEP line total.",
+    "state": "partial"
+  },
+  {
+    "calculation_id": "fy2027-health-facility-changes-v1",
+    "question": "Did the document-stage difference become a final cut, release, or payment?",
+    "result": "Not established. Later official stages are outside this release.",
+    "state": "evidence_gap"
+  }
+]

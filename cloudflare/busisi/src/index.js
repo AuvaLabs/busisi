@@ -96,6 +96,7 @@ import {
 import { getAlertFeed } from './alerts-query.js';
 import {
   fy2027ChangeConcentrationRelease,
+  fy2027HealthFacilityChangesRelease,
   fy2027StageChangesRelease,
   multipurposeBuildingsRelease,
   researchCatalogue,
@@ -307,6 +308,16 @@ const apiResponse = async (request, environment, url) => {
         review_scope: 'published_fy2027_project_list_concentration',
       },
       data: fy2027ChangeConcentrationRelease,
+    });
+  }
+  if (url.pathname === '/api/v1/research/fy2027-health-facility-changes') {
+    return jsonResponse({
+      meta: {
+        story_id: fy2027HealthFacilityChangesRelease.manifest.story_id,
+        version: fy2027HealthFacilityChangesRelease.manifest.version,
+        review_scope: 'published_fy2027_health_facility_project_list_comparison',
+      },
+      data: fy2027HealthFacilityChangesRelease,
     });
   }
   if (url.pathname === '/api/v1/public-services-summary') {

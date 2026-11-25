@@ -119,16 +119,33 @@ but it does not become an article until the normal publication checks pass.
 This produces a normal target of four complete investigations per month, with
 up to four shorter updates when the records support them.
 
+The first release under this cadence asks what changed in the FY2027
+health-facility project list. It publishes the checked 746-row comparison at
+`/research/fy2027-health-facility-changes/` and keeps the source control gap,
+row-matching limits and missing later budget stages beside the result.
+
 ## Build and release
 
-The public packages are regenerated and verified with:
+The published package register and every existing package are verified with:
 
 ```bash
 cd cloudflare/busisi
 npm run build:research
 ```
 
-The harness verifies archived source SHA-256 identities, rebuilds every payload, checks control totals, and writes authenticated manifests. A changed source or changed control total fails the build. Public packages can be checked without private acquisition data using:
+Published versions are not regenerated from newer local evidence. A new package
+is built once by its release-specific harness, then remains unchanged. The
+FY2027 health-facility release is built and checked with:
+
+```bash
+cd cloudflare/busisi
+npm run publish:research:health-facilities
+```
+
+The release harness verifies saved source SHA-256 identities, rebuilds the new
+payload, checks control totals, and writes its authenticated manifest. A changed
+source or changed control total fails the build. Public packages can be checked
+without private acquisition data using:
 
 ```bash
 PYTHONPATH=. python3 ops/harness/budget_watchdog_research_editor.py

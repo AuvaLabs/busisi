@@ -1,0 +1,286 @@
+{
+  "change_types": {
+    "decreased": {
+      "count": 64,
+      "house_centavos": 143400300000,
+      "nep_centavos": 402695000000,
+      "net_difference_centavos": -259294700000
+    },
+    "house_only": {
+      "count": 184,
+      "house_centavos": 240200200000,
+      "nep_centavos": 0,
+      "net_difference_centavos": 240200200000
+    },
+    "increased": {
+      "count": 54,
+      "house_centavos": 309290500000,
+      "nep_centavos": 68008000000,
+      "net_difference_centavos": 241282500000
+    },
+    "nep_only": {
+      "count": 163,
+      "house_centavos": 0,
+      "nep_centavos": 667274000000,
+      "net_difference_centavos": -667274000000
+    },
+    "unchanged": {
+      "count": 281,
+      "house_centavos": 309274900000,
+      "nep_centavos": 309274900000,
+      "net_difference_centavos": 0
+    }
+  },
+  "regions": [
+    {
+      "change_counts": {
+        "decreased": 9,
+        "house_only": 9,
+        "increased": 5,
+        "nep_only": 16,
+        "unchanged": 25
+      },
+      "house_centavos": 123960000000,
+      "nep_centavos": 363930000000,
+      "net_difference_centavos": -239970000000,
+      "records": 64,
+      "region": "NCR"
+    },
+    {
+      "change_counts": {
+        "decreased": 3,
+        "house_only": 3,
+        "increased": 2,
+        "nep_only": 13,
+        "unchanged": 7
+      },
+      "house_centavos": 21103300000,
+      "nep_centavos": 82841000000,
+      "net_difference_centavos": -61737700000,
+      "records": 28,
+      "region": "Region VII"
+    },
+    {
+      "change_counts": {
+        "decreased": 4,
+        "house_only": 14,
+        "increased": 3,
+        "nep_only": 10,
+        "unchanged": 11
+      },
+      "house_centavos": 105210000000,
+      "nep_centavos": 61468000000,
+      "net_difference_centavos": 43742000000,
+      "records": 42,
+      "region": "Region II"
+    },
+    {
+      "change_counts": {
+        "house_only": 7,
+        "nep_only": 19,
+        "unchanged": 44
+      },
+      "house_centavos": 10955500000,
+      "nep_centavos": 52673500000,
+      "net_difference_centavos": -41718000000,
+      "records": 70,
+      "region": "CAR"
+    },
+    {
+      "change_counts": {
+        "decreased": 4,
+        "house_only": 7,
+        "increased": 2,
+        "nep_only": 12,
+        "unchanged": 19
+      },
+      "house_centavos": 83301300000,
+      "nep_centavos": 122924300000,
+      "net_difference_centavos": -39623000000,
+      "records": 44,
+      "region": "Region X"
+    },
+    {
+      "change_counts": {
+        "decreased": 7,
+        "house_only": 62,
+        "increased": 9,
+        "nep_only": 14,
+        "unchanged": 17
+      },
+      "house_centavos": 137277500000,
+      "nep_centavos": 162505500000,
+      "net_difference_centavos": -25228000000,
+      "records": 109,
+      "region": "Region III"
+    },
+    {
+      "change_counts": {
+        "decreased": 1,
+        "increased": 4,
+        "nep_only": 2,
+        "unchanged": 48
+      },
+      "house_centavos": 75980400000,
+      "nep_centavos": 99250400000,
+      "net_difference_centavos": -23270000000,
+      "records": 55,
+      "region": "NIR"
+    },
+    {
+      "change_counts": {
+        "decreased": 1,
+        "house_only": 6,
+        "increased": 1,
+        "nep_only": 5,
+        "unchanged": 6
+      },
+      "house_centavos": 12085000000,
+      "nep_centavos": 35285000000,
+      "net_difference_centavos": -23200000000,
+      "records": 19,
+      "region": "Region V"
+    },
+    {
+      "change_counts": {
+        "decreased": 1,
+        "house_only": 5,
+        "increased": 4,
+        "nep_only": 4,
+        "unchanged": 9
+      },
+      "house_centavos": 19924000000,
+      "nep_centavos": 42074000000,
+      "net_difference_centavos": -22150000000,
+      "records": 23,
+      "region": "MIMAROPA"
+    },
+    {
+      "change_counts": {
+        "decreased": 4,
+        "house_only": 6,
+        "nep_only": 13,
+        "unchanged": 5
+      },
+      "house_centavos": 40324000000,
+      "nep_centavos": 55944000000,
+      "net_difference_centavos": -15620000000,
+      "records": 28,
+      "region": "CALABARZON"
+    },
+    {
+      "change_counts": {
+        "decreased": 3,
+        "house_only": 5,
+        "increased": 2,
+        "nep_only": 1,
+        "unchanged": 6
+      },
+      "house_centavos": 48597000000,
+      "nep_centavos": 37797000000,
+      "net_difference_centavos": 10800000000,
+      "records": 17,
+      "region": "Region XII"
+    },
+    {
+      "change_counts": {
+        "decreased": 5,
+        "house_only": 13,
+        "increased": 3,
+        "unchanged": 9
+      },
+      "house_centavos": 39888000000,
+      "nep_centavos": 50378000000,
+      "net_difference_centavos": -10490000000,
+      "records": 30,
+      "region": "Region XI"
+    },
+    {
+      "change_counts": {
+        "decreased": 3,
+        "house_only": 10,
+        "increased": 4,
+        "nep_only": 11,
+        "unchanged": 22
+      },
+      "house_centavos": 38292700000,
+      "nep_centavos": 48380000000,
+      "net_difference_centavos": -10087300000,
+      "records": 50,
+      "region": "Region VIII"
+    },
+    {
+      "change_counts": {
+        "decreased": 10,
+        "house_only": 9,
+        "increased": 6,
+        "nep_only": 12,
+        "unchanged": 20
+      },
+      "house_centavos": 94458000000,
+      "nep_centavos": 86730000000,
+      "net_difference_centavos": 7728000000,
+      "records": 57,
+      "region": "Region VI"
+    },
+    {
+      "change_counts": {
+        "decreased": 3,
+        "house_only": 21,
+        "increased": 3,
+        "nep_only": 18,
+        "unchanged": 9
+      },
+      "house_centavos": 25036000000,
+      "nep_centavos": 19226000000,
+      "net_difference_centavos": 5810000000,
+      "records": 54,
+      "region": "Region XIII"
+    },
+    {
+      "change_counts": {
+        "decreased": 3,
+        "house_only": 3,
+        "unchanged": 12
+      },
+      "house_centavos": 15420000000,
+      "nep_centavos": 19120000000,
+      "net_difference_centavos": -3700000000,
+      "records": 18,
+      "region": "BARMM"
+    },
+    {
+      "change_counts": {
+        "decreased": 2,
+        "house_only": 4,
+        "increased": 2,
+        "nep_only": 10,
+        "unchanged": 7
+      },
+      "house_centavos": 42485000000,
+      "nep_centavos": 38907000000,
+      "net_difference_centavos": 3578000000,
+      "records": 25,
+      "region": "Region IX"
+    },
+    {
+      "change_counts": {
+        "decreased": 1,
+        "increased": 4,
+        "nep_only": 3,
+        "unchanged": 5
+      },
+      "house_centavos": 67868200000,
+      "nep_centavos": 67818200000,
+      "net_difference_centavos": 50000000,
+      "records": 13,
+      "region": "Region I"
+    }
+  ],
+  "totals": {
+    "house_centavos": 1002165900000,
+    "nep_centavos": 1447251900000,
+    "net_difference_centavos": -445086000000,
+    "records": 746
+  }
+}

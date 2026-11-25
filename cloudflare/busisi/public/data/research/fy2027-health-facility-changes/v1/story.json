@@ -1,0 +1,163 @@
+{
+  "audience": "Filipino public",
+  "canonical_url": "https://busisi.org/research/fy2027-health-facility-changes/",
+  "data_cutoff": "2026-10-26",
+  "deck": "A checked comparison of the FY2027 health-facility lists, where their rows differ, and what later records are still needed.",
+  "editorial_format": "question-led-v1",
+  "editorial_status": "ready",
+  "headline": "What changed in the FY2027 health-facility project list?",
+  "language": "en-PH",
+  "method_summary": {
+    "denominators": [],
+    "question_definition": "A change is a difference between the saved FY2027 NEP health-facility list and the House second-reading list after source matching.",
+    "reference_years": [
+      "FY2027"
+    ],
+    "units": [
+      "project-list rows",
+      "PHP centavos"
+    ]
+  },
+  "next_checks": [
+    {
+      "office": "Senate of the Philippines",
+      "question": "Which House-stage changes remain in the Senate-approved documents?",
+      "record": "FY2027 Senate health-facility project schedule"
+    },
+    {
+      "office": "Congress of the Philippines",
+      "question": "Which document-stage differences survived the bicameral conference?",
+      "record": "FY2027 bicameral health-facility project schedule"
+    },
+    {
+      "office": "Department of Budget and Management",
+      "question": "Which enacted health-facility items later received allotment releases?",
+      "record": "FY2027 enacted GAA health-facility schedule and allotment releases"
+    }
+  ],
+  "schema_version": "1.1",
+  "sections": [
+    {
+      "claim_ids": [
+        "health-nep-total",
+        "health-house-total",
+        "health-net-movement"
+      ],
+      "copy": [
+        "The recorded House-list total is PHP 4,450,860,000.00 lower than the reconciled NEP line total.",
+        "This is a difference between two budget documents, not proof of a final cut, release, payment, or completed facility."
+      ],
+      "editorial_role": "short_answer",
+      "heading": "The short answer",
+      "id": "short-answer",
+      "limitation_ids": [
+        "document-stage-only",
+        "amounts-not-spending"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "bettergov-hgab-overview-2027",
+        "document-nep2027-hfep",
+        "document-hb10858-2r-vol-ib",
+        "document-hb10858-3r-vol-ib"
+      ],
+      "visual_refs": [
+        "chart_data.totals"
+      ]
+    },
+    {
+      "claim_ids": [
+        "health-house-only",
+        "health-nep-only",
+        "health-amount-changes",
+        "health-unchanged"
+      ],
+      "copy": [
+        "184 rows appear only in the compared House list.",
+        "163 rows appear only in the compared NEP list.",
+        "54 matched rows increased and 64 decreased in the House list.",
+        "281 matched rows carry the same amount in both lists."
+      ],
+      "editorial_role": "finding",
+      "heading": "The difference comes from five kinds of row movement",
+      "id": "row-movements",
+      "limitation_ids": [
+        "matching-boundary",
+        "rows-not-facilities"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "bettergov-hgab-overview-2027",
+        "document-nep2027-hfep",
+        "document-hb10858-2r-vol-ib",
+        "document-hb10858-3r-vol-ib"
+      ],
+      "visual_refs": [
+        "chart_data.change_types"
+      ]
+    },
+    {
+      "claim_ids": [
+        "health-largest-regional-movement"
+      ],
+      "copy": [
+        "Among recorded regional labels, NCR has the largest absolute net document movement at PHP 2,399,700,000.00."
+      ],
+      "editorial_role": "comparison",
+      "heading": "Regional labels do not all move in the same direction",
+      "id": "regional-movement",
+      "limitation_ids": [
+        "regional-boundary"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "bettergov-hgab-overview-2027",
+        "document-nep2027-hfep",
+        "document-hb10858-2r-vol-ib",
+        "document-hb10858-3r-vol-ib"
+      ],
+      "visual_refs": [
+        "chart_data.regions"
+      ]
+    },
+    {
+      "claim_ids": [
+        "health-total-records"
+      ],
+      "copy": [
+        "The records do not establish who requested a change, whether it was justified, whether it survived later budget stages, or whether money was released or spent.",
+        "A row that appears on only one list is a document-matching result, not proof of an insertion, deletion, wrongdoing, or a unique facility."
+      ],
+      "editorial_role": "limits",
+      "heading": "What this does not show",
+      "id": "limits",
+      "limitation_ids": [
+        "document-stage-only",
+        "rows-not-facilities",
+        "matching-boundary",
+        "source-control-gap",
+        "missing-later-stages"
+      ],
+      "narration_eligible": true,
+      "section_type": "finding",
+      "source_ids": [
+        "bettergov-hgab-overview-2027",
+        "document-nep2027-hfep",
+        "document-hb10858-2r-vol-ib",
+        "document-hb10858-3r-vol-ib"
+      ],
+      "visual_refs": []
+    }
+  ],
+  "source_ids": [
+    "bettergov-hgab-overview-2027",
+    "document-nep2027-hfep",
+    "document-hb10858-2r-vol-ib",
+    "document-hb10858-3r-vol-ib"
+  ],
+  "story_id": "fy2027-health-facility-changes-2026",
+  "version": 1
+}

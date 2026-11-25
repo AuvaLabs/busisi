@@ -21,7 +21,8 @@ const PUBLIC_LANGUAGE_ROUTES = [
   '/contracts/', '/signals/', '/integrity/', '/changes/', '/agencies/', '/releases/',
   '/sulit/', '/budget-trail/', '/research/', '/research/multipurpose-buildings/',
   '/research/multipurpose-buildings/evidence/', '/research/fy2027-nep-house-changes/',
-  '/research/fy2027-change-concentration/', '/research/releases/',
+  '/research/fy2027-change-concentration/', '/research/fy2027-health-facility-changes/',
+  '/research/releases/',
 ];
 
 const PUBLIC_JARGON = [
@@ -194,6 +195,7 @@ test('publishes a research library and the multipurpose-building investigation',
   assert.match(libraryDocument, /href="\/research\/multipurpose-buildings\//);
   assert.match(libraryDocument, /href="\/research\/fy2027-nep-house-changes\//);
   assert.match(libraryDocument, /href="\/research\/fy2027-change-concentration\//);
+  assert.match(libraryDocument, /href="\/research\/fy2027-health-facility-changes\//);
   assert.match(libraryDocument, /href="\/research\/releases\//);
   assert.match(libraryDocument, /Data cutoff/);
 
@@ -284,12 +286,30 @@ test('publishes the FY2027 change-concentration investigation without political 
   assert.match(document, /"@type":"AnalysisNewsArticle"/);
 });
 
+test('publishes the FY2027 health-facility comparison with a clear evidence boundary', async () => {
+  const article = await fetchPath('/research/fy2027-health-facility-changes/');
+  const document = await article.text();
+  assert.equal(article.status, 200);
+  assert.match(document, /What changed in the FY2027 health-facility project list\?/);
+  assert.match(document, /The short answer/);
+  assert.match(document, /746/);
+  assert.match(document, /₱14\.47 billion/);
+  assert.match(document, /₱10\.02 billion/);
+  assert.match(document, /₱4\.45 billion lower/);
+  assert.match(document, /not (?:the )?final budget/i);
+  assert.match(document, /not proof of an insertion/i);
+  assert.match(document, /PHP 140,000 below/i);
+  assert.match(document, /fy2027-health-facility-changes\/v1\/manifest\.json/);
+  assert.match(document, /Where this information came from/);
+  assert.match(document, /"@type":"AnalysisNewsArticle"/);
+});
+
 test('publishes an explicit corrections and immutable release history', async () => {
   const response = await fetchPath('/research/releases/');
   const document = await response.text();
   assert.equal(response.status, 200);
   assert.match(document, /Corrections and release history/);
-  assert.match(document, /8 published packages/);
+  assert.match(document, /9 published packages/);
   assert.match(document, /No corrections have been filed/);
   assert.match(document, /Editorial expansion/);
   assert.match(document, /underlying calculations/);
@@ -306,6 +326,7 @@ test('research routes appear in discovery surfaces', async () => {
   assert.match(sitemapDocument, /\/research\/multipurpose-buildings\//);
   assert.match(sitemapDocument, /\/research\/fy2027-nep-house-changes\//);
   assert.match(sitemapDocument, /\/research\/fy2027-change-concentration\//);
+  assert.match(sitemapDocument, /\/research\/fy2027-health-facility-changes\//);
   assert.match(sitemapDocument, /\/research\/releases\//);
   assert.match(llmsDocument, /Research library/);
   assert.match(
@@ -316,6 +337,7 @@ test('research routes appear in discovery surfaces', async () => {
   assert.match(llmsDocument, /Multipurpose-building public-value evidence queue/);
   assert.match(llmsDocument, /fy2027-nep-house-changes\/v1\/editorial-package\.json/);
   assert.match(llmsDocument, /fy2027-change-concentration\/v1\/editorial-package\.json/);
+  assert.match(llmsDocument, /fy2027-health-facility-changes\/v1\/editorial-package\.json/);
   assert.match(llmsDocument, /data\/research\/release-history\.json/);
 });
 
@@ -360,11 +382,18 @@ test('publishes a machine-readable research release without a database binding',
   assert.equal(concentrationPayload.data.manifest.package_sha256, 'b2a09440ee641fd5f6693401e7f18ed0392b83451e0afd94361a8dc5d6f979ed');
   assert.equal(concentrationPayload.data.claims.find(({ id }) => id === 'concentration-changed-rows').value, 9283);
 
+  const health = await fetchPath('/api/v1/research/fy2027-health-facility-changes');
+  const healthPayload = await health.json();
+  assert.equal(health.status, 200);
+  assert.equal(healthPayload.data.manifest.package_sha256, 'e838364fcbb18436975f4de0c30379bd2a702abe7b13f6052fa645633a90ea9f');
+  assert.equal(healthPayload.data.claims.find(({ id }) => id === 'health-total-records').value, 746);
+  assert.equal(healthPayload.data.story.editorial_format, 'question-led-v1');
+
   const history = await fetchPath('/api/v1/research/history');
   const historyPayload = await history.json();
   assert.equal(history.status, 200);
-  assert.equal(historyPayload.data.release_count, 8);
-  assert.equal(historyPayload.data.story_count, 3);
+  assert.equal(historyPayload.data.release_count, 9);
+  assert.equal(historyPayload.data.story_count, 4);
   assert.equal(historyPayload.data.correction_count, 0);
 });
 

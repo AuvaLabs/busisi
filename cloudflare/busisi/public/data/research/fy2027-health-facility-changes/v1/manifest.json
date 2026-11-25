@@ -1,0 +1,66 @@
+{
+  "canonical_url": "https://busisi.org/research/fy2027-health-facility-changes/",
+  "data_cutoff": "2026-10-26",
+  "editorial_ready": true,
+  "files": [
+    {
+      "bytes": 6821,
+      "path": "chart-data.json",
+      "sha256": "546a2dcb41fb1c88804bc47c2ed0cdf7e6feb197e758f4333239c4c0a2bfc36f"
+    },
+    {
+      "bytes": 5213,
+      "path": "claims.json",
+      "sha256": "2ab962a914f04b94fbd29de3c8306d774446ac3bb04c0e0ea47172ba426c5210"
+    },
+    {
+      "bytes": 2114,
+      "path": "editorial-package.json",
+      "sha256": "70e7235c45b86114af5cd7d5ec983fa1a9d1941910db2149e1bcbf93cc1fa9a4"
+    },
+    {
+      "bytes": 715,
+      "path": "findings.json",
+      "sha256": "594583c360e373ef8f4b1b953386a7043837726ddfff48f6c305ae40bc75ead3"
+    },
+    {
+      "bytes": 567,
+      "path": "investigations.json",
+      "sha256": "6670c880ac57f03c2547677f6375ec2d43ebceb06d131593124563246ea5e783"
+    },
+    {
+      "bytes": 1417,
+      "path": "limitations.json",
+      "sha256": "7ee95233ccc84a358432a69cbf3d6ec1ee607ee6428b5cc1b080f29b0b627d3c"
+    },
+    {
+      "bytes": 11088,
+      "path": "project-examples.json",
+      "sha256": "9b0c618db3ff989e3ef4b91b5570a80df6cd8f5179c3560c508509a3c922bde9"
+    },
+    {
+      "bytes": 2074,
+      "path": "sources.json",
+      "sha256": "3f5cb53b9171eca3c4d22b2b833f47c05b627ac5de6bbb8956189aeadd1df2d9"
+    },
+    {
+      "bytes": 5348,
+      "path": "story.json",
+      "sha256": "7a8b688df8c4a88eb25cce7bcd3a6554c19b0a4d5b63b129ace61db2b1b315ae"
+    }
+  ],
+  "headline": "What changed in the FY2027 health-facility project list?",
+  "max_source_age_days": 7,
+  "methodology_version": "fy2027-health-facility-changes-v1",
+  "package_sha256": "e838364fcbb18436975f4de0c30379bd2a702abe7b13f6052fa645633a90ea9f",
+  "published_at": "2026-11-25",
+  "schema_version": "1.1",
+  "slug": "fy2027-health-facility-changes",
+  "source_artifact_sha256": "011db0724c9a37094c72cc8648e166aca5666e2a30aa7d43d2b9e0f85a55761c",
+  "source_checked_at": "2026-11-25",
+  "source_commit": "a0caa778442cdae5583f5a006ea7401dab00e5ac",
+  "status": "published",
+  "story_id": "fy2027-health-facility-changes-2026",
+  "supersedes": null,
+  "version": 1
+}

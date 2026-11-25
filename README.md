@@ -98,7 +98,10 @@ work currently examines multipurpose-building records at
 changes at `/research/fy2027-nep-house-changes/`. A separate concentration
 investigation at `/research/fy2027-change-concentration/` groups the same
 authenticated comparison by recorded program, region, office and dataset
-labels without inferring political responsibility or wrongdoing.
+labels without inferring political responsibility or wrongdoing. The first
+question-led weekly article at `/research/fy2027-health-facility-changes/`
+compares 746 health-facility rows and explains the ₱4.45 billion net document
+difference without presenting it as a final budget cut, release or payment.
 
 The multipurpose-building investigation now reconciles ₱88.79 billion in the
 active pipeline and ₱129.78 billion across all classified FY2024 to FY2026

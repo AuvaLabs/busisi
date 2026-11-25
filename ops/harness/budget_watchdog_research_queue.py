@@ -17,7 +17,7 @@ DEFAULT_RECEIPT = PRIVATE_ROOT / "queue-receipt.json"
 def initial_queue() -> dict:
     return {
         "schema_version": "1.0",
-        "updated_at": "2026-11-23",
+        "updated_at": "2026-11-25",
         "items": [
             {
                 "topic_id": "multipurpose-buildings",
@@ -61,15 +61,15 @@ def initial_queue() -> dict:
             {
                 "topic_id": "fy2027-health-facility-changes",
                 "question": "What changed in the FY2027 health-facility project list, and where do the differences appear?",
-                "status": "evidence_ready",
+                "status": "published",
                 "priority": 2,
                 "evidence_sources": [
-                    "https://busisi.org/data/research/fy2027-nep-house-changes/v1/sources.json"
+                    "https://busisi.org/data/research/fy2027-health-facility-changes/v1/sources.json"
                 ],
                 "missing_evidence": [],
                 "target_slug": "fy2027-health-facility-changes",
-                "published_package_url": None,
-                "downstream_ready": False,
+                "published_package_url": "https://busisi.org/data/research/fy2027-health-facility-changes/v1/editorial-package.json",
+                "downstream_ready": True,
             },
             {
                 "topic_id": "fy2027-later-stage-survival",
