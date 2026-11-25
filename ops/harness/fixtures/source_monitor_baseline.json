@@ -14,39 +14,43 @@
   "dbm_releases": [
     {
       "label": "January",
-      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=3858%3Astatus-of-allotment-releases-as-of-january-31-2026&view=article"
+      "url": "https://www.dbm.gov.ph/index.php/status-of-allotment-releases?catid=307&id=3858%3Astatus-of-allotment-releases-as-of-january-31-2026&view=article"
     },
     {
       "label": "February",
-      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=3893%3Astatus-of-allotment-releases-as-of-february-28-2026&view=article"
+      "url": "https://www.dbm.gov.ph/index.php/status-of-allotment-releases?catid=307&id=3893%3Astatus-of-allotment-releases-as-of-february-28-2026&view=article"
     },
     {
       "label": "March",
-      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=3947%3Astatus-of-allotment-releases-as-of-march-31-2026&view=article"
+      "url": "https://www.dbm.gov.ph/index.php/status-of-allotment-releases?catid=307&id=3947%3Astatus-of-allotment-releases-as-of-march-31-2026&view=article"
     },
     {
       "label": "April",
-      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=3992&view=article"
+      "url": "https://www.dbm.gov.ph/index.php/status-of-allotment-releases?catid=307&id=3992&view=article"
     },
     {
       "label": "May",
-      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=4050&view=article"
+      "url": "https://www.dbm.gov.ph/index.php/status-of-allotment-releases?catid=307&id=4050&view=article"
     },
     {
       "label": "June",
-      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=4098&view=article"
+      "url": "https://www.dbm.gov.ph/index.php/status-of-allotment-releases?catid=307&id=4098&view=article"
     },
     {
       "label": "July",
-      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=4150&view=article"
+      "url": "https://www.dbm.gov.ph/index.php/status-of-allotment-releases?catid=307&id=4150&view=article"
     },
     {
       "label": "August",
-      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=4215%3Astatus-of-allotment-releases-as-of-august-31-2026&view=article"
+      "url": "https://www.dbm.gov.ph/index.php/status-of-allotment-releases?catid=307&id=4215%3Astatus-of-allotment-releases-as-of-august-31-2026&view=article"
     },
     {
       "label": "September",
-      "url": "https://www.dbm.gov.ph/index.php?catid=307&id=4331&view=article"
+      "url": "https://www.dbm.gov.ph/index.php/status-of-allotment-releases?catid=307&id=4331&view=article"
+    },
+    {
+      "label": "October",
+      "url": "https://www.dbm.gov.ph/index.php/status-of-allotment-releases?catid=307&id=4405&view=article"
     }
   ],
   "districts": {

@@ -21,9 +21,9 @@ OUTPUT_DIR = DATA_ROOT / "allotment-release-d1-bundle"
 ARCHIVE_DIR = DATA_ROOT / "archive"
 SOURCE_PATH = (
     "/wp-content/uploads/e-Fund_Releases/Status-of-Allotment-Releases/"
-    "2026/September/FY-2026-as-of-September-30-Website.xlsx"
+    "2026/October/FY-2026-as-of-October-Website.xlsx"
 )
-EXPECTED_SHA256 = "05a902418e0a78339b82d71def04447eab44897b752d001343121bcbe6226aae"
+EXPECTED_SHA256 = "b051d737ce26f18fd138bb48c086b882a1e762688b0ae4efcf6a04bbae0054e6"
 MAX_RESPONSE_BYTES = 16 * 1024 * 1024
 
 
@@ -40,7 +40,7 @@ def main() -> None:
     archived = ArtifactArchive(ARCHIVE_DIR).store(acquisition)
     if archived.sha256 != digest:
         raise ValueError("archived allotment-release workbook digest mismatch")
-    workbook_path = building / "fy2026-as-of-september-30.xlsx"
+    workbook_path = building / "fy2026-as-of-october-31.xlsx"
     workbook_path.write_bytes(acquisition.payload)
     rows = extract_xlsx_rows(acquisition.payload, "By Dept")
     rows_path = building / "by-department.json"

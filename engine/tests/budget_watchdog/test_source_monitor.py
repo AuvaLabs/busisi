@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -532,6 +533,19 @@ def test_extracts_only_normalized_2026_dbm_release_entries() -> None:
             "url": "https://www.dbm.gov.ph/index.php?catid=307&id=9&view=article",
         },
     )
+
+
+def test_tracked_dbm_baseline_includes_the_checked_october_release() -> None:
+    baseline_path = (
+        Path(__file__).resolve().parents[3]
+        / "ops/harness/fixtures/source_monitor_baseline.json"
+    )
+    baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+
+    assert baseline["dbm_releases"][-1] == {
+        "label": "October",
+        "url": "https://www.dbm.gov.ph/index.php/status-of-allotment-releases?catid=307&id=4405&view=article",
+    }
 
 
 def test_rejects_missing_or_duplicate_dbm_catalog_entries() -> None:

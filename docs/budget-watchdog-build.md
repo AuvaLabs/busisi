@@ -130,7 +130,7 @@ As of 2026-11-07:
   the bill's printed ₱4.606066495 trillion control. Automatic Appropriations
   remain not applicable to the House bill comparison, not zero.
 - The FY2026 allotment-release ledger publishes 96 official DBM rows as of
-  30 September 2026: 36 departments, 47 attached agencies or subunits, and 13
+  31 October 2026: 36 departments, 47 attached agencies or subunits, and 13
   Special Purpose Funds. The retained workbook is SHA-256 pinned, its
   thousand-peso values are normalized to integer centavos, and both current
   GAA and all-source program, release and balance controls reconcile exactly.

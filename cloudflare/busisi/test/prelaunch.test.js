@@ -506,14 +506,14 @@ test('publishes the official FY2026 allotment-release ledger with spending bound
   const document = await response.text();
 
   assert.equal(response.status, 200);
-  assert.match(document, /See how much budget authority DBM had released by September/);
-  assert.match(document, /30 September 2026/);
+  assert.match(document, /See how much budget authority DBM had released by October/);
+  assert.match(document, /31 October 2026/);
   assert.match(document, /data-release-ledger/);
   assert.match(document, /src="\/assets\/releases-v1\.js"/);
   assert.match(document, /Allotment release is not payment/);
   assert.match(document, /not project-level/i);
   assert.match(document, /href="https:\/\/www\.dbm\.gov\.ph\/index\.php\?/);
-  assert.match(document, /05a902418e0a78339b82d71def04447eab44897b752d001343121bcbe6226aae/);
+  assert.match(document, /b051d737ce26f18fd138bb48c086b882a1e762688b0ae4efcf6a04bbae0054e6/);
   assert.doesNotMatch(document, /release proves? (?:a )?payment/i);
 });
 

@@ -54,7 +54,7 @@ quarantined, and missing evidence is never presented as clearance.
 
 The allotment-release ledger at `/releases/` publishes 96 official FY2026 DBM
 department, attached-agency, subunit and Special Purpose Fund records as of
-30 September 2026. Current GAA and all-source controls reconcile exactly after
+31 October 2026. Current GAA and all-source controls reconcile exactly after
 converting the workbook's thousand-peso values to integer centavos. Allotment
 release remains separate from obligation, disbursement and payment evidence.
 

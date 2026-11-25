@@ -39,7 +39,7 @@ from the portal's fiscal-year label.
 
 The FY2026 allotment-release ledger adds the next verified fiscal stage without
 pretending it is payment evidence. It publishes 96 official DBM department,
-attached-agency, subunit and Special Purpose Fund records as of 30 September
+attached-agency, subunit and Special Purpose Fund records as of 31 October
 2026. Every amount is normalized to integer centavos and the current GAA and
 all-source controls reconcile exactly. The ledger remains separate from the
 FY2027 proposal and legislative comparisons.

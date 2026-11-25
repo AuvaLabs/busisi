@@ -12,8 +12,8 @@ from engine.budget_watchdog.allotment_releases import extract_xlsx_rows, parse_r
 
 SOURCE_URL = (
     "https://www.dbm.gov.ph/wp-content/uploads/e-Fund_Releases/"
-    "Status-of-Allotment-Releases/2026/September/"
-    "FY-2026-as-of-September-30-Website.xlsx"
+    "Status-of-Allotment-Releases/2026/October/"
+    "FY-2026-as-of-October-Website.xlsx"
 )
 SOURCE_SHA = "a" * 64
 
@@ -79,8 +79,8 @@ def _source_rows() -> tuple[dict[str, str], ...]:
             "row": "7",
             "A": "A. FY 2026 GAA, RA NO. 12314",
             "D": "4391044969",
-            "H": "4072227740",
-            "I": "318817229",
+            "H": "4136652049",
+            "I": "254392920",
         },
         {"row": "8", "A": "DEPARTMENTS", "D": "3671970347", "H": "3501002619", "I": "170967728"},
         {
@@ -167,7 +167,7 @@ def _source_rows() -> tuple[dict[str, str], ...]:
             "H": "6231429127",
             "I": "561732873",
         },
-        {"row": "264", "A": "TOTAL", "D": "6793162000", "H": "6532951466", "I": "260210534"},
+        {"row": "264", "A": "TOTAL", "D": "6793162000", "H": "6705889516", "I": "87272484"},
     )
 
 
@@ -175,8 +175,8 @@ def test_parses_department_attached_agency_subunit_and_special_fund() -> None:
     records, controls = parse_release_rows(_source_rows(), SOURCE_URL, SOURCE_SHA)
 
     assert len(records) == 7
-    assert controls.current_gaa_releases_centavos == 407_222_774_000_000
-    assert controls.total_releases_centavos == 653_295_146_600_000
+    assert controls.current_gaa_releases_centavos == 413_665_204_900_000
+    assert controls.total_releases_centavos == 670_588_951_600_000
     deped = next(record for record in records if record.source_row == 15)
     central = next(record for record in records if record.source_row == 16)
     amlc = next(record for record in records if record.source_row == 56)
@@ -195,7 +195,7 @@ def test_parses_department_attached_agency_subunit_and_special_fund() -> None:
 
 def test_release_parser_rejects_control_drift_and_unsafe_source_metadata() -> None:
     rows = list(_source_rows())
-    rows[0] = {**rows[0], "H": "4072227739"}
+    rows[0] = {**rows[0], "H": "4136652048"}
     with pytest.raises(ValueError, match="current GAA control"):
         parse_release_rows(tuple(rows), SOURCE_URL, SOURCE_SHA)
     with pytest.raises(ValueError, match="source URL"):
@@ -211,7 +211,7 @@ def _snapshot(tmp_path: Path) -> Path:
     rows_path.write_text(json.dumps(_source_rows()), encoding="utf-8")
     manifest = {
         "fiscal_year": 2026,
-        "as_of_date": "2026-09-30",
+        "as_of_date": "2026-10-31",
         "source_url": SOURCE_URL,
         "source_sha256": SOURCE_SHA,
         "rows_path": rows_path.name,

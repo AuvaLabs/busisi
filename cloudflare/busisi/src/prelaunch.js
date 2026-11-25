@@ -207,10 +207,10 @@ const AGENCIES_SCHEMA = Object.freeze({
 const RELEASES_SCHEMA = Object.freeze({
   '@context': 'https://schema.org',
   '@type': 'Dataset',
-  name: 'FY2026 Philippine allotment releases as of 30 September 2026',
+  name: 'FY2026 Philippine allotment releases as of 31 October 2026',
   url: `${SITE.origin}/releases/`,
   description: 'Official DBM allotment-release totals checked across departments, attached agencies, subunits, and Special Purpose Funds.',
-  temporalCoverage: '2026-01-01/2026-09-30',
+  temporalCoverage: '2026-01-01/2026-10-31',
   spatialCoverage: 'Philippines',
   isAccessibleForFree: true,
   isPartOf: { '@type': 'WebSite', name: SITE.name, url: `${SITE.origin}/` },
@@ -530,7 +530,7 @@ const agencies = () => page(document({
 
 const releases = () => page(document({
   title: 'FY2026 Philippine allotment releases | Busisi',
-  description: 'Search checked official DBM allotment-release totals by department, attached agency, subunit, and Special Purpose Fund as of 30 September 2026.',
+  description: 'Search checked official DBM allotment-release totals by department, attached agency, subunit, and Special Purpose Fund as of 31 October 2026.',
   canonicalPath: '/releases/',
   body: releasesBody,
   schema: RELEASES_SCHEMA,

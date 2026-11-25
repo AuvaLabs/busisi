@@ -41,18 +41,18 @@ const expectedChanges = Object.freeze({
 });
 const expectedReleases = Object.freeze({
   fiscal_year: 2026,
-  as_of_date: '2026-09-30',
+  as_of_date: '2026-10-31',
   record_count: 96,
   department_count: 36,
   attached_agency_count: 47,
   special_purpose_fund_count: 13,
   current_gaa_adjusted_centavos: 439_104_496_900_000,
-  current_gaa_releases_centavos: 407_222_774_000_000,
-  current_gaa_balance_centavos: 31_881_722_900_000,
+  current_gaa_releases_centavos: 413_665_204_900_000,
+  current_gaa_balance_centavos: 25_439_292_000_000,
   total_program_centavos: 679_316_200_000_000,
-  total_releases_centavos: 653_295_146_600_000,
-  total_balance_centavos: 26_021_053_400_000,
-  source_sha256: '05a902418e0a78339b82d71def04447eab44897b752d001343121bcbe6226aae',
+  total_releases_centavos: 670_588_951_600_000,
+  total_balance_centavos: 8_727_248_400_000,
+  source_sha256: 'b051d737ce26f18fd138bb48c086b882a1e762688b0ae4efcf6a04bbae0054e6',
 });
 const expectedBudgetCycle = Object.freeze({
   fiscal_year: '2027',
@@ -427,7 +427,7 @@ const verifyPages = async () => {
   const releases = await request('/releases/');
   expectStatus(releases, 200, '/releases/');
   const releasesText = await releases.text();
-  expectIncludes(releasesText, 'See how much budget authority DBM had released by September', 'releases heading');
+  expectIncludes(releasesText, 'See how much budget authority DBM had released by October', 'releases heading');
   expectIncludes(releasesText, '/assets/releases-v1.js', 'releases client');
   expectIncludes(releasesText, 'Allotment release is not payment', 'releases boundary');
   expectIncludes(releasesText, expectedReleases.source_sha256, 'releases fingerprint');
