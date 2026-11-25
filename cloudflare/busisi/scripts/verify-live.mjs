@@ -33,6 +33,11 @@ const expectedConcentrationResearch = Object.freeze({
   package_sha256: 'b2a09440ee641fd5f6693401e7f18ed0392b83451e0afd94361a8dc5d6f979ed',
   story_id: 'fy2027-change-concentration-2026',
 });
+const expectedHealthFacilityResearch = Object.freeze({
+  version: 1,
+  package_sha256: 'e838364fcbb18436975f4de0c30379bd2a702abe7b13f6052fa645633a90ea9f',
+  story_id: 'fy2027-health-facility-changes-2026',
+});
 const expectedChanges = Object.freeze({
   record_count: 20_431,
   quarantine_count: 426,
@@ -541,10 +546,22 @@ const verifyPages = async () => {
     'concentration research version',
   );
 
+  const healthFacilityResearch = await request('/research/fy2027-health-facility-changes/');
+  expectStatus(healthFacilityResearch, 200, '/research/fy2027-health-facility-changes/');
+  const healthFacilityResearchText = await healthFacilityResearch.text();
+  expectIncludes(healthFacilityResearchText, '746', 'health-facility research row control');
+  expectIncludes(healthFacilityResearchText, '₱4.45 billion lower', 'health-facility difference');
+  expectIncludes(healthFacilityResearchText, 'not the final budget', 'health-facility boundary');
+  expectIncludes(
+    healthFacilityResearchText,
+    '/data/research/fy2027-health-facility-changes/v1/',
+    'health-facility research version',
+  );
+
   const researchHistory = await request('/research/releases/');
   expectStatus(researchHistory, 200, '/research/releases/');
   const researchHistoryText = await researchHistory.text();
-  expectIncludes(researchHistoryText, '8 published packages', 'research release history');
+  expectIncludes(researchHistoryText, '9 published packages', 'research release history');
   expectIncludes(researchHistoryText, 'No corrections have been filed', 'research corrections state');
 
   const robots = await request('/robots.txt');
@@ -559,7 +576,7 @@ const verifyPages = async () => {
   const sitemap = await request('/sitemap.xml');
   expectStatus(sitemap, 200, '/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const path of ['/projects/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/needs/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/multipurpose-buildings/evidence/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
+  for (const path of ['/projects/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/needs/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/multipurpose-buildings/evidence/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/fy2027-health-facility-changes/', '/research/releases/', '/methodology/', '/projects/corazon-2024-phase-1/']) {
     expectIncludes(sitemapText, `<loc>${publicOrigin}${path}</loc>`, `sitemap ${path}`);
   }
   if (sitemapText.includes('corazon-2026-completion')) fail('sitemap: quarantined dossier is indexed');
@@ -594,6 +611,11 @@ const verifyPages = async () => {
   );
   expectIncludes(
     llmsText,
+    '/data/research/fy2027-health-facility-changes/v1/editorial-package.json',
+    'llms health-facility editorial package',
+  );
+  expectIncludes(
+    llmsText,
     '/data/research/release-history.json',
     'llms research release history',
   );
@@ -602,7 +624,7 @@ const verifyPages = async () => {
   expectStatus(indexNow, 200, 'IndexNow key');
   expectIncludes(await indexNow.text(), indexNowKey, 'IndexNow key');
 
-  return ['/', '/projects/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/needs/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/releases/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
+  return ['/', '/projects/', '/sulit/', '/releases/', '/contracts/', '/contractors/', '/places/', '/needs/', '/sources/', '/watch/', '/explore/', '/changes/', '/budget-trail/', '/audit/', '/procurement/', '/signals/', '/integrity/', '/accountability/', '/coverage/', '/questions/', '/public-services/', '/research/fy2027-nep-house-changes/', '/research/fy2027-change-concentration/', '/research/fy2027-health-facility-changes/', '/research/releases/', '/methodology/', '/robots.txt', '/sitemap.xml', '/llms.txt', 'IndexNow key'];
 };
 
 const verifyDesign = async () => {
@@ -816,11 +838,30 @@ const verifyData = async () => {
     || concentrationManifest.package_sha256 !== expectedConcentrationResearch.package_sha256) {
     fail('concentration research release: story, package, or static manifest is inconsistent');
   }
+  const healthResearchEntry = researchCatalogue.data?.find(({ story_id: id }) => (
+    id === expectedHealthFacilityResearch.story_id
+  ));
+  if (healthResearchEntry?.version !== expectedHealthFacilityResearch.version
+    || healthResearchEntry?.package_sha256 !== expectedHealthFacilityResearch.package_sha256
+    || !healthResearchEntry?.editorial_package_url?.endsWith('/v1/editorial-package.json')) {
+    fail('health-facility research catalogue: current package identity is missing');
+  }
+  const healthRelease = await readJson('/api/v1/research/fy2027-health-facility-changes');
+  const healthManifest = await readJson(
+    '/data/research/fy2027-health-facility-changes/v1/manifest.json',
+  );
+  if (healthRelease.data?.manifest?.package_sha256
+      !== expectedHealthFacilityResearch.package_sha256
+    || healthRelease.data?.story?.editorial_format !== 'question-led-v1'
+    || healthRelease.data?.chart_data?.totals?.records !== 746
+    || healthManifest.package_sha256 !== expectedHealthFacilityResearch.package_sha256) {
+    fail('health-facility research release: story, controls, or manifest is inconsistent');
+  }
   const researchHistory = await readJson('/api/v1/research/history');
   const staticResearchHistory = await readJson('/data/research/release-history.json');
   for (const [key, expected] of Object.entries({
-    release_count: 8,
-    story_count: 3,
+    release_count: 9,
+    story_count: 4,
     correction_count: 0,
   })) {
     if (researchHistory.data?.[key] !== expected || staticResearchHistory[key] !== expected) {
