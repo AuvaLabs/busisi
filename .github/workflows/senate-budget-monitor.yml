@@ -49,33 +49,19 @@ jobs:
         if: always()
         shell: bash
         run: |
-          python3 - <<'PY'
+          PYTHONPATH=. python3 - <<'PY'
           import json
           import os
           from pathlib import Path
 
+          from ops.harness.budget_watchdog_senate_monitor import format_summary
+
           path = Path("data/budget_watchdog/senate-monitor/report.json")
-          lines = ["## FY2027 Senate catalogue check", ""]
-          if not path.is_file():
-              lines.append("The monitor did not produce a report.")
-          else:
-              report = json.loads(path.read_text(encoding="utf-8"))
-              lines.extend(
-                  [
-                      f"- Status: `{report.get('status', 'unknown')}`",
-                      f"- Official portal: `{report.get('direct_status', 'unknown')}`",
-                      f"- Check method: `{report.get('discovery_mode', 'unknown')}`",
-                      f"- Saved responses: `{len(report.get('response_artifacts', []))}`",
-                      f"- Source freshness: `{report.get('freshness_state', 'unknown')}`",
-                      f"- Last successful check: `{report.get('last_success_at', 'none')}`",
-                      f"- Consecutive failed checks: `{report.get('consecutive_failures', 0)}`",
-                      f"- Next check: `{report.get('next_check_at', 'unknown')}`",
-                  ]
-              )
-              if report.get("error"):
-                  lines.append(f"- Reason: {report['error']}")
+          summary_text = "## FY2027 Senate catalogue check\n\nThe monitor did not produce a report.\n"
+          if path.is_file():
+              summary_text = format_summary(json.loads(path.read_text(encoding="utf-8")))
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
-              summary.write("\n".join(lines) + "\n")
+              summary.write(summary_text)
           PY
 
       - name: Save source health history

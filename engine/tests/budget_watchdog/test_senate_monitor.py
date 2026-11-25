@@ -308,6 +308,20 @@ def test_monitor_preserves_exhausted_secondary_response_and_failure_report(
     ).read_bytes() == b"<title>Just a moment</title> Cloudflare challenge"
 
 
+def test_monitor_records_access_denied_on_secondary_folder(tmp_path) -> None:
+    def fetch(url: str, headers: dict[str, str]) -> HttpPayload:
+        if "/index/file_card" in url:
+            return HttpPayload(401, url, b"Access denied", "text/plain")
+        return _fetcher()(url, headers)
+
+    with pytest.raises(SenateMonitorError, match="secondary folder discovery failed"):
+        run_senate_monitor(_baseline(), tmp_path, fetch=fetch)
+
+    report = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert report["failure_kind"] == "access_denied"
+    assert report["response_artifacts"][-1]["status_code"] == 401
+
+
 def test_monitor_rejects_a_check_time_without_timezone(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="timezone-aware"):
         run_senate_monitor(
@@ -425,6 +439,7 @@ def test_cli_preserves_detailed_failure_report(tmp_path, monkeypatch) -> None:
         "passed": False,
         "status": "acquisition_failure",
         "error": "source blocked",
+        "failure_kind": "access_denied",
         "freshness_state": "stale",
         "response_artifacts": [{"name": "blocked.html"}],
     }
@@ -433,7 +448,7 @@ def test_cli_preserves_detailed_failure_report(tmp_path, monkeypatch) -> None:
         assert previous_report is None
         output_dir.mkdir(parents=True)
         (output_dir / "report.json").write_text(json.dumps(detailed), encoding="utf-8")
-        raise SenateMonitorError("source blocked")
+        raise SenateMonitorError("source blocked", failure_kind="access_denied")
 
     monkeypatch.setattr(senate_monitor_cli, "run_senate_monitor", fail)
     monkeypatch.setattr(
@@ -442,7 +457,11 @@ def test_cli_preserves_detailed_failure_report(tmp_path, monkeypatch) -> None:
     )
 
     assert senate_monitor_cli.main() == 3
-    assert json.loads((output / "report.json").read_text(encoding="utf-8")) == detailed
+    assert json.loads((output / "report.json").read_text(encoding="utf-8")) == {
+        **detailed,
+        "monitor_state": "access_blocked",
+        "alert_reason": "stale_source",
+    }
 
 
 def test_cli_keeps_degraded_source_outage_nonfatal_and_persists_state(
@@ -453,6 +472,7 @@ def test_cli_keeps_degraded_source_outage_nonfatal_and_persists_state(
         "passed": False,
         "status": "acquisition_failure",
         "error": "challenge",
+        "failure_kind": "bot_challenge",
         "freshness_state": "degraded",
         "consecutive_failures": 1,
     }
@@ -470,7 +490,11 @@ def test_cli_keeps_degraded_source_outage_nonfatal_and_persists_state(
     )
 
     assert senate_monitor_cli.main() == 0
-    assert json.loads((output / "state.json").read_text(encoding="utf-8")) == detailed
+    assert json.loads((output / "state.json").read_text(encoding="utf-8")) == {
+        **detailed,
+        "monitor_state": "access_blocked",
+        "alert_reason": None,
+    }
 
 
 def test_cli_fails_immediately_for_invalid_source_content(tmp_path, monkeypatch) -> None:
@@ -497,14 +521,15 @@ def test_cli_fails_immediately_for_invalid_source_content(tmp_path, monkeypatch)
     assert senate_monitor_cli.main() == 3
 
 
-def test_cli_waits_for_persisted_retry_time(tmp_path, monkeypatch) -> None:
+@pytest.mark.parametrize("freshness", ["degraded", "stale"])
+def test_cli_waits_for_persisted_retry_time(tmp_path, monkeypatch, freshness) -> None:
     output = tmp_path / "monitor"
     output.mkdir()
     state = {
         "checked_at": "2026-11-09T18:00:00+00:00",
         "status": "acquisition_failure",
         "failure_kind": "bot_challenge",
-        "freshness_state": "degraded",
+        "freshness_state": freshness,
         "next_check_at": "2999-01-01T00:00:00+00:00",
     }
     (output / "state.json").write_text(json.dumps(state), encoding="utf-8")
@@ -520,9 +545,91 @@ def test_cli_waits_for_persisted_retry_time(tmp_path, monkeypatch) -> None:
             "--output",
             str(output),
             "--respect-backoff",
+            "--strict",
         ],
     )
 
     assert senate_monitor_cli.main() == 0
     report = json.loads((output / "report.json").read_text(encoding="utf-8"))
     assert report["monitor_state"] == "waiting_for_retry"
+    assert report["next_check_at"] == state["next_check_at"]
+    assert report["freshness_state"] == freshness
+    assert report["alert_reason"] is None
+    assert "Waiting to retry after access was blocked" in senate_monitor_cli.format_summary(report)
+    assert json.loads((output / "state.json").read_text(encoding="utf-8")) == state
+
+
+@pytest.mark.parametrize(
+    ("last_success", "expected_exit", "expected_alert"),
+    [
+        ("2026-11-16T07:00:00+00:00", 0, None),
+        ("2026-11-14T07:00:00+00:00", 3, "stale_source"),
+    ],
+)
+def test_cli_reports_blocked_access_and_retry_with_strict_alerts(
+    tmp_path, monkeypatch, last_success, expected_exit, expected_alert
+) -> None:
+    (tmp_path / "state.json").write_text(
+        json.dumps({"last_success_at": last_success}), encoding="utf-8"
+    )
+
+    def blocked_fetch(url: str, _headers: dict[str, str]) -> HttpPayload:
+        status = 401 if url.startswith(senate_monitor.READER_ORIGIN) else 403
+        return HttpPayload(status, url, b"Access denied", "text/plain")
+
+    def check(baseline: Path, output: Path, *, previous_report=None):
+        return run_senate_monitor(
+            baseline,
+            output,
+            fetch=blocked_fetch,
+            previous_report=previous_report,
+            checked_at=datetime(2026, 11, 16, 8, tzinfo=UTC),
+        )
+
+    monkeypatch.setattr(senate_monitor_cli, "run_senate_monitor", check)
+    monkeypatch.setattr("sys.argv", ["senate-monitor", "--output", str(tmp_path), "--strict"])
+
+    assert senate_monitor_cli.main() == expected_exit
+    report = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert report["monitor_state"] == "access_blocked"
+    assert report["passed"] is False
+    assert report["observed_document_count"] is None
+    assert report["alert_reason"] == expected_alert
+    summary = senate_monitor_cli.format_summary(report)
+    assert "Access blocked" in summary
+    assert "Next retry eligible (UTC): `2026-11-16T08:30:00+00:00`" in summary
+
+
+def test_cli_alerts_on_catalogue_change_after_backoff(tmp_path, monkeypatch) -> None:
+    (tmp_path / "state.json").write_text(
+        json.dumps(
+            {
+                "status": "acquisition_failure",
+                "failure_kind": "access_denied",
+                "last_success_at": "2026-11-16T07:00:00+00:00",
+                "next_check_at": "2026-11-16T07:30:00+00:00",
+                "consecutive_failures": 1,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def check(baseline: Path, output: Path, *, previous_report=None):
+        return run_senate_monitor(
+            baseline,
+            output,
+            fetch=_fetcher(changed=True),
+            previous_report=previous_report,
+            checked_at=datetime(2026, 11, 16, 8, tzinfo=UTC),
+        )
+
+    monkeypatch.setattr(senate_monitor_cli, "run_senate_monitor", check)
+    monkeypatch.setattr(
+        "sys.argv", ["senate-monitor", "--output", str(tmp_path), "--strict", "--respect-backoff"]
+    )
+    assert senate_monitor_cli.main() == 2
+    report = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert report["monitor_state"] == "drift_detected"
+    assert report["alert_reason"] == "catalogue_changed"
+    assert report["consecutive_failures"] == 0
+    assert report["differences"][0].endswith("Senate Committee Report FY 2027")

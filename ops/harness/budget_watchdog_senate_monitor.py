@@ -8,13 +8,22 @@ import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 
-from engine.budget_watchdog.senate_monitor import SenateMonitorError, run_senate_monitor
+from engine.budget_watchdog.senate_monitor import (
+    ACCESS_BLOCK_FAILURE_KINDS,
+    SenateMonitorError,
+    run_senate_monitor,
+)
 from engine.budget_watchdog.source_resilience import source_check_due
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BASELINE = ROOT / "ops" / "harness" / "fixtures" / "senate_2027_catalog.json"
 DEFAULT_OUTPUT = ROOT / "data" / "budget_watchdog" / "senate-monitor"
-IMMEDIATE_FAILURE_KINDS = frozenset({"validation_error", "unexpected_response", "not_found"})
+RETRYABLE_FAILURE_KINDS = ACCESS_BLOCK_FAILURE_KINDS | {
+    "publisher_maintenance",
+    "rate_limited",
+    "server_error",
+    "transport_error",
+}
 
 
 def main() -> int:
@@ -30,7 +39,10 @@ def main() -> int:
         prior_artifacts = previous.get("response_artifacts")
         waiting = {
             **previous,
-            "monitor_state": "waiting_for_retry",
+            "monitor_state": (
+                "waiting_for_retry" if previous.get("failure_kind") else "waiting_for_next_check"
+            ),
+            "alert_reason": None,
             "prior_response_artifact_count": (
                 len(prior_artifacts) if isinstance(prior_artifacts, list) else 0
             ),
@@ -38,7 +50,7 @@ def main() -> int:
         }
         _write_state(args.output / "report.json", waiting)
         print(json.dumps(waiting, indent=2))
-        return _failure_exit(waiting, strict=args.strict)
+        return 0
     shutil.rmtree(args.output / "responses", ignore_errors=True)
     (args.output / "report.json").unlink(missing_ok=True)
     try:
@@ -52,29 +64,26 @@ def main() -> int:
             failure = {
                 "passed": False,
                 "status": "acquisition_failure",
+                "failure_kind": exc.failure_kind,
                 "error": str(exc),
             }
-            report_path.write_text(
-                json.dumps(failure, indent=2, sort_keys=True) + "\n",
-                encoding="utf-8",
-            )
-        print(json.dumps(failure, indent=2))
-        _write_state(args.output / "state.json", failure)
-        return _failure_exit(failure, strict=args.strict)
-    payload = {
-        "passed": not result.changed,
-        "status": "drift_detected" if result.changed else "unchanged",
-        "direct_status": result.direct_status,
-        "discovery_mode": result.discovery_mode,
-        "expected_document_count": result.expected_document_count,
-        "observed_document_count": result.observed_document_count,
-        "differences": list(result.differences),
-        "response_artifacts": len(result.response_artifacts),
-    }
-    print(json.dumps(payload, indent=2))
-    _write_state(
-        args.output / "state.json",
-        json.loads((args.output / "report.json").read_text(encoding="utf-8")),
+        failure.setdefault("failure_kind", exc.failure_kind)
+        failure["monitor_state"] = (
+            "access_blocked"
+            if failure["failure_kind"] in ACCESS_BLOCK_FAILURE_KINDS
+            else "check_failed"
+        )
+        alert = _failure_alert(failure, strict=args.strict)
+        _record_attempt(args.output, {**failure, "alert_reason": alert})
+        return 3 if alert else 0
+    report = json.loads((args.output / "report.json").read_text(encoding="utf-8"))
+    _record_attempt(
+        args.output,
+        {
+            **report,
+            "monitor_state": result.status,
+            "alert_reason": "catalogue_changed" if result.changed else None,
+        },
     )
     return 2 if result.changed else 0
 
@@ -94,12 +103,63 @@ def _write_state(path: Path, value: dict[str, object]) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _failure_exit(report: dict[str, object], *, strict: bool) -> int:
-    if report.get("failure_kind") in IMMEDIATE_FAILURE_KINDS:
-        return 3
+def _record_attempt(output: Path, report: dict[str, object]) -> None:
+    _write_state(output / "report.json", report)
+    _write_state(output / "state.json", report)
+    print(json.dumps(report, indent=2))
+
+
+def _failure_alert(report: dict[str, object], *, strict: bool) -> str | None:
+    kind = report.get("failure_kind")
+    if not isinstance(kind, str) or kind not in RETRYABLE_FAILURE_KINDS:
+        return kind if isinstance(kind, str) else "check_failed"
     if strict and report.get("freshness_state") in {"stale", "unknown"}:
-        return 3
-    return 0
+        return "stale_source" if report.get("freshness_state") == "stale" else "source_unverified"
+    return None
+
+
+def format_summary(report: dict[str, object]) -> str:
+    state = str(report.get("monitor_state", "unknown"))
+    blocked = report.get("failure_kind") in ACCESS_BLOCK_FAILURE_KINDS
+    labels = {
+        "access_blocked": "Access blocked",
+        "check_failed": "Check failed",
+        "drift_detected": "Catalogue changes detected",
+        "unchanged": "Catalogue checked and unchanged",
+        "waiting_for_next_check": "Waiting for the next scheduled check",
+        "waiting_for_retry": (
+            "Waiting to retry after access was blocked" if blocked else "Waiting to retry"
+        ),
+    }
+    retrying = bool(report.get("failure_kind"))
+    next_label = "Next retry eligible" if retrying else "Next check eligible"
+    lines = [
+        "## FY2027 Senate catalogue check",
+        "",
+        f"- Status: **{labels.get(state, 'Unknown')}**",
+        f"- Official portal: `{report.get('direct_status', 'unknown')}`",
+        f"- Check method: `{report.get('discovery_mode', 'unknown')}`",
+        f"- Failure type: `{report.get('failure_kind') or 'none'}`",
+        f"- Evidence freshness: `{report.get('freshness_state', 'unknown')}`",
+        f"- Last attempt (UTC): `{report.get('checked_at') or 'unknown'}`",
+        f"- Last successful check (UTC): `{report.get('last_success_at') or 'none'}`",
+        f"- Consecutive failed checks: `{report.get('consecutive_failures', 0)}`",
+        f"- {next_label} (UTC): `{report.get('next_check_at') or 'unknown'}`",
+    ]
+    if report.get("alert_reason"):
+        lines.append(f"- Alert: `{report['alert_reason']}`")
+    if state == "waiting_for_next_check" and report.get("status") == "drift_detected":
+        lines.append("- The previous check found catalogue changes that need review.")
+    if report.get("error"):
+        lines.append(f"- Reason: {report['error']}")
+    if report.get("next_check_at"):
+        lines.extend(
+            [
+                "",
+                "The next automatic attempt runs on the first scheduled run at or after that time.",
+            ]
+        )
+    return "\n".join(lines) + "\n"
 
 
 if __name__ == "__main__":

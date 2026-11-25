@@ -327,9 +327,12 @@ interactive challenge. If the primary rendered page is challenged, it checks
 the official lowercase page alias through the same bounded secondary reader.
 Persistent source health uses 30-minute, two-hour and six-hour retry intervals.
 A failed check is degraded for up to 24 hours after a successful check and
-stale after that. Drift and stale source health fail the strict workflow. A
-temporary degraded check retains the last verified baseline without replacing
-it. The monitor never updates the reviewed baseline automatically.
+stale after that. The GitHub run summary shows when access was blocked, the last
+verified check, and when the next scheduled retry becomes eligible. Scheduled
+runs during backoff show the waiting status. An attempted check still fails
+the strict workflow when the evidence is stale or unverified, the response is
+unexpected or invalid, or the catalogue changed. The reviewed baseline is
+updated separately after verification.
 
 Committee Report No. 131 is an explicit FY2027 watch target. The public
 committee endpoint remains in `awaiting_official_document` state until an
