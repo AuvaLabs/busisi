@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from engine.budget_watchdog.research_story_format import QUESTION_LED_FORMAT
+
 QUEUE_STATES = frozenset({"candidate", "evidence_ready", "blocked", "published", "retired"})
 MIN_PRIORITY = 1
 MAX_PRIORITY = 5
@@ -23,6 +25,30 @@ def _text_list(value: object, label: str) -> list[str]:
     if not isinstance(value, list) or not all(isinstance(item, str) and item.strip() for item in value):
         raise ValueError(f"{label} must be a list of text values")
     return value
+
+
+def _non_empty_text_list(value: object, label: str) -> list[str]:
+    values = _text_list(value, label)
+    if not values:
+        raise ValueError(f"{label} must not be empty")
+    return values
+
+
+def _validate_comparison_plan(value: object, identifier: str) -> None:
+    if not isinstance(value, dict):
+        raise ValueError(f"{identifier} comparison plan must be an object")
+    if value.get("article_format") != QUESTION_LED_FORMAT:
+        raise ValueError(f"{identifier} article format must be {QUESTION_LED_FORMAT}")
+    _text(value.get("reader_value"), f"{identifier} reader value")
+    _non_empty_text_list(value.get("peer_places"), f"{identifier} peer places")
+    _non_empty_text_list(value.get("measures"), f"{identifier} measures")
+    _non_empty_text_list(value.get("normalization"), f"{identifier} normalization")
+    if not isinstance(value.get("same_year_required"), bool):
+        raise ValueError(f"{identifier} same-year requirement must be boolean")
+    _non_empty_text_list(
+        value.get("release_requirements"),
+        f"{identifier} release requirements",
+    )
 
 
 def _public_package_url(value: object) -> bool:
@@ -57,6 +83,9 @@ def _validate_queue_item(item: object, identifiers: set[str]) -> None:
         raise ValueError(f"{identifier} priority must be between 1 and 5")
     _text_list(item.get("evidence_sources"), f"{identifier} evidence sources")
     missing = _text_list(item.get("missing_evidence"), f"{identifier} missing evidence")
+    comparison_plan = item.get("comparison_plan")
+    if comparison_plan is not None:
+        _validate_comparison_plan(comparison_plan, identifier)
     if status == "blocked" and not missing:
         raise ValueError(f"{identifier} blocked topic must identify missing evidence")
     package = item.get("published_package_url")

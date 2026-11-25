@@ -48,6 +48,77 @@ lacks its archive identity, or a discovery-service URL is presented as
 evidence. Source disagreements remain visible as limitations or unresolved
 questions.
 
+## Community needs and country comparisons
+
+A comparison must help a reader answer a practical question. It must not exist
+only to produce a ranking. The private queue stores a bounded comparison plan
+when a topic compares places, needs, or countries. That plan names the reader
+value, peer places, measures, denominators, reference-year rule, and evidence
+required before publication.
+
+The first comparison set uses Philippine regions, provinces, and legislative
+districts for local need questions. The initial international peer set is
+Indonesia, Malaysia, Thailand, and Vietnam for education and service-delivery
+questions. Indonesia and South Korea are the initial references for comparing
+the public record trail from budget approval to implementation. A story may use
+fewer peers when definitions or years do not match. It may not silently replace
+a missing peer or measure.
+
+Every released comparison must:
+
+- use archived official Philippine records and official or multilateral peer data;
+- show the source publisher, reference year, definition, unit, and denominator;
+- compare like with like, using the same year and definition for every displayed value;
+- normalize large totals using a relevant denominator such as residents, households,
+  enrolled learners, exposed people, land area, road length, gross domestic product,
+  or total government spending;
+- keep appropriation, release, award, payment, completion, and audit values separate;
+- show missing and non-comparable values instead of estimating them without evidence;
+- display the underlying measures separately and never hide them inside a combined
+  need, quality, or risk score; and
+- state what the comparison does not prove, including that spending does not by
+  itself prove need, quality, protection, completion, or public benefit.
+
+If the same-year source files, shared definitions, geographic identifiers, or
+required denominators are missing, the topic remains blocked in the private
+queue. A blocked topic is not available to downstream publishers. This rule
+also applies when a compelling national total exists but the local evidence
+needed to answer the public question does not.
+
+New public research stories use the versioned `question-led-v1` format. The
+headline is a question a reader may actually ask. `The short answer` comes
+first and must stand on its own. One to four body sections follow, with headings
+written from the actual findings rather than reused category labels. A country,
+place, or year comparison appears only when its source years and definitions
+match. The story ends with a specific account of what the records do not show.
+
+The article package also identifies each next check by the office that holds
+the answer, the record needed, and the question that record could settle. The
+method summary states how the question is defined, the reference years, units,
+and denominators. The public page keeps that technical material and the source
+register in expandable details instead of interrupting the answer.
+
+Do not add a standing `Why it matters` section, reuse a standard paragraph of
+caveats, or pad a thin result to match another article. Put a necessary caveat
+beside the figure it qualifies. Let the evidence determine the number of body
+sections, the chart position, the comparison, and the article length. No
+sentence should be reusable unchanged in an unrelated Busisi article.
+
+## Editorial cadence
+
+Busisi targets one complete research article each week. A second publication
+may be a short evidence update, correction, new official release, or follow-up,
+but only when its authenticated package is already ready. The weekly target is
+not a content quota. If the required source files, calculations, or review are
+incomplete, the article remains in the private queue and no substitute article
+is generated merely to fill the calendar.
+
+Source monitoring and data refreshes continue independently of the article
+schedule. A changed source may update a public status or open a research task,
+but it does not become an article until the normal publication checks pass.
+This produces a normal target of four complete investigations per month, with
+up to four shorter updates when the records support them.
+
 ## Build and release
 
 The public packages are regenerated and verified with:

@@ -134,6 +134,11 @@ readiness remain in the ignored private queue under
 `data/budget_watchdog/research-editor/`; only completed editorial packages are
 available for downstream consumption.
 
+The editorial target is one complete research article per week. A second short
+update is optional when a checked package is already ready. Missing evidence
+delays publication instead of triggering a filler article, so the schedule does
+not weaken the source and review requirements.
+
 The public update feed at `/feeds/updates.xml` and `/api/v1/alerts` reports
 checked source status, gated coverage releases, newly checked contract evidence
 and deterministic review questions. Every item includes an evidence boundary.

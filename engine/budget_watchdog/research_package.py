@@ -10,6 +10,7 @@ from typing import Any
 
 from engine.budget_watchdog.money import parse_centavos
 from engine.budget_watchdog.research_editor import write_research_release
+from engine.budget_watchdog.research_story_format import validate_question_led_story
 
 FISCAL_YEARS = frozenset({"2024", "2025", "2026"})
 ACTIVE_STATUSES = frozenset({"On-Going", "For Procurement", "Not Yet Started"})
@@ -433,6 +434,7 @@ def validate_editorial_release(release: dict[str, Any]) -> None:
         raise ValueError("editorial story must contain ordered sections")
     for section in sections:
         _validate_story_section(section, claims, sources, limitations)
+    validate_question_led_story(story)
 
 
 def _prior_coordinate_candidates(

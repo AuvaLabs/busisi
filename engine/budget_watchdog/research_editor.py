@@ -11,6 +11,7 @@ from typing import Any, cast
 from urllib.parse import urlparse
 
 from engine.budget_watchdog.research_sources import validate_release_evidence
+from engine.budget_watchdog.research_story_format import validate_question_led_story
 
 BASE_PAYLOADS = {
     "chart-data.json": "chart_data",
@@ -188,6 +189,7 @@ def _validate_story(
         if not isinstance(section, dict):
             raise ValueError("story sections must be objects")
         _validate_story_section(section, claims, sources, limitations)
+    validate_question_led_story(story)
 
 
 def _package_base(metadata: dict[str, Any]) -> str:

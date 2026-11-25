@@ -126,6 +126,64 @@ def _release() -> dict:
     return release
 
 
+def _question_led_release() -> dict:
+    release = _release()
+    story = release["story"]
+    story["editorial_format"] = "question-led-v1"
+    story["method_summary"] = {
+        "question_definition": "A passed record is one that meets the published test.",
+        "reference_years": ["2026"],
+        "units": ["records"],
+        "denominators": [],
+    }
+    story["next_checks"] = [
+        {
+            "office": "Example Office",
+            "record": "The complete test register",
+            "question": "Which record explains the remaining review lead?",
+        }
+    ]
+    story["sections"] = [
+        {
+            "id": "short-answer",
+            "editorial_role": "short_answer",
+            "section_type": "finding",
+            "heading": "The short answer",
+            "copy": ["Ten records passed the published test."],
+            "claim_ids": ["checked-count"],
+            "source_ids": ["source-1"],
+            "visual_refs": ["chart_data.counts"],
+            "limitation_ids": ["source-limit"],
+            "narration_eligible": True,
+        },
+        {
+            "id": "published-result",
+            "editorial_role": "finding",
+            "section_type": "finding",
+            "heading": "Ten records passed the published check",
+            "copy": ["The result can be reproduced from the saved source."],
+            "claim_ids": ["checked-count"],
+            "source_ids": ["source-1"],
+            "visual_refs": ["chart_data.counts"],
+            "limitation_ids": ["source-limit"],
+            "narration_eligible": True,
+        },
+        {
+            "id": "limits",
+            "editorial_role": "limits",
+            "section_type": "finding",
+            "heading": "What this does not show",
+            "copy": ["The test does not resolve the remaining review lead."],
+            "claim_ids": ["checked-count"],
+            "source_ids": ["source-1"],
+            "visual_refs": [],
+            "limitation_ids": ["source-limit"],
+            "narration_eligible": True,
+        },
+    ]
+    return release
+
+
 def test_generic_editor_writes_and_reverifies_an_authenticated_package(tmp_path: Path) -> None:
     release = _release()
     manifest = write_research_release(release, tmp_path)
@@ -148,6 +206,46 @@ def test_generic_editor_writes_and_reverifies_an_authenticated_package(tmp_path:
     ).encode()
     assert hashlib.sha256(identity).hexdigest() == manifest["package_sha256"]
     assert json.loads((tmp_path / "story.json").read_text())["editorial_status"] == "ready"
+
+
+def test_question_led_story_accepts_a_bounded_human_edited_format() -> None:
+    validate_research_release(_question_led_release())
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("headline", "question headline"),
+        ("generic_heading", "generic heading"),
+        ("duplicate_heading", "unique"),
+        ("short_answer_order", "short answer"),
+        ("method", "denominators"),
+        ("next_check", "office"),
+    ],
+)
+def test_question_led_story_rejects_formulaic_or_incomplete_structure(
+    mutation: str, message: str
+) -> None:
+    release = _question_led_release()
+    story = release["story"]
+    if mutation == "headline":
+        story["headline"] = "Ten records passed"
+    elif mutation == "generic_heading":
+        story["sections"][1]["heading"] = "Why it matters"
+    elif mutation == "duplicate_heading":
+        story["sections"][1]["heading"] = "What this does not show"
+    elif mutation == "short_answer_order":
+        story["sections"][0], story["sections"][1] = (
+            story["sections"][1],
+            story["sections"][0],
+        )
+    elif mutation == "method":
+        story["method_summary"]["denominators"] = "records"
+    else:
+        del story["next_checks"][0]["office"]
+
+    with pytest.raises(ValueError, match=message):
+        validate_research_release(release)
 
 
 def test_editor_rejects_stale_source_check_at_publication() -> None:

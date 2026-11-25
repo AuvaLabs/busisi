@@ -18,6 +18,30 @@ When the information is available, answer in this order:
 Use short sentences and concrete subjects. Say who published a record, what it
 says, when it was published or checked, and what Busisi did with it.
 
+## Question-led research articles
+
+Research articles do not repeat the general page order as a fixed set of
+headings. They use this bounded structure:
+
+1. A plain-language question as the headline.
+2. `The short answer` in two to four sentences.
+3. One to four sections whose headings state the actual findings.
+4. A comparison only when the year, definition, unit, and denominator match.
+5. `What this does not show`, written specifically for that article.
+6. Next checks that name the responsible office and the exact record needed.
+7. Expandable method and source details.
+
+Remove sections that have nothing useful to say. Do not add `Why it matters`,
+`Findings`, `Analysis`, or `Comparison` as generic body headings. Do not repeat
+the same limitation paragraph in every article. Put a figure-specific limit in
+the chart caption or beside the sentence it qualifies.
+
+Before publication, confirm that the short answer works by itself, every money
+figure names its stage, the definition of need is visible, and no missing value
+was estimated. Body headings should differ from the preceding article. Every
+next check must name both an office and a record. Remove any sentence that could
+be pasted unchanged into an unrelated article.
+
 ## Preferred public wording
 
 | Internal term | Public wording |
