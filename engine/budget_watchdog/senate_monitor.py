@@ -36,6 +36,7 @@ MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_DIRECT_FOLDER_ROWS = 200
 MAX_FETCH_ATTEMPTS = 4
 HTTP_OK = 200
+ACCESS_BLOCK_FAILURE_KINDS = frozenset({"access_denied", "bot_challenge"})
 MARKDOWN_ROW = re.compile(
     r"(?P<title>.+?)\s+Document\s+"
     r"(?P<size>\d+(?:\.\d+)?\s+(?:B|KB|MB|GB))\s+"
@@ -114,6 +115,14 @@ def _record_sort_key(value: str) -> tuple[bool, int | str]:
 
 def _challenge(payload: HttpPayload) -> bool:
     return classify_source_failure(payload.status_code, payload.content) == "bot_challenge"
+
+
+def _response_error(message: str, payload: HttpPayload) -> SenateMonitorError:
+    return SenateMonitorError(
+        message,
+        failure_kind=classify_source_failure(payload.status_code, payload.content),
+        response_body=payload.content,
+    )
 
 
 def _fetch_checked(
@@ -236,11 +245,7 @@ def _secondary_root(fetch: Fetch, recorder: _ArtifactRecorder) -> tuple[HttpPayl
             continue
         if rendered.status_code != HTTP_OK:
             recorder.store(f"{name}-unavailable.html", rendered)
-            last_error = SenateMonitorError(
-                "secondary root discovery failed",
-                failure_kind=classify_source_failure(rendered.status_code, rendered.content),
-                response_body=rendered.content,
-            )
+            last_error = _response_error("secondary root discovery failed", rendered)
             continue
         recorder.store(f"{name}.html", rendered)
         return rendered, mode
@@ -265,7 +270,8 @@ def _secondary_root_rows(
             failure_name="secondary-root-listing-unavailable.html",
         )
         if listing.status_code != HTTP_OK:
-            raise SenateMonitorError("secondary root listing discovery failed") from None
+            recorder.store("secondary-root-listing-unavailable.html", listing)
+            raise _response_error("secondary root listing discovery failed", listing) from None
         recorder.store("secondary-root-listing.html", listing)
         try:
             return parse_portal_rows(listing.content)
@@ -334,7 +340,8 @@ def _secondary_documents(
             failure_name=f"folder-{folder.record_id}-listing-unavailable.md",
         )
         if markdown.status_code != HTTP_OK:
-            raise SenateMonitorError("secondary folder discovery failed")
+            recorder.store(f"folder-{folder.record_id}-listing-unavailable.md", markdown)
+            raise _response_error("secondary folder discovery failed", markdown)
         recorder.store(f"folder-{folder.record_id}-listing.md", markdown)
         for item in _markdown_documents(markdown.content):
             matches = expected_by_title.get(_canonical_title(item.title), [])
@@ -374,7 +381,7 @@ def _direct_documents(
             )
             recorder.store(f"direct-folder-{folder.record_id}-{offset:03d}.html", payload)
             if payload.status_code != HTTP_OK:
-                raise SenateMonitorError("official folder discovery failed")
+                raise _response_error("official folder discovery failed", payload)
             if not payload.content.strip():
                 break
             try:
@@ -478,7 +485,10 @@ def run_senate_monitor(
             rendered, discovery_mode = _secondary_root(fetch, recorder)
             root_rows = _secondary_root_rows(rendered, fetch, recorder)
             observed = _secondary_documents(root_rows, expected, fetch, recorder)
+        differences = _compare(expected, observed)
     except SenateMonitorError as exc:
+        if direct_status == "not_checked" and exc.failure_kind in ACCESS_BLOCK_FAILURE_KINDS:
+            direct_status = "blocked"
         health = source_health_after_failure(
             previous_report,
             checked_at=now,
@@ -504,7 +514,6 @@ def run_senate_monitor(
             json.dumps(failure, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
         raise
-    differences = _compare(expected, observed)
     response_fingerprint = json.dumps(
         [artifact.sha256 for artifact in recorder.artifacts], separators=(",", ":")
     ).encode()
