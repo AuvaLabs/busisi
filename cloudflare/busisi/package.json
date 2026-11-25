@@ -36,6 +36,6 @@
     "dev:publication": "wrangler dev --config wrangler.jsonc"
   },
   "devDependencies": {
-    "wrangler": "^4.36.0"
+    "wrangler": "^4.166.0"
   }
 }
